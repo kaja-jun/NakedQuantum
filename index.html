@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Quantum Sanctuary">
+<link rel="apple-touch-startup-image" href="splash.png">
+<link rel="apple-touch-icon" href="icon-512.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Quantum Sanctuary v0.70.1</title>
+<style>
+:root { --bg: #050505; --card: #121212; --accent: #00ffcc; --text: #d0d0d0; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+
+/* HEADER */
+.header { 
+  width: 100%; 
+  height: 64px; 
+  padding: 0 20px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  background: #000; 
+  border-bottom: 1px solid #222; 
+  z-index: 2000; 
+  flex-shrink: 0; 
+}
+
+.header-title {
+  color: var(--accent); /* THE TEAL */
+  font-size: 11px; 
+  letter-spacing: 3px; 
+  font-weight: 900; 
+  text-transform: uppercase;
+  opacity: 0.9; /* Increased opacity so the teal is vivid */
+}
+
+.burger { 
+  font-size: 28px; 
+  cursor: pointer; 
+  color: var(--accent); 
+  padding: 10px; 
+  line-height: 1; 
+  user-select: none; 
+}
+
+
+/* DRAWER */
+.overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; z-index: 999; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.drawer { position: fixed; top: 0; right: -100%; width: 85%; max-width: 360px; height: 100%; max-height: 100vh; background: #121212; -webkit-backdrop-filter: none; backdrop-filter: none; border-left: 1px solid #333; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 25px 20px; z-index: 1001; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.drawer > h3, .drawer > input, .drawer > textarea, .drawer > select, .drawer > button { flex-shrink: 0 !important; width: 100% !important; }
+.drawer div button { width: auto !important; flex-shrink: 0; }
+.drawer h3 { margin: 20px 0 10px 0; font-size: 11px; letter-spacing: 2px; color: var(--accent); opacity: 0.5; text-transform: uppercase; }
+.drawer input, .drawer textarea, .drawer select { background: #000; color: #fff; border: 1px solid #333; padding: 12px; margin-bottom: 10px; border-radius: 10px; font-size: 16px; outline: none; }
+.drawer button { padding: 14px; margin-bottom: 8px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: #fff; font-size: 14px; background: #1a1a1a; -webkit-appearance: none; appearance: none; }
+
+#copyModal button { flex: 1; min-width: 0; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 14px; }
+#copyModal .button-row { display: flex; gap: 10px; margin-top: 15px; }
+
+/* WORLD NARRATOR */
+.narrator-row { display: flex; align-items: center; justify-content: flex-start !important; gap: 12px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; margin: 15px 0; border: 1px solid #222; }
+.narrator-row input[type="checkbox"] { width: 24px !important; height: 24px !important; margin: 0; accent-color: var(--accent); }
+
+/* CHAT BOX — FIX: added -webkit-overflow-scrolling */
+.main-content { width: 100%; max-width: 600px; flex: 1; display: flex; flex-direction: column; margin: 0 auto; overflow: hidden; }
+#chat-box { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 15px; display: flex; flex-direction: column; gap: 16px; background: #000; height: auto; min-height: 0; }
+.input-group { background: #000; padding: 15px; border-top: 1px solid #222; flex-shrink: 0; }
+
+textarea#userInput { 
+  width: 100%; 
+  background: #1a1a1a; 
+  color: #fff; 
+  border: 1px solid #333; 
+  
+  /* UPDATED PADDING FOR VOICE CONTROLS */
+  padding: 15px; 
+  padding-right: 100px !important; /* Forces text to stop before the buttons */
+  padding-bottom: 50px; /* Gives extra space at the bottom */
+  border-radius: 15px; 
+  font-size: 16px; 
+  outline: none; 
+  resize: none; 
+  
+  /* THE FIXES */
+  overflow-y: auto; 
+  -webkit-overflow-scrolling: touch; 
+  line-height: 1.4; 
+  min-height: 50px; 
+  max-height: 160px; 
+  
+  box-sizing: border-box; /* CRITICAL: ensures padding doesn't break width */
+  transition: border-color 0.2s; 
+  display: block;
+}
+
+  /* THE FIXES */
+  overflow-y: auto; /* Allows scrolling when text exceeds max-height */
+  -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling for iOS */
+  line-height: 1.4; 
+  min-height: 50px; 
+  max-height: 160px; /* Lowered slightly so the keyboard doesn't hide it */
+  
+  transition: border-color 0.2s; 
+}
+
+textarea#userInput:focus { border-color: var(--accent); }
+.strike-btn { background: #00ffcc; color: #000; border: none; padding: 16px; border-radius: 20px; font-weight: 900; width: 100%; font-size: 18px; margin-top: 10px; -webkit-appearance: none; appearance: none; }
+
+/* MESSAGES & AVATARS */
+.msg { max-width: 85%; padding: 14px 18px; border-radius: 20px; font-size: 16px; line-height: 1.5; }
+.user-wrapper { align-self: flex-end; background: #1a1a1a; color: var(--accent); border-bottom-right-radius: 4px; border: 1px solid #222; display: flex; flex-direction: column; flex-shrink: 0; }
+.bot-wrapper { align-self: flex-start; background: #222; color: #fff; border-bottom-left-radius: 4px; border: 1px solid #333; display: flex; flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; padding: 12px 14px !important; flex-shrink: 0; }
+.label { font-size: 10px; font-weight: 900; margin-bottom: 8px; opacity: 0.5; display: block; letter-spacing: 1.5px; }
+.msg-content-col { display: flex; flex-direction: column; flex: 1; min-width: 0; width: 100% !important; }
+.chat-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; object-position: top center; flex-shrink: 0; cursor: pointer; border: 1px solid #444; transition: border-color 0.2s; align-self: flex-start !important; }
+.chat-avatar:active { border-color: var(--accent); }
+
+/* CHARACTER FORGE */
+.char-template {
+position: fixed !important;
+top: 100% !important;
+left: 0 !important;
+width: 100% !important;
+height: 100dvh !important;
+background: #050505 !important;
+-webkit-backdrop-filter: none !important;
+backdrop-filter: none !important;
+isolation: isolate;
+z-index: 3000 !important;
+display: flex !important;
+flex-direction: column !important;
+transition: top 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+visibility: hidden;
+overflow-y: auto !important;
+-webkit-overflow-scrolling: touch !important;
+scroll-behavior: smooth !important;
+}
+.char-template.open {
+top: 0 !important;
+visibility: visible !important;
+}
+.forge-footer { padding: 20px; background: #000000; border-top: 1px solid #222; flex-shrink: 0; }
+.forge-footer button { width: 100%; padding: 20px; background: #00ffcc; color: #000; font-weight: 900; border: none; border-radius: 16px; font-size: 1.15rem; letter-spacing: 1px; -webkit-appearance: none; appearance: none; }
+.forge-header { padding: 15px 20px; background: #000000; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.forge-header h2 { margin: 0; font-size: 14px; letter-spacing: 2px; color: #00ffcc; }
+.close-forge { font-size: 28px; cursor: pointer; color: #d0d0d0; padding: 0 10px; font-weight: 100; }
+.forge-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; padding: 20px; display: flex; flex-direction: column; gap: 20px; background: #050505; }
+.forge-group label { font-size: 11px; font-weight: 900; letter-spacing: 1.5px; opacity: 0.5; text-transform: uppercase; }
+
+/* FORGE SECTIONS */
+.forge-section { border: 1px solid #222; border-radius: 12px; overflow: hidden; background: #0a0a0a; flex-shrink: 0; }
+.forge-header-row { padding: 12px 16px; background: #0f0f0f; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 700; color: var(–text); }
+.forge-body { display: none; padding: 12px 16px; }
+.forge-section.open .forge-body { display: block; }
+.forge-section .arrow { transition: transform 0.18s ease; opacity: 0.6; }
+.forge-section.open .arrow { transform: rotate(90deg); }
+.forge-body textarea { width: 100%; min-height: 120px; max-height: 50vh; overflow-y: auto; resize: vertical; background: #1a1a1a; color: #fff; border: 1px solid #333; border-radius: 12px; padding: 15px; font-size: 16px; line-height: 1.4; box-sizing: border-box; }
+
+/* TAGS */
+.tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.tag { padding: 6px 12px; background: #111; border: 1px solid #333; border-radius: 12px; cursor: pointer; color: var(–text); font-size: 13px; user-select: none; }
+.tag.active { background: var(--accent); color: #000; border-color: transparent; }
+
+/* INNER VOICE */
+.mono { color: rgba(255,255,255,0.65) !important; font-style: italic !important; font-weight: 400 !important; opacity: 1 !important; }
+.act { color: rgba(255,255,255,0.95) !important; font-style: italic !important; font-weight: 700 !important; opacity: 1 !important; }
+
+/* INPUT WRAPPERS */
+.input-wrapper { position: relative; }
+.voice-controls { position: absolute; right: 12px; bottom: 12px; display: flex; gap: 6px; z-index: 10; pointer-events: auto; }
+.voice-btn { background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 8px; color: var(--accent); width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; backdrop-filter: blur(4px); }
+.voice-btn:active { background: var(--accent); color: #000; }
+
+/* MESSAGE ACTIONS */
+.msg-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.msg-action-btn { background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 8px; color: #888; font-size: 11px; padding: 4px 10px; cursor: pointer; -webkit-appearance: none; appearance: none; font-weight: 600; }
+.msg-action-btn:active { background: var(--accent); color: #000; border-color: transparent; }
+.scene-break { align-self: center; color: #444; font-size: 13px; letter-spacing: 4px; margin: 4px 0; user-select: none; flex-shrink: 0; }
+
+/* SPLASH */
+#splash { position: fixed; inset: 0; background: black url(‘splash.png’) center center no-repeat; background-size: 40%; z-index: 9999; animation: fadeOut 0.8s ease forwards; animation-delay: 0.3s; }
+@keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
+.drawer.open { right: 0; }
+
+@media (max-width: 420px) {
+.bot-wrapper { padding-left: 12px; padding-right: 12px; }
+.chat-avatar { width: 34px; height: 34px; }
+}
+
+/* TAP FEEDBACK — FIX: works on iOS with touchstart listener in JS */
+button:active, .msg-action-btn:active, .strike-btn:active, .voice-btn:active, .tag:active, .forge-footer button:active {
+transform: scale(0.96);
+opacity: 0.75;
+transition: transform 0.08s ease, opacity 0.08s ease;
+}
+
+.coc-trigger {
+  background: transparent;
+  border: 1px solid var(--border); /* Matching your cosmos borders */
+  color: var(--accent); /* That gold/sand color from your root */
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.2rem;
+  padding: 0;
+  margin: 0 5px;
+}
+
+.coc-trigger {
+  /* ... your existing size/style ... */
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  box-shadow: inset 0 0 15px rgba(200, 160, 80, 0.4), 0 0 10px rgba(200, 160, 80, 0.1);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.coc-trigger:active {
+  transform: scale(0.92); /* The "Collapse" feel when clicked */
+  box-shadow: inset 0 0 30px var(--accent);
+}
+/* If the message starts with the ✸ symbol, give it the COC style */
+.chat-bubble:contains("✸") {
+  border-left: 3px solid var(--accent);
+  background: rgba(200, 160, 80, 0.05);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+
+
+</style>
+
+</head>
+<body>
+<div id="splash"></div>
+
+<!-- WEBAUTHN LOCK SCREEN -->
+<div id="auth-screen" onclick="triggerAuth()" style="position:fixed;inset:0;background:#000;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+  <div style="font-size:11px;letter-spacing:4px;color:#00ffcc;font-weight:900;text-transform:uppercase;opacity:0.9;">Quantum Sanctuary</div>
+  <div id="auth-glyph" style="font-size:64px;user-select:none;pointer-events:none;">◎</div>
+  <div id="auth-msg" style="font-size:12px;color:#555;letter-spacing:2px;text-transform:uppercase;pointer-events:none;">Touch to unlock</div>
+</div>
+
+<div class="header">
+  <button class="coc-trigger" onclick="triggerOCC()">◎</button>
+  <div class="header-title">Quantum Sanctuary</div>
+  <div class="burger" onclick="toggleMenu()">☰</div>
+</div>
+
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+<div class="drawer" id="drawer">
+  <h3>Identity</h3>
+  <select id="activeChar" onchange="switchCharacter()"></select>
+  <button onclick="addNewChar()" style="background:#2a2a2a;">+ NEW CHARACTER</button>
+  <input type="text" id="charName" placeholder="Name" onchange="updateCharNameOnly()">
+  <img id="charPortrait" style="width:100%; border-radius:12px; margin:10px 0; display:none; object-fit:cover; max-height:200px;">
+  <input type="file" id="imageUpload" accept="image/*" onchange="uploadCharImage(event)" style="display:none;">
+  <div style="display:flex; gap:8px;">
+    <button onclick="document.getElementById('imageUpload').click()" style="background:#222222; flex:1; font-size:12px;">+ PORTRAIT</button>
+    <button id="removeImgBtn" onclick="removeCharImage()" style="background:#330000; flex:1; font-size:12px; display:none;">REMOVE</button>
+  </div>
+  <button onclick="openCharacterForge()" style="background:var(--accent); color:#000; font-weight:900; font-size:1.05rem; margin-top:10px;">OPEN CHARACTER FORGE</button>
+
+  <textarea id="charMemory" placeholder="Pinned Memories..." onchange="updateCharMemoryOnly()" style="height:100px; background:#0a0a0a; margin-top:10px;"></textarea>
+
+<button onclick="pinMemory()" style="background:#004466;">PIN MEMORY</button>
+
+  <h3>Custom Instructions</h3>
+  <textarea id="customInstructions" placeholder="How should the character behave, speak, respond?" style="height:120px; background:#000; color:#fff; border:1px solid #333; padding:12px; border-radius:10px;"></textarea>
+  <button onclick="updateCustomInstructions()" style="background:#004466;">SAVE INSTRUCTIONS</button>
+
+  <h3>cosmiOS</h3>
+  <button onclick="window.location.href='cosmos'" style="background:#2a2010; color:#c8a050; border:1px solid #5a4520; font-weight:900; letter-spacing:1px;">◈ OPEN cosmiOS</button>
+  <button onclick="sendChatToCosmOS()" style="background:#1a1008; color:#c8a050; border:1px solid #5a4520; font-weight:900; letter-spacing:1px;">↗ SEND CHAT TO cosmiOS</button>
+
+  <h3>Sanctuary Tools</h3>
+  <input type="password" id="apiKey" placeholder="OpenRouter API Key" onchange="saveSettings()">
+  <div style="display:flex; flex-direction:column; gap:8px; margin-top:15px;">
+    <label style="font-size:11px; font-weight:900; letter-spacing:1.5px; opacity:0.5; text-transform:uppercase;">Active Model Engine</label>
+    <select id="activeModel" onchange="handleModelChange()" style="width:100% !important; height:44px; background:#000; color:#fff; border:1px solid #333; padding:0 12px; border-radius:10px; font-size:16px; outline:none; appearance:none; -webkit-appearance:none;"></select>
+    <button onclick="removeSavedModel()" style="background:#1a0000; color:#ff4444; width:100% !important; height:44px !important; border-radius:10px; border:1px solid #330000; font-weight:900; font-size:11px; letter-spacing:2px; margin-top:4px; display:flex; align-items:center; justify-content:center; text-transform:uppercase;">PURGE TO THE ABYSS</button>
+  </div>
+
+  <div style="display:flex; gap:8px; width:100%; align-items:center; justify-content:center;">
+    <input type="text" id="newModelInput" placeholder="Paste OpenRouter ID..." style="flex:1; height:44px !important; margin:0 !important; font-size:14px; padding:0 12px; background:#0a0a0a; border:1px solid #333; border-radius:10px; color:#fff;">
+    <button onclick="summonNewModel()" style="background:var(--accent); color:#000; width:64px !important; height:40px !important; border-radius:10px; font-weight:900; font-size:12px; padding:0; margin:0; border:none; flex-shrink:0; display:flex; align-items:center; justify-content:center;">ADD</button>
+  </div>
+
+<button onclick="copyToClipboard()" style="background:#006600;">COPY NEW (Clipboard)</button>
+<button onclick="backupEncrypted()" style="background:#4a3300;">ENCRYPTED BACKUP (.qg)</button>
+<button onclick="document.getElementById('restoreFile').click()" style="background:#222222;">RESTORE BACKUP (.qg)</button>
+<button onclick="exportData()" style="background:#1a2233; color:#d0d0d0; border:1px solid #2c3a55;">EXPORT JSON (Raw)</button>
+
+  <div class="narrator-row">
+    <input type="checkbox" id="narratorToggle" onchange="saveSettings()">
+    <span style="font-size:14px; font-weight:600;">Enable World Narrator</span>
+  </div>
+
+  <div class="narrator-row" style="margin-top:10px; flex-direction:column; align-items:flex-start;">
+    <label style="font-size:14px; font-weight:600; margin-bottom:6px;">Select Characters (Multi-Voice)</label>
+    <select id="castSelect" multiple size="4" style="width:100%; background:#111; color:#ddd; border:1px solid #333; padding:6px; border-radius:8px;"></select>
+  </div>
+
+<button onclick="clearChat()" style="background:#440000; margin-top:20px;">WIPE HISTORY</button>
+<button onclick="deleteActiveChar()" style="background:#0a0000; color:#ff4444; border:1px solid #440000;">DELETE IDENTITY</button>
+
+</div>
+
+<!-- Character Forge -->
+
+<div class="char-template" id="charTemplate">
+  <div class="forge-header">
+    <h2>CHARACTER FORGE</h2>
+    <div class="close-forge" onclick="closeCharacterForge()">×</div>
+  </div>
+  <div class="forge-scroll">
+    <div class="forge-section">
+      <div class="forge-header-row" onclick="toggleForgeSection(this)"><span>Backstory</span><span class="arrow">›</span></div>
+      <div class="forge-body"><textarea id="forgeBio" class="auto-expand" placeholder="Who are they? Appearance, history, baseline existence..."></textarea></div>
+    </div>
+    <div class="forge-section">
+      <div class="forge-header-row" onclick="toggleForgeSection(this)"><span>Personality</span><span class="arrow">›</span></div>
+      <div class="forge-body"><textarea id="forgePersonality" class="auto-expand" placeholder="Traits, quirks, flaws, how they speak..."></textarea></div>
+    </div>
+    <div class="forge-section">
+      <div class="forge-header-row" onclick="toggleForgeSection(this)"><span>Personality Tags</span><span class="arrow">›</span></div>
+      <div class="forge-body"><div id="tagList" class="tag-container"></div></div>
+    </div>
+    <div class="forge-section">
+      <div class="forge-header-row" onclick="toggleForgeSection(this)"><span>Lorebook</span><span class="arrow">›</span></div>
+      <div class="forge-body"><textarea id="forgeLore" class="auto-expand" placeholder="Deep world rules, myths, or hidden truths..."></textarea></div>
+    </div>
+    <div class="forge-section">
+      <div class="forge-header-row" onclick="toggleForgeSection(this)"><span>Scenario</span><span class="arrow">›</span></div>
+      <div class="forge-body"><textarea id="forgeScenario" class="auto-expand" placeholder="The world context, current situation, or setting..."></textarea></div>
+    </div>
+    <div class="forge-section">
+      <div class="forge-header-row" onclick="toggleForgeSection(this)"><span>Inclination</span><span class="arrow">›</span></div>
+      <div class="forge-body"><textarea id="forgeInclination" class="auto-expand" placeholder="How they tend to behave toward you: affectionate, teasing, guarded..."></textarea></div>
+    </div>
+    <div class="forge-section">
+      <div class="forge-header-row" onclick="toggleForgeSection(this)"><span>Current Roleplay</span><span class="arrow">›</span></div>
+      <div class="forge-body"><textarea id="forgeCurrent" class="auto-expand" placeholder="What is happening right now in the story..."></textarea></div>
+    </div>
+    <div class="forge-section">
+      <div class="forge-header-row" onclick="toggleForgeSection(this)"><span>Relationship Dynamics</span><span class="arrow">›</span></div>
+      <div class="forge-body"><textarea id="forgeRelationship" class="auto-expand" placeholder="Friend, rival, crush, guardian, companion..."></textarea></div>
+    </div>
+    <div class="forge-section">
+      <div class="forge-header-row" onclick="toggleForgeSection(this)"><span>Player Character</span><span class="arrow">›</span></div>
+      <div class="forge-body">
+        <textarea id="playerCharacter" class="auto-expand" placeholder="Describe yourself: name, age, appearance, personality, how you tend to act..."></textarea>
+      </div>
+    </div>
+    <div class="forge-section">
+      <div class="forge-header-row" onclick="toggleForgeSection(this)"><span>Quantum Temperature</span><span class="arrow">›</span></div>
+      <div class="forge-body">
+        <label style="font-size:11px; font-weight:900; letter-spacing:1.5px; opacity:0.5; text-transform:uppercase; display:block; margin-bottom:12px;">Character Heat: <span id="tempValue" style="color:#00ffcc; opacity:1;">0.8</span></label>
+        <input type="range" id="charTemp" min="0" max="2" step="0.1" value="0.8" oninput="document.getElementById('tempValue').innerText = parseFloat(this.value).toFixed(1)" style="width:100%; accent-color:#00ffcc; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; font-size:11px; opacity:0.4; margin-bottom:12px;">
+          <span>0.0 Logic</span><span>1.0 Balanced</span><span>2.0 Chaos</span>
+        </div>
+        <small style="color:#666; display:block; font-size:12px; line-height:1.6;">Low = precise, controlled, consistent.<br>High = creative, unpredictable, volatile.<br>Sage 0.7 · Elara 0.7 · Anaya 0.8 · Painter 1.1</small>
+      </div>
+    </div>
+  </div>
+  <div class="forge-footer">
+    <button onclick="saveCharacterForge()">ANCHOR SOUL (SAVE)</button>
+  </div>
+</div>
+
+<div class="main-content">
+  <div id="chat-box"></div>
+  <div class="input-group">
+    <div class="input-wrapper">
+      <textarea id="userInput" class="auto-expand" placeholder="Strike into the abyss..." rows="1" oninput="resizeTextarea(this)"></textarea>
+      <div class="voice-controls">
+        <div class="voice-btn" onclick="insertVoice('act')" title="Narrative Action" style="font-size:1.4rem;">🌟</div>
+        <div class="voice-btn" onclick="insertVoice('mono')" title="Private Monologue" style="font-size:1.4rem;">💭</div>
+      </div>
+    </div>
+    <button class="strike-btn" onclick="handleSend()">Talk</button>
+  </div>
+</div>
+
+<input type="file" id="restoreFile" style="display:none" accept=".qg">
+
+<!-- cosmOS Pin Modal -->
+<div id="pin-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:6000;display:none;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);" onclick="closePinModal()"></div>
+<div id="pin-modal" style="position:fixed;bottom:0;left:0;right:0;background:#141311;border-top:1px solid #2c2a27;border-radius:18px 18px 0 0;padding:22px;z-index:6001;display:none;flex-direction:column;gap:14px;max-height:80vh;overflow-y:auto;">
+  <div style="font-size:10px;letter-spacing:3px;color:#c8a050;font-weight:900;text-transform:uppercase;opacity:0.8;">◈ Pin to cosmOS</div>
+  <input id="pin-title" type="text" placeholder="Discourse title..." style="width:100%;background:#0b0a08;border:1px solid #2c2a27;color:#ccc5b9;padding:13px;border-radius:10px;font-size:16px;outline:none;" maxlength="120">
+  <select id="pin-folder" style="width:100%;background:#0b0a08;border:1px solid #2c2a27;color:#ccc5b9;padding:13px;border-radius:10px;font-size:16px;outline:none;-webkit-appearance:none;appearance:none;"></select>
+  <div style="display:flex;gap:10px;">
+    <button onclick="closePinModal()" style="flex:1;padding:14px;background:#1c1b18;border:none;border-radius:10px;color:#ccc5b9;font-weight:900;font-size:14px;">Cancel</button>
+    <button onclick="confirmPin()" style="flex:1;padding:14px;background:#c8a050;border:none;border-radius:10px;color:#000;font-weight:900;font-size:14px;">Pin ◈</button>
+  </div>
+</div>
+
+<div id="imageModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:3000; display:none; justify-content:center; align-items:center; backdrop-filter:blur(5px);" onclick="this.style.display='none'">
+  <img id="enlargedImg" style="max-width:90%; max-height:90%; border-radius:15px; border:1px solid var(--accent); object-fit:contain; box-shadow:0 0 30px rgba(0,255,204,0.2);">
+</div>
+
+<div id="copyModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); display:none; overflow-y:auto; padding:20px; box-sizing:border-box; z-index:5000;">
+  <div style="background:#111; border:1px solid var(--accent); padding:20px; width:100%; max-width:500px; margin:auto; border-radius:12px; color:#ddd; box-sizing:border-box;">
+    <textarea id="copyModalText" style="width:100%; height:40vh; max-height:300px; background:#000; color:#ddd; border:1px solid #333; padding:10px; border-radius:8px; resize:none;"></textarea>
+    <div style="display:flex; gap:10px; margin-top:15px;">
+      <button onclick="closeCopyModal()" style="flex:1; background:#222; border:none; border-radius:10px; color:#fff; padding:14px; font-weight:bold; cursor:pointer;">Close</button>
+      <button onclick="forceCopy()" style="flex:1; background:var(--accent); color:#000; border:none; border-radius:10px; padding:14px; font-weight:bold; cursor:pointer;">Copy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   QUANTUM SANCTUARY v0.67.4
+   Fixes applied:
+   1. iOS button animations — touchstart listener added
+   2. Chat box scroll — -webkit-overflow-scrolling: touch
+   3. Textarea cursor alignment — padding-bottom fix
+   4. Pin memory first click fix — guard + history limit 10
+   5. World Narrator — now actually injected into system prompt
+   6. Auto summarize — error handling on getLatestSummary
+   7. Like button added to bot messages
+   ============================================================ */
+
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+let db = null;
+let activeCharData = null;
+let savedModels = [];
+
+/* ── FIX: iOS button animations need a touchstart listener ── */
+document.addEventListener('touchstart', () => {}, {passive: true});
+
+/* ── CRYPTO ── */
+async function deriveKey(pass, salt) {
+  const base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+    base,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+/* ── ENCRYPTED BACKUP ── */
+async function backupEncrypted() {
+  try {
+    const pass = prompt("Create Passphrase for .qg Backup:");
+    if (!pass) return;
+    const chars = await getAllCharacters();
+    const allHistory = [];
+    for (const c of chars) {
+      const h = await getFullHistory(c.id);
+      allHistory.push(...h);
+    }
+    const payload = { characters: chars, history: allHistory };
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv   = crypto.getRandomValues(new Uint8Array(12));
+    const key  = await deriveKey(pass, salt);
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(payload))
+    );
+    const container = {
+      version: 2,
+      salt: btoa(String.fromCharCode(...salt)),
+      iv:   btoa(String.fromCharCode(...iv)),
+      data: btoa(String.fromCharCode(...new Uint8Array(ciphertext)))
+    };
+    const blob = new Blob([JSON.stringify(container)], { type: "application/octet-stream" });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href     = url;
+    link.download = `sanctuary_${new Date().toISOString().slice(0,10)}.qg`;
+    link.click();
+    setTimeout(() => { URL.revokeObjectURL(url); alert("Backup Anchored! 🥂📂"); }, 1000);
+  } catch (err) {
+    console.error("Backup failed:", err);
+    setTimeout(() => alert("Backup failed. Check console."), 0);
+  }
+}
+
+/* ── RESTORE BACKUP ── */
+async function handleRestoreFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const pass = prompt("Enter Passphrase to Resurrect:");
+  if (!pass) return;
+  try {
+    const container = JSON.parse(await file.text());
+    const salt = Uint8Array.from(atob(container.salt), c => c.charCodeAt(0));
+    const iv   = Uint8Array.from(atob(container.iv),   c => c.charCodeAt(0));
+    const data = Uint8Array.from(atob(container.data),  c => c.charCodeAt(0));
+    const key  = await deriveKey(pass, salt);
+    const decBuf = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
+    const payload = JSON.parse(dec.decode(new Uint8Array(decBuf)));
+    if (payload.characters) {
+      for (const c of payload.characters) await saveToDB("characters", c);
+      for (const h of payload.history)    await saveToDB("history", h);
+    }
+    await loadActiveChar(localStorage.getItem('lastActiveId_v2'));
+    alert("Sanctuary Restored. 🥂✨");
+  } catch (err) {
+    console.error(err);
+    alert("The Abyss rejected the key. Try again.");
+  }
+  e.target.value = "";
+}
+
+/* ── IndexedDB ── */
+const dbReq = indexedDB.open("SanctuaryDB_v2", 3);
+dbReq.onupgradeneeded = (e) => {
+  const d = e.target.result;
+  if (!d.objectStoreNames.contains("characters")) d.createObjectStore("characters", { keyPath: "id" });
+  if (!d.objectStoreNames.contains("history")) {
+    const h = d.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+    h.createIndex("charId", "charId", { unique: false });
+  }
+  if (!d.objectStoreNames.contains("summaries")) {
+    const s = d.createObjectStore("summaries", { keyPath: "id", autoIncrement: true });
+    s.createIndex("charId", "charId", { unique: false });
+  }
+  if (!d.objectStoreNames.contains("cosm_folders")) {
+    d.createObjectStore("cosm_folders", { keyPath: "id" });
+  }
+  if (!d.objectStoreNames.contains("cosm_discourses")) {
+    const disc = d.createObjectStore("cosm_discourses", { keyPath: "id" });
+    disc.createIndex("folder_id", "folder_id", { unique: false });
+    disc.createIndex("created_at", "created_at", { unique: false });
+  }
+  if (!d.objectStoreNames.contains("cosm_mosaic_tiles")) {
+    const mosaic = d.createObjectStore("cosm_mosaic_tiles", { keyPath: "id" });
+    mosaic.createIndex("discourse_id", "discourse_id", { unique: false });
+  }
+  if (!d.objectStoreNames.contains("cosm_backlinks")) {
+    const bl = d.createObjectStore("cosm_backlinks", { keyPath: "id" });
+    bl.createIndex("discourse_id", "discourse_id", { unique: false });
+  }
+};
+dbReq.onsuccess = (e) => {
+  db = e.target.result;
+  document.getElementById('restoreFile').addEventListener('change', handleRestoreFile);
+  initAuth().then(() => initApp());
+};
+
+dbReq.onerror = (e) => console.error('DB error', e);
+
+/* ── WEBAUTHN ── */
+const WA_KEY = 'qs_webauthn_cred';
+
+async function initAuth() {
+  // If WebAuthn not supported, just skip lock screen
+  if (!window.PublicKeyCredential) {
+    hideAuthScreen();
+    return;
+  }
+
+  const storedCred = localStorage.getItem(WA_KEY);
+
+  if (!storedCred) {
+    // First time — register Face ID
+    await registerAuth();
+  } else {
+    // Returning — authenticate
+    await authenticateAuth();
+  }
+}
+
+async function registerAuth() {
+  try {
+    setAuthMsg('Setting up Face ID...');
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: 'Quantum Sanctuary' },
+        user: {
+          id: crypto.getRandomValues(new Uint8Array(16)),
+          name: 'kaja',
+          displayName: 'Kaja'
+        },
+        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required'
+        },
+        timeout: 60000
+      }
+    });
+    // Store credential ID for future auth
+    localStorage.setItem(WA_KEY, bufToBase64(cred.rawId));
+    setAuthMsg('Face ID registered ✓');
+    setTimeout(hideAuthScreen, 600);
+  } catch (e) {
+    console.error('Register failed:', e);
+    // User cancelled or device doesn't support — let them in anyway
+    setAuthMsg('Skipped');
+    setTimeout(hideAuthScreen, 400);
+  }
+}
+
+async function authenticateAuth() {
+  try {
+    setAuthMsg('Authenticating...');
+    const credId = base64ToBuf(localStorage.getItem(WA_KEY));
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{ id: credId, type: 'public-key' }],
+        userVerification: 'required',
+        timeout: 60000
+      }
+    });
+    setAuthMsg('Welcome back ✓');
+    setTimeout(hideAuthScreen, 400);
+  } catch (e) {
+    console.error('Auth failed:', e);
+    setAuthMsg('Try again ↺');
+    // Don't hide — let them retry by tapping glyph
+  }
+}
+
+async function triggerAuth() {
+  const storedCred = localStorage.getItem(WA_KEY);
+  if (storedCred) {
+    await authenticateAuth();
+  } else {
+    await registerAuth();
+  }
+}
+
+function hideAuthScreen() {
+  const screen = document.getElementById('auth-screen');
+  if (screen) {
+    screen.style.transition = 'opacity 0.4s ease';
+    screen.style.opacity = '0';
+    setTimeout(() => screen.remove(), 400);
+  }
+}
+
+function setAuthMsg(msg) {
+  const el = document.getElementById('auth-msg');
+  if (el) el.textContent = msg;
+}
+
+function bufToBase64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+
+function base64ToBuf(b64) {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}
+
+/* ── INIT ── */
+async function initApp() {
+  initModelEngine();
+  const tx   = db.transaction("characters", "readonly");
+  const req  = tx.objectStore("characters").getAll();
+  
+  req.onsuccess = async () => {
+    let chars = req.result;
+    if (chars.length === 0) {
+      const def = { id: "default", name: "Aniki", image: "", bio: "", personality: "Insightful peer.", lore: "", scenario: "", inclination: "", currentRoleplay: "", relationship: "", memory: "", customInstructions: "", playerCharacter: "", tags: [] };
+      await saveToDB("characters", def);
+      chars = [def];
+    }
+    const lastId = localStorage.getItem('lastActiveId_v2') || chars[0].id;
+    await loadActiveChar(lastId);
+    populateCastDropdown();
+
+    // ── THE AUTO-EXPAND FIX STARTS HERE ──
+    const txInput = document.getElementById('userInput');
+    if (txInput) {
+      txInput.addEventListener("input", function() {
+        // This resets height so it can shrink, then sets it to the content size
+        this.style.height = 'auto'; 
+        this.style.height = (this.scrollHeight) + 'px';
+      }, false);
+    }
+    // ── END FIX ──
+  };
+}
+
+/* ── DB HELPERS ── */
+function saveToDB(storeName, data) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(storeName, "readwrite");
+    const req = tx.objectStore(storeName).put(data);
+    req.onsuccess = () => resolve();
+    req.onerror   = (e) => reject(e.target.error);
+  });
+}
+
+function getHistory(charId, limit = 20) {
+  return new Promise(res => {
+    const tx  = db.transaction("history", "readonly");
+    const req = tx.objectStore("history").index("charId").getAll(IDBKeyRange.only(charId));
+    req.onsuccess = () => res(req.result.slice(-limit));
+  });
+}
+
+function getFullHistory(charId) {
+  return new Promise(res => {
+    const tx  = db.transaction("history", "readonly");
+    const req = tx.objectStore("history").index("charId").getAll(IDBKeyRange.only(charId));
+    req.onsuccess = () => res(req.result || []);
+  });
+}
+
+function getAllCharacters() {
+  return new Promise(resolve => {
+    const req = db.transaction("characters", "readonly").objectStore("characters").getAll();
+    req.onsuccess = e => resolve(e.target.result || []);
+  });
+}
+
+function loadCharacter(id) {
+  return new Promise(resolve => {
+    const req = db.transaction("characters", "readonly").objectStore("characters").get(id);
+    req.onsuccess = e => resolve(e.target.result);
+  });
+}
+
+function haptic(style = 'light') {
+  if (window.navigator?.vibrate) {
+    window.navigator.vibrate(style === 'heavy' ? 30 : 10);
+  }
+}
+
+/* ── SETTINGS SAVE ── */
+function saveSettings() {
+  localStorage.setItem('nexus_v7_key',     document.getElementById('apiKey').value);
+  localStorage.setItem('narratorEnabled',  document.getElementById('narratorToggle').checked);
+  const modelEl  = document.getElementById('activeModel');
+  const modelVal = (modelEl && modelEl.value) ? modelEl.value.trim() : "";
+  if (modelVal) localStorage.setItem('activeModel_v1', modelVal);
+}
+
+/* ── EXPORT JSON ── */
+async function exportData() {
+  const id = localStorage.getItem('lastActiveId_v2');
+  if (!id) { alert("No active soul selected."); return; }
+  const tx  = db.transaction("characters", "readonly");
+  const req = tx.objectStore("characters").get(id);
+  req.onsuccess = () => {
+    const char = req.result;
+    if (!char) { alert("Soul not found."); return; }
+    const blob = new Blob([JSON.stringify(char, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `${char.name || "character"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+}
+
+/* ── LOAD CHARACTER ── */
+async function loadActiveChar(id) {
+  if (!id || !db) return;
+  const tx  = db.transaction("characters", "readonly");
+  const req = tx.objectStore("characters").get(id);
+  req.onsuccess = async () => {
+    activeCharData = req.result;
+    if (!activeCharData) return;
+    localStorage.setItem('lastActiveId_v2', id);
+
+    document.getElementById('charName').value         = activeCharData.name || "";
+    document.getElementById('charMemory').value       = activeCharData.memory || "";
+    document.getElementById('apiKey').value           = localStorage.getItem('nexus_v7_key') || "";
+    document.getElementById('narratorToggle').checked = JSON.parse(localStorage.getItem('narratorEnabled') || "false");
+    document.getElementById('activeModel').value      = localStorage.getItem('activeModel_v1') || "google/gemini-2.0-flash-001";
+    document.getElementById('forgeBio').value         = activeCharData.bio || "";
+    document.getElementById('forgePersonality').value = activeCharData.personality || "";
+    document.getElementById('forgeLore').value        = activeCharData.lore || "";
+    document.getElementById('forgeScenario').value    = activeCharData.scenario || "";
+    document.getElementById('forgeInclination').value = activeCharData.inclination || "";
+    document.getElementById('forgeCurrent').value     = activeCharData.currentRoleplay || "";
+    document.getElementById('forgeRelationship').value= activeCharData.relationship || "";
+    document.getElementById('playerCharacter').value  = activeCharData.playerCharacter || "";
+    document.getElementById('charTemp').value         = activeCharData.temp || 0.8;
+    document.getElementById('tempValue').innerText    = parseFloat(activeCharData.temp || 0.8).toFixed(1);
+    document.getElementById('customInstructions').value = activeCharData.customInstructions || "";
+
+    renderTags();
+
+    const sel    = document.getElementById('activeChar');
+    sel.innerHTML = "";
+    const allReq = db.transaction("characters").objectStore("characters").getAll();
+    allReq.onsuccess = () => {
+      allReq.result.forEach(c => {
+        const opt    = document.createElement('option');
+        opt.value    = c.id;
+        opt.innerText = c.name || "Unnamed";
+        if (c.id === id) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    };
+
+    renderCharImage();
+    renderChat();
+    populateCastDropdown();
+
+    document.querySelectorAll('.forge-section.open').forEach(sec => {
+      sec.querySelectorAll('textarea').forEach(t => {
+        t.style.height = 'auto';
+        t.style.height = t.scrollHeight + 'px';
+      });
+    });
+  };
+}
+
+/* ── PORTRAIT ── */
+function uploadCharImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    activeCharData.image = reader.result;
+    await saveToDB("characters", activeCharData);
+    renderCharImage();
+    renderChat();
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderCharImage() {
+  const img       = document.getElementById('charPortrait');
+  const removeBtn = document.getElementById('removeImgBtn');
+  if (activeCharData && activeCharData.image) {
+    img.src = activeCharData.image;
+    img.style.display    = "block";
+    removeBtn.style.display = "block";
+  } else {
+    img.style.display    = "none";
+    removeBtn.style.display = "none";
+  }
+}
+
+async function removeCharImage() {
+  activeCharData.image = "";
+  await saveToDB("characters", activeCharData);
+  renderCharImage();
+  renderChat();
+}
+
+/* ── FORGE ── */
+function openCharacterForge() {
+  toggleMenu();
+  document.getElementById('charTemplate').classList.add('open');
+  setTimeout(() => document.querySelectorAll('.auto-expand').forEach(resizeTextarea), 50);
+}
+
+function closeCharacterForge() {
+  document.getElementById('charTemplate').classList.remove('open');
+}
+
+async function saveCharacterForge() {
+  activeCharData.bio             = document.getElementById('forgeBio').value;
+  activeCharData.personality     = document.getElementById('forgePersonality').value;
+  activeCharData.lore            = document.getElementById('forgeLore').value;
+  activeCharData.scenario        = document.getElementById('forgeScenario').value;
+  activeCharData.inclination     = document.getElementById('forgeInclination').value;
+  activeCharData.currentRoleplay = document.getElementById('forgeCurrent').value;
+  activeCharData.relationship    = document.getElementById('forgeRelationship').value;
+  activeCharData.playerCharacter = document.getElementById('playerCharacter').value;
+  activeCharData.temp            = parseFloat(document.getElementById('charTemp').value) || 0.8;
+  await saveToDB("characters", activeCharData);
+  closeCharacterForge();
+}
+
+function toggleForgeSection(el) {
+  const section = el.parentElement;
+  section.classList.toggle('open');
+  if (section.classList.contains('open')) {
+    section.querySelectorAll('textarea').forEach(t => {
+      t.style.height = 'auto';
+      t.style.height = t.scrollHeight + 'px';
+    });
+    const forgeScroll = document.querySelector('.forge-scroll');
+    if (forgeScroll) section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+/* ── TEXTAREA RESIZE ── */
+function resizeTextarea(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.matches('.auto-expand')) resizeTextarea(e.target);
+});
+
+/* ── CHARACTER MANAGEMENT ── */
+async function updateCharNameOnly() {
+  activeCharData.name = document.getElementById('charName').value;
+  await saveToDB("characters", activeCharData);
+  loadActiveChar(activeCharData.id);
+}
+
+async function updateCharMemoryOnly() {
+  activeCharData.memory = document.getElementById('charMemory').value;
+  await saveToDB("characters", activeCharData);
+}
+
+async function updateCustomInstructions() {
+  activeCharData.customInstructions = document.getElementById('customInstructions').value;
+  await saveToDB("characters", activeCharData);
+  alert("Instructions saved.");
+}
+
+async function addNewChar() {
+  const id = "c_" + Date.now();
+  const n  = { id, name: "New", image: "", bio: "", personality: "", lore: "", scenario: "", inclination: "", currentRoleplay: "", relationship: "", memory: "", customInstructions: "", playerCharacter: "", tags: [] };
+  await saveToDB("characters", n);
+  loadActiveChar(id);
+  populateCastDropdown();
+}
+
+async function switchCharacter() {
+  await loadActiveChar(document.getElementById('activeChar').value);
+  toggleMenu();
+}
+
+async function deleteActiveChar() {
+  if (!confirm("Delete soul?")) return;
+  await new Promise(r => {
+    const req = db.transaction("characters", "readwrite").objectStore("characters").delete(activeCharData.id);
+    req.onsuccess = r;
+  });
+  const all = await getAllCharacters();
+  if (all.length > 0) loadActiveChar(all[0].id);
+  else addNewChar();
+}
+
+async function clearChat() {
+  if (!confirm("Wipe?")) return;
+  const tx  = db.transaction("history", "readwrite");
+  const req = tx.objectStore("history").index("charId").openCursor(IDBKeyRange.only(activeCharData.id));
+  req.onsuccess = (e) => {
+    const cursor = e.target.result;
+    if (cursor) { cursor.delete(); cursor.continue(); }
+    else renderChat();
+  };
+}
+
+/* ── MENU ── */
+function toggleMenu() {
+  const d = document.getElementById('drawer');
+  const o = document.getElementById('overlay');
+  d.classList.toggle('open');
+  o.style.display = d.classList.contains('open') ? 'block' : 'none';
+}
+
+/* ── FORMAT TEXT ── */
+function formatText(text) {
+  if (!text) return "";
+  let t = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  t = t.replace(/\*(.+?)\*/gs, '<span class="mono">$1</span>');
+  t = t.replace(/\[(.+?)\]/gs,  '<span class="act">$1</span>');
+  return t;
+}
+
+/* ── RENDER CHAT ── */
+async function renderChat() {
+  if (!activeCharData) return;
+  const box     = document.getElementById('chat-box');
+  box.innerHTML = "";
+  const history = await getFullHistory(activeCharData.id);
+
+  history.forEach(m => {
+    if (m.role === 'scene-break') {
+      const sb = document.createElement('div');
+      sb.className = 'scene-break';
+      sb.textContent = '— ✦ —';
+      box.appendChild(sb);
+      return;
+    }
+    const isUser  = m.role === 'user';
+    const wrapper = document.createElement('div');
+    wrapper.className = `msg ${isUser ? 'user-wrapper' : 'bot-wrapper'}`;
+
+    if (isUser) {
+      wrapper.innerHTML = `<span class="label">YOU</span><span class="content">${formatText(m.content)}</span><div class="msg-actions"><button class="msg-action-btn" onclick="editMessage(${m.id}, 'user', this)">✏️ Edit</button><button class="msg-action-btn" onclick="rewindToMessage(${m.id})">⏪ Rewind</button></div>`;
+    } else {
+      let displayName    = activeCharData.name.toUpperCase();
+      let displayContent = m.content;
+      let displayImage   = activeCharData.image;
+
+      if (m.content.includes("(EXTERNAL)")) {
+        const match = m.content.match(/\(EXTERNAL\)\s+(.*?):\s*([\s\S]*)/);
+        if (match) {
+          displayName    = match[1].toUpperCase();
+          displayContent = match[2];
+          displayImage   = "";
+        }
+      }
+
+      const avatar = displayImage
+        ? `<img src="${displayImage}" class="chat-avatar" onclick="enlargeImage('${displayImage}')">`
+        : "";
+
+      /* FIX: like button added, heart turns pink when liked */
+      const likeColor = m.liked ? 'color:#ff6b8a;' : '';
+      wrapper.innerHTML = `
+        ${avatar}
+        <div class="msg-content-col">
+          <span class="label">${displayName}</span>
+          <span class="content">${formatText(displayContent)}</span>
+          <div class="msg-actions">
+            <button class="msg-action-btn" onclick="toggleLike(${m.id}, this)" style="${likeColor}">❤️</button>
+            <button class="msg-action-btn" onclick="retryLastResponse()">🔄 Retry</button>
+            <button class="msg-action-btn" onclick="alternativeResponse()">🎲 Alt</button>
+            <button class="msg-action-btn" onclick="continueResponse()">▶️ Continue</button>
+            <button class="msg-action-btn" onclick="editMessage(${m.id}, 'assistant', this)">✏️ Edit</button>
+            <button class="msg-action-btn" onclick="insertSceneBreak()">— ✦ —</button>
+            <button class="msg-action-btn" onclick="openPinModal(${m.id})" style="color:#c8a050;">📌 Pin</button>
+          </div>
+        </div>`;
+    }
+    box.appendChild(wrapper);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ── LIKE BUTTON ── */
+async function toggleLike(msgId, btn) {
+  const history = await getFullHistory(activeCharData.id);
+  const msg = history.find(m => m.id === msgId);
+  if (!msg) return;
+  msg.liked = !msg.liked;
+  await saveToDB("history", msg);
+  btn.style.color = msg.liked ? '#ff6b8a' : '';
+  showToast(msg.liked ? '❤️ Liked' : 'Like removed');
+}
+
+/* ── BUILD SYSTEM PROMPT ── */
+async function buildSystemPrompt(char, systemInstructions = "", narratorPrompt = "") {
+  const parts = [];
+
+  if (systemInstructions) parts.push(`SYSTEM INSTRUCTIONS:\n${systemInstructions}`);
+
+  const charBlock = [
+    `CHARACTER FORGE (NPC):`,
+    `Name: ${char.name || "Unnamed"}`,
+    char.bio          ? `Backstory: ${char.bio}`         : "",
+    char.personality  ? `Personality: ${char.personality}`: "",
+    char.tags && char.tags.length ? `Personality Tags: ${char.tags.join(', ')}` : "",
+    char.lore         ? `Lorebook: ${char.lore}`          : "",
+    char.inclination  ? `Inclination: ${char.inclination}`: "",
+  ].filter(Boolean).join("\n");
+  parts.push(charBlock);
+
+  if (char.playerCharacter) {
+    parts.push(`PLAYER CHARACTER (USER):\n${char.playerCharacter}`);
+  }
+
+  parts.push(
+    `LORE ANCHOR:\nPlayer Anchor: see Player Character block for appearance, quirks, likes, skills, and speaking style. Keep player flexible and open to any realistic emotional state; do not assume fixed backstory or mood.`
+  );
+
+  if (char.scenario)   parts.push(`SCENARIO:\n${char.scenario}`);
+  if (narratorPrompt)  parts.push(narratorPrompt);
+
+  if (char.relationship)    parts.push(`Relationship: ${char.relationship}`);
+  if (char.currentRoleplay) parts.push(`Current Roleplay: ${char.currentRoleplay}`);
+  if (char.memory)          parts.push(`Pinned Memories: ${char.memory}`);
+
+  const autoSummary = await getLatestSummary(char.id);
+  if (autoSummary) parts.push(`Learned about user:\n${autoSummary}`);
+
+  if (char.customInstructions) parts.push(`Special Instructions: ${char.customInstructions}`);
+
+  parts.push(
+    `[STRICT RULES]`,
+    `- Write ONLY in the third person (e.g., "${char.name} smiles", not "I smile").`,
+    `- Start your reply IMMEDIATELY with actions or dialogue — no name labels, no colons.`,
+    `- Do NOT speak for the user or other characters.`
+  );
+
+  return parts.filter(Boolean).join('\n\n').trim();
+}
+
+/* ── TRIM HISTORY ── */
+function trimHistory(history, maxTurns = 15) {
+  if (!Array.isArray(history)) return [];
+  const start = Math.max(0, history.length - maxTurns);
+  return history.slice(start);
+}
+
+/* ── HANDLE SEND ── */
+let isSending = false;
+
+async function handleSend() {
+  if (isSending) return;
+  const userInput = document.getElementById("userInput");
+  const content   = userInput.value.trim();
+  if (!content) return;
+  isSending = true;
+  haptic();
+
+  const key   = localStorage.getItem('nexus_v7_key') || document.getElementById('apiKey').value;
+  const model = localStorage.getItem('activeModel_v1') || "google/gemini-2.0-flash-001";
+
+  /* FIX: read narrator toggle for system prompt */
+  const narratorEnabled = JSON.parse(localStorage.getItem('narratorEnabled') || "false");
+  const narratorPrompt  = narratorEnabled
+    ? `WORLD NARRATOR: You may occasionally add short atmospheric scene descriptions in italics, like a novel narrator observing the scene. Keep them brief — one or two sentences maximum. Do not interrupt dialogue.`
+    : "";
+
+  await saveToDB("history", { charId: activeCharData.id, role: "user", content, timestamp: Date.now() });
+  userInput.value = "";
+  resizeTextarea(userInput);
+  await renderChat();
+
+  try {
+    const castIds = getSelectedCast();
+    for (const id of castIds) {
+      if (id === activeCharData.id) continue;
+      const otherChar = await loadCharacter(id);
+      if (!otherChar) continue;
+
+      const rawHistory   = await getHistory(activeCharData.id, 10);
+      const castMessages = [
+        { role: "system", content: await buildSystemPrompt(otherChar) },
+        ...trimHistory(rawHistory, 10).map(m => {
+          let speaker = m.role === 'user' ? 'USER' : activeCharData.name;
+          let text    = m.content;
+          if (text.includes("(EXTERNAL)")) {
+            const match = text.match(/\(EXTERNAL\)\s+(.*?):/);
+            if (match) speaker = match[1];
+            text = text.replace(/\(EXTERNAL\)\s+[^:]+:\s*/, "");
+          }
+          return { role: "user", content: `${speaker}: ${text}` };
+        }),
+        { role: "user", content: `USER: ${content}` }
+      ];
+
+      const castRes  = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model, messages: castMessages })
+      });
+      const castData = await castRes.json();
+      const castText = castData.choices?.[0]?.message?.content || "";
+      if (castText) {
+        await saveToDB("history", { charId: activeCharData.id, role: "assistant", content: `(EXTERNAL) ${otherChar.name.toUpperCase()}: ${castText}`, timestamp: Date.now() });
+        await renderChat();
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+
+    const box     = document.getElementById('chat-box');
+    const wrapper = document.createElement('div');
+    wrapper.className = "msg bot-wrapper";
+    const avatar  = activeCharData.image ? `<img src="${activeCharData.image}" class="chat-avatar">` : "";
+    wrapper.innerHTML = `${avatar}<div class="msg-content-col"><span class="label">${activeCharData.name.toUpperCase()}</span><span class="content">...</span></div>`;
+    box.appendChild(wrapper);
+
+    const rawHistory  = await getHistory(activeCharData.id, 15);
+    const mainMessages = [
+      /* FIX: narrator prompt now passed in */
+      { role: "system", content: await buildSystemPrompt(activeCharData, "", narratorPrompt) },
+      ...trimHistory(rawHistory, 15).map(m => {
+        let text = m.content;
+        if (m.role === 'assistant' && text.includes("(EXTERNAL)")) {
+          const match   = text.match(/\(EXTERNAL\)\s+(.*?):/);
+          const speaker = match ? match[1] : "Someone";
+          text          = text.replace(/\(EXTERNAL\)\s+[^:]+:\s*/, "");
+          return { role: "user", content: `${speaker} says: ${text}` };
+        }
+        return { role: m.role, content: text };
+      })
+    ];
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model, messages: mainMessages, temperature: activeCharData.temp || 0.8, stream: true })
+    });
+/* ── THE ANIKI SHIELD ── */
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("API Error:", errText);
+      contentSpan.innerHTML = `[API ERROR ${response.status}: Key missing or Abyss disconnected.]`;
+      contentSpan.style.color = "#ff4444";
+      isSending = false;
+      return;
+    }
+    /* ── END SHIELD ── */
+
+    const reader      = response.body.getReader();
+    const decoder     = new TextDecoder();
+    let   fullContent = "";
+    const contentSpan = wrapper.querySelector('.content');
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      for (const line of chunk.split("\n")) {
+        if (!line.startsWith("data: ")) continue;
+        const dataStr = line.slice(6).trim();
+        if (dataStr === "[DONE]") break;
+        try {
+          const data  = JSON.parse(dataStr);
+          const delta = data.choices?.[0]?.delta?.content || "";
+          if (delta) {
+            fullContent += delta;
+            contentSpan.innerHTML = formatText(fullContent);
+            box.scrollTop = box.scrollHeight;
+          }
+        } catch (_) {}
+      }
+    }
+
+    const cleaned1 = cleanOutput(fullContent);
+    if (cleaned1) await saveToDB("history", { charId: activeCharData.id, role: "assistant", content: cleaned1, timestamp: Date.now() });
+    await renderChat();
+
+  } catch (e) {
+    console.error("Send failed:", e);
+  } finally {
+    isSending = false;
+  }
+  maybeAutoSummarize();
+}
+
+/* ── PIN MEMORY — FIX: guard + higher limit ── */
+async function pinMemory() {
+  haptic('heavy');
+  const key     = localStorage.getItem('nexus_v7_key') || document.getElementById('apiKey').value;
+  const history = await getHistory(activeCharData.id, 10);
+
+  if (!history || history.length === 0) {
+    showToast("Nothing to pin yet");
+    return;
+  }
+
+  const messages = [
+    { role: "system", content: "You are a scene memory writer. From this conversation extract vivid moment or emotional beats. use show not not tell. Write it as a short screenplay action lines — present tense, no character names, no AI commentary, no explanation. Example style: 'Sits quietly by the window, watching rain. Doesn't say what he's thinking, but his longing gripped the clouds' Reply SKIP if there is nothing meaningful." },
+    ...history
+  ];
+  const res  = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "nvidia/nemotron-3-super-120b-a12b:free", messages })
+  });
+  const data = await res.json();
+  const fact = data.choices?.[0]?.message?.content || "";
+  if (fact && fact.trim() && !fact.includes("SKIP")) {
+    activeCharData.memory += `\n- ${fact}`;
+    await saveToDB("characters", activeCharData);
+    document.getElementById('charMemory').value = activeCharData.memory;
+    alert("Pinned.");
+  }
+}
+
+/* ── AUTO MEMORY SUMMARIZATION ── */
+async function maybeAutoSummarize() {
+  const history = await getFullHistory(activeCharData.id);
+  const assistantMsgs = history.filter(m => m.role === 'assistant');
+  if (assistantMsgs.length === 0 || assistantMsgs.length % 10 !== 0) return;
+
+  const key = localStorage.getItem('nexus_v7_key') || document.getElementById('apiKey').value;
+  if (!key) return;
+
+  const recent = history.slice(-20).map(m => {
+    const speaker = m.role === 'user' ? 'User' : activeCharData.name;
+    return `${speaker}: ${m.content}`;
+  }).join('\n');
+
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "nvidia/nemotron-3-super-120b-a12b:free",
+        max_tokens: 300,
+        messages: [
+          {
+            role: "system",
+            content: `You are a memory assistant. Extract and summarize key facts about the USER and the character. Focus on: name, personality traits, preferences, emotional states, things they mentioned about their life. Be concise. Format as bullet points starting with "User"`
+          },
+          { role: "user", content: recent }
+        ]
+      })
+    });
+
+    const data = await res.json();
+    const summary = data.choices?.[0]?.message?.content || "";
+    if (!summary || summary.includes("SKIP")) return;
+
+    await saveToDB("summaries", {
+      charId: activeCharData.id,
+      content: summary,
+      timestamp: Date.now()
+    });
+
+    showToast("💾 Memory anchored");
+  } catch (err) {
+    console.error("Auto-summarize failed:", err);
+  }
+}
+
+/* ── GET LATEST SUMMARY — FIX: error handling added ── */
+function getLatestSummary(charId) {
+  return new Promise(resolve => {
+    try {
+      const tx  = db.transaction("summaries", "readonly");
+      const req = tx.objectStore("summaries").index("charId").getAll(IDBKeyRange.only(charId));
+      req.onsuccess = () => {
+        const all = req.result || [];
+        if (all.length === 0) { resolve(""); return; }
+        all.sort((a, b) => b.timestamp - a.timestamp);
+        resolve(all[0].content);
+      };
+      req.onerror = () => resolve("");
+    } catch(e) {
+      resolve("");
+    }
+  });
+}
+/* ── SEND CHAT TO cosmiOS ── */
+async function sendChatToCosmOS() {
+  const history = await getFullHistory(activeCharData.id);
+  if (!history || history.length === 0) {
+    showToast("No history to send.");
+    return;
+  }
+
+  // Chapter checkpoint -- only send new messages since last export
+  const checkpointKey = "cosm_export_checkpoint_" + activeCharData.id;
+  const lastExportedId = parseInt(localStorage.getItem(checkpointKey) || "0");
+
+  const newMessages = history.filter(m =>
+    m.role !== "scene-break" &&
+    m.id > lastExportedId
+  );
+
+  if (newMessages.length === 0) {
+    showToast("No new messages since last export.");
+    return;
+  }
+
+  // Format as readable script
+  const raw_text = newMessages.map(m => {
+    let name = m.role === "user" ? "YOU" : activeCharData.name;
+    let text = m.content;
+    if (text.includes("(EXTERNAL)")) {
+      const match = text.match(/\(EXTERNAL\)\s+(.*?):/);
+      if (match) name = match[1];
+      text = text.replace(/\(EXTERNAL\)\s+[^:]+:\s*/, "");
+    }
+    return name + ": " + text.trim();
+  }).join("\n\n");
+
+  // Get or create character folder in cosmiOS
+  const folders = await new Promise(res => {
+    const req = db.transaction("cosm_folders", "readonly").objectStore("cosm_folders").getAll();
+    req.onsuccess = () => res(req.result || []);
+    req.onerror = () => res([]);
+  });
+
+  const charFolderName = activeCharData.name + " - Chats";
+  let folder = folders.find(f => f.name === charFolderName);
+
+  if (!folder) {
+    const fid = "f_" + Date.now();
+    folder = { id: fid, name: charFolderName, parent_id: null, created_at: Date.now() };
+    await new Promise(r => {
+      const req = db.transaction("cosm_folders", "readwrite").objectStore("cosm_folders").put(folder);
+      req.onsuccess = r; req.onerror = r;
+    });
+  }
+
+  // Count existing chapters for this character
+  const allDiscs = await new Promise(res => {
+    const req = db.transaction("cosm_discourses", "readonly").objectStore("cosm_discourses").getAll();
+    req.onsuccess = () => res(req.result || []);
+    req.onerror = () => res([]);
+  });
+
+  const chapterCount = allDiscs.filter(d => d.folder_id === folder.id).length + 1;
+  const title = activeCharData.name + " - Chapter " + chapterCount;
+  const now = Date.now();
+  const discId = "d_" + now;
+
+  await new Promise(r => {
+    const req = db.transaction("cosm_discourses", "readwrite").objectStore("cosm_discourses").put({
+      id: discId,
+      title,
+      raw_text,
+      folder_id: folder.id,
+      source_link: JSON.stringify({ charName: activeCharData.name, charId: activeCharData.id }),
+      created_at: now,
+      updated_at: now
+    });
+    req.onsuccess = r; req.onerror = r;
+  });
+
+  // Save backlink
+  await new Promise(r => {
+    const req = db.transaction("cosm_backlinks", "readwrite").objectStore("cosm_backlinks").put({
+      id: "bl_" + now,
+      discourse_id: discId,
+      char_name: activeCharData.name,
+      char_id: activeCharData.id,
+      created_at: now
+    });
+    req.onsuccess = r; req.onerror = r;
+  });
+
+  // Save checkpoint -- last message id exported
+  const lastMsg = newMessages[newMessages.length - 1];
+  localStorage.setItem(checkpointKey, String(lastMsg.id));
+
+  haptic("heavy");
+  toggleMenu();
+  showToast("↗ Sent to cosmiOS: " + title);
+}
+
+/* ── CLIPBOARD ── */
+function copyToClipboard() {
+  setTimeout(async () => {
+    const history = await getHistory(activeCharData.id, 100);
+    if (!history || history.length === 0) {
+      alert("The Sanctuary is silent. No history to harvest.");
+      return;
+    }
+    const script = history.map(m => {
+      let name = m.role === 'user' ? 'YOU' : activeCharData.name;
+      let text = m.content;
+      if (text.includes("(EXTERNAL)")) {
+        const match = text.match(/\(EXTERNAL\)\s+(.*?):/);
+        if (match) name = match[1];
+        text = text.replace(/\(EXTERNAL\)\s+[^:]+:\s*/, "");
+      }
+      return `${name}: ${text.trim()}`;
+    }).join("\n\n");
+    try {
+      await navigator.clipboard.writeText(script);
+      alert(`Harvested ${history.length} messages to clipboard! 🥂✨`);
+    } catch (_) {
+      showCopyModal(script);
+    }
+  }, 50);
+}
+
+function showCopyModal(text) {
+  document.getElementById("copyModalText").value = text;
+  document.getElementById("copyModal").style.display = "flex";
+}
+
+function closeCopyModal() {
+  document.getElementById("copyModal").style.display = "none";
+}
+
+function forceCopy() {
+  const text = document.getElementById("copyModalText").value;
+  const temp = document.createElement("textarea");
+  temp.value = text;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand("copy");
+  document.body.removeChild(temp);
+  alert("Copied! 🥂");
+}
+
+/* ── TAGS ── */
+const presetTags = [
+  "Soft-spoken","Shy","Tsundere","Female","Male","Playful","Stoic","Chaotic","Affectionate","Flirty","Romantic","Protective","Gentle","Bold",
+  "Philosophical","Poetic","Book Lover","Analytical","Dry Humor","Sarcastic","Minimalist","Dramatic",
+  "Angst","Slow Burn","Slice of Life","Wholesome","funny","Tension","Melancholic","Dreamlike"
+];
+
+function renderTags() {
+  const container = document.getElementById("tagList");
+  if (!container) return;
+  container.innerHTML = "";
+  presetTags.forEach(tag => {
+    const div     = document.createElement("div");
+    div.className = "tag" + (activeCharData.tags?.includes(tag) ? " active" : "");
+    div.textContent = tag;
+    div.onclick   = () => toggleTag(tag, div);
+    container.appendChild(div);
+  });
+}
+
+async function toggleTag(tag, el) {
+  activeCharData.tags = activeCharData.tags || [];
+  if (activeCharData.tags.includes(tag)) {
+    activeCharData.tags = activeCharData.tags.filter(t => t !== tag);
+    el.classList.remove("active");
+  } else {
+    activeCharData.tags.push(tag);
+    el.classList.add("active");
+  }
+  await saveToDB("characters", activeCharData);
+}
+
+/* ── CAST DROPDOWN ── */
+async function populateCastDropdown() {
+  const select = document.getElementById("castSelect");
+  if (!select || !db) return;
+  const allChars = await getAllCharacters();
+  select.innerHTML = "";
+  allChars.forEach(char => {
+    const option       = document.createElement("option");
+    option.value       = char.id;
+    option.textContent = char.name;
+    select.appendChild(option);
+  });
+}
+
+function getSelectedCast() {
+  const select = document.getElementById("castSelect");
+  if (!select) return [];
+  return [...select.selectedOptions].map(o => o.value);
+}
+
+/* ── MODEL ENGINE ── */
+function initModelEngine() {
+  savedModels = JSON.parse(localStorage.getItem('savedModels_v1')) || [];
+  if (savedModels.length === 0) {
+    savedModels = ["google/gemini-2.0-flash-001"];
+    localStorage.setItem('savedModels_v1', JSON.stringify(savedModels));
+  }
+  const active = localStorage.getItem('activeModel_v1') || savedModels[0];
+  localStorage.setItem('activeModel_v1', active);
+  updateModelDatalist();
+  document.getElementById('activeModel').value = active;
+}
+
+function updateModelDatalist() {
+  const sel = document.getElementById('activeModel');
+  sel.innerHTML = "";
+  savedModels.forEach(m => {
+    const opt    = document.createElement('option');
+    opt.value    = m;
+    opt.innerText = m;
+    sel.appendChild(opt);
+  });
+}
+
+function handleModelChange() {
+  const val = document.getElementById('activeModel').value.trim();
+  if (!val) return;
+  localStorage.setItem('activeModel_v1', val);
+  if (!savedModels.includes(val)) {
+    savedModels.push(val);
+    localStorage.setItem('savedModels_v1', JSON.stringify(savedModels));
+    updateModelDatalist();
+    document.getElementById('activeModel').value = val;
+  }
+  saveSettings();
+}
+
+function removeSavedModel() {
+  const current = document.getElementById('activeModel').value.trim();
+  if (!current) return;
+  savedModels = savedModels.filter(m => m !== current);
+  localStorage.setItem('savedModels_v1', JSON.stringify(savedModels));
+  updateModelDatalist();
+  const newActive = savedModels.length ? savedModels[0] : "";
+  document.getElementById('activeModel').value = newActive;
+  localStorage.setItem('activeModel_v1', newActive);
+}
+
+function summonNewModel() {
+  const input = document.getElementById('newModelInput');
+  const val   = input.value.trim();
+  if (!val) return;
+  if (!savedModels.includes(val)) {
+    savedModels.push(val);
+    localStorage.setItem('savedModels_v1', JSON.stringify(savedModels));
+  }
+  localStorage.setItem('activeModel_v1', val);
+  updateModelDatalist();
+  document.getElementById('activeModel').value = val;
+  input.value = "";
+  saveSettings();
+  alert(`Model ${val} anchored to Sanctuary.`);
+}
+
+/* ── VOICE MARKERS ── */
+function insertVoice(type) {
+  const ta    = document.getElementById('userInput');
+  const start = ta.selectionStart;
+  const end   = ta.selectionEnd;
+  const open  = type === "mono" ? "*" : "[";
+  const close = type === "mono" ? "*" : "]";
+  ta.value = ta.value.slice(0, start) + open + close + ta.value.slice(end);
+  const pos = start + open.length;
+  ta.setSelectionRange(pos, pos);
+  resizeTextarea(ta);
+  ta.focus();
+}
+
+/* ── AVATAR ENLARGE ── */
+function enlargeImage(src) {
+  document.getElementById('enlargedImg').src = src;
+  document.getElementById('imageModal').style.display = 'flex';
+}
+
+/* ── TOAST ── */
+function showToast(msg) {
+  let t = document.getElementById('qs-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'qs-toast';
+    t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#00ffcc;color:#000;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:900;letter-spacing:1px;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2000);
+}
+
+/* ── CLEAN MODEL OUTPUT ── */
+function cleanOutput(text) {
+  if (!text) return "";
+  return text
+    .replace(/<\s*\|.*?\|\s*>/gs, '')
+    .replace(/begin_+of_+sentence/gi, '')
+    .replace(/end_+of_+sentence/gi, '')
+    .trim();
+}
+
+/* ── RETRY ── */
+async function retryLastResponse() {
+  const history = await getFullHistory(activeCharData.id);
+  const last = [...history].reverse().find(m => m.role === 'assistant');
+  if (!last) return;
+  await new Promise(r => {
+    const tx = db.transaction('history','readwrite');
+    tx.objectStore('history').delete(last.id).onsuccess = r;
+  });
+  await renderChat();
+  await streamResponse();
+}
+
+/* ── ALTERNATIVE ── */
+async function alternativeResponse() {
+  const history = await getFullHistory(activeCharData.id);
+  const last = [...history].reverse().find(m => m.role === 'assistant');
+  if (last) {
+    await new Promise(r => {
+      const tx = db.transaction('history','readwrite');
+      tx.objectStore('history').delete(last.id).onsuccess = r;
+    });
+  }
+  await renderChat();
+  await streamResponse();
+}
+
+/* ── STREAM RESPONSE ── */
+async function streamResponse() {
+  const key   = localStorage.getItem('nexus_v7_key') || document.getElementById('apiKey').value;
+  const model = localStorage.getItem('activeModel_v1') || "google/gemini-2.0-flash-001";
+
+  const narratorEnabled = JSON.parse(localStorage.getItem('narratorEnabled') || "false");
+  const narratorPrompt  = narratorEnabled
+    ? `WORLD NARRATOR: You may occasionally add short atmospheric scene descriptions in italics, like a novel narrator observing the scene. Keep them brief — one or two sentences maximum. Do not interrupt dialogue.`
+    : "";
+
+  const box = document.getElementById('chat-box');
+  const wrapper = document.createElement('div');
+  wrapper.className = "msg bot-wrapper";
+  const avatar = activeCharData.image ? `<img src="${activeCharData.image}" class="chat-avatar">` : "";
+  wrapper.innerHTML = `${avatar}<div class="msg-content-col"><span class="label">${activeCharData.name.toUpperCase()}</span><span class="content">...</span></div>`;
+  box.appendChild(wrapper);
+  box.scrollTop = box.scrollHeight;
+
+  const rawHistory = await getHistory(activeCharData.id, 15);
+  const messages = [
+    { role: "system", content: await buildSystemPrompt(activeCharData, "", narratorPrompt) },
+    ...trimHistory(rawHistory, 15).map(m => {
+      let text = m.content;
+      if (m.role === 'assistant' && text.includes("(EXTERNAL)")) {
+        const match   = text.match(/\(EXTERNAL\)\s+(.*?):/);
+        const speaker = match ? match[1] : "Someone";
+        text          = text.replace(/\(EXTERNAL\)\s+[^:]+:\s*/, "");
+        return { role: "user", content: `${speaker} says: ${text}` };
+      }
+      return { role: m.role, content: text };
+    })
+  ];
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model, messages, temperature: activeCharData.temp || 0.8, stream: true })
+  });
+
+  const reader      = response.body.getReader();
+  const decoder     = new TextDecoder();
+  let   fullContent = "";
+  const contentSpan = wrapper.querySelector('.content');
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    for (const line of chunk.split("\n")) {
+      if (!line.startsWith("data: ")) continue;
+      const dataStr = line.slice(6).trim();
+      if (dataStr === "[DONE]") break;
+      try {
+        const data  = JSON.parse(dataStr);
+        const delta = data.choices?.[0]?.delta?.content || "";
+        if (delta) {
+          fullContent += delta;
+          contentSpan.innerHTML = formatText(fullContent);
+          box.scrollTop = box.scrollHeight;
+        }
+      } catch (_) {}
+    }
+  }
+
+  const cleaned2 = cleanOutput(fullContent);
+  if (cleaned2) await saveToDB("history", { charId: activeCharData.id, role: "assistant", content: cleaned2, timestamp: Date.now() });
+  await renderChat();
+}
+
+/* ── CONTINUE RESPONSE ── */
+async function continueResponse() {
+  const key   = localStorage.getItem('nexus_v7_key') || document.getElementById('apiKey').value;
+  const model = localStorage.getItem('activeModel_v1') || "google/gemini-2.0-flash-001";
+
+  const narratorEnabled = JSON.parse(localStorage.getItem('narratorEnabled') || "false");
+  const narratorPrompt  = narratorEnabled
+    ? `WORLD NARRATOR: You may occasionally add short atmospheric scene descriptions in italics, like a novel narrator observing the scene. Keep them brief — one or two sentences maximum. Do not interrupt dialogue.`
+    : "";
+
+  const rawHistory = await getHistory(activeCharData.id, 15);
+  const messages = [
+    { role: "system", content: await buildSystemPrompt(activeCharData, "", narratorPrompt) },
+    ...trimHistory(rawHistory, 15).map(m => ({ role: m.role, content: m.content })),
+    { role: "user", content: "[Continue exactly where you left off. Do not repeat what was already said.]" }
+  ];
+
+  const box = document.getElementById('chat-box');
+  const wrapper = document.createElement('div');
+  wrapper.className = "msg bot-wrapper";
+  const avatar = activeCharData.image ? `<img src="${activeCharData.image}" class="chat-avatar">` : "";
+  wrapper.innerHTML = `${avatar}<div class="msg-content-col"><span class="label">${activeCharData.name.toUpperCase()}</span><span class="content">...</span></div>`;
+  box.appendChild(wrapper);
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model, messages, temperature: activeCharData.temp || 0.8, stream: true })
+  });
+
+  const reader      = response.body.getReader();
+  const decoder     = new TextDecoder();
+  let   fullContent = "";
+  const contentSpan = wrapper.querySelector('.content');
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    for (const line of chunk.split("\n")) {
+      if (!line.startsWith("data: ")) continue;
+      const dataStr = line.slice(6).trim();
+      if (dataStr === "[DONE]") break;
+      try {
+        const data  = JSON.parse(dataStr);
+        const delta = data.choices?.[0]?.delta?.content || "";
+        if (delta) {
+          fullContent += delta;
+          contentSpan.innerHTML = formatText(fullContent);
+          box.scrollTop = box.scrollHeight;
+        }
+      } catch (_) {}
+    }
+  }
+
+  const cleaned3 = cleanOutput(fullContent);
+  if (cleaned3) await saveToDB("history", { charId: activeCharData.id, role: "assistant", content: cleaned3, timestamp: Date.now() });
+  await renderChat();
+}
+
+/* ── EDIT MESSAGE ── */
+async function editMessage(msgId, role, btnEl) {
+  const msgCol = btnEl.closest('.msg-content-col') || btnEl.closest('.msg');
+  const contentSpan = msgCol ? msgCol.querySelector('.content') : null;
+  if (!contentSpan) return;
+  const current = contentSpan.innerText;
+  const textarea = document.createElement('textarea');
+  textarea.value = current;
+  textarea.style.cssText = 'width:100%; min-height:80px; background:#1a1a1a; color:#fff; border:1px solid var(--accent); border-radius:8px; padding:10px; font-size:15px; resize:vertical; margin-top:6px; box-sizing:border-box;';
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save ✓';
+  saveBtn.style.cssText = 'margin-top:6px; background:#00ffcc; color:#000; border:none; border-radius:8px; padding:8px 16px; font-weight:900; cursor:pointer; -webkit-appearance:none; font-size:13px;';
+  contentSpan.innerHTML = '';
+  contentSpan.appendChild(textarea);
+  contentSpan.appendChild(saveBtn);
+  textarea.focus();
+  saveBtn.onclick = async () => {
+    const newText = textarea.value.trim();
+    if (!newText) return;
+    await new Promise(r => {
+      const tx = db.transaction('history','readwrite');
+      const req = tx.objectStore('history').get(msgId);
+      req.onsuccess = () => {
+        const row = req.result;
+        if (row) { row.content = newText; tx.objectStore('history').put(row).onsuccess = r; }
+        else r();
+      };
+    });
+    await renderChat();
+  };
+}
+
+/* ── REWIND ── */
+async function rewindToMessage(msgId) {
+  if (!confirm("Rewind to here? Everything after this message will be deleted.")) return;
+  const history = await getFullHistory(activeCharData.id);
+  const idx = history.findIndex(m => m.id === msgId);
+  if (idx === -1) return;
+  const toDelete = history.slice(idx + 1);
+  for (const m of toDelete) {
+    await new Promise(r => {
+      const tx = db.transaction('history','readwrite');
+      tx.objectStore('history').delete(m.id).onsuccess = r;
+    });
+  }
+  await renderChat();
+  showToast("Rewound ⏪");
+}
+
+/* ── SCENE BREAK ── */
+async function insertSceneBreak() {
+  await saveToDB("history", { charId: activeCharData.id, role: "scene-break", content: "— ✦ —", timestamp: Date.now() });
+  await renderChat();
+}
+
+/* ── cosmOS PIN BRIDGE ── */
+let _pinMsgId = null;
+
+async function openPinModal(msgId) {
+  _pinMsgId = msgId;
+  const history = await getFullHistory(activeCharData.id);
+  const msg = history.find(m => m.id === msgId);
+  if (!msg) return;
+
+  const defaultTitle = msg.content.replace(/\*|\[|\]/g, "").slice(0, 60).trim() || "Pinned Discourse";
+  document.getElementById("pin-title").value = defaultTitle;
+
+  const folders = await new Promise(res => {
+    const req = db.transaction("cosm_folders","readonly").objectStore("cosm_folders").getAll();
+    req.onsuccess = () => res(req.result || []);
+    req.onerror   = () => res([]);
+  });
+
+  const sel = document.getElementById("pin-folder");
+  sel.innerHTML = '<option value="">No folder</option>';
+  folders.forEach(f => {
+    const opt = document.createElement("option");
+    opt.value = f.id;
+    opt.textContent = f.name;
+    sel.appendChild(opt);
+  });
+
+  document.getElementById("pin-overlay").style.display = "block";
+  document.getElementById("pin-modal").style.display   = "flex";
+  setTimeout(() => document.getElementById("pin-title").focus(), 120);
+}
+
+function closePinModal() {
+  document.getElementById("pin-overlay").style.display = "none";
+  document.getElementById("pin-modal").style.display   = "none";
+  _pinMsgId = null;
+}
+
+async function confirmPin() {
+  if (!_pinMsgId) return;
+  const title    = document.getElementById("pin-title").value.trim() || "Pinned Discourse";
+  const folderId = document.getElementById("pin-folder").value || null;
+
+  const history = await getFullHistory(activeCharData.id);
+  const msg = history.find(m => m.id === _pinMsgId);
+  if (!msg) { closePinModal(); return; }
+
+  const msgId = _pinMsgId;
+  closePinModal();
+
+  const source = JSON.stringify({ charName: activeCharData.name, charId: activeCharData.id, messageId: msgId });
+  const discId = "d_" + Date.now();
+  const now = Date.now();
+
+  await new Promise(r => {
+    const req = db.transaction("cosm_discourses","readwrite").objectStore("cosm_discourses").put({
+      id: discId, title, raw_text: msg.content, folder_id: folderId,
+      source_link: source, created_at: now, updated_at: now
+    });
+    req.onsuccess = r; req.onerror = r;
+  });
+
+  await new Promise(r => {
+    const blId = "bl_" + Date.now();
+    const req = db.transaction("cosm_backlinks","readwrite").objectStore("cosm_backlinks").put({
+      id: blId, discourse_id: discId, sanctuary_message_id: msgId,
+      char_name: activeCharData.name, char_id: activeCharData.id, created_at: now
+    });
+    req.onsuccess = r; req.onerror = r;
+  });
+
+  haptic('heavy');
+  showToast("📌 Pinned to cosmOS");
+}
+
+/* ── MIGRATION HELPER ── */
+async function migrateEscapedHistory() {
+  const all = await new Promise(r => {
+    const req = db.transaction('history','readonly').objectStore('history').getAll();
+    req.onsuccess = () => r(req.result || []);
+  });
+  let changed = 0;
+  for (const row of all) {
+    if (typeof row.content === 'string' && row.content.includes('&lt;span')) {
+      const txt   = document.createElement('textarea');
+      txt.innerHTML = row.content;
+      const decoded = txt.value;
+      if (decoded !== row.content) {
+        row.content = decoded;
+        await saveToDB('history', row);
+        changed++;
+      }
+    }
+  }
+  await renderChat();
+  console.log('Migration complete. Rows updated:', changed);
+}
+window.migrateEscapedHistory = migrateEscapedHistory;
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
+
+/* ── THE COC TRIGGER ── */
+function triggerOCC() {
+  const ta = document.getElementById('userInput'); // <--- CHECK THIS ID
+  if (!ta) {
+    console.error("Aniki, I can't find the textarea! Check the ID.");
+    return;
+  }
+
+  const start = ta.selectionStart;
+  const end   = ta.selectionEnd;
+  const open  = "(OCC: ";
+  const close = ")";
+
+  // Inject the markers
+  ta.value = ta.value.slice(0, start) + open + close + ta.value.slice(end);
+
+  // Set the cursor precisely between the brackets
+  const pos = start + open.length;
+  ta.setSelectionRange(pos, pos);
+
+  // Focus the keyboard
+  ta.focus();
+
+  // If you have your resize function, call it
+  if (typeof resizeTextarea === "function") resizeTextarea(ta);
+}
+
+</script>
+
+</body>
+</html>

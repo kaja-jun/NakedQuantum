@@ -1,0 +1,3107 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="cosmOS">
+<link rel="manifest" href="/manifest.json">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>cosmiOS v0.26.6</title>
+<style>
+:root {
+  --bg: #0b0a08;
+  --surface: #141311;
+  --surface2: #1c1b18;
+  --surface3: #211f1b;
+  --border: #2c2a27;
+  --accent: #c8a050;
+  --accent-dim: #8a6e35;
+  --text: #ccc5b9;
+  --muted: #6b6560;
+  --danger: #8a3030;
+  --code-bg: #1a1815;
+  --decay-timing: 0.6s;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, sans-serif;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+button { cursor: pointer; -webkit-appearance: none; appearance: none; touch-action: manipulation; }
+button:active { opacity: 0.7; transform: scale(0.97); transition: transform 0.08s ease, opacity 0.08s ease; }
+
+/* MEASUREMENT DECAY CSS HOOK */
+.measurement-decay {
+  opacity: 1;
+  transition: opacity var(--decay-timing) ease;
+}
+.measurement-decay.decaying {
+  opacity: 0.4;
+}
+
+/* HEADER */
+.cosm-header {
+height: 56px;
+background: #000;
+border-bottom: 1px solid var(--border);
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 0 16px;
+flex-shrink: 0;
+z-index: 200;
+}
+.cosm-wordmark {
+font-size: 12px;
+letter-spacing: 4px;
+color: var(--accent);
+font-weight: 900;
+text-transform: uppercase;
+opacity: 0.85;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+/* VIEW SYSTEM */
+.view-host {
+flex: 1;
+overflow: hidden;
+position: relative;
+}
+.view-panel {
+position: absolute;
+inset: 0;
+display: flex;
+flex-direction: column;
+overflow: hidden;
+transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.28s ease;
+will-change: transform, opacity;
+}
+.view-panel.hidden {
+transform: translateX(40px);
+opacity: 0;
+pointer-events: none;
+}
+.view-panel.slide-back.hidden {
+transform: translateX(-40px);
+}
+/* TABLE VIEW */
+.table-view {
+background: var(--bg);
+overflow-y: auto;
+-webkit-overflow-scrolling: touch;
+}
+
+/* table surface subtle texture */
+.table-surface {
+flex: 1;
+padding: 0 16px 100px;
+}
+
+/* BREADCRUMB */
+.breadcrumb-bar {
+display: flex;
+align-items: center;
+gap: 0;
+padding: 14px 16px 8px;
+overflow-x: auto;
+-webkit-overflow-scrolling: touch;
+flex-shrink: 0;
+scrollbar-width: none;
+}
+.breadcrumb-bar::-webkit-scrollbar { display: none; }
+.breadcrumb-seg {
+display: flex;
+align-items: center;
+gap: 0;
+flex-shrink: 0;
+}
+.breadcrumb-btn {
+background: none;
+border: none;
+color: var(--muted);
+font-size: 11px;
+letter-spacing: 1.5px;
+text-transform: uppercase;
+font-weight: 700;
+padding: 4px 6px;
+border-radius: 6px;
+white-space: nowrap;
+}
+.breadcrumb-btn:active { color: var(--accent); background: rgba(200,160,80,0.08); }
+.breadcrumb-btn.current {
+color: var(--accent);
+opacity: 0.9;
+}
+.breadcrumb-arrow {
+color: var(--muted);
+font-size: 10px;
+opacity: 0.5;
+padding: 0 2px;
+user-select: none;
+}
+
+/* TABLE ACTION BAR */
+.table-action-bar {
+display: flex;
+gap: 10px;
+padding: 10px 16px 14px;
+flex-shrink: 0;
+}
+.btn-table-action {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 7px;
+background: var(--accent); /* This is your signature gold */
+border: 1px solid var(--border);
+color: #000000; /* Forces text to black */
+font-size: 12px;
+letter-spacing: 1px;
+font-weight: 700;
+padding: 10px 16px;
+border-radius: 10px;
+white-space: nowrap;
+flex: 1;
+}
+
+/* Fix the active state so it doesn't vanish */
+.btn-table-action:active {
+background: var(--accent-dim);
+color: #000000;
+border-color: var(--accent);
+}
+
+/* CARDS GRID */
+.cards-section-label {
+font-size: 9px;
+letter-spacing: 3px;
+color: var(--accent);
+opacity: 0.45;
+font-weight: 900;
+text-transform: uppercase;
+padding: 14px 0 8px;
+}
+.cards-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+}
+@media (min-width: 540px) {
+.cards-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 820px) {
+.cards-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ODD-GAP FIX: Span last item if it's odd */
+.card:last-child:nth-child(odd) {
+  grid-column: span 2;
+}
+
+.folder-card, .discourse-card {
+  user-select: none; /* Prevent text selection on long-press */
+  -webkit-user-select: none;
+}
+
+/* FOLDER CARD */
+.folder-card {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: 12px;
+padding: 14px 14px 12px;
+cursor: pointer;
+position: relative;
+overflow: hidden;
+transition: border-color 0.18s, background 0.18s;
+min-height: 90px;
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+user-select: none;
+}
+.folder-card.long-pressing {
+  background: var(--surface2);
+  border-color: var(--accent);
+  transform: scale(0.98);
+}
+.folder-card::before {
+content: '';
+position: absolute;
+top: 0; left: 0; right: 0;
+height: 3px;
+background: linear-gradient(90deg, var(--accent-dim), transparent);
+opacity: 0.4;
+}
+.folder-card:active { border-color: var(--accent); background: var(--surface2); }
+.folder-card-top {
+display: flex;
+align-items: flex-start;
+justify-content: space-between;
+}
+.folder-icon-glyph {
+font-size: 20px;
+line-height: 1;
+opacity: 0.6;
+}
+.folder-card-name {
+font-size: 13px;
+font-weight: 700;
+color: var(--text);
+margin-top: 8px;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+letter-spacing: 0.2px;
+}
+.folder-card-meta {
+font-size: 10px;
+color: var(--muted);
+letter-spacing: 0.5px;
+margin-top: 3px;
+}
+
+/* DISCOURSE CARD */
+.discourse-card {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: 12px;
+padding: 14px;
+cursor: pointer;
+position: relative;
+overflow: hidden;
+transition: border-color 0.18s, background 0.18s;
+min-height: 110px;
+display: flex;
+flex-direction: column;
+gap: 6px;
+user-select: none;
+}
+.discourse-card.long-pressing {
+  background: var(--surface2);
+  border-color: var(--accent);
+  transform: scale(0.98);
+}
+/* stacked paper effect */
+.discourse-card::after {
+content: '';
+position: absolute;
+bottom: -3px; left: 4px; right: 4px;
+height: 100%;
+background: var(--surface2);
+border: 1px solid var(--border);
+border-radius: 12px;
+z-index: -1;
+opacity: 0.7;
+}
+.discourse-card::before {
+content: '';
+position: absolute;
+bottom: -6px; left: 8px; right: 8px;
+height: 100%;
+background: var(--bg);
+border: 1px solid var(--border);
+border-radius: 12px;
+z-index: -2;
+opacity: 0.5;
+}
+.discourse-card:active { border-color: var(--accent); background: var(--surface2); }
+.discourse-card-title {
+font-size: 13px;
+font-weight: 700;
+color: var(--text);
+line-height: 1.3;
+display: -webkit-box;
+-webkit-line-clamp: 2;
+-webkit-box-orient: vertical;
+overflow: hidden;
+}
+.discourse-card-preview {
+font-size: 11px;
+color: var(--muted);
+font-style: italic;
+line-height: 1.4;
+flex: 1;
+display: -webkit-box;
+-webkit-line-clamp: 3;
+-webkit-box-orient: vertical;
+overflow: hidden;
+}
+.discourse-card-footer {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-top: auto;
+}
+.discourse-card-date {
+font-size: 9px;
+color: var(--muted);
+letter-spacing: 0.5px;
+opacity: 0.7;
+}
+.discourse-card-badges {
+display: flex;
+align-items: center;
+gap: 5px;
+}
+.badge-mosaic {
+font-size: 11px;
+color: var(--accent);
+opacity: 0.7;
+}
+.badge-pinned {
+font-size: 9px;
+color: var(--accent-dim);
+opacity: 0.6;
+letter-spacing: 0.5px;
+}
+
+/* EMPTY STATE */
+.table-empty {
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 10px;
+opacity: 0.22;
+padding: 60px 20px;
+user-select: none;
+grid-column: 1 / -1;
+}
+.table-empty-glyph { font-size: 40px; }
+.table-empty-text { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; }
+
+/* LIGHTHOUSE VIEW */
+.lighthouse-view {
+background: var(--bg);
+overflow: hidden;
+}
+
+.lighthouse-nav {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 10px 14px;
+border-bottom: 1px solid var(--border);
+background: var(--surface);
+flex-shrink: 0;
+gap: 8px;
+}
+.btn-back-table {
+display: flex;
+align-items: center;
+gap: 7px;
+background: none;
+border: 1px solid var(--border);
+color: var(--muted);
+font-size: 11px;
+letter-spacing: 1px;
+font-weight: 700;
+padding: 7px 12px;
+border-radius: 8px;
+white-space: nowrap;
+}
+.btn-back-table:active { color: var(--text); border-color: var(--accent-dim); }
+.btn-back-arrow { font-size: 14px; opacity: 0.7; }
+
+.lighthouse-tools {
+display: flex;
+align-items: center;
+gap: 6px;
+}
+.view-toggle {
+display: flex;
+background: var(--bg);
+border: 1px solid var(--border);
+border-radius: 8px;
+overflow: hidden;
+}
+.view-toggle-btn {
+background: none;
+border: none;
+color: var(--muted);
+font-size: 11px;
+padding: 6px 12px;
+font-weight: 700;
+letter-spacing: 0.5px;
+}
+.view-toggle-btn.active { background: var(--surface2); color: var(--text); }
+.tbtn {
+background: var(--surface2);
+border: 1px solid var(--border);
+color: var(--text);
+font-size: 11px;
+padding: 7px 11px;
+border-radius: 8px;
+font-weight: 700;
+letter-spacing: 0.5px;
+white-space: nowrap;
+}
+.tbtn.danger { color: #ff6060; border-color: var(--danger); }
+.tbtn.gold { color: var(--accent); border-color: var(--accent-dim); }
+.tbtn.primary { background: var(--accent); color: #000; border-color: transparent; }
+
+.lighthouse-scroll {
+flex: 1;
+overflow-y: auto;
+-webkit-overflow-scrolling: touch;
+padding: 28px 20px 60px;
+display: flex;
+flex-direction: column;
+gap: 16px;
+}
+.lighthouse-inner {
+max-width: 680px;
+width: 100%;
+margin: 0 auto;
+display: flex;
+flex-direction: column;
+gap: 16px;
+}
+
+/* DISCOURSE TITLE / META */
+.discourse-title-input {
+width: 100%;
+background: none;
+border: none;
+border-bottom: 1px solid var(--border);
+color: var(--text);
+font-size: 22px;
+font-weight: 700;
+padding: 6px 0 12px;
+outline: none;
+letter-spacing: 0.3px;
+font-family: Georgia, serif;
+caret-color: var(--accent);
+}
+.discourse-title-input::placeholder { color: var(--muted); opacity: 0.6; }
+.discourse-meta {
+display: flex;
+align-items: center;
+gap: 12px;
+flex-wrap: wrap;
+font-size: 10px;
+color: var(--muted);
+letter-spacing: 1px;
+}
+.meta-separator { opacity: 0.3; }
+.source-link {
+display: inline-flex;
+align-items: center;
+gap: 5px;
+color: var(--accent);
+font-size: 10px;
+letter-spacing: 0.5px;
+cursor: pointer;
+padding: 3px 8px;
+border: 1px solid var(--accent-dim);
+border-radius: 6px;
+background: rgba(200,160,80,0.06);
+text-decoration: none;
+}
+.source-link:active { background: rgba(200,160,80,0.14); }
+
+/* MOSAIC */
+.mosaic-block {
+border-left: 2px solid var(--accent-dim);
+padding: 10px 14px;
+background: rgba(200,160,80,0.04);
+border-radius: 0 8px 8px 0;
+}
+.mosaic-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 8px;
+}
+.mosaic-label {
+font-size: 9px;
+letter-spacing: 3px;
+color: var(--accent);
+opacity: 0.65;
+font-weight: 900;
+text-transform: uppercase;
+}
+.btn-delete-mosaic {
+background: none;
+border: none;
+color: var(--muted);
+font-size: 11px;
+padding: 2px 4px;
+border-radius: 4px;
+letter-spacing: 0.5px;
+}
+.btn-delete-mosaic:active { color: #ff6060; }
+.mosaic-anchors-wrap {
+display: flex;
+flex-direction: column;
+gap: 4px;
+}
+.mosaic-anchor {
+font-size: 13px;
+color: var(--text);
+line-height: 1.7;
+display: flex;
+align-items: baseline;
+gap: 6px;
+}
+.anchor-dot {
+width: 4px;
+height: 4px;
+border-radius: 50%;
+background: var(--accent-dim);
+flex-shrink: 0;
+margin-top: 8px;
+opacity: 0.7;
+}
+.anchor-cat {
+color: var(--accent);
+font-weight: 700;
+font-size: 10px;
+letter-spacing: 0.8px;
+text-transform: uppercase;
+white-space: nowrap;
+}
+
+/* EXTRACT LOADING */
+.extract-loading {
+display: none;
+align-items: center;
+gap: 8px;
+font-size: 12px;
+color: var(--accent);
+letter-spacing: 1px;
+padding: 8px 0;
+}
+.extract-loading.visible { display: flex; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+.extract-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation: pulse 1.2s ease infinite; }
+.extract-dot:nth-child(2) { animation-delay:0.2s; }
+.extract-dot:nth-child(3) { animation-delay:0.4s; }
+/* FORMATTING TOOLBAR */
+.format-toolbar {
+display: flex;
+align-items: center;
+gap: 4px;
+padding: 8px 4px;
+overflow-x: auto;
+-webkit-overflow-scrolling: touch;
+scrollbar-width: none;
+flex-shrink: 0;
+border-bottom: 1px solid var(--border);
+margin-bottom: 12px;
+}
+.format-toolbar::-webkit-scrollbar { display: none; }
+.fmt-btn {
+background: none;
+border: 1px solid var(--border);
+color: var(--muted);
+font-size: 12px;
+font-weight: 700;
+padding: 5px 10px;
+border-radius: 7px;
+white-space: nowrap;
+flex-shrink: 0;
+font-family: Georgia, serif;
+letter-spacing: 0.3px;
+min-width: 32px;
+text-align: center;
+}
+.fmt-btn:active {
+background: var(--surface2);
+color: var(--accent);
+border-color: var(--accent-dim);
+}
+.fmt-btn.code-btn {
+font-family: 'Menlo', 'Courier New', monospace;
+font-size: 11px;
+}
+.fmt-divider {
+width: 1px;
+height: 20px;
+background: var(--border);
+flex-shrink: 0;
+margin: 0 2px;
+}
+
+/* CONTENT EDITOR */
+.content-textarea {
+width: 100%;
+min-height: 320px;
+background: var(--surface);
+color: var(--text);
+border: 1px solid var(--border);
+border-radius: 12px;
+padding: 18px;
+font-size: 15px;
+line-height: 1.8;
+outline: none;
+resize: none;
+font-family: Georgia, serif;
+caret-color: var(--accent);
+-webkit-overflow-scrolling: touch;
+}
+.content-textarea:focus { border-color: var(--accent-dim); }
+
+/* RENDERED VIEW */
+.content-view {
+display: none;
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: 12px;
+padding: 20px;
+font-size: 15px;
+line-height: 1.8;
+font-family: Georgia, serif;
+color: var(--text);
+min-height: 200px;
+}
+.content-view h1 { font-size: 22px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin: 0 0 16px; }
+.content-view h2 { font-size: 18px; color: var(--text); margin: 20px 0 10px; }
+.content-view h3 { font-size: 15px; color: var(--accent); margin: 16px 0 8px; letter-spacing: 0.5px; }
+.content-view p { margin: 0 0 14px; }
+.content-view ul, .content-view ol { padding-left: 20px; margin: 10px 0; }
+.content-view li { margin: 4px 0; }
+.content-view blockquote { border-left: 3px solid var(--accent-dim); padding: 4px 0 4px 14px; color: var(--muted); margin: 12px 0; font-style: italic; }
+.content-view pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; overflow-x: auto; margin: 12px 0; }
+.content-view code { font-family: 'Menlo', 'Courier New', monospace; font-size: 13px; color: #a0d8a0; }
+.content-view img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+.content-view strong { color: var(--text); font-weight: 700; }
+.content-view em { color: #a09890; font-style: italic; }
+
+/* OVERLAY + MODALS */
+.cosm-overlay {
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,0.75);
+z-index: 800;
+display: none;
+backdrop-filter: blur(4px);
+-webkit-backdrop-filter: blur(4px);
+}
+.cosm-overlay.active { display: block; }
+.cosm-modal {
+position: fixed;
+bottom: 0;
+left: 0;
+right: 0;
+background: var(--surface);
+border-top: 1px solid var(--border);
+border-radius: 18px 18px 0 0;
+padding: 20px;
+z-index: 900;
+display: none;
+flex-direction: column;
+gap: 12px;
+max-height: 80vh;
+overflow-y: auto;
+}
+.cosm-modal.visible { display: flex; }
+.modal-title {
+font-size: 11px;
+letter-spacing: 3px;
+color: var(--accent);
+font-weight: 900;
+text-transform: uppercase;
+opacity: 0.75;
+}
+.cosm-input {
+width: 100%;
+background: var(--bg);
+border: 1px solid var(--border);
+color: var(--text);
+padding: 12px;
+border-radius: 10px;
+font-size: 16px;
+outline: none;
+font-family: -apple-system, sans-serif;
+}
+.cosm-input:focus { border-color: var(--accent-dim); }
+.cosm-select {
+width: 100%;
+background: var(--bg);
+border: 1px solid var(--border);
+color: var(--text);
+padding: 12px;
+border-radius: 10px;
+font-size: 16px;
+outline: none;
+-webkit-appearance: none;
+appearance: none;
+font-family: -apple-system, sans-serif;
+}
+.modal-buttons { display: flex; gap: 10px; }
+.modal-buttons button { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: 900; font-size: 14px; }
+.modal-btn-cancel { background: var(--surface2); color: var(--text); }
+.modal-btn-confirm { background: var(--accent); color: #000; }
+
+/* MANAGEMENT OVERLAY */
+.management-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.management-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+.management-btn:active {
+  background: var(--surface2);
+}
+.management-btn.danger {
+  color: #ff6060;
+  border-color: var(--danger);
+}
+.management-btn.export {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+
+/* GLOBAL SEARCH MODAL */
+.global-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.global-search-result {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.global-search-result:hover {
+  border-color: var(--accent-dim);
+}
+.global-search-result:active {
+  transform: scale(0.98);
+}
+.global-search-result-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.global-search-result-path {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+.global-search-result-type {
+  display: inline-block;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.global-search-result-type.folder {
+  background: var(--surface2);
+  color: var(--accent);
+}
+.global-search-result-type.discourse {
+  background: var(--surface);
+  color: var(--text);
+}
+.global-search-empty {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 24px;
+}
+
+/* TOAST */
+#cosm-toast {
+position: fixed;
+bottom: 30px;
+left: 50%;
+transform: translateX(-50%);
+background: var(--accent);
+color: #000;
+padding: 9px 20px;
+border-radius: 20px;
+font-size: 12px;
+font-weight: 900;
+letter-spacing: 1px;
+z-index: 9999;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.25s;
+white-space: nowrap;
+}
+
+/* VOID VIEW (SOFT DELETE) */
+.void-view {
+background: var(--bg);
+overflow-y: auto;
+-webkit-overflow-scrolling: touch;
+}
+.void-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 14px 16px 8px;
+flex-shrink: 0;
+}
+.void-title {
+font-size: 9px;
+letter-spacing: 3px;
+color: #ff6060;
+opacity: 0.6;
+font-weight: 900;
+text-transform: uppercase;
+}
+.btn-void-purge-all {
+background: none;
+border: 1px solid var(--danger);
+color: #ff6060;
+font-size: 10px;
+letter-spacing: 1px;
+font-weight: 700;
+padding: 5px 10px;
+border-radius: 7px;
+}
+.void-item {
+background: var(--surface);
+border: 1px solid var(--border);
+border-radius: 10px;
+padding: 12px 14px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+opacity: 0.75;
+}
+.void-item-info { flex: 1; min-width: 0; }
+.void-item-title {
+font-size: 13px;
+font-weight: 700;
+color: var(--text);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+text-decoration: line-through;
+opacity: 0.6;
+}
+.void-item-date { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.void-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-restore {
+background: none;
+border: 1px solid var(--accent-dim);
+color: var(--accent);
+font-size: 10px;
+letter-spacing: 0.5px;
+font-weight: 700;
+padding: 5px 9px;
+border-radius: 7px;
+}
+.btn-purge {
+background: none;
+border: 1px solid var(--danger);
+color: #ff6060;
+font-size: 10px;
+font-weight: 700;
+padding: 5px 9px;
+border-radius: 7px;
+}
+
+/* FOLDER REQUIRED HINT - HIDDEN (no longer needed) */
+.folder-required-hint {
+display: none;
+}
+
+/* SEARCH BAR */
+.search-bar-wrap {
+padding: 8px 16px 4px;
+flex-shrink: 0;
+}
+.search-input {
+width: 100%;
+background: var(--surface2);
+border: 1px solid var(--border);
+color: var(--text);
+padding: 9px 14px;
+border-radius: 10px;
+font-size: 14px;
+outline: none;
+font-family: -apple-system, sans-serif;
+caret-color: var(--accent);
+letter-spacing: 0.3px;
+}
+.search-input:focus { border-color: var(--accent-dim); }
+.search-input::placeholder { color: var(--muted); opacity: 0.6; }
+
+/* HEADER ICON BUTTONS - Unified with Sanctuary */
+.header-icon-btn {
+background: none;
+border: 1px solid var(--border);
+color: var(--accent);
+font-size: 18px;
+width: 40px;
+height: 40px;
+border-radius: 10px;
+letter-spacing: 0.5px;
+font-weight: 700;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+transition: all 0.2s ease;
+}
+.header-icon-btn:hover {
+border-color: var(--accent);
+background: rgba(200, 160, 80, 0.05);
+}
+.header-icon-btn:active {
+transform: scale(0.92);
+background: rgba(200, 160, 80, 0.1);
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* FAB */
+.fab-container {
+position: fixed;
+bottom: 28px;
+right: 20px;
+z-index: 700;
+display: flex;
+flex-direction: column;
+align-items: flex-end;
+gap: 10px;
+}
+.fab-menu {
+display: flex;
+flex-direction: column;
+align-items: flex-end;
+gap: 8px;
+opacity: 0;
+pointer-events: none;
+transform: translateY(10px);
+transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.fab-menu.open {
+opacity: 1;
+pointer-events: auto;
+transform: translateY(0);
+}
+.fab-item {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 10px;
+background: var(--surface2);
+border: 1px solid var(--accent-dim);
+color: var(--accent);
+font-size: 12px;
+font-weight: 700;
+letter-spacing: 1px;
+padding: 10px 20px;
+border-radius: 20px;
+white-space: nowrap;
+cursor: pointer;
+-webkit-appearance: none;
+appearance: none;
+min-width: 160px;
+}
+.fab-item.capture {
+color: var(--accent);
+border-color: var(--accent-dim);
+}
+
+.fab-item:active {
+opacity: 0.7;
+transform: scale(0.97);
+}
+.fab-main {
+width: 52px;
+height: 52px;
+border-radius: 50%;
+background: var(--accent);
+border: none;
+color: #000;
+font-size: 24px;
+font-weight: 900;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+-webkit-appearance: none;
+appearance: none;
+box-shadow: 0 4px 20px rgba(200,160,80,0.3);
+transition: transform 0.2s ease;
+flex-shrink: 0;
+}
+.fab-main.open {
+transform: rotate(45deg);
+}
+.fab-main:active {
+opacity: 0.8;
+}
+
+/* MOBILE ADJUSTMENTS */
+@media (max-width: 480px) {
+.lighthouse-tools { gap: 4px; }
+.tbtn { padding: 7px 8px; font-size: 10px; }
+.view-toggle-btn { padding: 6px 9px; }
+.cards-grid { gap: 8px; }
+.lighthouse-scroll { padding: 20px 14px 60px; }
+}
+</style>
+
+</head>
+<body>
+
+<div class="cosm-header">
+  <div class="header-left">
+    <div>
+      <span class="cosm-wordmark">cosmiOS</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="header-icon-btn" id="btn-void" title="Void - deleted items">○</button>
+    <button class="header-icon-btn" id="btn-export-json" title="Export full backup">⩔</button>
+    <label class="header-icon-btn" style="cursor:pointer;" title="Import backup">
+      ⩓<input type="file" accept=".json" id="import-json-input" style="display:none;">
+    </label>
+    <button class="header-icon-btn" id="btn-akashic" title="Akashic Resurrect">∞</button>
+    <button class="header-icon-btn" id="btn-search" title="Global search">⌖
+         </button>
+            <a class="header-icon-btn" id="btn-sanctuary" href="/" title="Return to Sanctuary">⌂</a>
+  </div>
+</div>
+
+<div class="view-host">
+
+  <!-- TABLE VIEW -->
+
+  <div class="view-panel table-view" id="view-table">
+    <div class="breadcrumb-bar" id="breadcrumb-bar"></div>
+     <div class="table-action-bar">
+      <button class="btn-table-action" id="btn-new-discourse">+ New Discourse</button>
+    </div>
+    <div class="folder-required-hint" id="folder-required-hint">
+      Open a folder first - discourses need a home.
+    </div>
+    <div class="search-bar-wrap" id="search-bar-wrap" style="display:none;">
+      <input class="search-input" id="search-input" placeholder="Search discourses...">
+    </div>
+        <div class="table-surface" id="table-surface"></div>
+  </div>
+
+  <!-- VOID VIEW -->
+
+  <div class="view-panel void-view hidden" id="view-void">
+    <div class="void-header">
+      <div class="void-title">◌ Void - Deleted Items</div>
+      <button class="btn-void-purge-all" id="btn-purge-all">Purge All</button>
+    </div>
+    <div style="padding:0 16px;">
+      <button class="btn-table-action" id="btn-close-void" style="margin-bottom:12px;flex:none;width:100%;">← Back to Table</button>
+    </div>
+    <div class="table-surface" id="void-surface" style="padding-top:0;"></div>
+  </div>
+
+  <!-- LIGHTHOUSE VIEW -->
+
+  <div class="view-panel lighthouse-view hidden" id="view-lighthouse">
+    <div class="lighthouse-nav">
+      <button class="btn-back-table" id="btn-back-table">
+        <span class="btn-back-arrow">▤</span> Table
+      </button>
+      <div class="lighthouse-tools">
+        <div class="view-toggle">
+          <button class="view-toggle-btn active" id="btn-write">Write</button>
+          <button class="view-toggle-btn" id="btn-view">View</button>
+        </div>
+        <button class="tbtn" id="btn-export-md" title="Export Markdown">MD ↓</button>
+        <button class="tbtn" id="btn-export-pdf" title="Export PDF">PDF ↓</button>
+        <button class="tbtn gold" id="btn-extract">◈</button>
+        <button class="tbtn danger" id="btn-delete-discourse">✕</button>
+      </div>
+    </div>
+
+<div class="lighthouse-scroll">
+  <div class="lighthouse-inner">
+    <input class="discourse-title-input" id="discourse-title" placeholder="Untitled Discourse" spellcheck="false">
+    <div class="discourse-meta" id="discourse-meta"></div>
+    <div class="extract-loading" id="extract-loading">
+      <div class="extract-dot"></div><div class="extract-dot"></div><div class="extract-dot"></div>
+      <span>Extracting anchors...</span>
+    </div>
+    <div id="mosaic-display"></div>
+       <div class="format-toolbar" id="format-toolbar">
+      <button class="fmt-btn" id="fmt-bold" title="Bold"><b>B</b></button>
+      <button class="fmt-btn" id="fmt-italic" title="Italic"><i>I</i></button>
+      <button class="fmt-btn" id="fmt-underline" title="Underline"><u>U</u></button>
+      <div class="fmt-divider"></div>
+      <button class="fmt-btn" id="fmt-h1" title="Heading 1">H1</button>
+      <button class="fmt-btn" id="fmt-h2" title="Heading 2">H2</button>
+      <button class="fmt-btn" id="fmt-h3" title="Heading 3">H3</button>
+      <div class="fmt-divider"></div>
+      <button class="fmt-btn" id="fmt-bullet" title="Bullet list">• —</button>
+      <button class="fmt-btn" id="fmt-numbered" title="Numbered list">1.</button>
+      <div class="fmt-divider"></div>
+      <button class="fmt-btn" id="fmt-quote" title="Blockquote">"</button>
+      <button class="fmt-btn code-btn" id="fmt-code" title="Inline code">`c`</button>
+      <button class="fmt-btn code-btn" id="fmt-codeblock" title="Code block">```</button>
+      <div class="fmt-divider"></div>
+      <button class="fmt-btn" id="fmt-divider-line" title="Divider">—</button>
+    </div>
+    <textarea class="content-textarea" id="content-textarea" placeholder="Begin writing..."></textarea>
+    <div class="content-view" id="content-view"></div>
+  </div>
+</div>
+  </div>
+</div>
+
+<!-- FAB - outside view-host so iOS overflow clip doesn't trap it -->
+<div class="fab-container" id="fab-container">
+  <div class="fab-menu" id="fab-menu">
+    <button class="fab-item" id="fab-new-folder">▤ New Folder</button>
+    <button class="fab-item capture" id="fab-quick-capture">✦ Quick Capture</button>
+  </div>
+  <button class="fab-main" id="fab-main">+</button>
+</div>
+
+<!-- OVERLAY -->
+
+<div class="cosm-overlay" id="cosm-overlay"></div>
+
+<!-- FOLDER MODAL -->
+
+<div class="cosm-modal" id="folder-modal">
+  <div class="modal-title">New Folder</div>
+  <input class="cosm-input" id="folder-name-input" placeholder="Folder name..." maxlength="60">
+  <div class="modal-label" style="font-size:11px;color:var(--muted);letter-spacing:0.5px;margin-bottom:-6px;">Parent Folder</div>
+  <select class="cosm-select" id="folder-parent-select">
+    <option value="">Root</option>
+  </select>
+  <div class="modal-buttons">
+    <button class="modal-btn-cancel" id="btn-folder-cancel">Cancel</button>
+    <button class="modal-btn-confirm" id="btn-folder-confirm">Create</button>
+  </div>
+</div>
+
+<!-- MANAGEMENT MODAL -->
+
+<div class="cosm-modal" id="management-modal">
+  <div class="modal-title" id="management-title">Manage</div>
+  <div class="management-actions" id="management-actions">
+    <button class="management-btn" id="btn-mgmt-rename">
+      <span>✎</span> Rename
+    </button>
+    <button class="management-btn" id="btn-mgmt-move">
+      <span>▤</span> Move
+    </button>
+    <button class="management-btn export" id="btn-mgmt-export">
+      <span>↓</span> Export
+    </button>
+    <button class="management-btn danger" id="btn-mgmt-delete">
+      <span>✕</span> Delete
+    </button>
+  </div>
+</div>
+
+<!-- RENAME MODAL -->
+
+<div class="cosm-modal" id="rename-modal">
+  <div class="modal-title" id="rename-title">Rename</div>
+  <input class="cosm-input" id="rename-input" placeholder="Name..." maxlength="60">
+  <div class="modal-buttons">
+    <button class="modal-btn-cancel" id="btn-rename-cancel">Cancel</button>
+    <button class="modal-btn-confirm" id="btn-rename-confirm">Save</button>
+  </div>
+</div>
+
+<!-- MOVE MODAL -->
+
+<div class="cosm-modal" id="move-modal">
+  <div class="modal-title">Move to Folder</div>
+  <select class="cosm-select" id="move-parent-select">
+    <option value="">Root</option>
+  </select>
+  <div class="modal-buttons">
+    <button class="modal-btn-cancel" id="btn-move-cancel">Cancel</button>
+    <button class="modal-btn-confirm" id="btn-move-confirm">Move</button>
+  </div>
+</div>
+
+<!-- GLOBAL SEARCH MODAL -->
+
+<div class="cosm-modal" id="global-search-modal">
+  <div class="modal-title">Search All</div>
+  <input class="cosm-input" id="global-search-input" placeholder="Search folders & discourses..." maxlength="60">
+  <div class="global-search-results" id="global-search-results"></div>
+  <div class="modal-buttons">
+    <button class="modal-btn-cancel" id="btn-global-search-cancel">Close</button>
+  </div>
+</div>
+<!-- QUICK CAPTURE MO by DAL -->
+<div class="cosm-modal" id="capture-modal">
+  <div class="modal-title">Quick Capture</div>
+  <input class="cosm-input" id="capture-title" placeholder="Title..." maxlength="120">
+  <textarea class="cosm-input" id="capture-body" placeholder="Thought, aphorism, idea..." style="min-height:120px; resize:none; font-family:Georgia,serif; line-height:1.7; font-size:15px;"></textarea>
+   <select class="cosm-select" id="capture-folder"></select>
+  <input class="cosm-input" id="capture-new-folder-input" placeholder="New folder name..." maxlength="60" style="display:none;">
+  <div class="modal-buttons">
+    <button class="modal-btn-cancel" id="btn-capture-cancel">Cancel</button>
+    <button class="modal-btn-confirm" id="btn-capture-confirm">Capture ✦</button>
+  </div>
+</div>
+
+<div id="cosm-toast"></div>
+
+<script>
+document.addEventListener('touchstart', () => {}, { passive: true });
+
+/* STATE */
+let db = null;
+let currentDiscourseId = null;
+let currentFolderId = null;
+let breadcrumbPath = [{ id: null, name: '◈ root' }];
+let editorMode = 'write';
+let currentView = 'table';
+/* AKASHIC R2 CONFIG */
+const AKASHIC_URL = 'https://wandering-violet-964a.gazajar.workers.dev'; // ← REPLACE YOURNAME with your actual subdomain from the Worker page
+let cosmUserId = localStorage.getItem('cosm_user_id') || crypto.randomUUID();
+localStorage.setItem('cosm_user_id', cosmUserId);
+let mosaicCache = {};
+
+/* LONG PRESS STATE */
+let longPressTimer = null;
+let isLongPress = false;
+let longPressConsumed = false;
+let touchStartPos = { x: 0, y: 0 };
+const LONG_PRESS_DURATION = 1000; // ms
+const MOVE_THRESHOLD = 10;
+
+/* MANAGEMENT STATE */
+let mgmtItem = null; // { type: 'folder'|'discourse', id, name, data }
+
+/* DB INIT */
+const dbReq = indexedDB.open("SanctuaryDB_v2", 3);
+
+dbReq.onupgradeneeded = (e) => {
+  const d = e.target.result;
+  if (!d.objectStoreNames.contains("characters")) d.createObjectStore("characters", { keyPath: "id" });
+  if (!d.objectStoreNames.contains("history")) {
+    const h = d.createObjectStore("history", { keyPath: "id", autoIncrement: true });
+    h.createIndex("charId", "charId", { unique: false });
+  }
+  if (!d.objectStoreNames.contains("summaries")) {
+    const s = d.createObjectStore("summaries", { keyPath: "id", autoIncrement: true });
+    s.createIndex("charId", "charId", { unique: false });
+  }
+  if (!d.objectStoreNames.contains("cosm_folders")) {
+    d.createObjectStore("cosm_folders", { keyPath: "id" });
+  }
+  if (!d.objectStoreNames.contains("cosm_discourses")) {
+    const disc = d.createObjectStore("cosm_discourses", { keyPath: "id" });
+    disc.createIndex("folder_id", "folder_id", { unique: false });
+    disc.createIndex("created_at", "created_at", { unique: false });
+  }
+  if (!d.objectStoreNames.contains("cosm_mosaic_tiles")) {
+    const mosaic = d.createObjectStore("cosm_mosaic_tiles", { keyPath: "id" });
+    mosaic.createIndex("discourse_id", "discourse_id", { unique: false });
+  }
+  if (!d.objectStoreNames.contains("cosm_backlinks")) {
+    const bl = d.createObjectStore("cosm_backlinks", { keyPath: "id" });
+    bl.createIndex("discourse_id", "discourse_id", { unique: false });
+  }
+};
+
+dbReq.onsuccess = (e) => {
+  db = e.target.result;
+  init();
+};
+dbReq.onerror = (e) => console.error("cosmOS DB error", e);
+
+/* INIT */
+async function init() {
+  await renderTableView();
+  const params = new URLSearchParams(window.location.search);
+  const openId = params.get('open');
+  if (openId) await openDiscourse(openId);
+}
+
+/* BIND ALL BUTTONS - fires immediately on DOM ready, before DB */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btn-new-discourse').addEventListener('click', handleNewDiscourse);
+  document.getElementById('fab-main').addEventListener('click', toggleFab);
+  document.getElementById('fab-new-folder').addEventListener('click', () => { closeFab(); openFolderModal(); });
+  document.getElementById('fab-quick-capture').addEventListener('click', () => { closeFab(); openQuickCapture(); });
+  document.getElementById('btn-close-void').addEventListener('click', closeVoidView);
+  document.getElementById('btn-purge-all').addEventListener('click', purgeAll);
+  document.getElementById('btn-back-table').addEventListener('click', goToTable);
+  document.getElementById('btn-write').addEventListener('click', () => setEditorMode('write'));
+    // Formatting toolbar
+  const fmtButtons = {
+    'fmt-bold':        { wrap: ['**', '**'],     placeholder: 'bold text' },
+    'fmt-italic':      { wrap: ['*', '*'],        placeholder: 'italic text' },
+    'fmt-underline':   { wrap: ['<u>', '</u>'],   placeholder: 'underline text' },
+    'fmt-quote':       { line: '> ',              placeholder: 'quoted text' },
+    'fmt-code':        { wrap: ['`', '`'],        placeholder: 'code' },
+    'fmt-codeblock':   { block: '```\n',          end: '\n```',  placeholder: 'code block' },
+    'fmt-divider-line':{ insert: '\n---\n' },
+    'fmt-bullet':      { line: '- ',              placeholder: 'list item' },
+    'fmt-numbered':    { line: '1. ',             placeholder: 'list item' },
+    'fmt-h1':          { line: '# ',              placeholder: 'Heading' },
+    'fmt-h2':          { line: '## ',             placeholder: 'Heading' },
+    'fmt-h3':          { line: '### ',            placeholder: 'Heading' },
+  };
+
+  Object.entries(fmtButtons).forEach(([id, cfg]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', () => applyFormat(cfg));
+  });
+  document.getElementById('btn-view').addEventListener('click', () => setEditorMode('view'));
+  document.getElementById('btn-export-md').addEventListener('click', exportMarkdown);
+  document.getElementById('btn-export-pdf').addEventListener('click', exportPDF);
+  document.getElementById('btn-extract').addEventListener('click', extractMemory);
+  document.getElementById('btn-delete-discourse').addEventListener('click', deleteCurrentDiscourse);
+  document.getElementById('cosm-overlay').addEventListener('click', closeOverlay);
+  document.getElementById('btn-folder-cancel').addEventListener('click', closeFolderModal);
+  document.getElementById('btn-folder-confirm').addEventListener('click', confirmNewFolder);
+  document.getElementById('search-input').addEventListener('input', (e) => onSearchInput(e.target.value));
+  document.getElementById('discourse-title').addEventListener('blur', () => {
+    if (currentDiscourseId && currentView === 'lighthouse') saveCurrentDiscourse(true);
+  });
+  document.getElementById('content-textarea').addEventListener('paste', function(e) {
+    const html = e.clipboardData && e.clipboardData.getData('text/html');
+    if (html) {
+      e.preventDefault();
+      const plain = e.clipboardData.getData('text/plain');
+      document.execCommand('insertText', false, plain);
+    }
+  });
+  
+  // Management modal buttons
+  document.getElementById('btn-mgmt-rename').addEventListener('click', (e) => { e.stopPropagation(); closeManagementModal(false); openRenameModal(); });
+  document.getElementById('btn-mgmt-move').addEventListener('click', (e) => { e.stopPropagation(); closeManagementModal(false); openMoveModal(); });
+  document.getElementById('btn-mgmt-export').addEventListener('click', (e) => { e.stopPropagation(); handleMgmtExport(); });
+  document.getElementById('btn-mgmt-delete').addEventListener('click', (e) => { e.stopPropagation(); handleMgmtDelete(); });
+  
+  // Rename modal buttons
+  document.getElementById('btn-rename-cancel').addEventListener('click', closeRenameModal);
+  document.getElementById('btn-rename-confirm').addEventListener('click', confirmRename);
+  
+  // Move modal buttons
+  document.getElementById('btn-move-cancel').addEventListener('click', closeMoveModal);
+  document.getElementById('btn-move-confirm').addEventListener('click', confirmMove);
+  
+  // Header icon buttons with toast
+  document.getElementById('btn-void').addEventListener('click', () => {
+    showToast('Void - deleted items');
+    openVoidView();
+  });
+  document.getElementById('btn-export-json').addEventListener('click', () => {
+    showToast('Exporting backup...');
+    exportJSON();
+  });
+  document.getElementById('import-json-input').addEventListener('change', (e) => {
+    showToast('Import backup');
+    importJSON(e);
+  });
+  document.getElementById('btn-akashic').addEventListener('click', () => {
+    showToast('Restoring from Akashic...');
+    restoreFromAkashic();
+  });
+  document.getElementById('btn-search').addEventListener('click', () => {
+    showToast('Search folders & discourses');
+    openGlobalSearch();
+  });
+    document.getElementById('btn-sanctuary').addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (currentDiscourseId && currentView === 'lighthouse') {
+      await saveCurrentDiscourse(true);
+    }
+    window.location.href = '/';
+  });
+
+  
+  // Global search modal
+  document.getElementById('btn-global-search-cancel').addEventListener('click', closeGlobalSearch);
+    document.getElementById('capture-folder').addEventListener('change', function() {
+    const input = document.getElementById('capture-new-folder-input');
+    input.style.display = this.value === '__new__' ? 'block' : 'none';
+    if (this.value === '__new__') setTimeout(() => input.focus(), 50);
+  });
+
+  document.getElementById('btn-capture-confirm').addEventListener('click', confirmQuickCapture);
+    document.getElementById('capture-body').addEventListener('input', function() {
+    const titleEl = document.getElementById('capture-title');
+    if (titleEl.dataset.userEdited === 'true') return;
+    const val = this.value || '';
+    const firstLine = val.split('\n')[0].trim();
+    const words = firstLine.split(/\s+/).filter(Boolean).slice(0, 4).join(' ');
+    titleEl.value = words || '';
+  });
+
+  document.getElementById('capture-title').addEventListener('input', function() {
+    this.dataset.userEdited = 'true';
+  });
+
+  document.getElementById('capture-body').addEventListener('blur', function() {
+    const titleEl = document.getElementById('capture-title');
+    if (titleEl.dataset.userEdited === 'true') return;
+    const firstLine = this.value.split('\n')[0].trim();
+    const words = firstLine.split(/\s+/).filter(Boolean).slice(0, 4).join(' ');
+    if (words) titleEl.value = words;
+  });
+  document.getElementById('global-search-input').addEventListener('input', (e) => onGlobalSearchInput(e.target.value));
+});
+
+/* DB HELPERS */
+function dbPut(store, data) {
+  return new Promise((resolve, reject) => {
+    const tx  = db.transaction(store, "readwrite");
+    const req = tx.objectStore(store).put(data);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = (e) => reject(e.target.error);
+  });
+}
+function dbGet(store, id) {
+  return new Promise((resolve) => {
+    const req = db.transaction(store, "readonly").objectStore(store).get(id);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror   = () => resolve(null);
+  });
+}
+function dbGetAll(store) {
+  return new Promise((resolve) => {
+    const req = db.transaction(store, "readonly").objectStore(store).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror   = () => resolve([]);
+  });
+}
+function dbGetByIndex(store, index, value) {
+  return new Promise((resolve) => {
+    const tx  = db.transaction(store, "readonly");
+    const req = tx.objectStore(store).index(index).getAll(IDBKeyRange.only(value));
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror   = () => resolve([]);
+  });
+}
+function dbDelete(store, id) {
+  return new Promise((resolve) => {
+    const req = db.transaction(store, "readwrite").objectStore(store).delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror   = () => resolve();
+  });
+}
+
+/* FOLDERS */
+async function getFolders() {
+  return await dbGetAll("cosm_folders");
+}
+async function createFolder(name, parent_id = null) {
+  const id = "f_" + Date.now();
+  await dbPut("cosm_folders", { id, name, parent_id, created_at: Date.now() });
+  return id;
+}
+async function deleteFolder(id) {
+  await dbDelete("cosm_folders", id);
+  const discs = await dbGetByIndex("cosm_discourses", "folder_id", id);
+  for (const d of discs) {
+    d.folder_id = null;
+    await dbPut("cosm_discourses", d);
+  }
+  const childFolders = (await dbGetAll("cosm_folders")).filter(f => f.parent_id === id);
+  for (const cf of childFolders) await deleteFolder(cf.id);
+}
+
+/* DISCOURSES */
+async function getDiscourses() {
+  const all = await dbGetAll("cosm_discourses");
+  return all.filter(d => !d.isDeleted).sort((a, b) => b.updated_at - a.updated_at);
+}
+async function getDeletedDiscourses() {
+  const all = await dbGetAll("cosm_discourses");
+  return all.filter(d => d.isDeleted).sort((a, b) => b.deleted_at - a.deleted_at);
+}
+async function getDiscourse(id) {
+  return await dbGet("cosm_discourses", id);
+}
+async function createDiscourse({ title = "Untitled Discourse", raw_text = "", folder_id = null, source_link = null } = {}) {
+  const id = "d_" + Date.now();
+  const now = Date.now();
+  const disc = { id, title, raw_text, folder_id, source_link, created_at: now, updated_at: now };
+  await dbPut("cosm_discourses", disc);
+  return disc;
+}
+async function updateDiscourse(id, updates) {
+  const disc = await getDiscourse(id);
+  if (!disc) return;
+  const updated = { ...disc, ...updates, updated_at: Date.now() };
+  await dbPut("cosm_discourses", updated);
+  return updated;
+}
+async function deleteDiscourse(id) {
+  // Soft delete - move to Void
+  const disc = await getDiscourse(id);
+  if (!disc) return;
+  await dbPut("cosm_discourses", { ...disc, isDeleted: true, deleted_at: Date.now() });
+}
+async function purgeDiscourse(id) {
+  // Hard delete - permanent
+  await dbDelete("cosm_discourses", id);
+  const tiles = await dbGetByIndex("cosm_mosaic_tiles", "discourse_id", id);
+  for (const t of tiles) await dbDelete("cosm_mosaic_tiles", t.id);
+  const bls = await dbGetByIndex("cosm_backlinks", "discourse_id", id);
+  for (const b of bls) await dbDelete("cosm_backlinks", b.id);
+}
+async function restoreDiscourse(id) {
+  const disc = await getDiscourse(id);
+  if (!disc) return;
+  const { isDeleted, deleted_at, ...rest } = disc;
+  await dbPut("cosm_discourses", { ...rest, updated_at: Date.now() });
+}
+
+/* MOSAIC TILES */
+async function getMosaicTile(discourseId) {
+  if (mosaicCache[discourseId] !== undefined) return mosaicCache[discourseId];
+  const tiles = await dbGetByIndex("cosm_mosaic_tiles", "discourse_id", discourseId);
+  if (tiles.length === 0) { mosaicCache[discourseId] = null; return null; }
+  tiles.sort((a, b) => b.created_at - a.created_at);
+  mosaicCache[discourseId] = tiles[0];
+  return tiles[0];
+}
+async function saveMosaicTile(discourseId, anchors) {
+  const existing = await getMosaicTile(discourseId);
+  if (existing) await dbDelete("cosm_mosaic_tiles", existing.id);
+  const id = "m_" + Date.now();
+  const tile = { id, discourse_id: discourseId, anchors, created_at: Date.now() };
+  await dbPut("cosm_mosaic_tiles", tile);
+  mosaicCache[discourseId] = tile;
+}
+async function deleteMosaicTile(discourseId) {
+  const tile = await getMosaicTile(discourseId);
+  if (tile) await dbDelete("cosm_mosaic_tiles", tile.id);
+  mosaicCache[discourseId] = null;
+}
+
+/* BACKLINKS */
+async function getBacklink(discourseId) {
+  const links = await dbGetByIndex("cosm_backlinks", "discourse_id", discourseId);
+  return links.length > 0 ? links[0] : null;
+}
+
+/* VIEW SWITCHING */
+function switchView(view, slideBack = false) {
+  const tablePanel = document.getElementById('view-table');
+  const lighthousePanel = document.getElementById('view-lighthouse');
+  const voidPanel = document.getElementById('view-void');
+
+  [tablePanel, lighthousePanel, voidPanel].forEach(p => {
+    p.classList.add('hidden');
+    if (slideBack) p.classList.add('slide-back');
+    else p.classList.remove('slide-back');
+  });
+
+  let target;
+  if (view === 'lighthouse') target = lighthousePanel;
+  else if (view === 'void') target = voidPanel;
+  else target = tablePanel;
+
+  target.classList.remove('hidden');
+  target.classList.remove('slide-back');
+  currentView = view;
+    const fab = document.getElementById('fab-container');
+  if (fab) fab.style.display = (view === 'table') ? 'flex' : 'none';
+}
+
+/* LONG PRESS HANDLERS */
+function startLongPress(e, card, item) {
+  const touch = e.touches ? e.touches[0] : e;
+  touchStartPos = { x: touch.clientX, y: touch.clientY };
+  isLongPress = false;
+  longPressConsumed = false;
+  card.classList.add('long-pressing');
+  longPressTimer = setTimeout(() => {
+    isLongPress = true;
+    longPressConsumed = true;
+    card.classList.remove('long-pressing');
+    triggerLongPress(item);
+  }, LONG_PRESS_DURATION);
+}
+
+function handleTouchMove(e, card) {
+  if (!longPressTimer) return;
+  const touch = e.touches[0];
+  const dx = Math.abs(touch.clientX - touchStartPos.x);
+  const dy = Math.abs(touch.clientY - touchStartPos.y);
+  if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
+    cancelLongPress(card);
+  }
+}
+
+function cancelLongPress(card) {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+  isLongPress = false;
+  if (card) card.classList.remove('long-pressing');
+}
+
+function triggerLongPress(item) {
+  mgmtItem = item;
+  openManagementModal(item);
+}
+
+/* TABLE VIEW RENDER */
+async function renderTableView() {
+  renderBreadcrumb();
+  const surface = document.getElementById('table-surface');
+  surface.innerHTML = '';
+
+  // Show/hide search bar - only when inside a folder
+  const searchWrap = document.getElementById('search-bar-wrap');
+  if (currentFolderId !== null) {
+    searchWrap.style.display = 'block';
+  } else {
+    searchWrap.style.display = 'none';
+    searchQuery = '';
+    const inp = document.getElementById('search-input');
+    if (inp) inp.value = '';
+  }
+
+  // If search query active, render flat search results
+  if (searchQuery && currentFolderId !== null) {
+    const allDiscourses = await dbGetAll("cosm_discourses");
+    const results = allDiscourses.filter(d =>
+      !d.isDeleted &&
+      d.folder_id === currentFolderId &&
+      ((d.title || '').toLowerCase().includes(searchQuery) ||
+       (d.raw_text || '').toLowerCase().includes(searchQuery))
+    );
+    if (results.length === 0) {
+      const grid = document.createElement('div');
+      grid.className = 'cards-grid';
+      grid.innerHTML = `<div class="table-empty"><div class="table-empty-glyph">◈</div><div class="table-empty-text">No results</div></div>`;
+      surface.appendChild(grid);
+      return;
+    }
+    const label = document.createElement('div');
+    label.className = 'cards-section-label';
+    label.textContent = `Results (${results.length})`;
+    surface.appendChild(label);
+    const grid = document.createElement('div');
+    grid.className = 'cards-grid';
+    for (const d of results) {
+      grid.appendChild(await buildDiscourseCard(d));
+    }
+    surface.appendChild(grid);
+    return;
+  }
+
+  const allFolders = await getFolders();
+  const allDiscourses = await getDiscourses();
+
+    const childFolders = allFolders.filter(f => f.parent_id === currentFolderId);
+
+  const notes = allDiscourses.filter(d => {
+    const inScope = currentFolderId === null
+      ? (d.folder_id === null || d.folder_id === undefined)
+      : d.folder_id === currentFolderId;
+    return inScope && d.item_type === 'note';
+  });
+
+  const discourses = allDiscourses.filter(d => {
+    const inScope = currentFolderId === null
+      ? (d.folder_id === null || d.folder_id === undefined)
+      : d.folder_id === currentFolderId;
+    return inScope && d.item_type !== 'note';
+  });
+
+  const hasFolders = childFolders.length > 0;
+  const hasDiscourses = discourses.length > 0;
+  const hasNotes = notes.length > 0;
+
+  if (!hasFolders && !hasDiscourses && !hasNotes) {
+    const grid = document.createElement('div');
+    grid.className = 'cards-grid';
+    grid.innerHTML = `
+      <div class="table-empty">
+        <div class="table-empty-glyph">◈</div>
+        <div class="table-empty-text">${currentFolderId === null ? 'Create a folder to begin' : 'Nothing here yet'}</div>
+      </div>`;
+    surface.appendChild(grid);
+    return;
+  }
+
+  if (hasFolders) {
+    const label = document.createElement('div');
+    label.className = 'cards-section-label';
+    label.textContent = 'Folders';
+    surface.appendChild(label);
+
+    const grid = document.createElement('div');
+    grid.className = 'cards-grid';
+
+    for (const f of childFolders) {
+      const discCount = allDiscourses.filter(d => d.folder_id === f.id && d.item_type !== 'note' && !d.isDeleted).length;
+const noteCount = allDiscourses.filter(d => d.folder_id === f.id && d.item_type === 'note' && !d.isDeleted).length;
+      const subCount = allFolders.filter(sf => sf.parent_id === f.id).length;
+      const meta = [];
+      if (discCount > 0) meta.push(discCount + (discCount === 1 ? ' discourse' : ' discourses'));
+      if (noteCount > 0) meta.push(noteCount + (noteCount === 1 ? ' note' : ' notes'));
+      if (subCount > 0) meta.push(subCount + (subCount === 1 ? ' folder' : ' folders'));
+      const card = document.createElement('div');
+      card.className = 'folder-card card';
+      card.innerHTML = `
+        <div class="folder-card-top">
+          <span class="folder-icon-glyph">▤</span>
+        </div>
+        <div class="folder-card-name">${escHtml(f.name)}</div>
+        <div class="folder-card-meta">${meta.length ? meta.join(' · ') : 'Empty'}</div>`;
+      
+      // Click to enter folder
+      card.addEventListener('click', () => {
+        if (!longPressConsumed) enterFolder(f.id, f.name);
+      });
+      
+      // Long press handlers
+      card.addEventListener('mousedown', (e) => startLongPress(e, card, { type: 'folder', id: f.id, name: f.name, data: f }));
+      card.addEventListener('mouseup', () => cancelLongPress(card));
+      card.addEventListener('mouseleave', () => cancelLongPress(card));
+      card.addEventListener('touchstart', (e) => { 
+        startLongPress(e, card, { type: 'folder', id: f.id, name: f.name, data: f });
+      }, { passive: true });
+      card.addEventListener('touchend', () => cancelLongPress(card));
+      card.addEventListener('touchcancel', () => cancelLongPress(card));
+      card.addEventListener('touchmove', (e) => handleTouchMove(e, card), { passive: true });
+      
+      // Prevent context menu on long press
+      card.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        return false;
+      });
+      
+      grid.appendChild(card);
+    }
+    surface.appendChild(grid);
+  }
+
+   if (hasDiscourses) {
+    const label = document.createElement('div');
+    label.className = 'cards-section-label';
+    label.textContent = 'Discourses';
+    surface.appendChild(label);
+
+    const grid = document.createElement('div');
+    grid.className = 'cards-grid';
+
+    for (const d of discourses) {
+      grid.appendChild(await buildDiscourseCard(d));
+    }
+    surface.appendChild(grid);
+  }
+
+  if (hasNotes) {
+    const label = document.createElement('div');
+    label.className = 'cards-section-label';
+    label.textContent = 'Notes';
+    surface.appendChild(label);
+
+    const grid = document.createElement('div');
+    grid.className = 'cards-grid';
+
+    for (const n of notes) {
+      grid.appendChild(await buildDiscourseCard(n));
+    }
+    surface.appendChild(grid);
+  }
+}
+
+
+async function buildDiscourseCard(d) {
+  const tile = await getMosaicTile(d.id);
+  const hasMosaic = tile && tile.anchors && tile.anchors.length > 0;
+  const date = new Date(d.updated_at || d.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const preview = d.raw_text ? d.raw_text.replace(/\n+/g, ' ').slice(0, 100) : '';
+  const card = document.createElement('div');
+  card.className = 'discourse-card card';
+  card.innerHTML = `
+    <div class="discourse-card-title">${escHtml(d.title || 'Untitled')}</div>
+    ${preview ? `<div class="discourse-card-preview">${escHtml(preview)}</div>` : ''}
+    <div class="discourse-card-footer">
+      <span class="discourse-card-date">${date}</span>
+      <div class="discourse-card-badges">
+        ${d.source_link ? '<span class="badge-pinned">⟵ pinned</span>' : ''}
+        ${hasMosaic ? '<span class="badge-mosaic">◈</span>' : ''}
+      </div>
+    </div>`;
+  
+  // Click to open discourse
+  card.addEventListener('click', () => {
+    if (!longPressConsumed) openDiscourse(d.id);
+  });
+  
+  // Long press handlers
+  card.addEventListener('mousedown', (e) => startLongPress(e, card, { type: 'discourse', id: d.id, name: d.title, data: d }));
+  card.addEventListener('mouseup', () => cancelLongPress(card));
+  card.addEventListener('mouseleave', () => cancelLongPress(card));
+  card.addEventListener('touchstart', (e) => { 
+    startLongPress(e, card, { type: 'discourse', id: d.id, name: d.title, data: d });
+  }, { passive: true });
+  card.addEventListener('touchend', () => cancelLongPress(card));
+  card.addEventListener('touchcancel', () => cancelLongPress(card));
+  card.addEventListener('touchmove', (e) => handleTouchMove(e, card), { passive: true });
+  
+  // Prevent context menu on long press
+  card.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    return false;
+  });
+  
+  return card;
+}
+
+/* BREADCRUMB */
+function renderBreadcrumb() {
+  const bar = document.getElementById('breadcrumb-bar');
+  bar.innerHTML = '';
+  breadcrumbPath.forEach((seg, idx) => {
+    const isLast = idx === breadcrumbPath.length - 1;
+    const segEl = document.createElement('div');
+    segEl.className = 'breadcrumb-seg';
+
+    const btn = document.createElement('button');
+    btn.className = 'breadcrumb-btn' + (isLast ? ' current' : '');
+    btn.textContent = seg.name;
+    if (!isLast) {
+      btn.addEventListener('click', () => navigateToBreadcrumb(idx));
+    }
+    segEl.appendChild(btn);
+
+    if (!isLast) {
+      const arrow = document.createElement('span');
+      arrow.className = 'breadcrumb-arrow';
+      arrow.textContent = '▸';
+      segEl.appendChild(arrow);
+    }
+    bar.appendChild(segEl);
+  });
+}
+
+/* FOLDER NAVIGATION */
+function enterFolder(id, name) {
+  breadcrumbPath.push({ id, name });
+  currentFolderId = id;
+  renderTableView();
+}
+
+function navigateToBreadcrumb(idx) {
+  breadcrumbPath = breadcrumbPath.slice(0, idx + 1);
+  currentFolderId = breadcrumbPath[breadcrumbPath.length - 1].id;
+  renderTableView();
+}
+
+/* GO BACK TO TABLE */
+async function goToTable() {
+  if (currentDiscourseId) await saveCurrentDiscourse(true);
+  switchView('table', true);
+  await renderTableView();
+}
+
+/* OPEN DISCOURSE */
+async function openDiscourse(id) {
+  if (currentDiscourseId && id !== currentDiscourseId) {
+    await saveCurrentDiscourse(true);
+  }
+  const disc = await getDiscourse(id);
+  if (!disc) { showToast("Discourse not found"); return; }
+
+  currentDiscourseId = id;
+  document.getElementById("discourse-title").value = disc.title || "";
+  document.getElementById("content-textarea").value = disc.raw_text || "";
+
+  await renderMeta(disc);
+  await renderMosaicDisplay(id);
+
+  setEditorMode('write');
+  switchView('lighthouse');
+
+  if (disc.folder_id && currentFolderId !== disc.folder_id) {
+    const folder = await dbGet("cosm_folders", disc.folder_id);
+    if (folder) {
+      breadcrumbPath = [{ id: null, name: '◈ root' }, { id: disc.folder_id, name: folder.name }];
+      currentFolderId = disc.folder_id;
+    }
+  }
+}
+
+/* RENDER META */
+async function renderMeta(disc) {
+  const el = document.getElementById("discourse-meta");
+  const date = new Date(disc.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  let html = `<span>${date}</span>`;
+
+  if (disc.folder_id) {
+    const folder = await dbGet("cosm_folders", disc.folder_id);
+    if (folder) html += `<span class="meta-separator">·</span><span>▸ ${escHtml(folder.name)}</span>`;
+  }
+
+  const backlink = await getBacklink(disc.id);
+  if (backlink) {
+    html += `<span class="meta-separator">·</span>
+      <a class="source-link" href="/" title="Open Sanctuary">
+        ⟵ ${escHtml(backlink.char_name || "Sanctuary")}
+      </a>`;
+  } else if (disc.source_link) {
+    try {
+      const src = JSON.parse(disc.source_link);
+      html += `<span class="meta-separator">·</span>
+        <a class="source-link" href="/">⟵ ${escHtml(src.charName || "Sanctuary")}</a>`;
+    } catch(_) {}
+  }
+
+  el.innerHTML = html;
+}
+
+/* RENDER MOSAIC */
+async function renderMosaicDisplay(discourseId) {
+  const tile = await getMosaicTile(discourseId);
+  const mosaicEl = document.getElementById("mosaic-display");
+  if (!tile || !tile.anchors || tile.anchors.length === 0) {
+    mosaicEl.innerHTML = "";
+    return;
+  }
+  const anchorsHtml = tile.anchors.map(a => {
+    const parts = a.split(":");
+    if (parts.length > 1) {
+      return `<div class="mosaic-anchor">
+        <span class="anchor-dot"></span>
+        <span><span class="anchor-cat">${escHtml(parts[0].trim())}:</span> ${escHtml(parts.slice(1).join(":").trim())}</span>
+      </div>`;
+    }
+    return `<div class="mosaic-anchor"><span class="anchor-dot"></span><span>${escHtml(a)}</span></div>`;
+  }).join("");
+  mosaicEl.innerHTML = `
+    <div class="mosaic-block">
+      <div class="mosaic-header">
+        <span class="mosaic-label">◈ Mosaic</span>
+        <button class="btn-delete-mosaic" id="btn-clear-mosaic">✕ Clear</button>
+      </div>
+      <div class="mosaic-anchors-wrap">${anchorsHtml}</div>
+    </div>`;
+  document.getElementById('btn-clear-mosaic').addEventListener('click', confirmDeleteMosaic);
+}
+
+/* SAVE */
+async function saveCurrentDiscourse(silent = false) {
+  if (!currentDiscourseId) return;
+  const title = document.getElementById("discourse-title").value.trim() || "Untitled Discourse";
+  const raw_text = document.getElementById("content-textarea").value;
+  await updateDiscourse(currentDiscourseId, { title, raw_text });
+  if (!silent) showToast("Saved ✓");
+  setTimeout(() => backupToAkashic(), 0);
+}
+
+/* NEW DISCOURSE */
+async function newDiscourseInCurrent() {
+  const folderId = currentFolderId;
+  if (currentDiscourseId) await saveCurrentDiscourse(true);
+  const disc = await createDiscourse({
+    title: "Untitled Discourse",
+    raw_text: "",
+    folder_id: folderId,
+    source_link: null
+  });
+  await openDiscourse(disc.id);
+  setTimeout(() => {
+    const titleEl = document.getElementById("discourse-title");
+    titleEl.select();
+    titleEl.focus();
+  }, 120);
+  return disc.id;
+}
+
+async function newDiscourse(folderId = null, prefillTitle = "", prefillText = "", sourceLink = null) {
+  if (currentDiscourseId) await saveCurrentDiscourse(true);
+  const disc = await createDiscourse({
+    title: prefillTitle || "Untitled Discourse",
+    raw_text: prefillText,
+    folder_id: folderId,
+    source_link: sourceLink
+  });
+  await openDiscourse(disc.id);
+  if (!prefillTitle) {
+    setTimeout(() => document.getElementById("discourse-title").select(), 100);
+  }
+  return disc.id;
+}
+
+/* NEW DISCOURSE AT ROOT - Auto-create Unknown_[timestamp] folder */
+async function newDiscourseAtRoot() {
+  // Create Unknown folder with timestamp
+  const folders = await getFolders();
+const unknownCount = folders.filter(f => f.name.startsWith('Unknown_')).length + 1;
+const folderName = `Unknown_${unknownCount}`;
+  const folderId = await createFolder(folderName, null);
+  
+  // Navigate into the folder
+  breadcrumbPath = [{ id: null, name: '◈ root' }, { id: folderId, name: folderName }];
+  currentFolderId = folderId;
+  
+  // Create discourse inside
+  const disc = await createDiscourse({
+    title: "Untitled Discourse",
+    raw_text: "",
+    folder_id: folderId,
+    source_link: null
+  });
+  
+  await openDiscourse(disc.id);
+  setTimeout(() => {
+    const titleEl = document.getElementById("discourse-title");
+    titleEl.select();
+    titleEl.focus();
+  }, 120);
+  
+  showToast(`Created ${folderName}`);
+  return disc.id;
+}
+
+/* DELETE */
+async function deleteCurrentDiscourse() {
+  if (!currentDiscourseId) return;
+  if (!confirm("Move this discourse to the Void?")) return;
+  await deleteDiscourse(currentDiscourseId);
+  mosaicCache[currentDiscourseId] = null;
+  currentDiscourseId = null;
+  await goToTable();
+  showToast("Moved to Void ◌");
+}
+
+/* HANDLE NEW DISCOURSE BUTTON */
+function handleNewDiscourse() {
+  if (currentFolderId === null) {
+    // At root - auto-create Unknown folder and discourse
+    newDiscourseAtRoot();
+  } else {
+    // Inside folder - standard spawn
+    newDiscourseInCurrent();
+  }
+}
+
+/* SEARCH */
+let searchActive = false;
+let searchQuery = '';
+
+function onSearchInput(val) {
+  searchQuery = val.trim().toLowerCase();
+  renderTableView();
+}
+
+/* VOID VIEW */
+async function openVoidView() {
+  switchView('void');
+  await renderVoidView();
+}
+
+function closeVoidView() {
+  switchView('table', true);
+}
+
+async function renderVoidView() {
+  const surface = document.getElementById('void-surface');
+  surface.innerHTML = '';
+  const deleted = await getDeletedDiscourses();
+  if (deleted.length === 0) {
+    surface.innerHTML = `<div class="table-empty" style="grid-column:unset;display:flex;">
+      <div class="table-empty-glyph">◌</div>
+      <div class="table-empty-text">Void is empty</div>
+    </div>`;
+    return;
+  }
+  const list = document.createElement('div');
+  list.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+  for (const d of deleted) {
+    const date = new Date(d.deleted_at || d.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const item = document.createElement('div');
+    item.className = 'void-item';
+    item.innerHTML = `
+      <div class="void-item-info">
+        <div class="void-item-title">${escHtml(d.title || 'Untitled')}</div>
+        <div class="void-item-date">Deleted ${date}</div>
+      </div>
+      <div class="void-item-actions">
+        <button class="btn-restore" data-id="${d.id}">↩ Undeath</button>
+        <button class="btn-purge" data-id="${d.id}">✕ Purge</button>
+      </div>`;
+    // Wire buttons directly on the element (safe - no string interpolation in handler)
+    item.querySelector('.btn-restore').addEventListener('click', () => handleRestore(d.id));
+    item.querySelector('.btn-purge').addEventListener('click', () => handlePurge(d.id));
+    list.appendChild(item);
+  }
+  surface.appendChild(list);
+}
+
+async function handleRestore(id) {
+  await restoreDiscourse(id);
+  showToast("Restored ✓");
+  await renderVoidView();
+}
+
+async function handlePurge(id) {
+  if (!confirm("Permanently delete? This cannot be undone.")) return;
+  await purgeDiscourse(id);
+  showToast("Purged permanently");
+  await renderVoidView();
+}
+
+async function purgeAll() {
+  const deleted = await getDeletedDiscourses();
+  if (deleted.length === 0) { showToast("Void is already empty"); return; }
+  if (!confirm(`Permanently delete all ${deleted.length} item(s)? This cannot be undone.`)) return;
+  for (const d of deleted) await purgeDiscourse(d.id);
+  showToast("Void purged");
+  await renderVoidView();
+}
+
+/* JSON EXPORT */
+async function exportJSON() {
+  const folders = await dbGetAll("cosm_folders");
+  const discourses = await dbGetAll("cosm_discourses");
+  const mosaicTiles = await dbGetAll("cosm_mosaic_tiles");
+  const backlinks = await dbGetAll("cosm_backlinks");
+  const payload = {
+    version: "cosmiOS",
+    exported_at: new Date().toISOString(),
+    cosm_folders: folders,
+    cosm_discourses: discourses,
+    cosm_mosaic_tiles: mosaicTiles,
+    cosm_backlinks: backlinks
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cosmiOS_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Backup exported ✓");
+}
+
+/* JSON IMPORT */
+async function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!confirm("Import will merge with existing data. Conflicts will be overwritten by the backup. Continue?")) {
+    event.target.value = '';
+    return;
+  }
+  try {
+    const text = await file.text();
+    const payload = JSON.parse(text);
+    const stores = ['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks'];
+    for (const store of stores) {
+      if (payload[store] && Array.isArray(payload[store])) {
+        for (const item of payload[store]) {
+          await dbPut(store, item);
+        }
+      }
+    }
+    mosaicCache = {};
+    await renderTableView();
+    showToast("Import complete ✓");
+  } catch(err) {
+    console.error("Import failed:", err);
+    showToast("Import failed - invalid file");
+  }
+  event.target.value = '';
+}
+
+/* FOLDER MODAL WITH PARENT SELECTOR */
+async function openFolderModal() {
+  const folderSelect = document.getElementById("folder-parent-select");
+  folderSelect.innerHTML = '<option value="">Root</option>';
+  
+  const folders = await getFolders();
+  for (const f of folders) {
+    const option = document.createElement('option');
+    option.value = f.id;
+    option.textContent = f.name;
+    if (f.id === currentFolderId) option.selected = true;
+    folderSelect.appendChild(option);
+  }
+  
+  document.getElementById("folder-name-input").value = "";
+  document.getElementById("folder-modal").classList.add("visible");
+  document.getElementById("cosm-overlay").classList.add("active");
+  setTimeout(() => document.getElementById("folder-name-input").focus(), 100);
+}
+
+function closeFolderModal() {
+  document.getElementById("folder-modal").classList.remove("visible");
+  closeOverlay();
+}
+
+async function confirmNewFolder() {
+  const name = document.getElementById("folder-name-input").value.trim();
+  if (!name) return;
+  const parentSelect = document.getElementById("folder-parent-select");
+  const parentId = parentSelect.value || null;
+  await createFolder(name, parentId);
+  closeFolderModal();
+  await renderTableView();
+  showToast("Folder created");
+}
+
+/* MANAGEMENT MODAL */
+function openManagementModal(item) {
+  const title = document.getElementById("management-title");
+  title.textContent = item.name || (item.type === 'folder' ? 'Folder' : 'Discourse');
+  document.getElementById("management-modal").classList.add("visible");
+  document.getElementById("cosm-overlay").classList.add("active");
+}
+
+function closeManagementModal(closeOverlayToo = true) {
+  document.getElementById("management-modal").classList.remove("visible");
+  if (closeOverlayToo) closeOverlay();
+}
+async function handleMgmtExport() {
+  if (!mgmtItem) return;
+  const item = mgmtItem;  // SAVE BEFORE CLOSING
+  closeManagementModal();
+  
+  if (item.type === 'discourse') {  // Use local variable
+    await exportDiscourseMarkdown(item.id);
+  } else {
+    await exportFolderContents(item.id);
+  }
+}
+
+async function handleMgmtDelete() {
+  if (!mgmtItem) return;
+  const item = mgmtItem;  // SAVE BEFORE CLOSING
+  closeManagementModal();
+  
+  if (item.type === 'folder') {
+    if (!confirm(`Delete folder "${item.name}"? All discourses inside will be moved to root.`)) return;
+    await deleteFolder(item.id);
+    if (currentFolderId === item.id) {
+      breadcrumbPath.pop();
+      currentFolderId = breadcrumbPath[breadcrumbPath.length - 1].id;
+    }
+    await renderTableView();
+    showToast("Folder deleted");
+  } else {
+    if (!confirm(`Move "${item.name}" to the Void?`)) return;
+    await deleteDiscourse(item.id);
+    await renderTableView();
+    showToast("Moved to Void ◌");
+  }
+}
+
+
+async function exportDiscourseMarkdown(id) {
+  const disc = await getDiscourse(id);
+  if (!disc) return;
+  const tile = await getMosaicTile(id);
+  let md = `# ${disc.title}\n\n`;
+  if (tile && tile.anchors && tile.anchors.length > 0) {
+    md += `> **Mosaic**\n${tile.anchors.map(a => `> - ${a}`).join('\n')}\n\n`;
+  }
+  md += disc.raw_text || " ";
+  const blob = new Blob([md], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${(disc.title || "discourse").replace(/[^a-z0-9]/gi, "_").toLowerCase()}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Exported as Markdown");
+}
+
+async function exportFolderContents(folderId) {
+  const discourses = await dbGetByIndex("cosm_discourses", "folder_id", folderId);
+  const validDiscourses = discourses.filter(d => !d.isDeleted);
+  if (validDiscourses.length === 0) {
+    showToast("No discourses to export");
+    return;
+  }
+  
+  let combinedMd = `# Folder Export\n\n`;
+  for (const disc of validDiscourses) {
+    const tile = await getMosaicTile(disc.id);
+    combinedMd += `## ${disc.title}\n\n`;
+    if (tile && tile.anchors && tile.anchors.length > 0) {
+      combinedMd += `> **Mosaic**\n${tile.anchors.map(a => `> - ${a}`).join('\n')}\n\n`;
+    }
+    combinedMd += disc.raw_text || " ";
+    combinedMd += `\n\n---\n\n`;
+  }
+  
+  const blob = new Blob([combinedMd], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `folder_export_${new Date().toISOString().slice(0,10)}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Exported ${validDiscourses.length} discourse(s)`);
+}
+
+/* RENAME MODAL */
+function openRenameModal() {
+  if (!mgmtItem) return;
+  const title = document.getElementById("rename-title");
+  title.textContent = mgmtItem.type === 'folder' ? 'Rename Folder' : 'Rename Discourse';
+  document.getElementById("rename-input").value = mgmtItem.name || '';
+  document.getElementById("rename-modal").classList.add("visible");
+  document.getElementById("cosm-overlay").classList.add("active");
+  setTimeout(() => document.getElementById("rename-input").focus(), 100);
+}
+
+function closeRenameModal() {
+  document.getElementById("rename-modal").classList.remove("visible");
+  closeOverlay();
+}
+
+async function confirmRename() {
+  if (!mgmtItem) return;
+  const newName = document.getElementById("rename-input").value.trim();
+  if (!newName) return;
+  
+  if (mgmtItem.type === 'folder') {
+    await dbPut("cosm_folders", { ...mgmtItem.data, name: newName });
+    showToast("Folder renamed");
+  } else {
+    await updateDiscourse(mgmtItem.id, { title: newName });
+    showToast("Discourse renamed");
+  }
+  
+  closeRenameModal();
+  await renderTableView();
+  mgmtItem = null;
+}
+
+/* MOVE MODAL */
+async function openMoveModal() {
+  if (!mgmtItem) return;
+  const moveSelect = document.getElementById("move-parent-select");
+  moveSelect.innerHTML = '<option value="">Root</option>';
+  
+  const folders = await getFolders();
+  // Don't include the item itself as a destination (can't move into self)
+  const validFolders = folders.filter(f => f.id !== mgmtItem.id);
+  
+  for (const f of validFolders) {
+    const option = document.createElement('option');
+    option.value = f.id;
+    option.textContent = f.name;
+    // Default to current parent
+    const currentParent = mgmtItem.type === 'folder' ? mgmtItem.data.parent_id : mgmtItem.data.folder_id;
+    if (f.id === currentParent) option.selected = true;
+    moveSelect.appendChild(option);
+  }
+  
+  // Select root if current parent is null
+  if (!moveSelect.value && (mgmtItem.type === 'folder' ? !mgmtItem.data.parent_id : !mgmtItem.data.folder_id)) {
+    moveSelect.value = "";
+  }
+  
+  document.getElementById("move-modal").classList.add("visible");
+  document.getElementById("cosm-overlay").classList.add("active");
+}
+
+function closeMoveModal() {
+  document.getElementById("move-modal").classList.remove("visible");
+  closeOverlay();
+}
+
+async function confirmMove() {
+  if (!mgmtItem) return;
+  const newParentId = document.getElementById("move-parent-select").value || null;
+  
+  if (mgmtItem.type === 'folder') {
+    // Can't move folder into itself or its descendants
+    if (newParentId === mgmtItem.id) {
+      showToast("Can't move into itself");
+      return;
+    }
+    // Check for circular reference
+    if (newParentId) {
+      const allFolders = await getFolders();
+      let checkId = newParentId;
+      while (checkId) {
+        const parent = allFolders.find(f => f.id === checkId);
+        if (!parent) break;
+        if (parent.parent_id === mgmtItem.id) {
+          showToast("Can't move into a child");
+          return;
+        }
+        checkId = parent.parent_id;
+      }
+    }
+    await dbPut("cosm_folders", { ...mgmtItem.data, parent_id: newParentId });
+  } else {
+    await updateDiscourse(mgmtItem.id, { folder_id: newParentId });
+  }
+  
+  // Get destination name for toast
+  let destName = "Root";
+  if (newParentId) {
+    const destFolder = await dbGet("cosm_folders", newParentId);
+    if (destFolder) destName = destFolder.name;
+  }
+  
+  closeMoveModal();
+  mgmtItem = null;
+  
+  // Stay in place - don't teleport
+  await renderTableView();
+  showToast(`Moved to ${destName}`);
+}
+
+/* EDITOR MODE */
+function setEditorMode(mode) {
+  editorMode = mode;
+  const ta   = document.getElementById("content-textarea");
+  const view = document.getElementById("content-view");
+  const btnW = document.getElementById("btn-write");
+  const btnV = document.getElementById("btn-view");
+  const tb   = document.getElementById("format-toolbar");
+  if (mode === 'write') {
+    ta.style.display = "block";
+    view.style.display = "none";
+    if (tb) tb.style.display = "flex";
+    btnW.classList.add("active");
+    btnV.classList.remove("active");
+  } else {
+    view.innerHTML = renderContent(ta.value);
+    view.style.display = "block";
+    ta.style.display = "none";
+    if (tb) tb.style.display = "none";
+    btnW.classList.remove("active");
+    btnV.classList.add("active");
+  }
+}
+
+/* CONTENT RENDERER */
+function renderContent(raw) {
+  if (!raw) return '<span style="opacity:0.3;font-style:italic;">Nothing written yet.</span>';
+  let text = raw;
+
+  // Step 1 — extract code blocks before any escaping
+  const codeBlocks = [];
+  text = text.replace(/```([\s\S]*?)```/g, (_, code) => {
+    const i = codeBlocks.length;
+    codeBlocks.push('<pre><code>' + escHtml(code.trim()) + '</code></pre>');
+    return '%%CB' + i + '%%';
+  });
+
+  const inlineCodes = [];
+  text = text.replace(/`([^`]+)`/g, (_, code) => {
+    const i = inlineCodes.length;
+    inlineCodes.push('<code>' + escHtml(code) + '</code>');
+    return '%%IC' + i + '%%';
+  });
+
+  // Step 2 — extract block-level markdown before escaping
+  const blockMap = [];
+  function storeBlock(html) {
+    const i = blockMap.length;
+    blockMap.push(html);
+    return '%%BL' + i + '%%';
+  }
+
+  // headings
+  text = text.replace(/^### (.+)$/gm, (_, t) => storeBlock('<h3>' + t + '</h3>'));
+  text = text.replace(/^## (.+)$/gm,  (_, t) => storeBlock('<h2>' + t + '</h2>'));
+  text = text.replace(/^# (.+)$/gm,   (_, t) => storeBlock('<h1>' + t + '</h1>'));
+
+  // blockquote
+  text = text.replace(/^> (.+)$/gm, (_, t) => storeBlock('<blockquote>' + t + '</blockquote>'));
+
+  // divider
+  text = text.replace(/^---$/gm, () => storeBlock('<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">'));
+
+  // Step 3 — escape remaining text
+  text = escHtml(text);
+
+  // Step 4 — inline formatting on escaped text
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  text = text.replace(/&lt;u&gt;(.+?)&lt;\/u&gt;/g, '<u>$1</u>');
+
+  // Step 5 — line by line for lists and paragraphs
+  const lines = text.split('\n');
+  const out = [];
+  let inList = false;
+  let inOL = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // block placeholders pass through untouched
+    if (/^%%BL\d+%%$/.test(trimmed)) {
+      if (inList) { out.push('</ul>'); inList = false; }
+      if (inOL)   { out.push('</ol>'); inOL = false; }
+      out.push(line);
+      continue;
+    }
+
+    if (/^- .+/.test(trimmed)) {
+      if (inOL)   { out.push('</ol>'); inOL = false; }
+      if (!inList){ out.push('<ul>');  inList = true; }
+      out.push('<li>' + trimmed.slice(2) + '</li>');
+      continue;
+    }
+
+    if (/^\d+\. .+/.test(trimmed)) {
+      if (inList) { out.push('</ul>'); inList = false; }
+      if (!inOL)  { out.push('<ol>');  inOL = true; }
+      out.push('<li>' + trimmed.replace(/^\d+\. /, '') + '</li>');
+      continue;
+    }
+
+    if (inList) { out.push('</ul>'); inList = false; }
+    if (inOL)   { out.push('</ol>'); inOL = false; }
+
+    if (trimmed === '') {
+      out.push('');
+    } else {
+      out.push('<p>' + line + '</p>');
+    }
+  }
+
+  if (inList) out.push('</ul>');
+  if (inOL)   out.push('</ol>');
+  text = out.join('\n');
+
+  // Step 6 — restore all placeholders
+  blockMap.forEach((html, i)  => { text = text.replace('%%BL' + i + '%%', html); });
+  codeBlocks.forEach((html, i) => { text = text.replace('%%CB' + i + '%%', html); });
+  inlineCodes.forEach((html, i) => { text = text.replace('%%IC' + i + '%%', html); });
+
+  text = text.replace(/<p><\/p>/g, '');
+  text = text.replace(/<p>%%[A-Z0-9]+%%<\/p>/g, (m) => m.slice(3, -4));
+
+  return text;
+}
+
+/* EXPORT MARKDOWN */
+async function exportMarkdown() {
+if (!currentDiscourseId) return;
+await saveCurrentDiscourse(true);
+const disc = await getDiscourse(currentDiscourseId);
+if (!disc) return;
+const tile = await getMosaicTile(currentDiscourseId);
+let md = `# ${disc.title}\n\n`;
+if (tile && tile.anchors && tile.anchors.length > 0) {
+md += `> **Mosaic**\n${tile.anchors.map(a => `> - ${a}`).join('\n')}\n\n`;
+}
+md += disc.raw_text || " ";
+const blob = new Blob([md], { type: "text/markdown" });
+const url  = URL.createObjectURL(blob);
+const a    = document.createElement("a");
+a.href     = url;
+a.download =  `${(disc.title || "discourse").replace(/[^a-z0-9]/gi, "_").toLowerCase()}.md`;
+a.click();
+URL.revokeObjectURL(url);
+showToast("Exported as Markdown");
+}
+
+/* EXPORT PDF (The Safari-Proof Method) */
+async function exportPDF() {
+    if (!currentDiscourseId) return;
+    await saveCurrentDiscourse(true);
+    const disc = await getDiscourse(currentDiscourseId);
+    if (!disc) return;
+    const tile = await getMosaicTile(currentDiscourseId);
+    
+    let mosaicHtml = "";
+    if (tile && tile.anchors && tile.anchors.length > 0) {
+        mosaicHtml = `<div style="border-left:3px solid #c8a050;padding:10px 16px;margin:16px 0;background:#f9f5ee;"> <div style="font-size:11px;letter-spacing:2px;font-weight:900;margin-bottom:8px;color:#8a6e35;">◈ MOSAIC</div> ${tile.anchors.map(a => `<div style="margin:4px 0;">• ${escHtml(a)}</div>`).join('')} </div>`;
+    }
+    
+    const content = renderContent(disc.raw_text || "");
+    
+    // 1. Build the payload
+    const fullHtml = `<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <title>${escHtml(disc.title || "Discourse")}</title>
+    <style>
+    body { font-family: Georgia, serif; max-width: 700px; margin: 0 auto; padding: 20px; color: #1a1a1a; line-height:1.8; }
+    h1 { font-size: 26px; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 6px; }
+    .meta { font-size: 12px; color: #888; margin-bottom: 24px; }
+    h2 { font-size:20px; } h3 { font-size:16px; color:#555; }
+    pre { background:#f4f4f4; padding:14px; border-radius:6px; overflow-x:auto; }
+    code { font-family: monospace; font-size:13px; }
+    blockquote { border-left:3px solid #ccc; padding-left:14px; color:#666; font-style:italic; margin:12px 0; }
+    </style>
+    </head><body>
+      <h1>${escHtml(disc.title || "Untitled Discourse")}</h1>
+      <div class="meta">${new Date(disc.created_at).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>
+      ${mosaicHtml}
+      ${content}
+    </body></html>`;
+
+    // 2. Create the Ghost Window
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.width = '0px';
+    iframe.style.height = '0px';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    // 3. Inject the soul into the Ghost Window
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(fullHtml);
+    doc.close();
+
+    // 4. Wait for iOS to render, then trigger the Print Dialog
+    setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        
+        // Let the iframe live long enough for the user to hit "Save to Files"
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+        }, 10000); 
+    }, 500);
+}
+
+
+/* EXTRACT MEMORY */
+async function extractMemory() {
+if (!currentDiscourseId) return;
+const rawText = document.getElementById("content-textarea").value.trim();
+if (!rawText || rawText.length < 50) {
+showToast("Write more before extracting");
+return;
+}
+const key = localStorage.getItem("nexus_v7_key") || " ";
+if (!key) {
+showToast("Add OpenRouter key in Sanctuary first");
+return;
+}
+document.getElementById("extract-loading").classList.add("visible");
+try {
+const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+method: "POST",
+headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+body: JSON.stringify({
+model: localStorage.getItem("activeModel_v1") || "google/gemini-2.0-flash-001",
+max_tokens: 350,
+messages: [
+{
+role: "system",
+content: `You are a conceptual anchor extractor. Read the text and return exactly 4-6 anchor phrases. Each anchor should capture a specific tension, concept, or open question from the text - not a generic summary. Format: one per line, structured as "Category: brief anchor phrase". Categories to use (pick fitting ones): Core tension, Open question, Key concept, Hidden assumption, Named force, Recurring image. Be specific and concrete, never generic. Reply with ONLY the list - no intro, no explanation.`
+},
+{ role: "user", content: rawText.slice(0, 3000) }
+]
+})
+});
+const data = await res.json();
+const raw = data.choices?.[0]?.message?.content || " ";
+if (!raw.trim()) { showToast("Nothing extracted - try more text"); return; }
+const anchors = raw.split("\n").map(l => l.trim()).filter(l => l.length > 3 && !l.startsWith("#"));
+await saveMosaicTile(currentDiscourseId, anchors);
+await renderMosaicDisplay(currentDiscourseId);
+showToast("Mosaic anchored ◈");
+} catch(err) {
+console.error("Extract failed:", err);
+showToast("Extraction failed");
+} finally {
+document.getElementById("extract-loading").classList.remove("visible");
+}
+}
+
+async function confirmDeleteMosaic() {
+if (!currentDiscourseId) return;
+if (!confirm("Clear mosaic anchors?")) return;
+await deleteMosaicTile(currentDiscourseId);
+await renderMosaicDisplay(currentDiscourseId);
+showToast("Mosaic cleared");
+}
+
+/* OVERLAY */
+function closeOverlay() {
+document.getElementById("cosm-overlay").classList.remove("active");
+// Close all modals
+const modals = ['folder-modal', 'management-modal', 'rename-modal', 'move-modal', 'global-search-modal', 'capture-modal'];
+modals.forEach(id => document.getElementById(id).classList.remove("visible"));
+mgmtItem = null;
+}
+
+/* TOAST */
+function showToast(msg) {
+const t = document.getElementById("cosm-toast");
+t.textContent = msg;
+t.style.opacity = "1";
+clearTimeout(t._timer);
+t._timer = setTimeout(() => { t.style.opacity = "0"; }, 2200);
+}
+
+async function backupToAkashic() {
+    try {
+        // Mirror your exportJSON — full sanctuary
+        const payload = {
+            version: "cosmiOS",
+            exported_at: new Date().toISOString(),
+            cosm_folders: await dbGetAll("cosm_folders"),
+            cosm_discourses: await dbGetAll("cosm_discourses"),
+            cosm_mosaic_tiles: await dbGetAll("cosm_mosaic_tiles"),
+            cosm_backlinks: await dbGetAll("cosm_backlinks")
+        };
+        const res = await fetch(`${AKASHIC_URL}/backup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: cosmUserId, data: JSON.stringify(payload) })
+        });
+        if (res.ok) showToast('Akashic Synced ◈');
+    } catch (e) {
+        console.error('Sync error:', e);
+        showToast('Abyss Offline');
+    }
+}
+
+async function restoreFromAkashic() {
+    if (!confirm("Pull from Akashic? This will overwrite local fragments.")) return;
+    try {
+        const res = await fetch(`${AKASHIC_URL}/backup/latest?user_id=${cosmUserId}`);
+        if (!res.ok) throw new Error('No backup found');
+        const text = await res.text();
+        const payload = JSON.parse(text);
+
+        // Clear and hydrate — reuse your import logic
+        const stores = ['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks'];
+        for (const store of stores) {
+            if (payload[store] && Array.isArray(payload[store])) {
+                // clear first
+                const all = await dbGetAll(store);
+                for (const item of all) await dbDelete(store, item.id);
+                // restore
+                for (const item of payload[store]) await dbPut(store, item);
+            }
+        }
+        showToast('Sanctuary Restored ◈');
+        setTimeout(() => location.reload(), 1200);
+    } catch (e) {
+        console.error('Restore error:', e);
+        showToast('Restore Failed');
+    }
+}
+
+/* GLOBAL SEARCH */
+
+function openGlobalSearch() {
+  document.getElementById('global-search-modal').classList.add('visible');
+  document.getElementById('cosm-overlay').classList.add('active');
+  document.getElementById('global-search-input').value = '';
+  document.getElementById('global-search-input').focus();
+  document.getElementById('global-search-results').innerHTML = '<div class="global-search-empty">Type to search...</div>';
+}
+
+function closeGlobalSearch() {
+  document.getElementById('global-search-modal').classList.remove('visible');
+  document.getElementById('cosm-overlay').classList.remove('active');
+}
+
+async function onGlobalSearchInput(query) {
+  const resultsContainer = document.getElementById('global-search-results');
+  if (!query.trim()) {
+    resultsContainer.innerHTML = '<div class="global-search-empty">Type to search...</div>';
+    return;
+  }
+  
+  const q = query.toLowerCase();
+  const folders = await getFolders();
+  const discourses = await getDiscourses();
+  
+  // Build folder path map
+  const folderMap = new Map(folders.map(f => [f.id, f]));
+  function getFolderPath(folderId) {
+    const parts = [];
+    let current = folderId ? folderMap.get(folderId) : null;
+    while (current) {
+      parts.unshift(current.name);
+      current = current.parent_id ? folderMap.get(current.parent_id) : null;
+    }
+    return parts.length > 0 ? parts.join(' / ') : 'Root';
+  }
+  
+  // Search folders
+  const matchedFolders = folders.filter(f => 
+    (f.name || '').toLowerCase().includes(q)
+  ).map(f => ({ type: 'folder', item: f, path: getFolderPath(f.parent_id) }));
+  
+  // Search discourses
+  const matchedDiscourses = discourses.filter(d => 
+    !d.deleted_at && (
+      (d.title || '').toLowerCase().includes(q) ||
+      (d.raw_text || '').toLowerCase().includes(q)
+    )
+  ).map(d => ({ type: 'discourse', item: d, path: getFolderPath(d.folder_id) }));
+  
+  const allResults = [...matchedFolders, ...matchedDiscourses];
+  
+  if (allResults.length === 0) {
+    resultsContainer.innerHTML = '<div class="global-search-empty">No results found</div>';
+    return;
+  }
+  
+  resultsContainer.innerHTML = allResults.map(r => {
+    const title = r.type === 'folder' ? r.item.name : (r.item.title || 'Untitled');
+    const typeLabel = r.type === 'folder' ? 'folder' : 'discourse';
+    return `
+      <div class="global-search-result" data-type="${r.type}" data-id="${r.item.id}">
+        <div class="global-search-result-title">
+          ${escHtml(title)}
+          <span class="global-search-result-type ${typeLabel}">${typeLabel}</span>
+        </div>
+        <div class="global-search-result-path">${escHtml(r.path)}</div>
+      </div>
+    `;
+  }).join('');
+  
+  // Add click handlers
+    // Add click handlers
+  resultsContainer.querySelectorAll('.global-search-result').forEach(el => {
+    el.addEventListener('click', () => {
+      const type = el.dataset.type;
+      const id = el.dataset.id;
+      closeGlobalSearch();
+      if (type === 'folder') {
+        enterFolder(id, folderMap.get(id)?.name || 'Folder');
+      } else {
+        openDiscourse(id);
+      }
+    });
+  });
+}
+/* FAB */
+let fabOpen = false;
+
+function toggleFab() {
+  fabOpen = !fabOpen;
+  document.getElementById('fab-menu').classList.toggle('open', fabOpen);
+  document.getElementById('fab-main').classList.toggle('open', fabOpen);
+}
+
+function closeFab() {
+  fabOpen = false;
+  document.getElementById('fab-menu').classList.remove('open');
+  document.getElementById('fab-main').classList.remove('open');
+}
+/* FORMATTING */
+function applyFormat(cfg) {
+  const ta = document.getElementById('content-textarea');
+  if (!ta) return;
+  const start = ta.selectionStart;
+  const end   = ta.selectionEnd;
+  const selected = ta.value.slice(start, end);
+  const before = ta.value.slice(0, start);
+  const after  = ta.value.slice(end);
+  let newText = '';
+  let cursorPos = 0;
+
+  if (cfg.insert) {
+    newText = before + cfg.insert + after;
+    cursorPos = start + cfg.insert.length;
+} else if (cfg.wrap) {
+    if (selected) {
+      newText = before + cfg.wrap[0] + selected + cfg.wrap[1] + after;
+      cursorPos = start + cfg.wrap[0].length + selected.length + cfg.wrap[1].length;
+    } else {
+      newText = before + cfg.wrap[0] + cfg.wrap[1] + after;
+      cursorPos = start + cfg.wrap[0].length;
+    }
+  } else if (cfg.block) {
+    if (selected) {
+      newText = before + cfg.block + selected + cfg.end + after;
+      cursorPos = start + cfg.block.length + selected.length + cfg.end.length;
+    } else {
+      newText = before + cfg.block + cfg.end + after;
+      cursorPos = start + cfg.block.length;
+    }
+  } else if (cfg.line) {
+    const lineStart = before.lastIndexOf('\n') + 1;
+    const linePrefix = ta.value.slice(lineStart, start);
+    if (linePrefix.startsWith(cfg.line)) {
+      newText = ta.value.slice(0, lineStart) + linePrefix.slice(cfg.line.length) + ta.value.slice(start);
+      cursorPos = start - cfg.line.length;
+    } else {
+      newText = ta.value.slice(0, lineStart) + cfg.line + ta.value.slice(lineStart);
+      cursorPos = start + cfg.line.length;
+    }
+  }
+
+  ta.value = newText;
+  ta.setSelectionRange(cursorPos, cursorPos);
+  ta.focus();
+}
+
+/* QUICK CAPTURE */
+async function openQuickCapture() {
+  const folderSelect = document.getElementById('capture-folder');
+  folderSelect.innerHTML = '<option value="">-- Choose folder --</option>';
+
+  const folders = await getFolders();
+  folders.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = f.name;
+    if (f.id === currentFolderId) opt.selected = true;
+    folderSelect.appendChild(opt);
+  });
+
+  // Add "New folder..." option
+  const newOpt = document.createElement('option');
+  newOpt.value = '__new__';
+  newOpt.textContent = '+ New folder...';
+  folderSelect.appendChild(newOpt);
+
+      document.getElementById('capture-title').value = '';
+  document.getElementById('capture-title').dataset.userEdited = '';
+  document.getElementById('capture-body').value = '';
+  _captureSaving = false;
+
+  document.getElementById('capture-modal').classList.add('visible');
+  document.getElementById('cosm-overlay').classList.add('active');
+  setTimeout(() => document.getElementById('capture-body').focus(), 100);
+}
+
+function closeQuickCapture() {
+  document.getElementById('capture-modal').classList.remove('visible');
+  closeOverlay();
+}
+
+let _captureSaving = false;
+
+async function confirmQuickCapture() {
+  if (_captureSaving) return;
+  _captureSaving = true;
+
+  try {
+    const title = document.getElementById('capture-title').value.trim() || 'Untitled Capture';
+    const raw_text = document.getElementById('capture-body').value.trim();
+        if (!raw_text) { showToast('Nothing to capture'); return; }
+    let folderId = document.getElementById('capture-folder').value || currentFolderId || null;
+    let isNewFolder = false;
+    let newFolderName = '';
+
+    if (folderId === '__new__') {
+      newFolderName = document.getElementById('capture-new-folder-input').value.trim();
+            if (!newFolderName) { showToast('Type a folder name first'); return; }
+      folderId = await createFolder(newFolderName, currentFolderId);
+      isNewFolder = true;
+    }
+
+    const now = Date.now();
+        await dbPut('cosm_discourses', {
+      id: 'n_' + now,
+      title,
+      raw_text,
+      folder_id: folderId,
+      source_link: null,
+      item_type: 'note',
+      created_at: now,
+      updated_at: now
+    });
+
+    closeQuickCapture();
+    haptic('heavy');
+    
+    if (isNewFolder) {
+      // jump once, after the note exists
+      enterFolder(folderId, newFolderName);
+    } else {
+      await renderTableView();
+    }
+      showToast('Captured ✦');
+  } catch (err) {
+    console.error('Capture failed:', err);
+    showToast('Capture failed');
+  } finally {
+    _captureSaving = false;
+  }
+}
+
+
+/* UTILS */
+function haptic(type) { 
+  try { if ('vibrate' in navigator) navigator.vibrate(type === 'heavy' ? 50 : 20); } 
+  catch(e) {} 
+}
+
+function escHtml(str) {
+if (!str) return "";
+return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+/* KEYBOARD SHORTCUTS */
+document.addEventListener("keydown", (e) => {
+if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+e.preventDefault();
+if (currentView === 'lighthouse') saveCurrentDiscourse();
+}
+if (e.key === "Escape" && currentView === 'lighthouse') {
+goToTable();
+}
+if (e.key === "Enter" && document.getElementById("folder-modal").classList.contains("visible")) {
+confirmNewFolder();
+}
+if (e.key === "Enter" && document.getElementById("rename-modal").classList.contains("visible")) {
+confirmRename();
+}
+if (e.key === "Enter" && document.getElementById("move-modal").classList.contains("visible")) {
+confirmMove();
+}
+if (e.key === "Escape" && document.getElementById("global-search-modal").classList.contains("visible")) {
+closeGlobalSearch();
+}
+});
+
+/* SERVICE WORKER */
+if ('serviceWorker' in navigator) {
+navigator.serviceWorker.register('/sw.js');
+}
+
+/* GLOBAL API: called from Sanctuary */
+window.cosmOSPinDisc = async function({ title, raw_text, source_link, backlink }) {
+const disc = await createDiscourse({ title, raw_text, source_link: JSON.stringify(source_link) });
+if (backlink) {
+const blId = "bl_" + Date.now();
+await dbPut("cosm_backlinks", { id: blId, discourse_id: disc.id, ...backlink, created_at: Date.now() });
+}
+return disc.id;
+};
+</script>
+
+</body>
+</html>
