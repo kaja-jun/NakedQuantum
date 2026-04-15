@@ -1,13 +1,13 @@
 {
-  "name": "Quantum Sanctuary",
-  "short_name": "Sanctuary",
-  "description": "PhiloQua — Sanctuary + cosmOS",
+  "name": "NakedQuantum",
+  "short_name": "NakedQuantum",
+  "description": "The unified boundless dark container.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#050505",
-  "theme_color": "#050505",
+  "background_color": "#000000",
+  "theme_color": "#c8a050",
   "icons": [
     {
       "src": "icon-512.png",

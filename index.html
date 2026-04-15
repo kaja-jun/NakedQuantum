@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="NakedQuantum">
+<link rel="manifest" href="/manifest.json">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NakedQuantum</title>
+<style>
+:root {
+  --bg: #000000;        /* Absolute Void */
+  --surface: #0a0a0a;   /* Deep Shadow */
+  --surface2: #111111;  /* Lighter Shadow */
+  --border: #1f1f1f;    /* Stealth Border */
+  --accent: #c8a050;    /* The Gold Firefly */
+  --accent-dim: #8a6e35;
+  --text: #ccc5b9;      /* Bone White */
+  --muted: #6b6560;
+  --danger: #8a3030;
+  --font-serif: Georgia, serif;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* --- FIREFLY BACKGROUND --- */
+#firefly-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* --- THE VOID NAVIGATION --- */
+.nq-header {
+  height: 56px;
+  background: #000;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 1000;
+  flex-shrink: 0;
+}
+
+.nq-wordmark {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  font-weight: 900;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.nav-toggle {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-btn.active {
+  background: var(--accent);
+  color: #000;
+}
+
+/* --- VIEW SYSTEM --- */
+.view-host {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.view-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  will-change: transform, opacity;
+  background: transparent;
+}
+
+.view-panel.hidden {
+  transform: translateX(50px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- SOUP VIEW (ARCHIVE) --- */
+.soup-view {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --- SANCTUARY VIEW (ENCOUNTER) --- */
+.sanctuary-view {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- UNIFIED FAB --- */
+.fab-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2000;
+}
+
+.fab-main {
+  width: 56px;
+  height: 56px;
+  background: var(--accent);
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: none;
+}
+
+.fab-main.open {
+  transform: rotate(45deg);
+}
+
+.fab-menu {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  transform: translateY(20px);
+}
+
+.fab-menu.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.fab-item {
+  width: 44px;
+  height: 44px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.fab-label {
+  position: absolute;
+  right: 56px;
+  background: var(--surface2);
+  color: var(--text);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  border: 1px solid var(--border);
+}
+
+/* --- PLACEHOLDERS & EMPTY STATES --- */
+.placeholder-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 40px;
+}
+
+.placeholder-center h1 {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  font-weight: normal;
+}
+
+.placeholder-center p {
+  opacity: 0.5;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* --- SOUP LIST STYLES --- */
+.soup-list {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.soup-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.soup-item:active {
+  background: var(--surface2);
+}
+
+.soup-item-icon {
+  font-size: 20px;
+  color: var(--accent);
+  opacity: 0.7;
+}
+
+.soup-item-info {
+  flex: 1;
+}
+
+.soup-item-name {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.soup-item-meta {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* --- BREADCRUMBS --- */
+.breadcrumbs {
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+}
+
+.breadcrumb-item:hover {
+  color: var(--accent);
+}
+
+/* --- EDITOR --- */
+.editor-view {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.editor-view.open {
+  transform: translateY(0);
+}
+
+.editor-header {
+  height: 56px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.editor-title-input {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 16px;
+  font-family: var(--font-serif);
+  flex: 1;
+  outline: none;
+}
+
+.editor-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.editor-textarea {
+  width: 100%;
+  height: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  font-family: var(--font-serif);
+}
+
+/* --- TOAST --- */
+#nq-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: #000;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 900;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+/* --- MODALS --- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(4px);
+  z-index: 2500;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 400px;
+  padding: 24px;
+  z-index: 2600;
+  display: none;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal.visible {
+  display: block;
+}
+
+.modal h2 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  color: var(--accent);
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.modal input, .modal select, .modal textarea {
+  width: 100%;
+  background: #000;
+  border: 1px solid var(--border);
+  color: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  outline: none;
+  font-family: inherit;
+}
+
+.modal-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.modal-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+.modal-btn.primary {
+  background: var(--accent);
+  color: #000;
+}
+
+.modal-btn.secondary {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* --- SANCTUARY CHAT --- */
+#chat-box {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.msg {
+  display: flex;
+  gap: 12px;
+}
+
+.msg-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background: var(--surface);
+  flex-shrink: 0;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.msg-content-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.msg-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+
+.msg-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  font-family: var(--font-serif);
+}
+
+.chat-input-area {
+  padding: 16px;
+  background: #000;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.chat-textarea {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 15px;
+  resize: none;
+  outline: none;
+  max-height: 120px;
+  font-family: inherit;
+}
+
+.chat-send-btn {
+  background: var(--accent);
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* --- CHARACTER SELECT --- */
+.char-selector {
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow-x: auto;
+}
+
+.char-chip {
+  padding: 6px 12px;
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.char-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+</style>
+</head>
+<body>
+
+<canvas id="firefly-canvas"></canvas>
+
+<div class="nq-header">
+  <div class="nq-wordmark">NakedQuantum</div>
+  
+  <div class="nav-toggle">
+    <button class="nav-btn active" id="btn-mode-soup">The Soup</button>
+    <button class="nav-btn" id="btn-mode-sanctuary">The Sanctuary</button>
+  </div>
+
+  <div style="display:flex; gap:8px;">
+    <button class="nav-btn" style="border:1px solid var(--border); padding:6px; font-size: 14px" id="btn-global-sync" title="Akashic Sync">∞</button>
+  </div>
+</div>
+
+<div class="view-host">
+  <!-- THE SOUP (Archive) -->
+  <div class="view-panel soup-view" id="view-soup">
+    <div id="soup-breadcrumbs" class="breadcrumbs"></div>
+    <div id="soup-content" class="soup-list">
+      <div class="placeholder-center">
+        <h1>The Soup</h1>
+        <p>The boundless dark container.<br>Awaiting the firefly.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- THE SANCTUARY (Encounter) -->
+  <div class="view-panel sanctuary-view hidden" id="view-sanctuary">
+    <div class="char-selector" id="char-selector"></div>
+    <div id="chat-box">
+      <div class="placeholder-center">
+        <h1>The Sanctuary</h1>
+        <p>The energetic spring.<br>Enter the encounter.</p>
+      </div>
+    </div>
+    <div class="chat-input-area" id="chat-input-area" style="display:none;">
+      <textarea class="chat-textarea" id="chat-input" placeholder="Whisper into the void..." rows="1"></textarea>
+      <button class="chat-send-btn" id="btn-send">✦</button>
+    </div>
+  </div>
+</div>
+
+<div class="fab-container">
+  <div class="fab-menu" id="fab-menu"></div>
+  <button class="fab-main" id="fab-main">＋</button>
+</div>
+
+<!-- EDITOR -->
+<div class="editor-view" id="editor-view">
+  <div class="editor-header">
+    <button class="nav-btn" id="btn-editor-close">Close</button>
+    <input type="text" class="editor-title-input" id="editor-title" placeholder="Untitled Discourse">
+    <button class="nav-btn" id="btn-editor-save" style="color:var(--accent)">Save</button>
+  </div>
+  <div class="editor-content">
+    <textarea class="editor-textarea" id="editor-body" placeholder="Begin writing..."></textarea>
+  </div>
+</div>
+
+<div id="nq-toast"></div>
+
+<!-- OVERLAY & MODALS -->
+<div class="overlay" id="nq-overlay"></div>
+
+<div class="modal" id="modal-folder">
+  <h2>New Folder</h2>
+  <input type="text" id="input-folder-name" placeholder="Name the void...">
+  <div class="modal-btns">
+    <button class="modal-btn secondary" onclick="closeModals()">Cancel</button>
+    <button class="modal-btn primary" id="btn-confirm-folder">Create</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-forge">
+  <h2 id="forge-title">Character Forge</h2>
+  <input type="text" id="forge-name" placeholder="Name">
+  <textarea id="forge-bio" placeholder="Backstory / Bio" rows="3"></textarea>
+  <textarea id="forge-personality" placeholder="Personality" rows="2"></textarea>
+  <textarea id="forge-scenario" placeholder="Current Scenario" rows="2"></textarea>
+  <div class="modal-btns">
+    <button class="modal-btn secondary" onclick="closeModals()">Cancel</button>
+    <button class="modal-btn primary" id="btn-confirm-forge">Save</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-search">
+  <h2>Search</h2>
+  <input type="text" id="input-search" placeholder="Type to search the void...">
+  <div id="search-results" style="max-height: 200px; overflow-y: auto; margin-bottom: 16px;"></div>
+  <div class="modal-btns">
+    <button class="modal-btn secondary" onclick="closeModals()">Close</button>
+  </div>
+</div>
+
+<div class="modal" id="modal-settings">
+  <h2>Sanctuary Settings</h2>
+  <label style="font-size: 12px; color: var(--muted)">OpenRouter API Key</label>
+  <input type="password" id="input-api-key" placeholder="sk-or-...">
+  <label style="font-size: 12px; color: var(--muted)">Active Model</label>
+  <input type="text" id="input-model" placeholder="google/gemini-2.0-flash-001">
+  <div class="modal-btns">
+    <button class="modal-btn secondary" onclick="closeModals()">Cancel</button>
+    <button class="modal-btn primary" id="btn-save-settings">Save</button>
+  </div>
+</div>
+
+<script>
+/* --- CONSTANTS & STATE --- */
+let db = null;
+let currentMode = 'soup';
+let currentFolderId = null;
+let currentDiscourseId = null;
+let activeCharacterId = null;
+let fabOpen = false;
+
+/* --- FIREFLY MANAGER --- */
+class FireflyManager {
+  constructor() {
+    this.canvas = document.getElementById('firefly-canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.particles = [];
+    this.density = 20;
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+    this.animate();
+  }
+  resize() {
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+  }
+  setDensity(len) {
+    this.density = Math.min(250, 20 + Math.floor(len / 40));
+  }
+  animate() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    while (this.particles.length < this.density) {
+      this.particles.push({
+        x: Math.random() * this.canvas.width,
+        y: Math.random() * this.canvas.height,
+        size: Math.random() * 2 + 0.5,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        alpha: Math.random() * 0.5 + 0.2,
+        pulse: Math.random() * 0.02 + 0.005
+      });
+    }
+    if (this.particles.length > this.density) this.particles.splice(this.density);
+    this.particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.alpha += p.pulse;
+      if (p.alpha > 0.8 || p.alpha < 0.2) p.pulse *= -1;
+      if (p.x < 0) p.x = this.canvas.width; if (p.x > this.canvas.width) p.x = 0;
+      if (p.y < 0) p.y = this.canvas.height; if (p.y > this.canvas.height) p.y = 0;
+      this.ctx.beginPath();
+      this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      this.ctx.fillStyle = `rgba(200, 160, 80, ${p.alpha})`;
+      this.ctx.fill();
+    });
+    requestAnimationFrame(() => this.animate());
+  }
+}
+const fireflyManager = new FireflyManager();
+
+/* --- DB INITIALIZATION --- */
+async function initDB() {
+  return new Promise((resolve) => {
+    const req = indexedDB.open("NakedQuantumDB", 3);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      const stores = ["folders", "discourses", "mosaic", "backlinks", "characters", "history", "summaries"];
+      stores.forEach(s => {
+        if (!d.objectStoreNames.contains(s)) {
+          const os = d.createObjectStore(s, { keyPath: "id", autoIncrement: (s === 'history' || s === 'summaries') });
+          if (s === 'discourses') os.createIndex("folder_id", "folder_id");
+          if (s === 'history' || s === 'summaries') os.createIndex("charId", "charId");
+        }
+      });
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+  });
+}
+
+/* --- MIGRATION --- */
+async function migrateLegacy() {
+  const legacyDBs = ["SanctuaryDB_v2", "NakedQuantumDB"];
+  for (const dbName of legacyDBs) {
+    try {
+      const oldReq = indexedDB.open(dbName);
+      oldReq.onsuccess = async (e) => {
+        const oldDB = e.target.result;
+        const stores = oldDB.objectStoreNames;
+        for (const s of stores) {
+          const tx = oldDB.transaction(s, "readonly");
+          const data = await new Promise(r => {
+            const req = tx.objectStore(s).getAll();
+            req.onsuccess = () => r(req.result);
+          });
+          
+          let targetStore = s.replace("cosm_", "").replace("_tiles", "");
+          if (s === 'lenses') targetStore = 'characters';
+          if (s === 'chat_history') targetStore = 'history';
+          if (s === 'watcher_logs') targetStore = 'summaries';
+          
+          if (db.objectStoreNames.contains(targetStore)) {
+            for (const item of data) {
+              const putTx = db.transaction(targetStore, "readwrite");
+              putTx.objectStore(targetStore).put(item);
+            }
+          }
+        }
+        oldDB.close();
+      };
+    } catch (err) {}
+  }
+}
+
+/* --- DB WRAPPERS --- */
+const dbCall = (store, method, ...args) => new Promise(r => {
+  const tx = db.transaction(store, "readwrite");
+  const req = tx.objectStore(store)[method](...args);
+  req.onsuccess = () => r(req.result);
+  req.onerror = () => r(null);
+});
+
+/* --- UI HELPERS --- */
+const showToast = (msg) => {
+  const t = document.getElementById('nq-toast');
+  t.textContent = msg; t.style.opacity = "1";
+  setTimeout(() => t.style.opacity = "0", 2000);
+};
+const closeModals = () => {
+  document.getElementById('nq-overlay').classList.remove('active');
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('visible'));
+  fabOpen = false; updateFAB();
+};
+const openModal = (id) => {
+  document.getElementById('nq-overlay').classList.add('active');
+  document.getElementById(id).classList.add('visible');
+};
+
+/* --- NAVIGATION --- */
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id === 'btn-mode-' + mode));
+  document.getElementById('view-soup').classList.toggle('hidden', mode !== 'soup');
+  document.getElementById('view-sanctuary').classList.toggle('hidden', mode !== 'sanctuary');
+  if (mode === 'soup') renderSoup(); else renderSanctuary();
+  updateFAB();
+}
+
+/* --- SOUP LOGIC --- */
+async function renderSoup() {
+  const container = document.getElementById('soup-content');
+  const breadcrumbs = document.getElementById('soup-breadcrumbs');
+  let bcHtml = `<span class="breadcrumb-item" onclick="enterFolder(null)">Soup</span>`;
+  if (currentFolderId) {
+    const f = await dbCall('folders', 'get', currentFolderId);
+    if (f) bcHtml += ` ◈ <span class="breadcrumb-item">${f.name}</span>`;
+  }
+  breadcrumbs.innerHTML = bcHtml;
+
+  const folders = (await dbCall('folders', 'getAll')).filter(f => f.parent_id === currentFolderId);
+  const discourses = (await dbCall('discourses', 'getAll')).filter(d => d.folder_id === currentFolderId);
+
+  if (!folders.length && !discourses.length) {
+    container.innerHTML = `<div class="placeholder-center"><h1>The Soup is Clear</h1><p>No fragments found in this depth.</p></div>`;
+    fireflyManager.setDensity(0); return;
+  }
+
+  let html = '', totalLen = 0;
+  folders.forEach(f => {
+    html += `<div class="soup-item" onclick="enterFolder('${f.id}')"><div class="soup-item-icon">◈</div><div class="soup-item-info"><div class="soup-item-name">${f.name}</div><div class="soup-item-meta">Folder</div></div></div>`;
+  });
+  discourses.forEach(d => {
+    totalLen += (d.raw_text || "").length;
+    html += `<div class="soup-item" onclick="openDiscourse('${d.id}')"><div class="soup-item-icon">✦</div><div class="soup-item-info"><div class="soup-item-name">${d.title || 'Untitled'}</div><div class="soup-item-meta">${new Date(d.updated_at).toLocaleDateString()}</div></div></div>`;
+  });
+  container.innerHTML = html;
+  fireflyManager.setDensity(totalLen);
+}
+
+const enterFolder = (id) => { currentFolderId = id; renderSoup(); };
+
+async function openDiscourse(id) {
+  currentDiscourseId = id;
+  const d = await dbCall('discourses', 'get', id);
+  if (!d) return;
+  document.getElementById('editor-title').value = d.title || '';
+  document.getElementById('editor-body').value = d.raw_text || '';
+  document.getElementById('editor-view').classList.add('open');
+  fireflyManager.setDensity(d.raw_text?.length || 0);
+}
+
+async function saveDiscourse() {
+  const id = currentDiscourseId || 'd_' + Date.now();
+  const d = {
+    id, title: document.getElementById('editor-title').value || 'Untitled',
+    raw_text: document.getElementById('editor-body').value,
+    folder_id: currentFolderId, updated_at: Date.now()
+  };
+  await dbCall('discourses', 'put', d);
+  showToast("Discourse Anchored");
+  renderSoup();
+}
+
+/* --- SANCTUARY LOGIC --- */
+async function renderSanctuary() {
+  const characters = await dbCall('characters', 'getAll');
+  const selector = document.getElementById('char-selector');
+  const chatBox = document.getElementById('chat-box');
+  const inputArea = document.getElementById('chat-input-area');
+
+  if (!characters.length) {
+    selector.innerHTML = '';
+    chatBox.innerHTML = `<div class="placeholder-center"><h1>The Sanctuary</h1><p>The energetic spring is silent.<br>Create a character to begin the encounter.</p></div>`;
+    inputArea.style.display = 'none';
+    fireflyManager.setDensity(0); return;
+  }
+
+  if (!activeCharacterId) activeCharacterId = characters[0].id;
+  selector.innerHTML = characters.map(c => `<div class="char-chip ${c.id === activeCharacterId ? 'active' : ''}" onclick="selectChar('${c.id}')">${c.name}</div>`).join('');
+  inputArea.style.display = 'flex';
+  renderChat();
+}
+
+const selectChar = (id) => { activeCharacterId = id; renderSanctuary(); };
+
+async function renderChat() {
+  if (!activeCharacterId) return;
+  const char = await dbCall('characters', 'get', activeCharacterId);
+  const history = (await dbCall('history', 'getAll')).filter(h => h.charId === activeCharacterId);
+  const chatBox = document.getElementById('chat-box');
+  
+  if (!history.length) {
+    chatBox.innerHTML = `<div class="placeholder-center"><h1>Meeting ${char.name}</h1><p>${char.bio || 'Silence awaits your words.'}</p></div>`;
+    fireflyManager.setDensity(0); return;
+  }
+
+  let totalLen = 0;
+  chatBox.innerHTML = history.map(m => {
+    totalLen += m.content.length;
+    const isUser = m.role === 'user';
+    return `<div class="msg"><div class="msg-content-col"><span class="msg-label">${isUser ? 'YOU' : char.name.toUpperCase()}</span><div class="msg-text">${m.content}</div></div></div>`;
+  }).join('');
+  chatBox.scrollTop = chatBox.scrollHeight;
+  fireflyManager.setDensity(totalLen);
+}
+
+/* --- FAB MANAGEMENT --- */
+function updateFAB() {
+  const menu = document.getElementById('fab-menu');
+  const items = currentMode === 'soup' ? [
+    { label: 'New Discourse', icon: '✦', action: 'createNewDiscourse()' },
+    { label: 'New Folder', icon: '◈', action: 'openModal("modal-folder")' },
+    { label: 'Search Void', icon: '⌖', action: 'openModal("modal-search")' }
+  ] : [
+    { label: 'New Presence', icon: '👤', action: 'openForge()' },
+    { label: 'Clear Chat', icon: '✖', action: 'clearChat()' },
+    { label: 'Settings', icon: '⚙', action: 'openModal("modal-settings")' }
+  ];
+  menu.innerHTML = items.map(i => `<div class="fab-item" onclick="${i.action}"><span class="fab-label">${i.label}</span>${i.icon}</div>`).join('');
+  document.getElementById('fab-main').classList.toggle('open', fabOpen);
+  document.getElementById('fab-menu').classList.toggle('open', fabOpen);
+}
+
+const toggleFAB = () => { fabOpen = !fabOpen; updateFAB(); };
+
+function createNewDiscourse() {
+  currentDiscourseId = null;
+  document.getElementById('editor-title').value = '';
+  document.getElementById('editor-body').value = '';
+  document.getElementById('editor-view').classList.add('open');
+  toggleFAB();
+}
+
+async function openForge() {
+  const char = activeCharacterId ? await dbCall('characters', 'get', activeCharacterId) : null;
+  document.getElementById('forge-name').value = char?.name || '';
+  document.getElementById('forge-bio').value = char?.bio || '';
+  document.getElementById('forge-personality').value = char?.personality || '';
+  document.getElementById('forge-scenario').value = char?.scenario || '';
+  openModal('modal-forge');
+}
+
+async function clearChat() {
+  if (!confirm("Vanish this encounter's memory?")) return;
+  const history = await dbCall('history', 'getAll');
+  for (const h of history) if (h.charId === activeCharacterId) await dbCall('history', 'delete', h.id);
+  renderChat(); toggleFAB();
+}
+
+/* --- ACTIONS --- */
+document.getElementById('btn-mode-soup').onclick = () => switchMode('soup');
+document.getElementById('btn-mode-sanctuary').onclick = () => switchMode('sanctuary');
+document.getElementById('fab-main').onclick = toggleFAB;
+document.getElementById('btn-editor-close').onclick = () => { document.getElementById('editor-view').classList.remove('open'); currentDiscourseId = null; };
+document.getElementById('btn-editor-save').onclick = () => { saveDiscourse(); document.getElementById('editor-view').classList.remove('open'); };
+
+document.getElementById('btn-confirm-folder').onclick = async () => {
+  const name = document.getElementById('input-folder-name').value;
+  if (!name) return;
+  await dbCall('folders', 'put', { id: 'f_' + Date.now(), name, parent_id: currentFolderId, created_at: Date.now() });
+  document.getElementById('input-folder-name').value = ''; closeModals(); renderSoup();
+};
+
+document.getElementById('btn-confirm-forge').onclick = async () => {
+  const id = activeCharacterId || 'c_' + Date.now();
+  const char = {
+    id, name: document.getElementById('forge-name').value || 'Unnamed',
+    bio: document.getElementById('forge-bio').value,
+    personality: document.getElementById('forge-personality').value,
+    scenario: document.getElementById('forge-scenario').value
+  };
+  await dbCall('characters', 'put', char);
+  activeCharacterId = id; closeModals(); renderSanctuary();
+};
+
+document.getElementById('btn-save-settings').onclick = () => {
+  localStorage.setItem('nq_api_key', document.getElementById('input-api-key').value);
+  localStorage.setItem('nq_model', document.getElementById('input-model').value);
+  closeModals(); showToast("Settings Anchored");
+};
+
+document.getElementById('btn-send').onclick = async () => {
+  const input = document.getElementById('chat-input');
+  const content = input.value.trim();
+  if (!content || !activeCharacterId) return;
+  
+  const char = await dbCall('characters', 'get', activeCharacterId);
+  await dbCall('history', 'add', { charId: activeCharacterId, role: 'user', content, timestamp: Date.now() });
+  input.value = ''; renderChat();
+
+  const key = localStorage.getItem('nq_api_key');
+  const model = localStorage.getItem('nq_model') || 'google/gemini-2.0-flash-001';
+  
+  if (!key) {
+    setTimeout(async () => {
+      await dbCall('history', 'add', { charId: activeCharacterId, role: 'assistant', content: "[API Key missing. Settings are in the FAB menu.]", timestamp: Date.now() });
+      renderChat();
+    }, 500);
+    return;
+  }
+
+  try {
+    const history = (await dbCall('history', 'getAll')).filter(h => h.charId === activeCharacterId).slice(-10);
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model, messages: [
+          { role: "system", content: `Character: ${char.name}\nBio: ${char.bio}\nPersonality: ${char.personality}\nScenario: ${char.scenario}\n\nStrictly Roleplay as ${char.name}.` },
+          ...history.map(h => ({ role: h.role, content: h.content }))
+        ]
+      })
+    });
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || "The void is silent.";
+    await dbCall('history', 'add', { charId: activeCharacterId, role: 'assistant', content: reply, timestamp: Date.now() });
+    renderChat();
+  } catch (err) {
+    showToast("Connection Lost");
+  }
+};
+
+document.getElementById('btn-global-sync').onclick = async () => {
+  showToast("Akashic Sync Initiated...");
+  // Sync logic would go here
+  setTimeout(() => showToast("Akashic Synced ◈"), 1000);
+};
+
+/* --- SEARCH --- */
+document.getElementById('input-search').oninput = async (e) => {
+  const q = e.target.value.toLowerCase();
+  const results = document.getElementById('search-results');
+  if (!q) { results.innerHTML = ''; return; }
+  
+  const folders = (await dbCall('folders', 'getAll')).filter(f => f.name.toLowerCase().includes(q));
+  const discourses = (await dbCall('discourses', 'getAll')).filter(d => (d.title || '').toLowerCase().includes(q) || (d.raw_text || '').toLowerCase().includes(q));
+  
+  results.innerHTML = [
+    ...folders.map(f => `<div class="soup-item" onclick="enterFolder('${f.id}');closeModals()"><div class="soup-item-icon">◈</div><div>${f.name} (Folder)</div></div>`),
+    ...discourses.map(d => `<div class="soup-item" onclick="openDiscourse('${d.id}');closeModals()"><div class="soup-item-icon">✦</div><div>${d.title || 'Untitled'} (Discourse)</div></div>`)
+  ].join('');
+};
+
+/* --- INIT --- */
+initDB().then(async () => {
+  await migrateLegacy();
+  const characters = await dbCall('characters', 'getAll');
+  if (!characters.length) {
+    await dbCall('characters', 'put', { id: 'c_def', name: 'The Void', bio: 'A silent observer.', personality: 'Calm', scenario: 'The beginning.' });
+  }
+  document.getElementById('input-api-key').value = localStorage.getItem('nq_api_key') || '';
+  document.getElementById('input-model').value = localStorage.getItem('nq_model') || 'google/gemini-2.0-flash-001';
+  switchMode('soup');
+});
+</script>
+</body>
+</html>

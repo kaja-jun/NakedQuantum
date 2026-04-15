@@ -1,10 +1,9 @@
-const CACHE = "philoqua-v2";
+const CACHE = "nq-v1";
 const FILES = [
   "/",
-  "/cosmos",
+  "/index.html",
   "/manifest.json",
-  "/icon-512.png",
-  "/splash.png"
+  "/icon-512.png"
 ];
 
 self.addEventListener("install", e => {
