@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum</title>
+<title>NakedQuantum Beta</title>
 <style>
 :root {
   --bg: #000000;
@@ -69,33 +69,9 @@ body {
   padding: 8px 0;
   transition: opacity 0.15s;
 }
+.nq-wordmark.pressing { opacity: 0.4; }
 
-.nq-wordmark.pressing {
-  opacity: 0.4;
-}
-
-/* Mode indicator dot — tiny, under the wordmark */
-.nq-mode-dot {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.nq-mode-label {
-  font-size: 8px;
-  letter-spacing: 2px;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-top: 2px;
-}
-
-/* --- HEADER ICON BUTTONS (cosmiOS style) --- */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+.header-actions { display: flex; align-items: center; gap: 8px; }
 .hdr-btn {
   width: 36px;
   height: 36px;
@@ -111,11 +87,7 @@ body {
   transition: background 0.2s, border-color 0.2s;
   flex-shrink: 0;
 }
-
-.hdr-btn:active {
-  background: var(--surface2);
-  border-color: var(--accent-dim);
-}
+.hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
 
 /* --- VIEW SYSTEM --- */
 .view-host {
@@ -134,461 +106,201 @@ body {
   will-change: transform, opacity;
   background: transparent;
 }
-
 .view-panel.hidden {
   transform: translateX(50px);
   opacity: 0;
   pointer-events: none;
 }
 
-/* --- SOUP VIEW --- */
+/* --- THE SOUP (GRID) --- */
 .soup-view {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
-
-/* --- SANCTUARY VIEW --- */
-.sanctuary-view {
-  display: flex;
-  flex-direction: column;
+.soup-surface {
+  padding: 0 16px 100px;
+}
+.section-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  opacity: 0.45;
+  font-weight: 900;
+  text-transform: uppercase;
+  padding: 14px 0 8px;
+}
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
-/* --- FAB --- */
-.fab-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 2000;
-}
-
-.fab-main {
-  width: 56px;
-  height: 56px;
-  background: var(--accent);
-  border-radius: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #000;
-  font-size: 24px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border: none;
-}
-
-.fab-main.open { transform: rotate(45deg); }
-
-.fab-menu {
-  position: absolute;
-  bottom: 70px;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.3s ease;
-  transform: translateY(20px);
-}
-
-.fab-menu.open {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-}
-
-.fab-item {
-  width: 44px;
-  height: 44px;
+/* Fix iOS selection on long-press */
+.folder-card, .fragment-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent);
-  font-size: 18px;
+  border-radius: 12px;
+  padding: 14px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: border-color 0.2s, background 0.2s;
   position: relative;
+  overflow: hidden;
+  user-select: none; 
+  -webkit-user-select: none;
+  -webkit-touch-callout: none; 
 }
+.folder-card:active, .fragment-card:active { border-color: var(--accent); background: var(--surface2); }
+.card-name { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-serif); }
+.card-meta { font-size: 10px; color: var(--muted); margin-top: 3px; }
+.card-icon { font-size: 14px; color: var(--accent); opacity: 0.6; }
 
-.fab-label {
-  position: absolute;
-  right: 56px;
-  background: var(--surface2);
-  color: var(--text);
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-  border: 1px solid var(--border);
-}
-
-/* --- PLACEHOLDERS --- */
-.placeholder-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  text-align: center;
-  padding: 40px;
-}
-
-.placeholder-center h1 {
-  font-family: var(--font-serif);
-  font-size: 24px;
-  color: var(--accent);
-  margin-bottom: 10px;
-  font-weight: normal;
-}
-
-.placeholder-center p {
-  opacity: 0.5;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-/* --- SOUP LIST — stripped down, journal style --- */
-.soup-list {
-  padding: 8px 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.soup-item {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.soup-item:first-child {
-  border-top: 1px solid var(--border);
-}
-
-.soup-item:active {
-  background: rgba(200, 160, 80, 0.04);
-}
-
-.soup-item-icon {
-  font-size: 14px;
-  color: var(--accent);
-  opacity: 0.5;
-  flex-shrink: 0;
-}
-
-.soup-item-info { flex: 1; }
-
-.soup-item-name {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text);
-  margin-bottom: 2px;
-}
-
-.soup-item-meta {
-  font-size: 11px;
-  color: var(--muted);
-}
-
-/* --- BREADCRUMBS --- */
+/* BREADCRUMBS */
 .breadcrumbs {
-  padding: 10px 20px;
+  padding: 14px 16px 8px;
   font-size: 11px;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--accent);
-  opacity: 0.6;
+  color: var(--muted);
   display: flex;
   align-items: center;
   gap: 6px;
   overflow-x: auto;
   white-space: nowrap;
 }
+.breadcrumb-item { cursor: pointer; font-weight: 700; }
+.breadcrumb-item:active { color: var(--accent); }
+.breadcrumb-current { color: var(--accent); opacity: 0.9; font-weight: 700; }
+.breadcrumb-arrow { opacity: 0.5; font-size: 10px; }
 
-.breadcrumb-item { cursor: pointer; }
-.breadcrumb-item:active { opacity: 0.5; }
-
-/* --- EDITOR --- */
-.editor-view {
+/* --- LIGHTHOUSE EDITOR --- */
+.lighthouse-overlay {
   position: fixed;
   inset: 0;
   background: var(--bg);
-  z-index: 1500;
-  display: flex;
+  z-index: 2000;
+  display: none;
   flex-direction: column;
-  transform: translateY(100%);
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
-
-.editor-view.open { transform: translateY(0); }
-
-.editor-header {
-  height: 56px;
-  padding: 0 16px;
+.lighthouse-overlay.active { display: flex; }
+.lh-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border);
+  background: #000;
 }
-
-.editor-title-input {
+.btn-back {
   background: none;
-  border: none;
-  color: var(--text);
-  font-size: 16px;
-  font-family: var(--font-serif);
-  flex: 1;
-  outline: none;
-  padding: 0 12px;
-}
-
-.editor-action-btn {
-  background: none;
-  border: none;
+  border: 1px solid var(--border);
   color: var(--muted);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  cursor: pointer;
-  padding: 6px 4px;
-}
-
-.editor-action-btn.save { color: var(--accent); }
-
-.editor-content {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.editor-textarea {
-  width: 100%;
-  height: 100%;
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 16px;
-  line-height: 1.7;
-  resize: none;
-  outline: none;
-  font-family: var(--font-serif);
-}
-
-/* --- TOAST --- */
-#nq-toast {
-  position: fixed;
-  bottom: 100px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--accent);
-  color: #000;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 900;
-  z-index: 9999;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-
-/* --- MODE SWITCH TOAST --- */
-#mode-toast {
-  position: fixed;
-  top: 72px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--surface2);
-  border: 1px solid var(--accent-dim);
-  color: var(--accent);
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  z-index: 9999;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-
-/* --- MODALS --- */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.8);
-  backdrop-filter: blur(4px);
-  z-index: 2500;
-  display: none;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.overlay.active { display: block; opacity: 1; }
-
-.modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  width: 90%;
-  max-width: 400px;
-  padding: 24px;
-  z-index: 2600;
-  display: none;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.modal.visible { display: block; }
-
-.modal h2 {
-  font-family: var(--font-serif);
-  font-size: 20px;
-  color: var(--accent);
-  margin-top: 0;
-  margin-bottom: 16px;
-}
-
-.modal input, .modal select, .modal textarea {
-  width: 100%;
-  background: #000;
-  border: 1px solid var(--border);
-  color: #fff;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  outline: none;
-  font-family: inherit;
-}
-
-.modal-btns {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.modal-btn {
-  padding: 10px 20px;
+  padding: 7px 12px;
   border-radius: 8px;
   font-weight: bold;
-  cursor: pointer;
-  border: none;
 }
+.lh-tools { display: flex; gap: 8px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+.lh-toggle-btn {
+  background: none; border: none; color: var(--muted); font-size: 11px; padding: 6px 12px; font-weight: bold;
+}
+.lh-toggle-btn.active { background: var(--surface2); color: var(--text); }
 
-.modal-btn.primary { background: var(--accent); color: #000; }
-.modal-btn.secondary { background: var(--surface2); color: var(--text); }
-
-/* --- SANCTUARY CHAT --- */
-#chat-box {
+.lh-scroll {
   flex: 1;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+}
+.lh-inner { max-width: 680px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.lh-title {
+  width: 100%; background: none; border: none; border-bottom: 1px solid var(--border);
+  color: var(--text); font-size: 22px; font-weight: 700; padding: 6px 0 12px; outline: none; font-family: var(--font-serif);
 }
 
-.msg { display: flex; gap: 12px; }
-
-.msg-content-col { flex: 1; min-width: 0; }
-
-.msg-label {
-  font-size: 9px;
-  letter-spacing: 2px;
-  font-weight: 900;
-  text-transform: uppercase;
-  color: var(--accent);
-  opacity: 0.6;
-  margin-bottom: 6px;
+.format-toolbar {
+  display: flex; align-items: center; gap: 4px; padding: 8px 4px; overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid var(--border); margin-bottom: 12px;
 }
-
-.msg-text {
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--text);
-  white-space: pre-wrap;
-  font-family: var(--font-serif);
+.format-toolbar::-webkit-scrollbar { display: none; }
+.fmt-btn {
+  background: none; border: 1px solid var(--border); color: var(--muted); font-size: 12px; font-weight: 700;
+  padding: 5px 10px; border-radius: 7px; white-space: nowrap; font-family: var(--font-serif);
 }
+.fmt-btn:active { background: var(--surface2); color: var(--accent); }
+.fmt-divider { width: 1px; height: 20px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
 
-.chat-input-area {
-  padding: 16px;
-  background: #000;
-  border-top: 1px solid var(--border);
+.content-textarea {
+  width: 100%; min-height: 320px; background: none; color: var(--text); border: none;
+  font-size: 16px; line-height: 1.8; outline: none; resize: none; font-family: var(--font-serif);
+}
+.content-view {
+  display: none; background: none; color: var(--text); font-size: 16px; line-height: 1.8; font-family: var(--font-serif); min-height: 200px;
+}
+.content-view h1, .content-view h2, .content-view h3 { color: var(--accent); margin-bottom: 8px; }
+.content-view p { margin-bottom: 14px; }
+.content-view blockquote { border-left: 2px solid var(--accent-dim); padding-left: 14px; color: var(--muted); font-style: italic; }
+
+/* --- FAB --- */
+.fab-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1500;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
   align-items: flex-end;
-}
-
-.chat-textarea {
-  flex: 1;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  font-size: 15px;
-  resize: none;
-  outline: none;
-  max-height: 120px;
-  font-family: inherit;
-}
-
-.chat-send-btn {
-  background: var(--accent);
-  border: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #000;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-/* --- CHARACTER SELECT --- */
-.char-selector {
-  padding: 8px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
   gap: 12px;
-  overflow-x: auto;
 }
-
-.char-chip {
-  padding: 6px 12px;
-  background: #000;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  font-size: 11px;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s;
+.fab-main {
+  width: 52px; height: 52px; background: var(--surface2); border: 1px solid var(--accent-dim); border-radius: 26px;
+  display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+.fab-main.open { transform: rotate(45deg); background: var(--accent); color: #000; }
 
-.char-chip.active {
-  border-color: var(--accent);
-  color: var(--accent);
+.fab-menu {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  opacity: 0; pointer-events: none; transform: translateY(10px); transition: all 0.3s ease;
+}
+.fab-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.fab-item {
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  font-size: 13px; font-weight: bold; padding: 10px 16px; border-radius: 20px; white-space: nowrap; cursor: pointer;
+}
+.fab-item:active { border-color: var(--accent); }
+
+/* --- SANCTUARY VIEW --- */
+.sanctuary-view { display: flex; flex-direction: column; }
+
+/* --- MODALS & TOASTS --- */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 2500; display: none; opacity: 0; transition: opacity 0.3s;
+}
+.overlay.active { display: block; opacity: 1; }
+.modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; width: 90%; max-width: 340px; padding: 24px; z-index: 2600; display: none; flex-direction: column; gap: 12px;
+}
+.modal.visible { display: flex; }
+.modal-title { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; margin-bottom: 8px; }
+.modal input { width: 100%; background: #000; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; outline: none; font-size: 15px;}
+.modal-btns { display: flex; gap: 10px; margin-top: 8px; }
+.modal-btn { flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; }
+.modal-btn.primary { background: var(--accent); color: #000; }
+.modal-btn.secondary { background: var(--surface2); color: var(--text); }
+.modal-btn.danger { background: var(--bg); border: 1px solid var(--danger); color: #ff6666; }
+
+#nq-toast {
+  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000;
+  padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 900; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+}
+#mode-toast {
+  position: fixed; top: 72px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent-dim);
+  color: var(--accent); padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+  z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none;
 }
 </style>
 </head>
@@ -596,13 +308,9 @@ body {
 
 <canvas id="firefly-canvas"></canvas>
 
+<!-- HEADER -->
 <div class="nq-header">
-  <!-- WORDMARK — long press to switch mode -->
-  <div class="nq-mode-dot">
-    <div class="nq-wordmark" id="nq-wordmark">NakedQuantum</div>
-  </div>
-
-  <!-- CONTEXT-AWARE HEADER BUTTONS -->
+  <div class="nq-wordmark" id="nq-wordmark">NakedQuantum</div>
   <div class="header-actions" id="header-actions"></div>
 </div>
 
@@ -610,55 +318,69 @@ body {
   <!-- THE SOUP -->
   <div class="view-panel soup-view" id="view-soup">
     <div id="soup-breadcrumbs" class="breadcrumbs"></div>
-    <div id="soup-content" class="soup-list">
-      <div class="placeholder-center">
-        <h1>The Soup</h1>
-        <p>The boundless dark container.<br>Awaiting the firefly.</p>
-      </div>
-    </div>
+    <div id="soup-content" class="soup-surface"></div>
   </div>
 
-  <!-- THE SANCTUARY -->
+  <!-- THE SANCTUARY (Phase 2 placeholder) -->
   <div class="view-panel sanctuary-view hidden" id="view-sanctuary">
-    <div class="char-selector" id="char-selector"></div>
-    <div id="chat-box">
-      <div class="placeholder-center">
-        <h1>The Sanctuary</h1>
-        <p>The energetic spring.<br>Enter the encounter.</p>
-      </div>
-    </div>
-    <div class="chat-input-area" id="chat-input-area" style="display:none;">
-      <textarea class="chat-textarea" id="chat-input" placeholder="Whisper into the void..." rows="1"></textarea>
-      <button class="chat-send-btn" id="btn-send">✦</button>
+    <div style="padding:40px; text-align:center; opacity:0.5;">
+      <h1 style="color:var(--accent); font-family:var(--font-serif); font-weight:normal;">The Sanctuary</h1>
+      <p>The encounter space.<br>Container logic arriving in Phase 2.</p>
     </div>
   </div>
 </div>
 
-<div class="fab-container">
-  <div class="fab-menu" id="fab-menu"></div>
+<!-- FAB -->
+<div class="fab-container" id="fab-container">
+  <div class="fab-menu" id="fab-menu">
+    <div class="fab-item" id="btn-fab-folder">◈ New Folder</div>
+    <div class="fab-item" id="btn-fab-frag" style="color:var(--text);">✦ New Fragment</div>
+  </div>
   <button class="fab-main" id="fab-main">＋</button>
 </div>
 
-<!-- EDITOR -->
-<div class="editor-view" id="editor-view">
-  <div class="editor-header">
-    <button class="editor-action-btn" id="btn-editor-close">Close</button>
-    <input type="text" class="editor-title-input" id="editor-title" placeholder="Untitled Discourse">
-    <button class="editor-action-btn save" id="btn-editor-save">Save</button>
+<!-- LIGHTHOUSE EDITOR -->
+<div class="lighthouse-overlay" id="lh-overlay">
+  <div class="lh-nav">
+    <button class="btn-back" id="btn-lh-back">← Soup</button>
+    <div class="lh-tools">
+        <button class="lh-toggle-btn active" id="btn-lh-write">Write</button>
+        <button class="lh-toggle-btn" id="btn-lh-view">View</button>
+    </div>
   </div>
-  <div class="editor-content">
-    <textarea class="editor-textarea" id="editor-body" placeholder="Begin writing..."></textarea>
+  <div class="lh-scroll">
+    <div class="lh-inner">
+      <input class="lh-title" id="lh-title" placeholder="Untitled Fragment">
+      
+      <!-- Formatting Toolbar -->
+      <div class="format-toolbar">
+        <button class="fmt-btn" data-wrap="**"><b>B</b></button>
+        <button class="fmt-btn" data-wrap="*"><i>I</i></button>
+        <button class="fmt-btn" data-wrap="<u>"><u>U</u></button>
+        <div class="fmt-divider"></div>
+        <button class="fmt-btn" data-line="# ">H1</button>
+        <button class="fmt-btn" data-line="## ">H2</button>
+        <button class="fmt-btn" data-line="### ">H3</button>
+        <div class="fmt-divider"></div>
+        <button class="fmt-btn" data-line="- ">•</button>
+        <button class="fmt-btn" data-line="1. ">1.</button>
+        <div class="fmt-divider"></div>
+        <button class="fmt-btn" data-wrap="> ">"</button>
+        <button class="fmt-btn" data-wrap="`">`c`</button>
+      </div>
+
+      <textarea class="content-textarea" id="lh-text" placeholder="Strike into the void..."></textarea>
+      <div class="content-view" id="lh-view"></div>
+    </div>
   </div>
 </div>
 
-<div id="nq-toast"></div>
-<div id="mode-toast"></div>
+<!-- MODALS -->
+<div class="overlay" id="nq-overlay" onclick="closeModals()"></div>
 
-<!-- OVERLAY & MODALS -->
-<div class="overlay" id="nq-overlay"></div>
-
+<!-- Folder Modal -->
 <div class="modal" id="modal-folder">
-  <h2>New Folder</h2>
+  <div class="modal-title">New Folder</div>
   <input type="text" id="input-folder-name" placeholder="Name the void...">
   <div class="modal-btns">
     <button class="modal-btn secondary" onclick="closeModals()">Cancel</button>
@@ -666,49 +388,38 @@ body {
   </div>
 </div>
 
-<div class="modal" id="modal-forge">
-  <h2 id="forge-title">Character Forge</h2>
-  <input type="text" id="forge-name" placeholder="Name">
-  <textarea id="forge-bio" placeholder="Backstory / Bio" rows="3"></textarea>
-  <textarea id="forge-personality" placeholder="Personality" rows="2"></textarea>
-  <textarea id="forge-scenario" placeholder="Current Scenario" rows="2"></textarea>
-  <div class="modal-btns">
-    <button class="modal-btn secondary" onclick="closeModals()">Cancel</button>
-    <button class="modal-btn primary" id="btn-confirm-forge">Save</button>
+<!-- Management Modal -->
+<div class="modal" id="modal-mgmt">
+  <div class="modal-title">Manage</div>
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <button class="modal-btn secondary" id="btn-mgmt-rename">✎ Rename</button>
+    <button class="modal-btn danger" id="btn-mgmt-delete">✕ Delete</button>
   </div>
 </div>
 
-<div class="modal" id="modal-search">
-  <h2>Search</h2>
-  <input type="text" id="input-search" placeholder="Type to search the void...">
-  <div id="search-results" style="max-height: 200px; overflow-y: auto; margin-bottom: 16px;"></div>
+<!-- Rename Modal -->
+<div class="modal" id="modal-rename">
+  <div class="modal-title">Rename</div>
+  <input type="text" id="input-rename" placeholder="New name...">
   <div class="modal-btns">
-    <button class="modal-btn secondary" onclick="closeModals()">Close</button>
+    <button class="modal-btn secondary" onclick="closeModals()">Cancel</button>
+    <button class="modal-btn primary" id="btn-confirm-rename">Save</button>
   </div>
 </div>
 
-<div class="modal" id="modal-settings">
-  <h2>Sanctuary Settings</h2>
-  <label style="font-size: 12px; color: var(--muted)">OpenRouter API Key</label>
-  <input type="password" id="input-api-key" placeholder="sk-or-...">
-  <label style="font-size: 12px; color: var(--muted)">Active Model</label>
-  <input type="text" id="input-model" placeholder="google/gemini-2.0-flash-001">
-  <div class="modal-btns">
-    <button class="modal-btn secondary" onclick="closeModals()">Cancel</button>
-    <button class="modal-btn primary" id="btn-save-settings">Save</button>
-  </div>
-</div>
+<div id="nq-toast"></div>
+<div id="mode-toast"></div>
 
 <script>
-/* --- STATE --- */
+/* --- STATE & FIREFLY --- */
 let db = null;
 let currentMode = 'soup';
 let currentFolderId = null;
 let currentDiscourseId = null;
-let activeCharacterId = null;
-let fabOpen = false;
+let mgmtId = null;
+let longPressTimer = null;
+let breadcrumbPath = [{ id: null, name: '◈ Root' }];
 
-/* --- FIREFLY MANAGER --- */
 class FireflyManager {
   constructor() {
     this.canvas = document.getElementById('firefly-canvas');
@@ -719,92 +430,48 @@ class FireflyManager {
     window.addEventListener('resize', () => this.resize());
     this.animate();
   }
-  resize() {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
-  }
-  setDensity(len) {
-    this.density = Math.min(250, 20 + Math.floor(len / 40));
-  }
+  resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
+  setDensity(len) { this.density = Math.min(200, 15 + Math.floor(len / 50)); }
   animate() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     while (this.particles.length < this.density) {
       this.particles.push({
-        x: Math.random() * this.canvas.width,
-        y: Math.random() * this.canvas.height,
-        size: Math.random() * 2 + 0.5,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        alpha: Math.random() * 0.5 + 0.2,
-        pulse: Math.random() * 0.02 + 0.005
+        x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height,
+        size: Math.random() * 2 + 0.5, vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+        alpha: Math.random() * 0.5 + 0.2, pulse: Math.random() * 0.02 + 0.005
       });
     }
     if (this.particles.length > this.density) this.particles.splice(this.density);
     this.particles.forEach(p => {
       p.x += p.vx; p.y += p.vy; p.alpha += p.pulse;
-      if (p.alpha > 0.8 || p.alpha < 0.2) p.pulse *= -1;
+      if (p.alpha > 0.7 || p.alpha < 0.1) p.pulse *= -1;
       if (p.x < 0) p.x = this.canvas.width; if (p.x > this.canvas.width) p.x = 0;
       if (p.y < 0) p.y = this.canvas.height; if (p.y > this.canvas.height) p.y = 0;
-      this.ctx.beginPath();
-      this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      this.ctx.fillStyle = `rgba(200, 160, 80, ${p.alpha})`;
-      this.ctx.fill();
+      this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      this.ctx.fillStyle = `rgba(200, 160, 80, ${p.alpha})`; this.ctx.fill();
     });
     requestAnimationFrame(() => this.animate());
   }
 }
 const fireflyManager = new FireflyManager();
 
-/* --- DB --- */
+/* --- DB CORE --- */
 async function initDB() {
   return new Promise((resolve) => {
     const req = indexedDB.open("NakedQuantumDB", 3);
     req.onupgradeneeded = (e) => {
       const d = e.target.result;
-      const stores = ["folders", "discourses", "mosaic", "backlinks", "characters", "history", "summaries"];
+      const stores = ["folders", "discourses", "characters", "history"];
       stores.forEach(s => {
         if (!d.objectStoreNames.contains(s)) {
-          const os = d.createObjectStore(s, { keyPath: "id", autoIncrement: (s === 'history' || s === 'summaries') });
+          const os = d.createObjectStore(s, { keyPath: "id", autoIncrement: (s === 'history') });
           if (s === 'discourses') os.createIndex("folder_id", "folder_id");
-          if (s === 'history' || s === 'summaries') os.createIndex("charId", "charId");
         }
       });
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
   });
 }
-
-async function migrateLegacy() {
-  const legacyDBs = ["SanctuaryDB_v2", "NakedQuantumDB"];
-  for (const dbName of legacyDBs) {
-    try {
-      const oldReq = indexedDB.open(dbName);
-      oldReq.onsuccess = async (e) => {
-        const oldDB = e.target.result;
-        const stores = oldDB.objectStoreNames;
-        for (const s of stores) {
-          const tx = oldDB.transaction(s, "readonly");
-          const data = await new Promise(r => {
-            const req = tx.objectStore(s).getAll();
-            req.onsuccess = () => r(req.result);
-          });
-          let targetStore = s.replace("cosm_", "").replace("_tiles", "");
-          if (s === 'lenses') targetStore = 'characters';
-          if (s === 'chat_history') targetStore = 'history';
-          if (s === 'watcher_logs') targetStore = 'summaries';
-          if (db.objectStoreNames.contains(targetStore)) {
-            for (const item of data) {
-              const putTx = db.transaction(targetStore, "readwrite");
-              putTx.objectStore(targetStore).put(item);
-            }
-          }
-        }
-        oldDB.close();
-      };
-    } catch (err) {}
-  }
-}
-
 const dbCall = (store, method, ...args) => new Promise(r => {
   const tx = db.transaction(store, "readwrite");
   const req = tx.objectStore(store)[method](...args);
@@ -818,29 +485,27 @@ const showToast = (msg) => {
   t.textContent = msg; t.style.opacity = "1";
   setTimeout(() => t.style.opacity = "0", 2000);
 };
-
 const showModeToast = (msg) => {
   const t = document.getElementById('mode-toast');
   t.textContent = msg; t.style.opacity = "1";
   setTimeout(() => t.style.opacity = "0", 1500);
 };
-
 const closeModals = () => {
   document.getElementById('nq-overlay').classList.remove('active');
   document.querySelectorAll('.modal').forEach(m => m.classList.remove('visible'));
-  fabOpen = false; updateFAB();
+  document.getElementById('fab-main').classList.remove('open');
+  document.getElementById('fab-menu').classList.remove('open');
 };
-
 const openModal = (id) => {
+  closeModals();
   document.getElementById('nq-overlay').classList.add('active');
   document.getElementById(id).classList.add('visible');
 };
 
-/* --- LONG PRESS WORDMARK → SWITCH MODE --- */
-let pressTimer = null;
+/* --- MODE SWITCHING --- */
 const wordmark = document.getElementById('nq-wordmark');
-
-wordmark.addEventListener('touchstart', (e) => {
+let pressTimer = null;
+wordmark.addEventListener('touchstart', () => {
   wordmark.classList.add('pressing');
   pressTimer = setTimeout(() => {
     wordmark.classList.remove('pressing');
@@ -850,315 +515,215 @@ wordmark.addEventListener('touchstart', (e) => {
     if (navigator.vibrate) navigator.vibrate(40);
   }, 600);
 }, { passive: true });
+wordmark.addEventListener('touchend', () => { wordmark.classList.remove('pressing'); clearTimeout(pressTimer); });
 
-wordmark.addEventListener('touchend', () => {
-  wordmark.classList.remove('pressing');
-  clearTimeout(pressTimer);
-});
-
-wordmark.addEventListener('touchmove', () => {
-  wordmark.classList.remove('pressing');
-  clearTimeout(pressTimer);
-});
-
-/* --- NAVIGATION --- */
 function switchMode(mode) {
   currentMode = mode;
   document.getElementById('view-soup').classList.toggle('hidden', mode !== 'soup');
   document.getElementById('view-sanctuary').classList.toggle('hidden', mode !== 'sanctuary');
-  if (mode === 'soup') renderSoup(); else renderSanctuary();
-  updateHeaderButtons();
-  updateFAB();
-}
-
-/* --- CONTEXT-AWARE HEADER BUTTONS --- */
-function updateHeaderButtons() {
-  const container = document.getElementById('header-actions');
-  if (currentMode === 'soup') {
-    container.innerHTML = `
-      <button class="hdr-btn" onclick='openModal("modal-search")' title="Search">⌖</button>
-      <button class="hdr-btn" onclick='openModal("modal-folder")' title="New Folder">◈</button>
-      <button class="hdr-btn" id="btn-global-sync" title="Sync">∞</button>
-    `;
-    document.getElementById('btn-global-sync').onclick = () => {
-      showToast("Akashic Sync Initiated...");
-      setTimeout(() => showToast("Akashic Synced ◈"), 1000);
-    };
+  
+  // Hide FAB in Sanctuary
+  document.getElementById('fab-container').style.display = (mode === 'soup') ? 'flex' : 'none';
+  
+  const hdrActions = document.getElementById('header-actions');
+  if (mode === 'soup') {
+    hdrActions.innerHTML = `<button class="hdr-btn" title="Global Sync">∞</button>`;
+    renderSoup();
   } else {
-    container.innerHTML = `
-      <button class="hdr-btn" onclick='openForge()' title="Forge Character">👤</button>
-      <button class="hdr-btn" onclick='clearChat()' title="Clear Chat">✖</button>
-      <button class="hdr-btn" onclick='openModal("modal-settings")' title="Settings">⚙</button>
-    `;
+    hdrActions.innerHTML = `<button class="hdr-btn" title="Lens Settings">⚙</button>`;
   }
 }
 
-/* --- SOUP LOGIC --- */
+/* --- FAB LOGIC --- */
+document.getElementById('fab-main').onclick = () => {
+  document.getElementById('fab-main').classList.toggle('open');
+  document.getElementById('fab-menu').classList.toggle('open');
+};
+document.getElementById('btn-fab-folder').onclick = () => { openModal('modal-folder'); document.getElementById('input-folder-name').focus(); };
+document.getElementById('btn-fab-frag').onclick = () => { createNewDiscourse(); };
+
+/* --- THE SOUP & GRID LOGIC --- */
 async function renderSoup() {
   const container = document.getElementById('soup-content');
   const breadcrumbs = document.getElementById('soup-breadcrumbs');
-  let bcHtml = `<span class="breadcrumb-item" onclick="enterFolder(null)">Soup</span>`;
-  if (currentFolderId) {
-    const f = await dbCall('folders', 'get', currentFolderId);
-    if (f) bcHtml += ` ◈ <span class="breadcrumb-item">${f.name}</span>`;
-  }
-  breadcrumbs.innerHTML = bcHtml;
+  
+  // Breadcrumbs
+  breadcrumbs.innerHTML = '';
+  breadcrumbPath.forEach((seg, idx) => {
+    const btn = document.createElement('span');
+    btn.className = idx === breadcrumbPath.length - 1 ? 'breadcrumb-current' : 'breadcrumb-item';
+    btn.textContent = seg.name;
+    btn.onclick = () => {
+      breadcrumbPath = breadcrumbPath.slice(0, idx + 1);
+      currentFolderId = breadcrumbPath[breadcrumbPath.length - 1].id;
+      renderSoup();
+    };
+    breadcrumbs.appendChild(btn);
+    if (idx < breadcrumbPath.length - 1) {
+      const arrow = document.createElement('span');
+      arrow.className = 'breadcrumb-arrow';
+      arrow.textContent = '▸';
+      breadcrumbs.appendChild(arrow);
+    }
+  });
 
   const folders = (await dbCall('folders', 'getAll')).filter(f => f.parent_id === currentFolderId);
   const discourses = (await dbCall('discourses', 'getAll')).filter(d => d.folder_id === currentFolderId);
 
+  container.innerHTML = '';
+  let totalLen = 0;
+
+  if (folders.length > 0) {
+    container.innerHTML += `<div class="section-label">Folders</div><div class="cards-grid" id="folder-grid"></div>`;
+    const grid = document.getElementById('folder-grid');
+    folders.forEach(f => {
+      const card = document.createElement('div');
+      card.className = 'folder-card';
+      card.innerHTML = `<div class="card-icon">◈</div><div class="card-name">${f.name}</div>`;
+      card.onclick = () => { breadcrumbPath.push({ id: f.id, name: f.name }); currentFolderId = f.id; renderSoup(); };
+      card.oncontextmenu = (e) => { e.preventDefault(); return false; };
+      card.onmousedown = () => startLongPress(f.id, 'folder');
+      card.ontouchstart = () => startLongPress(f.id, 'folder');
+      grid.appendChild(card);
+    });
+  }
+
+  if (discourses.length > 0) {
+    container.innerHTML += `<div class="section-label">Fragments</div><div class="cards-grid" id="disc-grid"></div>`;
+    const grid = document.getElementById('disc-grid');
+    discourses.forEach(d => {
+      totalLen += (d.raw_text || "").length;
+      const card = document.createElement('div');
+      card.className = 'fragment-card';
+      card.innerHTML = `<div class="card-icon">✦</div><div class="card-name">${d.title || 'Untitled'}</div><div class="card-meta">${new Date(d.updated_at).toLocaleDateString()}</div>`;
+      card.onclick = () => openLighthouse(d.id);
+      card.oncontextmenu = (e) => { e.preventDefault(); return false; };
+      card.onmousedown = () => startLongPress(d.id, 'discourse');
+      card.ontouchstart = () => startLongPress(d.id, 'discourse');
+      grid.appendChild(card);
+    });
+  }
+
   if (!folders.length && !discourses.length) {
     container.innerHTML = `<div class="placeholder-center"><h1>The Soup is Clear</h1><p>No fragments found in this depth.</p></div>`;
-    fireflyManager.setDensity(0); return;
   }
-
-  let html = '', totalLen = 0;
-  folders.forEach(f => {
-    html += `<div class="soup-item" onclick="enterFolder('${f.id}')">
-      <div class="soup-item-icon">◈</div>
-      <div class="soup-item-info">
-        <div class="soup-item-name">${f.name}</div>
-        <div class="soup-item-meta">Folder</div>
-      </div>
-    </div>`;
-  });
-  discourses.forEach(d => {
-    totalLen += (d.raw_text || "").length;
-    html += `<div class="soup-item" onclick="openDiscourse('${d.id}')">
-      <div class="soup-item-icon">✦</div>
-      <div class="soup-item-info">
-        <div class="soup-item-name">${d.title || 'Untitled'}</div>
-        <div class="soup-item-meta">${new Date(d.updated_at).toLocaleDateString()}</div>
-      </div>
-    </div>`;
-  });
-  container.innerHTML = html;
   fireflyManager.setDensity(totalLen);
 }
 
-const enterFolder = (id) => { currentFolderId = id; renderSoup(); };
-
-async function openDiscourse(id) {
-  currentDiscourseId = id;
-  const d = await dbCall('discourses', 'get', id);
-  if (!d) return;
-  document.getElementById('editor-title').value = d.title || '';
-  document.getElementById('editor-body').value = d.raw_text || '';
-  document.getElementById('editor-view').classList.add('open');
-  fireflyManager.setDensity(d.raw_text?.length || 0);
+/* --- LONG PRESS MGMT --- */
+function startLongPress(id, type) {
+  longPressTimer = setTimeout(() => {
+    mgmtId = id;
+    if (navigator.vibrate) navigator.vibrate(20);
+    openModal('modal-mgmt');
+  }, 600); // 600ms long press
 }
+window.onmouseup = window.ontouchend = window.ontouchmove = () => clearTimeout(longPressTimer);
 
-async function saveDiscourse() {
-  const id = currentDiscourseId || 'd_' + Date.now();
-  const d = {
-    id,
-    title: document.getElementById('editor-title').value || 'Untitled',
-    raw_text: document.getElementById('editor-body').value,
-    folder_id: currentFolderId,
-    updated_at: Date.now()
-  };
-  await dbCall('discourses', 'put', d);
-  showToast("Discourse Anchored");
-  renderSoup();
-}
-
-/* --- SANCTUARY LOGIC --- */
-async function renderSanctuary() {
-  const characters = await dbCall('characters', 'getAll');
-  const selector = document.getElementById('char-selector');
-  const chatBox = document.getElementById('chat-box');
-  const inputArea = document.getElementById('chat-input-area');
-
-  if (!characters.length) {
-    selector.innerHTML = '';
-    chatBox.innerHTML = `<div class="placeholder-center"><h1>The Sanctuary</h1><p>The energetic spring is silent.<br>Create a character to begin the encounter.</p></div>`;
-    inputArea.style.display = 'none';
-    fireflyManager.setDensity(0); return;
-  }
-
-  if (!activeCharacterId) activeCharacterId = characters[0].id;
-  selector.innerHTML = characters.map(c =>
-    `<div class="char-chip ${c.id === activeCharacterId ? 'active' : ''}" onclick="selectChar('${c.id}')">${c.name}</div>`
-  ).join('');
-  inputArea.style.display = 'flex';
-  renderChat();
-}
-
-const selectChar = (id) => { activeCharacterId = id; renderSanctuary(); };
-
-async function renderChat() {
-  if (!activeCharacterId) return;
-  const char = await dbCall('characters', 'get', activeCharacterId);
-  const history = (await dbCall('history', 'getAll')).filter(h => h.charId === activeCharacterId);
-  const chatBox = document.getElementById('chat-box');
-
-  if (!history.length) {
-    chatBox.innerHTML = `<div class="placeholder-center"><h1>Meeting ${char.name}</h1><p>${char.bio || 'Silence awaits your words.'}</p></div>`;
-    fireflyManager.setDensity(0); return;
-  }
-
-  let totalLen = 0;
-  chatBox.innerHTML = history.map(m => {
-    totalLen += m.content.length;
-    const isUser = m.role === 'user';
-    return `<div class="msg"><div class="msg-content-col">
-      <span class="msg-label">${isUser ? 'YOU' : char.name.toUpperCase()}</span>
-      <div class="msg-text">${m.content}</div>
-    </div></div>`;
-  }).join('');
-  chatBox.scrollTop = chatBox.scrollHeight;
-  fireflyManager.setDensity(totalLen);
-}
-
-/* --- FAB --- */
-function updateFAB() {
-  const menu = document.getElementById('fab-menu');
-  const items = currentMode === 'soup' ? [
-    { label: 'New Discourse', icon: '✦', action: 'createNewDiscourse()' },
-    { label: 'New Folder', icon: '◈', action: 'openModal("modal-folder")' }
-  ] : [
-    { label: 'New Presence', icon: '👤', action: 'openForge()' },
-    { label: 'Clear Chat', icon: '✖', action: 'clearChat()' }
-  ];
-  menu.innerHTML = items.map(i =>
-    `<div class="fab-item" onclick="${i.action}"><span class="fab-label">${i.label}</span>${i.icon}</div>`
-  ).join('');
-  document.getElementById('fab-main').classList.toggle('open', fabOpen);
-  document.getElementById('fab-menu').classList.toggle('open', fabOpen);
-}
-
-const toggleFAB = () => { fabOpen = !fabOpen; updateFAB(); };
-
-function createNewDiscourse() {
-  currentDiscourseId = null;
-  document.getElementById('editor-title').value = '';
-  document.getElementById('editor-body').value = '';
-  document.getElementById('editor-view').classList.add('open');
-  if (fabOpen) toggleFAB();
-}
-
-async function openForge() {
-  const char = activeCharacterId ? await dbCall('characters', 'get', activeCharacterId) : null;
-  document.getElementById('forge-name').value = char?.name || '';
-  document.getElementById('forge-bio').value = char?.bio || '';
-  document.getElementById('forge-personality').value = char?.personality || '';
-  document.getElementById('forge-scenario').value = char?.scenario || '';
-  openModal('modal-forge');
-}
-
-async function clearChat() {
-  if (!confirm("Vanish this encounter's memory?")) return;
-  const history = await dbCall('history', 'getAll');
-  for (const h of history) if (h.charId === activeCharacterId) await dbCall('history', 'delete', h.id);
-  renderChat();
-  if (fabOpen) toggleFAB();
-}
-
-/* --- WIRE UP STATIC BUTTONS --- */
-document.getElementById('fab-main').onclick = toggleFAB;
-document.getElementById('btn-editor-close').onclick = () => {
-  document.getElementById('editor-view').classList.remove('open');
-  currentDiscourseId = null;
+document.getElementById('btn-mgmt-rename').onclick = () => {
+  openModal('modal-rename');
+  document.getElementById('input-rename').focus();
 };
-document.getElementById('btn-editor-save').onclick = () => {
-  saveDiscourse();
-  document.getElementById('editor-view').classList.remove('open');
+document.getElementById('btn-mgmt-delete').onclick = async () => {
+  if(!confirm("Purge to the Void?")) return;
+  const store = mgmtId.startsWith('f_') ? 'folders' : 'discourses';
+  await dbCall(store, 'delete', mgmtId);
+  closeModals(); renderSoup(); showToast("Purged.");
 };
 
+/* --- MODAL CONFIRMS --- */
 document.getElementById('btn-confirm-folder').onclick = async () => {
-  const name = document.getElementById('input-folder-name').value;
+  const name = document.getElementById('input-folder-name').value.trim();
   if (!name) return;
   await dbCall('folders', 'put', { id: 'f_' + Date.now(), name, parent_id: currentFolderId, created_at: Date.now() });
   document.getElementById('input-folder-name').value = '';
   closeModals(); renderSoup();
 };
 
-document.getElementById('btn-confirm-forge').onclick = async () => {
-  const id = activeCharacterId || 'c_' + Date.now();
-  const char = {
-    id,
-    name: document.getElementById('forge-name').value || 'Unnamed',
-    bio: document.getElementById('forge-bio').value,
-    personality: document.getElementById('forge-personality').value,
-    scenario: document.getElementById('forge-scenario').value
+document.getElementById('btn-confirm-rename').onclick = async () => {
+  const newName = document.getElementById('input-rename').value.trim();
+  if (!newName) return;
+  const store = mgmtId.startsWith('f_') ? 'folders' : 'discourses';
+  const item = await dbCall(store, 'get', mgmtId);
+  if (store === 'folders') item.name = newName; else item.title = newName;
+  await dbCall(store, 'put', item);
+  document.getElementById('input-rename').value = '';
+  closeModals(); renderSoup();
+};
+
+/* --- LIGHTHOUSE EDITOR --- */
+async function createNewDiscourse() {
+  const id = 'd_' + Date.now();
+  currentDiscourseId = id;
+  document.getElementById('lh-title').value = '';
+  document.getElementById('lh-text').value = '';
+  document.getElementById('lh-overlay').classList.add('active');
+  setLhMode('write'); closeModals();
+}
+
+async function openLighthouse(id) {
+  currentDiscourseId = id;
+  const d = await dbCall('discourses', 'get', id);
+  document.getElementById('lh-title').value = d.title || '';
+  document.getElementById('lh-text').value = d.raw_text || '';
+  document.getElementById('lh-overlay').classList.add('active');
+  setLhMode('write');
+}
+
+function setLhMode(mode) {
+  const ta = document.getElementById('lh-text');
+  const view = document.getElementById('lh-view');
+  const btnW = document.getElementById('btn-lh-write');
+  const btnV = document.getElementById('btn-lh-view');
+  if (mode === 'write') {
+    ta.style.display = 'block'; view.style.display = 'none';
+    btnW.classList.add('active'); btnV.classList.remove('active');
+  } else {
+    view.innerHTML = renderMarkdown(ta.value);
+    ta.style.display = 'none'; view.style.display = 'block';
+    btnW.classList.remove('active'); btnV.classList.add('active');
+  }
+}
+document.getElementById('btn-lh-write').onclick = () => setLhMode('write');
+document.getElementById('btn-lh-view').onclick = () => setLhMode('view');
+
+document.getElementById('btn-lh-back').onclick = async () => {
+  if (currentDiscourseId) {
+    const title = document.getElementById('lh-title').value.trim() || 'Untitled';
+    const text = document.getElementById('lh-text').value;
+    await dbCall('discourses', 'put', { id: currentDiscourseId, title, raw_text: text, folder_id: currentFolderId, updated_at: Date.now() });
+  }
+  document.getElementById('lh-overlay').classList.remove('active');
+  renderSoup(); // INSTANT REFRESH
+};
+
+/* Formatting Toolbar Logic */
+document.querySelectorAll('.fmt-btn').forEach(btn => {
+  btn.onclick = () => {
+    const ta = document.getElementById('lh-text');
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    const val = ta.value, selected = val.slice(start, end);
+    let res = '';
+    if (btn.dataset.wrap) res = btn.dataset.wrap + selected + btn.dataset.wrap;
+    else if (btn.dataset.line) res = btn.dataset.line + selected;
+    else if (btn.dataset.insert) res = btn.dataset.insert;
+    ta.value = val.slice(0, start) + res + val.slice(end);
+    ta.focus(); ta.setSelectionRange(start + res.length, start + res.length);
   };
-  await dbCall('characters', 'put', char);
-  activeCharacterId = id;
-  closeModals(); renderSanctuary();
-};
+});
 
-document.getElementById('btn-save-settings').onclick = () => {
-  localStorage.setItem('nq_api_key', document.getElementById('input-api-key').value);
-  localStorage.setItem('nq_model', document.getElementById('input-model').value);
-  closeModals(); showToast("Settings Anchored");
-};
-
-document.getElementById('btn-send').onclick = async () => {
-  const input = document.getElementById('chat-input');
-  const content = input.value.trim();
-  if (!content || !activeCharacterId) return;
-
-  const char = await dbCall('characters', 'get', activeCharacterId);
-  await dbCall('history', 'add', { charId: activeCharacterId, role: 'user', content, timestamp: Date.now() });
-  input.value = ''; renderChat();
-
-  const key = localStorage.getItem('nq_api_key');
-  const model = localStorage.getItem('nq_model') || 'google/gemini-2.0-flash-001';
-
-  if (!key) {
-    setTimeout(async () => {
-      await dbCall('history', 'add', { charId: activeCharacterId, role: 'assistant', content: "[API Key missing. Open Settings from the header.]", timestamp: Date.now() });
-      renderChat();
-    }, 500);
-    return;
-  }
-
-  try {
-    const history = (await dbCall('history', 'getAll')).filter(h => h.charId === activeCharacterId).slice(-10);
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: `Character: ${char.name}\nBio: ${char.bio}\nPersonality: ${char.personality}\nScenario: ${char.scenario}\n\nStrictly Roleplay as ${char.name}.` },
-          ...history.map(h => ({ role: h.role, content: h.content }))
-        ]
-      })
-    });
-    const data = await res.json();
-    const reply = data.choices?.[0]?.message?.content || "The void is silent.";
-    await dbCall('history', 'add', { charId: activeCharacterId, role: 'assistant', content: reply, timestamp: Date.now() });
-    renderChat();
-  } catch (err) {
-    showToast("Connection Lost");
-  }
-};
-
-/* --- SEARCH --- */
-document.getElementById('input-search').oninput = async (e) => {
-  const q = e.target.value.toLowerCase();
-  const results = document.getElementById('search-results');
-  if (!q) { results.innerHTML = ''; return; }
-  const folders = (await dbCall('folders', 'getAll')).filter(f => f.name.toLowerCase().includes(q));
-  const discourses = (await dbCall('discourses', 'getAll')).filter(d =>
-    (d.title || '').toLowerCase().includes(q) || (d.raw_text || '').toLowerCase().includes(q)
-  );
-  results.innerHTML = [
-    ...folders.map(f => `<div class="soup-item" onclick="enterFolder('${f.id}');closeModals()"><div class="soup-item-icon">◈</div><div>${f.name} (Folder)</div></div>`),
-    ...discourses.map(d => `<div class="soup-item" onclick="openDiscourse('${d.id}');closeModals()"><div class="soup-item-icon">✦</div><div>${d.title || 'Untitled'}</div></div>`)
-  ].join('');
-};
+function renderMarkdown(raw) {
+  if (!raw) return '<span style="opacity:0.5;font-style:italic;">Silence.</span>';
+  return raw.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+            .replace(/\n/g, '<br>');
+}
 
 /* --- INIT --- */
-initDB().then(async () => {
-  await migrateLegacy();
-  const characters = await dbCall('characters', 'getAll');
-  if (!characters.length) {
-    await dbCall('characters', 'put', { id: 'c_def', name: 'The Void', bio: 'A silent observer.', personality: 'Calm', scenario: 'The beginning.' });
-  }
-  document.getElementById('input-api-key').value = localStorage.getItem('nq_api_key') || '';
-  document.getElementById('input-model').value = localStorage.getItem('nq_model') || 'google/gemini-2.0-flash-001';
+initDB().then(() => {
   switchMode('soup');
 });
 </script>
