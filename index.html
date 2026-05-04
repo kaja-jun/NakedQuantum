@@ -6923,46 +6923,51 @@ async function bootApp() {
   btnUnlock.style.display = 'block';
   statusEl.textContent = 'Tap to unlock.';
   
-  btnUnlock.onclick = async () => {
+btnUnlock.onclick = async () => {
     btnUnlock.style.display = 'none';
     statusEl.textContent = 'Checking...';
-    
-    const unlocked = await unlockWithPRF();
-    
-    if (unlocked) {
-      lockScreen.style.display = 'none';
-      await init();
-    } else {
-      // Should never reach here now, but just in case:
-      statusEl.textContent = 'Something went wrong. Use Start Fresh.';
-      document.getElementById('btn-wipe-abyss').style.display = 'block';
-    }
-  };
-  
-  // Build the escape hatch button
-  let btnWipe = document.getElementById('btn-wipe-abyss');
-  if (!btnWipe) {
-    btnWipe = document.createElement('button');
-    btnWipe.id = 'btn-wipe-abyss';
-    btnWipe.style.cssText = 'display:none; background:#1a0000; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:12px 24px; border-radius:8px; margin-top:40px; text-transform:uppercase;';
-    btnWipe.textContent = '✕ Start Fresh';
-    lockScreen.appendChild(btnWipe);
-  }
-  btnWipe.onclick = async () => {
-    if (!confirm('Erase everything and start over?')) return;
-    if (!confirm('Final warning: no undo.')) return;
-    
-    localStorage.clear();
+
     try {
-      const root = await navigator.storage.getDirectory();
-      await root.removeEntry('nq.db');
-    } catch(e) {}
-    
-    const freshKey = crypto.getRandomValues(new Uint8Array(32));
-    setSovereignKey(freshKey);
-    await setEncryptionKey(freshKey);
-    localStorage.setItem('nq_fresh_start', '1');
-    location.reload();
+      const unlocked = await unlockWithPRF();
+      if (unlocked) {
+        // Immediately hide the lock screen so the user sees the app
+        lockScreen.style.display = 'none';
+        
+        // "Quick init" – only what's needed to render the soup, no heavy models
+        await _workerReady;
+        currentMode = 'soup';
+        currentView = 'soup';
+        currentFolderId = null;
+        breadcrumbPath = [{id: null, name: '◈ The Soup'}];
+        updateHeaderButtons();
+        showPanel('view-soup');
+        await renderTableView();
+        
+        // Pre‑fill the API key without heavy crypto
+        document.getElementById('input-api-key').value = await readSecureKey('nq_api_key') || '';
+        document.getElementById('input-model').value = localStorage.getItem('nq_model') || 'deepseek/deepseek-v4-flash';
+        initGuardianModel();
+
+        // Defer the heavy Watcher and deep mapper so the UI is never blocked
+        setTimeout(() => {
+          try { initWatcher(); } catch(e) { console.warn('Watcher deferred', e); }
+        }, 500);
+
+        return;
+      }
+
+      // Face ID failed
+      statusEl.textContent = 'Enter sovereign key or start fresh.';
+      document.getElementById('fallback-key-input').style.display = 'block';
+      document.getElementById('btn-fallback-unlock').style.display = 'block';
+      const wipeBtn = document.getElementById('btn-wipe-abyss');
+      if (wipeBtn) wipeBtn.style.display = 'block';
+
+    } catch(e) {
+      statusEl.textContent = 'Something went wrong. Use Start Fresh.';
+      const wipeBtn = document.getElementById('btn-wipe-abyss');
+      if (wipeBtn) wipeBtn.style.display = 'block';
+    }
   };
 }
 bootApp();
