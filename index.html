@@ -1956,7 +1956,7 @@ function initWorker(){
 const NQ_DEV_MODE = (function() {
   try {
     const host = window.location.hostname;
-    return host.includes('alpha') || host.includes('beta') || host === 'localhost';
+    return host.includes('alp') || host.includes('beta') || host === 'localhost';
   } catch(e) {
     return true; // If we can't detect, assume dev (safe default)
   }
