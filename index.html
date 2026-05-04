@@ -2959,7 +2959,7 @@ async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
 async function unlockWithPRF() {
   const stored = localStorage.getItem(WA_CRED_KEY);
 
-  // ── TRY EXISTING CREDENTIAL ────────────────────────────
+  // ── TRY EXISTING CREDENTIAL (RETURNING USER) ──────────
   if (stored) {
     try {
       const assertion = await navigator.credentials.get({
@@ -2982,7 +2982,7 @@ async function unlockWithPRF() {
           try {
             finalKey = await unwrapSovereignKey(wrapped, prfKey);
           } catch (e) {
-            showToast('⚠ Face ID mismatch');
+            showToast('⚠ Face ID mismatch — use sovereign key');
             return false;
           }
         }
@@ -2992,12 +2992,13 @@ async function unlockWithPRF() {
         showToast('Sovereign key active ◆');
         return true;
       }
+      // PRF empty → fall through to local key
     } catch (e) {
-      // existing credential failed – will continue
+      // assertion failed → fall through
     }
   }
 
-  // ── NO VALID CREDENTIAL → REGISTER NEW ONE ──────────────
+  // ── NEW USER: REGISTER CREDENTIAL ──────────────────────
   try {
     const cred = await navigator.credentials.create({
       publicKey: {
@@ -3012,13 +3013,14 @@ async function unlockWithPRF() {
     });
 
     localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-    showToast('◈ Face ID registered. Generating local key …');
+    showToast('◈ Face ID registered');
 
   } catch (e) {
-    // registration failed – will fall through
+    // registration failed → will use a local key
+    console.warn('Face ID registration failed:', e);
   }
 
-  // ── ALWAYS PROCEED WITH A LOCAL KEY ──────────────────────
+  // ── ALWAYS ENTER WITH A LOCAL KEY ──────────────────────
   showToast('◈ Local key created. Save it in Data Sovereignty.');
   const localKey = crypto.getRandomValues(new Uint8Array(32));
   setSovereignKey(localKey);
