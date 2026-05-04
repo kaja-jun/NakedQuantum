@@ -2956,8 +2956,9 @@ async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
   return new Uint8Array(dec);
 }
 
-async function unlockWithPRF(){
+async function unlockWithPRF() {
   const stored = localStorage.getItem(WA_CRED_KEY);
+
   try {
     const opts = {
       publicKey: {
@@ -2967,16 +2968,15 @@ async function unlockWithPRF(){
         timeout: 60000
       }
     };
-    if(stored) opts.publicKey.allowCredentials =[{ id: b64ToBuf(stored), type: 'public-key' }];
+    if (stored) opts.publicKey.allowCredentials =[{ id: b64ToBuf(stored), type: 'public-key' }];
 
     const assertion = await navigator.credentials.get(opts);
     const ext = assertion.getClientExtensionResults();
 
-    if(ext.prf?.results?.first){
+    if (ext.prf?.results?.first) {
       let prfKey = new Uint8Array(ext.prf.results.first);
       let finalKey = prfKey;
-      
-      // If we find a wrapped key, Face ID is acting as a wrapper. Unpack it.
+
       const wrapped = localStorage.getItem('nq_wrapped_sk');
       if (wrapped) {
         try {
@@ -2987,14 +2987,30 @@ async function unlockWithPRF(){
           return false;
         }
       }
-      
-      setSovereignKey(finalKey); // Capture in RAM for backup/sync
+
+      setSovereignKey(finalKey);
       await setEncryptionKey(finalKey);
       showToast('Sovereign key active ◆');
       return true;
     }
-  } catch(e) {
-    if(!stored){
+  } catch (e) {
+    // If getting the assertion failed...
+    if (!stored) {
+      // SAFEGUARD: Check if the vault exists. If localStorage was cleared 
+      // but the DB remains, generating a new key will brick the vault forever.
+      let dbExists = false;
+      try {
+        const root = await navigator.storage.getDirectory();
+        await root.getFileHandle('nq.db');
+        dbExists = true;
+      } catch(err) {}
+
+      if (dbExists) {
+        showToast('⚠ Vault found but Face ID link lost. Use Backup Key.');
+        return false;
+      }
+
+      // It is truly a fresh install. Safe to register.
       try {
         const cred = await navigator.credentials.create({
           publicKey: {
@@ -3008,14 +3024,16 @@ async function unlockWithPRF(){
           }
         });
         localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-        showToast('◈ Face ID registered -- unlock now');
+        showToast('◈ Face ID registered');
+        // Recursively trigger unlock now that the credential exists
         return await unlockWithPRF();
       } catch(regErr) {
         console.error('PRF register failed:', regErr);
       }
+    } else {
+      console.warn('Face ID assertion rejected or cancelled.');
     }
   }
-  showToast('⚠ Running without encryption');
   return false;
 }
 
@@ -6889,175 +6907,97 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   
 // bootApp function
 async function bootApp() {
-  
-  if (NQ_DEV_MODE) {
-  try {
-    document.getElementById('lock-screen').style.display = 'none';
-        await init();
-    document.getElementById('btn-dev-force-pass').style.display = 'flex';
-    document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
-  } catch(e) {
-    console.error('DEV boot failed:', e);
-    alert('Boot error: ' + e.message);
-  }
-  return;
-}
-  const lockScreen = document.getElementById('lock-screen');
-  const statusEl = document.getElementById('lock-status'); // add this element (see HTML patch below)
-  let faceAttempts = 0;
-  const MAX_FACE_ATTEMPTS = 3;
-  let cooldownActive = false;
+  const DEV_MODE = false; // Set to false to test true lock flow
+  const isDev = typeof NQ_DEV_MODE !== 'undefined' ? NQ_DEV_MODE : DEV_MODE;
 
-  async function tryFaceID() {
-  const stored = localStorage.getItem('nq_prf_cred_id');
-  
-  if (!stored) {
-    // No stored credential — attempt fresh registration immediately
-    await attemptRegistration();
+  if (isDev) {
+    try {
+      document.getElementById('lock-screen').style.display = 'none';
+      await init();
+      const fpBtn = document.getElementById('btn-dev-force-pass');
+      if (fpBtn) fpBtn.style.display = 'flex';
+      const cwBtn = document.getElementById('btn-dev-clear-watcher');
+      if (cwBtn) cwBtn.style.display = 'flex';
+    } catch(e) {
+      console.error('DEV boot failed:', e);
+      alert('Boot error: ' + e.message);
+    }
     return;
   }
-  
-  // Stored credential exists — try once
-  statusEl.textContent = 'Face ID unlocking...';
-  
-  try {
-    const assertion = await navigator.credentials.get({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        userVerification: 'required',
-        allowCredentials: [{ id: b64ToBuf(stored), type: 'public-key' }],
-        extensions: { prf: { eval: { first: getPRFSalt() } } },
-        timeout: 10000
-      }
-    });
-    
-    const ext = assertion.getClientExtensionResults();
-    if (ext.prf?.results?.first) {
-      // Success — derive key and enter
-      let prfKey = new Uint8Array(ext.prf.results.first);
-      let finalKey = prfKey;
-      const wrapped = localStorage.getItem('nq_wrapped_sk');
-      if (wrapped) {
-        try {
-          finalKey = await unwrapSovereignKey(wrapped, prfKey);
-        } catch(e) {
-          console.error('Failed to unwrap SK:', e);
-          showBackupKeyInput();
-          return;
-        }
-      }
-      setSovereignKey(finalKey);
-      await setEncryptionKey(finalKey);
-      lockScreen.style.display = 'none';
-      await init();
-      return;
-    }
-  } catch(e) {
-    // Face ID failed — credential might be stale
-    console.warn('Face ID assertion failed:', e.name);
-    
-    // If the error is "no credential found" or user cancelled
-    if (e.name === 'NotAllowedError' || e.name === 'InvalidStateError') {
-      // Clear stale credential and attempt fresh registration
-      localStorage.removeItem('nq_prf_cred_id');
-      localStorage.removeItem('nq_wrapped_sk');
-      statusEl.textContent = 'Face ID data was reset. Re-registering...';
-      await attemptRegistration();
-      return;
-    }
-  }
-  
-  // If we get here, try up to remaining attempts (less aggressive)
-  if (faceAttempts < MAX_FACE_ATTEMPTS) {
-    faceAttempts++;
-    statusEl.textContent = `Face ID attempt ${faceAttempts} of ${MAX_FACE_ATTEMPTS}...`;
-    setTimeout(tryFaceID, 800);
-  } else {
-    showBackupKeyInput();
-  }
-}
 
-async function attemptRegistration() {
-  statusEl.textContent = 'Registering Face ID...';
-  
-  try {
-    const cred = await navigator.credentials.create({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: { name: 'NakedQuantum', id: window.location.hostname },
-        user: { 
-          id: crypto.getRandomValues(new Uint8Array(16)), 
-          name: 'kaja', 
-          displayName: 'Kaja' 
-        },
-        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
-        authenticatorSelection: { 
-          authenticatorAttachment: 'platform', 
-          userVerification: 'required', 
-          residentKey: 'required' 
-        },
-        extensions: { prf: { eval: { first: getPRFSalt() } } },
-        timeout: 60000
-      }
-    });
-    
-    localStorage.setItem('nq_prf_cred_id', bufToB64(cred.rawId));
-    statusEl.textContent = 'Face ID registered. Unlocking...';
-    
-    // Immediately try to unlock with the fresh credential
+  const lockScreen = document.getElementById('lock-screen');
+  const statusEl = document.getElementById('lock-status');
+  const btnUnlock = document.getElementById('btn-manual-unlock');
+  const btnFallbackUnlock = document.getElementById('btn-fallback-unlock');
+  const fallbackInput = document.getElementById('fallback-key-input');
+  const btnRetry = document.getElementById('btn-faceid-retry');
+
+  // Inject the "Burn Vault & Start Fresh" Escape Hatch
+  let btnWipe = document.getElementById('btn-wipe-abyss');
+  if (!btnWipe) {
+    btnWipe = document.createElement('button');
+    btnWipe.id = 'btn-wipe-abyss';
+    btnWipe.innerHTML = '✕ Burn Vault & Start Fresh';
+    btnWipe.style.cssText = 'display:none; background:none; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:10px 20px; border-radius:8px; margin-top:40px; text-transform:uppercase;';
+    btnWipe.onclick = async () => {
+      if (!confirm('WARNING: This will obliterate your Sovereign Vault. All memory, maps, and entities will be permanently destroyed. Are you absolutely sure?')) return;
+      if (!confirm('FINAL WARNING: There is no undo. Burn the Abyss?')) return;
+      
+      localStorage.clear();
+      try {
+        const root = await navigator.storage.getDirectory();
+        await root.removeEntry('nq.db');
+      } catch(e) {}
+      
+      location.reload(); // Reload the app completely fresh
+    };
+    lockScreen.appendChild(btnWipe);
+  }
+
+  // UI Setup: Safari REQUIRES a user tap before Face ID
+  btnUnlock.style.display = 'block';
+  statusEl.textContent = 'Awaiting Resonance.';
+
+  // Trigger authentication ONLY when the user taps
+  btnUnlock.onclick = async () => {
+    btnUnlock.style.display = 'none';
+    statusEl.textContent = 'Authenticating...';
+
     const unlocked = await unlockWithPRF();
-    if (unlocked) {
-      lockScreen.style.display = 'none';
-      await init();
-      return;
-    }
-  } catch(e) {
-    console.error('Registration failed:', e);
-  }
-  
-  // Registration failed or user cancelled
-  showBackupKeyInput();
-}
 
-  function showBackupKeyInput() {
-    statusEl.textContent = 'Enter sovereign backup key.';
-    document.getElementById('fallback-key-input').style.display = 'block';
-    document.getElementById('btn-fallback-unlock').style.display = 'block';
-    document.getElementById('btn-fallback-unlock').onclick = unlockWithFallbackKey;
-    // Offer one cooldown Face ID retry
-    document.getElementById('btn-faceid-retry').style.display = 'block'; // add this button (see HTML patch)
-    document.getElementById('btn-faceid-retry').onclick = () => tryCooldownFaceID();
-  }
-
-  async function tryCooldownFaceID() {
-    if (cooldownActive) return;
-    const btn = document.getElementById('btn-faceid-retry');
-    cooldownActive = true;
-    btn.disabled = true;
-    let secs = 30;
-    const interval = setInterval(() => {
-      secs--;
-      btn.textContent = `◈ Retry Face ID (${secs}s)`;
-      if (secs <= 0) {
-        clearInterval(interval);
-        btn.textContent = '◈ Try Face ID';
-        btn.disabled = false;
-        cooldownActive = false;
-      }
-    }, 1000);
-    // Attempt immediately, cooldown prevents re-tap
-    const unlocked = await unlockWithPRF();
     if (unlocked) {
       lockScreen.style.display = 'none';
       await init();
     } else {
-      statusEl.textContent = 'Face ID rejected. Use sovereign key.';
+      triggerFallbackUI();
     }
+  };
+
+  // Wire up the manual retry button in case they hit cancel
+  if (btnRetry) {
+    btnRetry.onclick = async () => {
+      btnRetry.style.display = 'none';
+      statusEl.textContent = 'Retrying Face ID...';
+      const unlocked = await unlockWithPRF();
+      if (unlocked) {
+        lockScreen.style.display = 'none';
+        await init();
+      } else {
+        triggerFallbackUI();
+      }
+    };
   }
-  tryFaceID(); // kick off on boot
+
+  function triggerFallbackUI() {
+    statusEl.textContent = 'Face ID missing or rejected. Use Backup Key.';
+    fallbackInput.style.display = 'block';
+    btnFallbackUnlock.style.display = 'block';
+    btnFallbackUnlock.onclick = unlockWithFallbackKey;
+    if (btnRetry) btnRetry.style.display = 'block';
+    btnWipe.style.display = 'block'; // Unhide the escape hatch
+  }
 }
 bootApp();
-});
 
 
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');
