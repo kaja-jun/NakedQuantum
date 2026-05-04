@@ -6897,28 +6897,29 @@ async function bootApp() {
     btnWipe.style.cssText = 'display:none; background:none; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:12px 24px; border-radius:8px; margin-top:40px; text-transform:uppercase; cursor:pointer;';
     
     btnWipe.onclick = async () => {
-      if (!confirm('This will permanently delete your database to let you start fresh. Your old data cannot be recovered. Proceed?')) return;
-      
-      // 1. Wipe all local states, keys, and settings immediately
-      localStorage.clear();
-      
-      // 2. Terminate the SQL worker so Safari releases the OPFS file lock
-      if (typeof window._worker !== 'undefined' && window._worker) {
-        window._worker.terminate();
-      }
-      
-      // 3. Wait 200ms for the OS to release the file handle, then destroy the file
-      setTimeout(async () => {
-        try {
-          const root = await navigator.storage.getDirectory();
-          await root.removeEntry('nq.db');
-        } catch(e) { console.warn("OPFS file already gone or locked.", e); }
-        
-        // 4. Force a hard context reload by appending a timestamp to the URL.
-        // This ensures Safari doesn't trap the user in a ghost PWA state.
-        window.location.href = window.location.pathname + '?reset=' + Date.now();
-      }, 200);
-    };
+  if (!confirm('This will permanently delete your database to let you start fresh. Your old data cannot be recovered. Proceed?')) return;
+
+  localStorage.clear();
+
+  if (typeof window._worker !== 'undefined' && window._worker) {
+    window._worker.terminate();
+    window._worker = null;
+  }
+
+  // Give the worker time to release the file lock, then delete, then reload
+  await new Promise(r => setTimeout(r, 300));
+
+  try {
+    const root = await navigator.storage.getDirectory();
+    await root.removeEntry('nq.db');
+  } catch(e) { console.warn('OPFS already gone:', e); }
+
+  // Wait for deletion to flush before navigating
+  await new Promise(r => setTimeout(r, 200));
+
+  window.location.href = window.location.pathname + '?reset=' + Date.now();
+};
+
     lockScreen.appendChild(btnWipe);
   }
 
