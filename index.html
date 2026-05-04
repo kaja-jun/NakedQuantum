@@ -6911,7 +6911,7 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   
 // bootApp function
 async function bootApp() {
-  const NQ_DEV_MODE = false; // Set to false to test true lock flow
+  const DEV_MODE = false; // Set to false to test true lock flow
   const isDev = typeof NQ_DEV_MODE !== 'undefined' ? NQ_DEV_MODE : DEV_MODE;
 // --- FRESH START ESCAPE HATCH ---
 if (localStorage.getItem('nq_fresh_start') === '1') {
