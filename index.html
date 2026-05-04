@@ -1956,9 +1956,15 @@ function initWorker(){
 const NQ_DEV_MODE = (function() {
   try {
     const host = window.location.hostname;
-    return host.includes('alp') || host.includes('beta') || host === 'localhost';
+    // Dev branches on Cloudflare Pages include the branch name in the subdomain
+    if (host.includes('alp')) return true;
+    if (host.includes('beta')) return true;
+    // Local development on computer
+    if (host === 'localhost' || host === '127.0.0.1') return true;
+    // Everything else (main branch, nakedquantum.com, *.pages.dev without alpha/beta) = production
+    return false;
   } catch(e) {
-    return true; // If we can't detect, assume dev (safe default)
+    return true; // Safe default: if detection fails, assume dev
   }
 })();
 
