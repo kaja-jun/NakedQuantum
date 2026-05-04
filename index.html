@@ -2959,82 +2959,86 @@ async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
 async function unlockWithPRF() {
   const stored = localStorage.getItem(WA_CRED_KEY);
 
+  // 1. IF WE HAVE A FACE ID LINKED -> TRY TO UNLOCK
+  if (stored) {
+    try {
+      const opts = {
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          userVerification: 'required',
+          allowCredentials:[{ id: b64ToBuf(stored), type: 'public-key' }],
+          extensions: { prf: { eval: { first: getPRFSalt() } } },
+          timeout: 60000
+        }
+      };
+
+      const assertion = await navigator.credentials.get(opts);
+      const ext = assertion.getClientExtensionResults();
+
+      if (ext.prf?.results?.first) {
+        let prfKey = new Uint8Array(ext.prf.results.first);
+        let finalKey = prfKey;
+
+        const wrapped = localStorage.getItem('nq_wrapped_sk');
+        if (wrapped) {
+          try {
+            finalKey = await unwrapSovereignKey(wrapped, prfKey);
+          } catch(e) {
+            console.error("Failed to unwrap SK. PRF key mismatch.", e);
+            showToast('⚠ Face ID Key mismatch');
+            return false;
+          }
+        }
+
+        setSovereignKey(finalKey);
+        await setEncryptionKey(finalKey);
+        showToast('Sovereign key active ◆');
+        return true;
+      }
+    } catch (e) {
+      console.warn('Face ID assertion rejected or cancelled.', e);
+      return false; // Drop to fallback UI
+    }
+  }
+
+  // 2. IF WE DO NOT HAVE A FACE ID LINKED (Fresh Install or Burned Vault)
+  
+  // SAFEGUARD: Check if the vault exists. If Safari cleared localStorage 
+  // but the DB remains, generating a new Face ID will brick the vault forever.
+  let dbExists = false;
   try {
-    const opts = {
+    const root = await navigator.storage.getDirectory();
+    await root.getFileHandle('nq.db');
+    dbExists = true;
+  } catch(err) {}
+
+  if (dbExists) {
+    showToast('⚠ Vault found but Face ID link lost. Use Backup Key.');
+    return false; // Drop to fallback UI to enter sovereign key
+  }
+
+  // It is a completely fresh universe. Safe to register new Face ID.
+  try {
+    const cred = await navigator.credentials.create({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
-        userVerification: 'required',
+        rp: { name: 'NakedQuantum', id: location.hostname },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
+        pubKeyCredParams:[{ alg: -7, type: 'public-key' }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
         extensions: { prf: { eval: { first: getPRFSalt() } } },
         timeout: 60000
       }
-    };
-    if (stored) opts.publicKey.allowCredentials =[{ id: b64ToBuf(stored), type: 'public-key' }];
-
-    const assertion = await navigator.credentials.get(opts);
-    const ext = assertion.getClientExtensionResults();
-
-    if (ext.prf?.results?.first) {
-      let prfKey = new Uint8Array(ext.prf.results.first);
-      let finalKey = prfKey;
-
-      const wrapped = localStorage.getItem('nq_wrapped_sk');
-      if (wrapped) {
-        try {
-          finalKey = await unwrapSovereignKey(wrapped, prfKey);
-        } catch(e) {
-          console.error("Failed to unwrap SK. PRF key mismatch.", e);
-          showToast('⚠ Face ID Key mismatch');
-          return false;
-        }
-      }
-
-      setSovereignKey(finalKey);
-      await setEncryptionKey(finalKey);
-      showToast('Sovereign key active ◆');
-      return true;
-    }
-  } catch (e) {
-    // If getting the assertion failed...
-    if (!stored) {
-      // SAFEGUARD: Check if the vault exists. If localStorage was cleared 
-      // but the DB remains, generating a new key will brick the vault forever.
-      let dbExists = false;
-      try {
-        const root = await navigator.storage.getDirectory();
-        await root.getFileHandle('nq.db');
-        dbExists = true;
-      } catch(err) {}
-
-      if (dbExists) {
-        showToast('⚠ Vault found but Face ID link lost. Use Backup Key.');
-        return false;
-      }
-
-      // It is truly a fresh install. Safe to register.
-      try {
-        const cred = await navigator.credentials.create({
-          publicKey: {
-            challenge: crypto.getRandomValues(new Uint8Array(32)),
-            rp: { name: 'NakedQuantum', id: location.hostname },
-            user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
-            pubKeyCredParams:[{ alg: -7, type: 'public-key' }],
-            authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
-            extensions: { prf: { eval: { first: getPRFSalt() } } },
-            timeout: 60000
-          }
-        });
-        localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-        showToast('◈ Face ID registered');
-        // Recursively trigger unlock now that the credential exists
-        return await unlockWithPRF();
-      } catch(regErr) {
-        console.error('PRF register failed:', regErr);
-      }
-    } else {
-      console.warn('Face ID assertion rejected or cancelled.');
-    }
+    });
+    localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
+    showToast('◈ Face ID registered');
+    
+    // Face ID created successfully. Recursively trigger unlock to generate the key.
+    return await unlockWithPRF();
+  } catch(regErr) {
+    console.error('PRF register failed:', regErr);
+    return false; // User cancelled creation, drop to fallback UI
   }
-  return false;
 }
 
 // WEBAUTHN RESET
