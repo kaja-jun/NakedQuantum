@@ -1754,9 +1754,9 @@ try {
 
   db.run("CREATE TABLE IF NOT EXISTS cosm_folders(id TEXT PRIMARY KEY, name TEXT, parent_id TEXT, created_at INTEGER, updated_at INTEGER, is_deleted INTEGER DEFAULT 0)");
   db.run("CREATE TABLE IF NOT EXISTS cosm_discourses(id TEXT PRIMARY KEY, title TEXT, raw_text TEXT, folder_id TEXT, source_link TEXT, item_type TEXT, tags TEXT, is_deleted INTEGER DEFAULT 0, deleted_at INTEGER, created_at INTEGER, updated_at INTEGER)");
-  db.run("CREATE TABLE IF NOT EXISTS guardian_summaries(id TEXT PRIMARY KEY, discourse_id TEXT, summary TEXT, map_type TEXT, first_line TEXT, last_line TEXT, key_terms TEXT, emotional_arc TEXT, extractive_summary TEXT, watcher TEXT, word_count INTEGER, model TEXT, generated_at INTEGER, created_at INTEGER, updated_at INTEGER)");
-  db.run("CREATE TABLE IF NOT EXISTS immutable_entities(id TEXT PRIMARY KEY, display_name TEXT NOT NULL, archetype_tag TEXT, existential_function TEXT, system_prompt_core TEXT, constraints TEXT, voice_limits TEXT, memory_policy TEXT DEFAULT 'stateless', model_variants TEXT, example_turns TEXT, watcher_thresholds TEXT, guardian_audit_hash TEXT, sigil_svg TEXT, locked_at INTEGER, signature TEXT, is_hidden INTEGER DEFAULT 0, created_at INTEGER, updated_at INTEGER)");
-  db.run("CREATE TABLE IF NOT EXISTS immutable_entities_enc(id TEXT PRIMARY KEY, enc TEXT)");
+ db.run("CREATE TABLE IF NOT EXISTS guardian_summaries(id TEXT PRIMARY KEY, discourse_id TEXT, summary TEXT, map_type TEXT, first_line TEXT, last_line TEXT, key_terms TEXT, emotional_arc TEXT, extractive_summary TEXT, watcher TEXT, word_count INTEGER, model TEXT, generated_at INTEGER, created_at INTEGER, updated_at INTEGER)");
+ db.run("CREATE TABLE IF NOT EXISTS immutable_entities(id TEXT PRIMARY KEY, display_name TEXT NOT NULL, archetype_tag TEXT, existential_function TEXT, system_prompt_core TEXT, constraints TEXT, voice_limits TEXT, memory_policy TEXT DEFAULT 'stateless', model_variants TEXT, example_turns TEXT, watcher_thresholds TEXT, guardian_audit_hash TEXT, sigil_svg TEXT, locked_at INTEGER, signature TEXT, is_hidden INTEGER DEFAULT 0, created_at INTEGER, updated_at INTEGER)");
+db.run("CREATE TABLE IF NOT EXISTS immutable_entities_enc(id TEXT PRIMARY KEY, enc TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS characters(id TEXT PRIMARY KEY, name TEXT, role TEXT, backstory TEXT, personality TEXT, lorebook TEXT, scenario TEXT, inclination TEXT, relationships TEXT, pc_info TEXT, player_role_id TEXT, image TEXT, temperature REAL DEFAULT 1, is_deleted INTEGER DEFAULT 0, deleted_at INTEGER, created_at INTEGER, updated_at INTEGER)");
   // THE FIX: History and Summaries now use TEXT IDs (UUID/Timestamps)
   db.run("CREATE TABLE IF NOT EXISTS history(id TEXT PRIMARY KEY, charId TEXT, role TEXT, content TEXT, created_at INTEGER)");
@@ -6885,22 +6885,22 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   
 // bootApp function
 async function bootApp() {
-  if (DEV_MODE) {
-    // DEV MODE: Skip lock screen entirely
-    try {
-      document.getElementById('lock-screen').style.display = 'none';
-      await init();
-      document.getElementById('btn-dev-force-pass').style.display = 'flex';
-      document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
-    } catch(e) {
-      console.error('DEV boot failed:', e);
-    }
-    return;
-  }
+  const DEV_MODE = true; // flip to false for production
   
-  // PRODUCTION: Full PRF/WebAuthn unlock flow
+  if (DEV_MODE) {
+  try {
+    document.getElementById('lock-screen').style.display = 'none';
+        await init();
+    document.getElementById('btn-dev-force-pass').style.display = 'flex';
+    document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
+  } catch(e) {
+    console.error('DEV boot failed:', e);
+    alert('Boot error: ' + e.message);
+  }
+  return;
+}
   const lockScreen = document.getElementById('lock-screen');
-  const statusEl = document.getElementById('lock-status');
+  const statusEl = document.getElementById('lock-status'); // add this element (see HTML patch below)
   let faceAttempts = 0;
   const MAX_FACE_ATTEMPTS = 3;
   let cooldownActive = false;
@@ -6917,8 +6917,8 @@ async function bootApp() {
       lockScreen.style.display = 'none';
       await init();
     } else if (faceAttempts < MAX_FACE_ATTEMPTS) {
-      statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempts remaining.`;
-      setTimeout(tryFaceID, 800);
+      statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempt${MAX_FACE_ATTEMPTS - faceAttempts > 1 ? 's' : ''} remaining.`;
+      setTimeout(tryFaceID, 800); // brief pause between attempts
     } else {
       showBackupKeyInput();
     }
@@ -6929,7 +6929,8 @@ async function bootApp() {
     document.getElementById('fallback-key-input').style.display = 'block';
     document.getElementById('btn-fallback-unlock').style.display = 'block';
     document.getElementById('btn-fallback-unlock').onclick = unlockWithFallbackKey;
-    document.getElementById('btn-faceid-retry').style.display = 'block';
+    // Offer one cooldown Face ID retry
+    document.getElementById('btn-faceid-retry').style.display = 'block'; // add this button (see HTML patch)
     document.getElementById('btn-faceid-retry').onclick = () => tryCooldownFaceID();
   }
 
@@ -6949,6 +6950,7 @@ async function bootApp() {
         cooldownActive = false;
       }
     }, 1000);
+    // Attempt immediately, cooldown prevents re-tap
     const unlocked = await unlockWithPRF();
     if (unlocked) {
       lockScreen.style.display = 'none';
@@ -6957,8 +6959,7 @@ async function bootApp() {
       statusEl.textContent = 'Face ID rejected. Use sovereign key.';
     }
   }
-  
-  tryFaceID();
+  tryFaceID(); // kick off on boot
 }
 bootApp();
 });
