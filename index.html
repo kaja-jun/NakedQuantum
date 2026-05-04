@@ -6886,19 +6886,21 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
 // bootApp function
 async function bootApp() {
   if (DEV_MODE) {
-  try {
-    document.getElementById('lock-screen').style.display = 'none';
-        await init();
-    document.getElementById('btn-dev-force-pass').style.display = 'flex';
-    document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
-  } catch(e) {
-    console.error('DEV boot failed:', e);
-    alert('Boot error: ' + e.message);
+    // DEV MODE: Skip lock screen entirely
+    try {
+      document.getElementById('lock-screen').style.display = 'none';
+      await init();
+      document.getElementById('btn-dev-force-pass').style.display = 'flex';
+      document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
+    } catch(e) {
+      console.error('DEV boot failed:', e);
+    }
+    return;
   }
-  return;
-}
+  
+  // PRODUCTION: Full PRF/WebAuthn unlock flow
   const lockScreen = document.getElementById('lock-screen');
-  const statusEl = document.getElementById('lock-status'); // add this element (see HTML patch below)
+  const statusEl = document.getElementById('lock-status');
   let faceAttempts = 0;
   const MAX_FACE_ATTEMPTS = 3;
   let cooldownActive = false;
@@ -6915,8 +6917,8 @@ async function bootApp() {
       lockScreen.style.display = 'none';
       await init();
     } else if (faceAttempts < MAX_FACE_ATTEMPTS) {
-      statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempt${MAX_FACE_ATTEMPTS - faceAttempts > 1 ? 's' : ''} remaining.`;
-      setTimeout(tryFaceID, 800); // brief pause between attempts
+      statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempts remaining.`;
+      setTimeout(tryFaceID, 800);
     } else {
       showBackupKeyInput();
     }
@@ -6927,8 +6929,7 @@ async function bootApp() {
     document.getElementById('fallback-key-input').style.display = 'block';
     document.getElementById('btn-fallback-unlock').style.display = 'block';
     document.getElementById('btn-fallback-unlock').onclick = unlockWithFallbackKey;
-    // Offer one cooldown Face ID retry
-    document.getElementById('btn-faceid-retry').style.display = 'block'; // add this button (see HTML patch)
+    document.getElementById('btn-faceid-retry').style.display = 'block';
     document.getElementById('btn-faceid-retry').onclick = () => tryCooldownFaceID();
   }
 
@@ -6948,7 +6949,6 @@ async function bootApp() {
         cooldownActive = false;
       }
     }, 1000);
-    // Attempt immediately, cooldown prevents re-tap
     const unlocked = await unlockWithPRF();
     if (unlocked) {
       lockScreen.style.display = 'none';
@@ -6957,7 +6957,8 @@ async function bootApp() {
       statusEl.textContent = 'Face ID rejected. Use sovereign key.';
     }
   }
-  tryFaceID(); // kick off on boot
+  
+  tryFaceID();
 }
 bootApp();
 });
