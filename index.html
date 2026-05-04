@@ -1953,8 +1953,14 @@ function initWorker(){
 
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
-const NQ_DEV_MODE = window.location.hostname.includes('alpha') || 
-                 window.location.hostname.includes('localhost');
+const DEV_MODE = (function() {
+  try {
+    const host = window.location.hostname;
+    return host.includes('alpha') || host.includes('beta') || host === 'localhost';
+  } catch(e) {
+    return true; // If we can't detect, assume dev (safe default)
+  }
+})();
 
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
 const W_SIMILARITY_THRESHOLD = NQ_DEV_MODE ? 0.50 : 0.73;
