@@ -1953,11 +1953,7 @@ function initWorker(){
 
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
-const NQ_DEV_MODE = (function() {
-  const host = window.location.hostname;
-  return host === 'nakedquantum-alp.pages.dev' ||
-         host === 'nakedquantum-beta.pages.dev';
-})();
+const NQ_DEV_MODE = false;
 
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
 const W_SIMILARITY_THRESHOLD = NQ_DEV_MODE ? 0.50 : 0.73;
@@ -2956,232 +2952,6 @@ async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
   return new Uint8Array(dec);
 }
 
-async function unlockWithPRF(){
-  const stored = localStorage.getItem(WA_CRED_KEY);
-  try {
-    const opts = {
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        userVerification: 'required',
-        extensions: { prf: { eval: { first: getPRFSalt() } } },
-        timeout: 60000
-      }
-    };
-    if(stored) opts.publicKey.allowCredentials =[{ id: b64ToBuf(stored), type: 'public-key' }];
-
-    const assertion = await navigator.credentials.get(opts);
-    const ext = assertion.getClientExtensionResults();
-
-    if(ext.prf?.results?.first){
-      let prfKey = new Uint8Array(ext.prf.results.first);
-      let finalKey = prfKey;
-      
-      // If we find a wrapped key, Face ID is acting as a wrapper. Unpack it.
-      const wrapped = localStorage.getItem('nq_wrapped_sk');
-      if (wrapped) {
-        try {
-          finalKey = await unwrapSovereignKey(wrapped, prfKey);
-        } catch(e) {
-          console.error("Failed to unwrap SK. PRF key mismatch.", e);
-          showToast('⚠ Face ID Key mismatch');
-          return false;
-        }
-      }
-      
-      setSovereignKey(finalKey); // Capture in RAM for backup/sync
-      await setEncryptionKey(finalKey);
-      showToast('Sovereign key active ◆');
-      return true;
-    }
-  } catch(e) {
-    if(!stored){
-      try {
-        const cred = await navigator.credentials.create({
-          publicKey: {
-            challenge: crypto.getRandomValues(new Uint8Array(32)),
-            rp: { name: 'NakedQuantum', id: location.hostname },
-            user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
-            pubKeyCredParams:[{ alg: -7, type: 'public-key' }],
-            authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
-            extensions: { prf: { eval: { first: getPRFSalt() } } },
-            timeout: 60000
-          }
-        });
-        localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-        showToast('◈ Face ID registered -- unlock now');
-        return await unlockWithPRF();
-      } catch(regErr) {
-        console.error('PRF register failed:', regErr);
-      }
-    }
-  }
-  showToast('⚠ Running without encryption');
-  return false;
-}
-
-// WEBAUTHN RESET
-async function resetWebAuthnRegistration() {
-  const currentSK = getSovereignKey();
-  if (!currentSK) {
-    showToast('⚠ No active Sovereign Key. Unlock Abyss first.');
-    return;
-  }
-  
-  if (!confirm('This will bind a new Face ID to your existing Sovereign Key. You will be prompted to authenticate now. Continue?')) return;
-  
-  try {
-    // 1. Generate a brand new salt
-    const newSalt = crypto.getRandomValues(new Uint8Array(32));
-    localStorage.setItem('nq_prf_salt', bufToB64(newSalt.buffer));
-    
-    // 2. Create the new credential
-    const cred = await navigator.credentials.create({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: { name: 'NakedQuantum', id: location.hostname },
-        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
-        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
-        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
-        extensions: { prf: { eval: { first: newSalt.buffer } } },
-        timeout: 60000
-      }
-    });
-    
-    localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-    
-    // 3. Immediately assert to get the new PRF output
-    const assertion = await navigator.credentials.get({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        userVerification: 'required',
-        allowCredentials: [{ id: cred.rawId, type: 'public-key' }],
-        extensions: { prf: { eval: { first: newSalt.buffer } } },
-        timeout: 60000
-      }
-    });
-    
-    const ext = assertion.getClientExtensionResults();
-    if (ext.prf?.results?.first) {
-      const newPrfKey = new Uint8Array(ext.prf.results.first);
-      
-      // 4. Wrap the existing Sovereign Key with the new PRF key
-      const wrapped = await wrapSovereignKey(currentSK, newPrfKey);
-      localStorage.setItem('nq_wrapped_sk', wrapped);
-      
-      showToast('◈ Face ID Re-bound Safely');
-    } else {
-      throw new Error('PRF verification failed on bind');
-    }
-  } catch (e) {
-    console.error("Bind failed:", e);
-    showToast('⚠ Face ID update failed or was cancelled.');
-  }
-}
-
-async function unlockWithFallbackKey() {
-  const inputEl = document.getElementById('fallback-key-input');
-  const input = inputEl.value.trim();
-  
-  // Helper to flash error directly on the input box
-  const showError = (msg) => {
-    inputEl.value = '';
-    inputEl.placeholder = msg;
-    inputEl.style.borderColor = '#ff6060';
-    setTimeout(() => {
-      inputEl.style.borderColor = 'var(--border)';
-      inputEl.placeholder = 'Paste Sovereign Key...';
-    }, 2500);
-  };
-  
-  if(!input) {
-    showError("⚠ PASTE KEY FIRST");
-    return;
-  }
-  
-  try {
-    const buf = b64ToBuf(input);
-    const keyBytes = new Uint8Array(buf);
-    
-    if(keyBytes.length !== 32) throw new Error("Incorrect key length");
-    
-    setSovereignKey(keyBytes);
-    await setEncryptionKey(keyBytes);
-    
-    document.getElementById('lock-screen').style.display = 'none';
-    showToast("Abyss Unlocked ◆"); // This toast is fine because the keyboard drops when app loads
-    await init();
-  } catch(e) {
-    showError("⚠ INVALID KEY");
-  }
-}
-
-// ─── SECURE KEY STORAGE ─────────────────────────────────────────────────────
-
-async function storeSecureKey(storageKey, value) {
-  if (!getSovereignKey() || !value) {
-    // No sovereign key yet (DEV_MODE) -- fall back to plaintext
-    localStorage.setItem(storageKey, value);
-    return;
-  }
-  const cryptoKey = await getCloudCryptoKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    cryptoKey,
-    new TextEncoder().encode(value)
-  );
-  localStorage.setItem(
-    storageKey + '_enc',
-    JSON.stringify({ iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) })
-  );
-  localStorage.removeItem(storageKey); // remove any old plaintext
-}
-
-async function readSecureKey(storageKey) {
-  const enc = localStorage.getItem(storageKey + '_enc');
-  if (enc && getSovereignKey()) {
-    try {
-      const { iv, ct } = JSON.parse(enc);
-      const cryptoKey = await getCloudCryptoKey();
-      const dec = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: new Uint8Array(iv) },
-        cryptoKey,
-        new Uint8Array(ct)
-      );
-      return new TextDecoder().decode(dec);
-    } catch (e) {
-      console.error('Key decrypt failed:', e);
-    }
-  }
-  // Fallback: plaintext (DEV_MODE or pre-migration)
-  return localStorage.getItem(storageKey) || '';
-}
-
-/* INIT */
-async function init(){
-  await _workerReady;
-  
-  // Ask iOS nicely to not erase us
-  if(navigator.storage&&navigator.storage.persist){
-    navigator.storage.persist().then(granted=>{
-      if(granted)console.log('◆ Storage persistence granted');
-    });
-  }
-  
-  currentMode = 'soup';
-  currentView = 'soup';
-  currentFolderId = null;
-  breadcrumbPath = [{id: null, name: '◈ The Soup'}];
-  
-  updateHeaderButtons();
-  showPanel('view-soup'); 
-  await renderTableView();
-  
-  document.getElementById('input-api-key').value=await readSecureKey('nq_api_key')||'';
-  document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
-  initWatcher();
-  initGuardianModel();
-}
 
 /* BURN DISC */
 async function openBurnDiscModal(){
@@ -6887,82 +6657,319 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   // Initial draw
   renderGoldTicks();
   
-// bootApp function
-async function bootApp() {
-  
-  if (NQ_DEV_MODE) {
+// ─── AUTHENTICATION FLOW ─────────────────────────────────────────────────────
+
+async function checkVaultExists() {
   try {
-    document.getElementById('lock-screen').style.display = 'none';
-        await init();
-    document.getElementById('btn-dev-force-pass').style.display = 'flex';
-    document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
+    const root = await navigator.storage.getDirectory();
+    await root.getFileHandle('nq.db');
+    return true;
   } catch(e) {
-    console.error('DEV boot failed:', e);
-    alert('Boot error: ' + e.message);
+    return false; // No database found
   }
-  return;
 }
-  const lockScreen = document.getElementById('lock-screen');
-  const statusEl = document.getElementById('lock-status'); // add this element (see HTML patch below)
-  let faceAttempts = 0;
-  const MAX_FACE_ATTEMPTS = 3;
-  let cooldownActive = false;
 
-  async function tryFaceID() {
-    if (faceAttempts >= MAX_FACE_ATTEMPTS) {
-      showBackupKeyInput();
-      return;
-    }
-    faceAttempts++;
-    statusEl.textContent = `Face ID attempt ${faceAttempts} of ${MAX_FACE_ATTEMPTS}...`;
-    const unlocked = await unlockWithPRF();
-    if (unlocked) {
-      lockScreen.style.display = 'none';
-      await init();
-    } else if (faceAttempts < MAX_FACE_ATTEMPTS) {
-      statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempt${MAX_FACE_ATTEMPTS - faceAttempts > 1 ? 's' : ''} remaining.`;
-      setTimeout(tryFaceID, 800); // brief pause between attempts
-    } else {
-      showBackupKeyInput();
-    }
+async function handleAuthFlow() {
+  const storedCred = localStorage.getItem(WA_CRED_KEY);
+  const vaultExists = await checkVaultExists();
+
+  if (storedCred) {
+    // We have a Face ID saved. Attempt to unlock.
+    return await attemptUnlock(storedCred);
+  } else if (vaultExists) {
+    // SAFEGUARD: The vault exists, but the Face ID is gone (e.g. cleared cache).
+    // We CANNOT create a new passkey, or it will overwrite the vault key and brick it.
+    showToast('⚠ Vault found but Passkey lost. Use Backup Key.');
+    return false;
+  } else {
+    // Fresh universe. No passkey, no vault. Safe to register.
+    return await attemptRegistration();
   }
+}
 
-  function showBackupKeyInput() {
-    statusEl.textContent = 'Enter sovereign backup key.';
-    document.getElementById('fallback-key-input').style.display = 'block';
-    document.getElementById('btn-fallback-unlock').style.display = 'block';
-    document.getElementById('btn-fallback-unlock').onclick = unlockWithFallbackKey;
-    // Offer one cooldown Face ID retry
-    document.getElementById('btn-faceid-retry').style.display = 'block'; // add this button (see HTML patch)
-    document.getElementById('btn-faceid-retry').onclick = () => tryCooldownFaceID();
-  }
-
-  async function tryCooldownFaceID() {
-    if (cooldownActive) return;
-    const btn = document.getElementById('btn-faceid-retry');
-    cooldownActive = true;
-    btn.disabled = true;
-    let secs = 30;
-    const interval = setInterval(() => {
-      secs--;
-      btn.textContent = `◈ Retry Face ID (${secs}s)`;
-      if (secs <= 0) {
-        clearInterval(interval);
-        btn.textContent = '◈ Try Face ID';
-        btn.disabled = false;
-        cooldownActive = false;
+async function attemptUnlock(storedCred) {
+  try {
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        userVerification: 'required',
+        allowCredentials:[{ id: b64ToBuf(storedCred), type: 'public-key' }],
+        extensions: { prf: { eval: { first: getPRFSalt() } } },
+        timeout: 60000
       }
-    }, 1000);
-    // Attempt immediately, cooldown prevents re-tap
-    const unlocked = await unlockWithPRF();
-    if (unlocked) {
+    });
+
+    if (assertion.getClientExtensionResults().prf?.results?.first) {
+      let prfKey = new Uint8Array(assertion.getClientExtensionResults().prf.results.first);
+      let finalKey = prfKey;
+
+      const wrapped = localStorage.getItem('nq_wrapped_sk');
+      if (wrapped) {
+        try {
+          finalKey = await unwrapSovereignKey(wrapped, prfKey);
+        } catch(e) {
+          console.error("Unwrap failed", e);
+          showToast('⚠ Key mismatch');
+          return false;
+        }
+      }
+
+      setSovereignKey(finalKey);
+      await setEncryptionKey(finalKey);
+      showToast('Abyss Unlocked ◆');
+      return true;
+    }
+  } catch (e) {
+    console.warn("Unlock assertion failed/cancelled:", e);
+  }
+  return false;
+}
+
+async function attemptRegistration() {
+  try {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'NakedQuantum', id: location.hostname },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
+        pubKeyCredParams:[{ alg: -7, type: 'public-key' }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
+        extensions: { prf: { eval: { first: getPRFSalt() } } },
+        timeout: 60000
+      }
+    });
+
+    localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
+    showToast('◈ Face ID registered');
+    
+    // Immediately unlock using the newly created credential
+    return await attemptUnlock(bufToB64(cred.rawId));
+  } catch (e) {
+    console.error("Registration failed/cancelled:", e);
+  }
+  return false;
+}
+
+// WEBAUTHN RESET (In-App Bind Update)
+async function resetWebAuthnRegistration() {
+  const currentSK = getSovereignKey();
+  if (!currentSK) {
+    showToast('⚠ No active Sovereign Key. Unlock Abyss first.');
+    return;
+  }
+  
+  if (!confirm('This will bind a new Face ID to your existing Sovereign Key. You will be prompted to authenticate now. Continue?')) return;
+  
+  try {
+    const newSalt = crypto.getRandomValues(new Uint8Array(32));
+    localStorage.setItem('nq_prf_salt', bufToB64(newSalt.buffer));
+    
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'NakedQuantum', id: location.hostname },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
+        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
+        extensions: { prf: { eval: { first: newSalt.buffer } } },
+        timeout: 60000
+      }
+    });
+    
+    localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
+    
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        userVerification: 'required',
+        allowCredentials:[{ id: cred.rawId, type: 'public-key' }],
+        extensions: { prf: { eval: { first: newSalt.buffer } } },
+        timeout: 60000
+      }
+    });
+    
+    const ext = assertion.getClientExtensionResults();
+    if (ext.prf?.results?.first) {
+      const newPrfKey = new Uint8Array(ext.prf.results.first);
+      const wrapped = await wrapSovereignKey(currentSK, newPrfKey);
+      localStorage.setItem('nq_wrapped_sk', wrapped);
+      showToast('◈ Face ID Re-bound Safely');
+    } else {
+      throw new Error('PRF verification failed on bind');
+    }
+  } catch (e) {
+    console.error("Bind failed:", e);
+    showToast('⚠ Face ID update failed or was cancelled.');
+  }
+}
+
+async function unlockWithFallbackKey() {
+  const inputEl = document.getElementById('fallback-key-input');
+  const input = inputEl.value.trim();
+  
+  const showError = (msg) => {
+    inputEl.value = '';
+    inputEl.placeholder = msg;
+    inputEl.style.borderColor = '#ff6060';
+    setTimeout(() => {
+      inputEl.style.borderColor = 'var(--border)';
+      inputEl.placeholder = 'Paste Sovereign Key...';
+    }, 2500);
+  };
+  
+  if(!input) { showError("⚠ PASTE KEY FIRST"); return; }
+  
+  try {
+    const buf = b64ToBuf(input);
+    const keyBytes = new Uint8Array(buf);
+    if(keyBytes.length !== 32) throw new Error("Incorrect key length");
+    
+    setSovereignKey(keyBytes);
+    await setEncryptionKey(keyBytes);
+    
+    document.getElementById('lock-screen').style.display = 'none';
+    showToast("Abyss Unlocked ◆"); 
+    await init();
+  } catch(e) {
+    showError("⚠ INVALID KEY");
+  }
+}
+
+// ─── SECURE KEY STORAGE ─────────────────────────────────────────────────────
+
+async function storeSecureKey(storageKey, value) {
+  if (!getSovereignKey() || !value) {
+    localStorage.setItem(storageKey, value);
+    return;
+  }
+  const cryptoKey = await getCloudCryptoKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, new TextEncoder().encode(value));
+  localStorage.setItem(storageKey + '_enc', JSON.stringify({ iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) }));
+  localStorage.removeItem(storageKey); 
+}
+
+async function readSecureKey(storageKey) {
+  const enc = localStorage.getItem(storageKey + '_enc');
+  if (enc && getSovereignKey()) {
+    try {
+      const { iv, ct } = JSON.parse(enc);
+      const cryptoKey = await getCloudCryptoKey();
+      const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(iv) }, cryptoKey, new Uint8Array(ct));
+      return new TextDecoder().decode(dec);
+    } catch (e) {
+      console.error('Key decrypt failed:', e);
+    }
+  }
+  return localStorage.getItem(storageKey) || '';
+}
+
+/* INIT */
+async function init(){
+  await _workerReady;
+  
+  if(navigator.storage&&navigator.storage.persist){
+    navigator.storage.persist().then(granted => {
+      if(granted) console.log('◆ Storage persistence granted');
+    });
+  }
+  
+  currentMode = 'soup';
+  currentView = 'soup';
+  currentFolderId = null;
+  breadcrumbPath =[{id: null, name: '◈ The Soup'}];
+  
+  updateHeaderButtons();
+  showPanel('view-soup'); 
+  await renderTableView();
+  
+  document.getElementById('input-api-key').value=await readSecureKey('nq_api_key')||'';
+  document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
+  initWatcher();
+  initGuardianModel();
+}
+
+// ─── BOOT LOGIC ─────────────────────────────────────────────────────────────
+
+async function bootApp() {
+  const DEV_MODE = false; // Ensures Face ID lock screen activates
+  const isDev = typeof NQ_DEV_MODE !== 'undefined' ? NQ_DEV_MODE : DEV_MODE;
+
+  if (isDev) {
+    try {
+      document.getElementById('lock-screen').style.display = 'none';
+      await init();
+      const fpBtn = document.getElementById('btn-dev-force-pass');
+      if (fpBtn) fpBtn.style.display = 'flex';
+      const cwBtn = document.getElementById('btn-dev-clear-watcher');
+      if (cwBtn) cwBtn.style.display = 'flex';
+    } catch(e) {
+      console.error('DEV boot failed:', e);
+      alert('Boot error: ' + e.message);
+    }
+    return;
+  }
+
+  const lockScreen = document.getElementById('lock-screen');
+  const statusEl = document.getElementById('lock-status');
+  const btnUnlock = document.getElementById('btn-manual-unlock');
+  const btnFallbackUnlock = document.getElementById('btn-fallback-unlock');
+  const fallbackInput = document.getElementById('fallback-key-input');
+  
+  // Clean up any old duplicate UI elements from looping
+  const oldRetryBtn = document.getElementById('btn-faceid-retry');
+  if (oldRetryBtn) oldRetryBtn.style.display = 'none';
+
+  // Inject the "Burn Vault & Start Fresh" Escape Hatch securely
+  let btnWipe = document.getElementById('btn-wipe-abyss');
+  if (!btnWipe) {
+    btnWipe = document.createElement('button');
+    btnWipe.id = 'btn-wipe-abyss';
+    btnWipe.innerHTML = '✕ Burn Vault & Start Fresh';
+    btnWipe.style.cssText = 'display:none; background:none; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:10px 20px; border-radius:8px; margin-top:40px; text-transform:uppercase;';
+    btnWipe.onclick = async () => {
+      if (!confirm('WARNING: This will obliterate your Sovereign Vault permanently. Are you absolutely sure?')) return;
+      if (!confirm('FINAL WARNING: There is no undo. Burn the Abyss?')) return;
+      
+      localStorage.clear();
+      try {
+        const root = await navigator.storage.getDirectory();
+        await root.removeEntry('nq.db');
+      } catch(e) {}
+      
+      location.reload(); // Reload the app completely fresh
+    };
+    lockScreen.appendChild(btnWipe);
+  }
+
+  // 1. Await User Gesture
+  btnUnlock.style.display = 'block';
+  btnUnlock.textContent = localStorage.getItem(WA_CRED_KEY) ? 'Tap to Unlock' : 'Setup Face ID';
+  statusEl.textContent = 'Awaiting Resonance.';
+
+  // 2. Execute ONLY on click
+  btnUnlock.onclick = async () => {
+    btnUnlock.style.display = 'none';
+    statusEl.textContent = 'Authenticating...';
+
+    const success = await handleAuthFlow();
+
+    if (success) {
       lockScreen.style.display = 'none';
       await init();
     } else {
-      statusEl.textContent = 'Face ID rejected. Use sovereign key.';
+      // Fallback UI State
+      statusEl.textContent = 'Face ID missing or rejected. Use Backup Key.';
+      fallbackInput.style.display = 'block';
+      btnFallbackUnlock.style.display = 'block';
+      btnFallbackUnlock.onclick = unlockWithFallbackKey;
+      btnWipe.style.display = 'block'; // Unhide the escape hatch
+      
+      // Let them retry Face ID cleanly
+      btnUnlock.style.display = 'block';
+      btnUnlock.textContent = 'Retry Face ID';
     }
-  }
-  tryFaceID(); // kick off on boot
+  };
 }
 bootApp();
 });
