@@ -1953,8 +1953,7 @@ function initWorker(){
 
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
-const NQ_DEV_MODE = const DEV_MODE = window.location.hostname.includes('alp') || 
-                 window.location.hostname.includes('localhost');
+const NQ_DEV_MODE = true;
 
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
 const W_SIMILARITY_THRESHOLD = NQ_DEV_MODE ? 0.50 : 0.73;
@@ -6886,9 +6885,8 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   
 // bootApp function
 async function bootApp() {
-  const DEV_MODE = true; // flip to false for production
   
-  if (DEV_MODE) {
+  if (NQ_DEV_MODE) {
   try {
     document.getElementById('lock-screen').style.display = 'none';
         await init();
