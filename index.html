@@ -6893,62 +6893,101 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   renderGoldTicks();
   
 // bootApp function
+// bootApp function
 async function bootApp() {
   
+  // ── DEV MODE: skip everything ───────────────────────
   if (NQ_DEV_MODE) {
-  try {
-    document.getElementById('lock-screen').style.display = 'none';
-        await init();
-    document.getElementById('btn-dev-force-pass').style.display = 'flex';
-    document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
-  } catch(e) {
-    console.error('DEV boot failed:', e);
-    alert('Boot error: ' + e.message);
+    try {
+      document.getElementById('lock-screen').style.display = 'none';
+      await init();
+      document.getElementById('btn-dev-force-pass').style.display = 'flex';
+      document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
+    } catch(e) {
+      console.error('DEV boot failed:', e);
+      alert('Boot error: ' + e.message);
+    }
+    return;
   }
-  return;
-}
+  
+  // ── FRESH START ESCAPE HATCH (MUST RUN FIRST) ────────
+  // Check for one-time flag set by Burn Vault button
+  if (localStorage.getItem('nq_fresh_start') === '1') {
+    // Remove flag immediately so it doesn't loop
+    localStorage.removeItem('nq_fresh_start');
+    
+    try {
+      // Generate brand new key
+      const freshKey = crypto.getRandomValues(new Uint8Array(32));
+      setSovereignKey(freshKey);
+      await setEncryptionKey(freshKey);
+      
+      // Skip lock screen entirely
+      document.getElementById('lock-screen').style.display = 'none';
+      
+      // Clear any leftover credential references
+      localStorage.removeItem('nq_prf_cred_id');
+      localStorage.removeItem('nq_prf_salt');
+      localStorage.removeItem('nq_wrapped_sk');
+      
+      // Clean slate message
+      showToast('◈ Abyss reborn. Register Face ID in Data Sovereignty.');
+      
+      await init();
+      return; // EXIT -- never reaches Face ID
+    } catch(e) {
+      console.error('Fresh start failed:', e);
+      // If even this fails, fall through to normal lock screen
+      // but the vault is already empty so Burn Vault button will work again
+    }
+  }
+  
+  // ── NORMAL LOCK FLOW ──────────────────────────────────
   const lockScreen = document.getElementById('lock-screen');
-  // Inside bootApp(), right after the const lockScreen = ... block and before tryFaceID()
-if (localStorage.getItem('nq_fresh_start') === '1') {
-  localStorage.removeItem('nq_fresh_start');
-  const freshKey = crypto.getRandomValues(new Uint8Array(32));
-  setSovereignKey(freshKey);
-  await setEncryptionKey(freshKey);
-  lockScreen.style.display = 'none';
-  await init();
-  return;
-}
-  // Right inside bootApp(), after const lockScreen = ...
-let btnWipe = document.getElementById('btn-wipe-abyss');
-if (!btnWipe) {
-  // Create it if it wasn't already in the HTML (safety net)
-  btnWipe = document.createElement('button');
-  btnWipe.id = 'btn-wipe-abyss';
-  btnWipe.style.cssText = 'display:none; background:#1a0000; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:10px 20px; border-radius:8px; margin-top:40px; text-transform:uppercase;';
-  btnWipe.textContent = '✕ Burn Vault & Start Fresh';
-  lockScreen.appendChild(btnWipe);
-}
-btnWipe.onclick = async () => {
-  if (!confirm('WARNING: All memory, maps, and entities will be obliterated. Continue?')) return;
-  if (!confirm('FINAL WARNING: No undo. Burn the Abyss?')) return;
-  
-  localStorage.clear();
-  try {
-    const root = await navigator.storage.getDirectory();
-    await root.removeEntry('nq.db');
-  } catch(e) {}
-  
-  // Generate a fresh key so the app doesn't lock on next load
-  const freshKey = crypto.getRandomValues(new Uint8Array(32));
-  setSovereignKey(freshKey);
-  await setEncryptionKey(freshKey);
-  localStorage.setItem('nq_fresh_start', '1');
-  location.reload();
-};
-  const statusEl = document.getElementById('lock-status'); // add this element (see HTML patch below)
+  const statusEl = document.getElementById('lock-status');
   let faceAttempts = 0;
   const MAX_FACE_ATTEMPTS = 3;
   let cooldownActive = false;
+
+  // Build the Wipe button if it doesn't exist
+  let btnWipe = document.getElementById('btn-wipe-abyss');
+  if (!btnWipe) {
+    btnWipe = document.createElement('button');
+    btnWipe.id = 'btn-wipe-abyss';
+    btnWipe.style.cssText = 'display:none; background:#1a0000; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:10px 20px; border-radius:8px; margin-top:40px; text-transform:uppercase;';
+    btnWipe.textContent = '✕ Burn Vault & Start Fresh';
+    lockScreen.appendChild(btnWipe);
+  }
+  
+  // Wire the Wipe button
+  btnWipe.onclick = async () => {
+    if (!confirm('WARNING: All memory, maps, and entities will be obliterated. Continue?')) return;
+    if (!confirm('FINAL WARNING: No undo. Burn the Abyss?')) return;
+    
+    try {
+      // 1. Destroy everything
+      localStorage.clear();
+      try {
+        const root = await navigator.storage.getDirectory();
+        await root.removeEntry('nq.db');
+      } catch(e) {
+        // DB file might not exist yet -- that's fine
+      }
+      
+      // 2. Generate fresh key immediately
+      const freshKey = crypto.getRandomValues(new Uint8Array(32));
+      setSovereignKey(freshKey);
+      await setEncryptionKey(freshKey);
+      
+      // 3. Set flag for next load
+      localStorage.setItem('nq_fresh_start', '1');
+      
+      // 4. Reload -- the escape hatch above will catch it
+      location.reload();
+    } catch(e) {
+      alert('Reset failed. Try clearing website data manually in Safari Settings.');
+    }
+  };
 
   async function tryFaceID() {
     if (faceAttempts >= MAX_FACE_ATTEMPTS) {
@@ -6957,28 +6996,31 @@ btnWipe.onclick = async () => {
     }
     faceAttempts++;
     statusEl.textContent = `Face ID attempt ${faceAttempts} of ${MAX_FACE_ATTEMPTS}...`;
+    
     const unlocked = await unlockWithPRF();
+    
     if (unlocked) {
       lockScreen.style.display = 'none';
       await init();
     } else if (faceAttempts < MAX_FACE_ATTEMPTS) {
       statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempt${MAX_FACE_ATTEMPTS - faceAttempts > 1 ? 's' : ''} remaining.`;
-      setTimeout(tryFaceID, 800); // brief pause between attempts
+      setTimeout(tryFaceID, 800);
     } else {
       showBackupKeyInput();
     }
   }
 
   function showBackupKeyInput() {
-  statusEl.textContent = 'Enter sovereign backup key.';
-  document.getElementById('fallback-key-input').style.display = 'block';
-  document.getElementById('btn-fallback-unlock').style.display = 'block';
-  document.getElementById('btn-fallback-unlock').onclick = unlockWithFallbackKey;
-  document.getElementById('btn-faceid-retry').style.display = 'block';
-  document.getElementById('btn-faceid-retry').onclick = () => tryCooldownFaceID();
-  // ADD THIS:
-  document.getElementById('btn-wipe-abyss').style.display = 'block';
-}
+    statusEl.textContent = 'Enter sovereign backup key.';
+    document.getElementById('fallback-key-input').style.display = 'block';
+    document.getElementById('btn-fallback-unlock').style.display = 'block';
+    document.getElementById('btn-fallback-unlock').onclick = unlockWithFallbackKey;
+    document.getElementById('btn-faceid-retry').style.display = 'block';
+    document.getElementById('btn-faceid-retry').onclick = () => tryCooldownFaceID();
+    
+    // SHOW THE ESCAPE HATCH
+    btnWipe.style.display = 'block';
+  }
 
   async function tryCooldownFaceID() {
     if (cooldownActive) return;
@@ -6996,16 +7038,18 @@ btnWipe.onclick = async () => {
         cooldownActive = false;
       }
     }, 1000);
-    // Attempt immediately, cooldown prevents re-tap
+    
     const unlocked = await unlockWithPRF();
     if (unlocked) {
       lockScreen.style.display = 'none';
       await init();
     } else {
-      statusEl.textContent = 'Face ID rejected. Use sovereign key.';
+      statusEl.textContent = 'Face ID rejected. Use sovereign key or Burn Vault.';
     }
   }
-  tryFaceID(); // kick off on boot
+  
+  // Kick off the Face ID loop
+  tryFaceID();
 }
 bootApp();
 });
