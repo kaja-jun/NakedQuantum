@@ -1953,7 +1953,11 @@ function initWorker(){
 
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
-const NQ_DEV_MODE = false;
+const NQ_DEV_MODE = (function() {
+  const host = window.location.hostname;
+  return host === 'nakedquantum-alp.pages.dev' ||
+         host === 'nakedquantum-beta.pages.dev';
+})();
 
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
 const W_SIMILARITY_THRESHOLD = NQ_DEV_MODE ? 0.50 : 0.73;
@@ -6806,15 +6810,9 @@ async function resetWebAuthnRegistration() {
 async function unlockWithFallbackKey() {
   const inputEl = document.getElementById('fallback-key-input');
   const input = inputEl.value.trim();
-  
   const showError = (msg) => {
-    inputEl.value = '';
-    inputEl.placeholder = msg;
-    inputEl.style.borderColor = '#ff6060';
-    setTimeout(() => {
-      inputEl.style.borderColor = 'var(--border)';
-      inputEl.placeholder = 'Paste Sovereign Key...';
-    }, 2500);
+    inputEl.value = ''; inputEl.placeholder = msg; inputEl.style.borderColor = '#ff6060';
+    setTimeout(() => { inputEl.style.borderColor = 'var(--border)'; inputEl.placeholder = 'Paste Sovereign Key...'; }, 2500);
   };
   
   if(!input) { showError("⚠ PASTE KEY FIRST"); return; }
@@ -6826,22 +6824,15 @@ async function unlockWithFallbackKey() {
     
     setSovereignKey(keyBytes);
     await setEncryptionKey(keyBytes);
-    
     document.getElementById('lock-screen').style.display = 'none';
     showToast("Abyss Unlocked ◆"); 
     await init();
-  } catch(e) {
-    showError("⚠ INVALID KEY");
-  }
+  } catch(e) { showError("⚠ INVALID KEY"); }
 }
 
 // ─── SECURE KEY STORAGE ─────────────────────────────────────────────────────
-
 async function storeSecureKey(storageKey, value) {
-  if (!getSovereignKey() || !value) {
-    localStorage.setItem(storageKey, value);
-    return;
-  }
+  if (!getSovereignKey() || !value) { localStorage.setItem(storageKey, value); return; }
   const cryptoKey = await getCloudCryptoKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, new TextEncoder().encode(value));
@@ -6857,9 +6848,7 @@ async function readSecureKey(storageKey) {
       const cryptoKey = await getCloudCryptoKey();
       const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(iv) }, cryptoKey, new Uint8Array(ct));
       return new TextDecoder().decode(dec);
-    } catch (e) {
-      console.error('Key decrypt failed:', e);
-    }
+    } catch (e) { console.error('Key decrypt failed:', e); }
   }
   return localStorage.getItem(storageKey) || '';
 }
@@ -6867,46 +6856,28 @@ async function readSecureKey(storageKey) {
 /* INIT */
 async function init(){
   await _workerReady;
-  
   if(navigator.storage&&navigator.storage.persist){
-    navigator.storage.persist().then(granted => {
-      if(granted) console.log('◆ Storage persistence granted');
-    });
+    navigator.storage.persist().then(granted => { if(granted) console.log('◆ Storage persistence granted'); });
   }
-  
-  currentMode = 'soup';
-  currentView = 'soup';
-  currentFolderId = null;
-  breadcrumbPath =[{id: null, name: '◈ The Soup'}];
-  
-  updateHeaderButtons();
-  showPanel('view-soup'); 
-  await renderTableView();
-  
+  currentMode = 'soup'; currentView = 'soup'; currentFolderId = null; breadcrumbPath =[{id: null, name: '◈ The Soup'}];
+  updateHeaderButtons(); showPanel('view-soup'); await renderTableView();
   document.getElementById('input-api-key').value=await readSecureKey('nq_api_key')||'';
   document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
-  initWatcher();
-  initGuardianModel();
+  initWatcher(); initGuardianModel();
 }
 
-// ─── BOOT LOGIC ─────────────────────────────────────────────────────────────
-
+// ─── BOOT LOGIC & THE GRACEFUL CROSSROADS ───────────────────────────────────
 async function bootApp() {
-  const DEV_MODE = false; // Ensures Face ID lock screen activates
+  const DEV_MODE = false; 
   const isDev = typeof NQ_DEV_MODE !== 'undefined' ? NQ_DEV_MODE : DEV_MODE;
 
   if (isDev) {
     try {
       document.getElementById('lock-screen').style.display = 'none';
       await init();
-      const fpBtn = document.getElementById('btn-dev-force-pass');
-      if (fpBtn) fpBtn.style.display = 'flex';
-      const cwBtn = document.getElementById('btn-dev-clear-watcher');
-      if (cwBtn) cwBtn.style.display = 'flex';
-    } catch(e) {
-      console.error('DEV boot failed:', e);
-      alert('Boot error: ' + e.message);
-    }
+      const fpBtn = document.getElementById('btn-dev-force-pass'); if (fpBtn) fpBtn.style.display = 'flex';
+      const cwBtn = document.getElementById('btn-dev-clear-watcher'); if (cwBtn) cwBtn.style.display = 'flex';
+    } catch(e) { console.error('DEV boot failed:', e); alert('Boot error: ' + e.message); }
     return;
   }
 
@@ -6916,61 +6887,99 @@ async function bootApp() {
   const btnFallbackUnlock = document.getElementById('btn-fallback-unlock');
   const fallbackInput = document.getElementById('fallback-key-input');
   
-  // Clean up any old duplicate UI elements from looping
   const oldRetryBtn = document.getElementById('btn-faceid-retry');
   if (oldRetryBtn) oldRetryBtn.style.display = 'none';
 
-  // Inject the "Burn Vault & Start Fresh" Escape Hatch securely
+  // THE ESCAPE HATCH: Bulletproof OPFS Wipe & Cache Bust
   let btnWipe = document.getElementById('btn-wipe-abyss');
   if (!btnWipe) {
     btnWipe = document.createElement('button');
     btnWipe.id = 'btn-wipe-abyss';
-    btnWipe.innerHTML = '✕ Burn Vault & Start Fresh';
-    btnWipe.style.cssText = 'display:none; background:none; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:10px 20px; border-radius:8px; margin-top:40px; text-transform:uppercase;';
+    btnWipe.innerHTML = '✕ Lost Key? Burn Vault & Start Fresh';
+    btnWipe.style.cssText = 'display:none; background:none; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:12px 24px; border-radius:8px; margin-top:40px; text-transform:uppercase; cursor:pointer;';
+    
     btnWipe.onclick = async () => {
-      if (!confirm('WARNING: This will obliterate your Sovereign Vault permanently. Are you absolutely sure?')) return;
-      if (!confirm('FINAL WARNING: There is no undo. Burn the Abyss?')) return;
+      if (!confirm('This will permanently delete your database to let you start fresh. Your old data cannot be recovered. Proceed?')) return;
       
+      // 1. Wipe all local states, keys, and settings immediately
       localStorage.clear();
-      try {
-        const root = await navigator.storage.getDirectory();
-        await root.removeEntry('nq.db');
-      } catch(e) {}
       
-      location.reload(); // Reload the app completely fresh
+      // 2. Terminate the SQL worker so Safari releases the OPFS file lock
+      if (typeof window._worker !== 'undefined' && window._worker) {
+        window._worker.terminate();
+      }
+      
+      // 3. Wait 200ms for the OS to release the file handle, then destroy the file
+      setTimeout(async () => {
+        try {
+          const root = await navigator.storage.getDirectory();
+          await root.removeEntry('nq.db');
+        } catch(e) { console.warn("OPFS file already gone or locked.", e); }
+        
+        // 4. Force a hard context reload by appending a timestamp to the URL.
+        // This ensures Safari doesn't trap the user in a ghost PWA state.
+        window.location.href = window.location.pathname + '?reset=' + Date.now();
+      }, 200);
     };
     lockScreen.appendChild(btnWipe);
   }
 
-  // 1. Await User Gesture
+  // Determine App State smoothly
   btnUnlock.style.display = 'block';
-  btnUnlock.textContent = localStorage.getItem(WA_CRED_KEY) ? 'Tap to Unlock' : 'Setup Face ID';
-  statusEl.textContent = 'Awaiting Resonance.';
+  const vaultStatus = await checkVaultExists();
+  const hasFaceID = !!localStorage.getItem(WA_CRED_KEY);
 
-  // 2. Execute ONLY on click
+  if (hasFaceID) {
+      btnUnlock.textContent = 'Tap to Unlock';
+      statusEl.textContent = 'Awaiting Resonance.';
+  } else if (vaultStatus) {
+      // The Crossroads: Vault exists, but FaceID is missing.
+      btnUnlock.textContent = 'Enter Backup Key';
+      statusEl.textContent = 'Face ID link missing. Provide Sovereign Key.';
+  } else {
+      btnUnlock.textContent = 'Setup Face ID';
+      statusEl.textContent = 'Welcome to NakedQuantum.';
+  }
+
+  // Trigger Auth
   btnUnlock.onclick = async () => {
+    // If DB exists but passkey is gone, tapping the button bypasses WebAuthn and forces fallback directly
+    if (!hasFaceID && vaultStatus) { 
+      triggerFallbackUI(); 
+      return; 
+    }
+
     btnUnlock.style.display = 'none';
     statusEl.textContent = 'Authenticating...';
-
-    const success = await handleAuthFlow();
-
+    
+    const success = await executeAuthFlow();
     if (success) {
       lockScreen.style.display = 'none';
       await init();
     } else {
-      // Fallback UI State
-      statusEl.textContent = 'Face ID missing or rejected. Use Backup Key.';
-      fallbackInput.style.display = 'block';
-      btnFallbackUnlock.style.display = 'block';
-      btnFallbackUnlock.onclick = unlockWithFallbackKey;
-      btnWipe.style.display = 'block'; // Unhide the escape hatch
-      
-      // Let them retry Face ID cleanly
-      btnUnlock.style.display = 'block';
-      btnUnlock.textContent = 'Retry Face ID';
+      triggerFallbackUI();
     }
   };
+
+  function triggerFallbackUI() {
+    statusEl.textContent = 'Enter your Sovereign Key to unlock.';
+    fallbackInput.style.display = 'block';
+    btnFallbackUnlock.style.display = 'block';
+    btnFallbackUnlock.onclick = unlockWithFallbackKey;
+    
+    // Show the "Start Fresh" button prominently
+    btnWipe.style.display = 'block';
+    
+    // Only show "Retry Face ID" if they actually HAVE a Face ID saved
+    if (hasFaceID) {
+      btnUnlock.style.display = 'block';
+      btnUnlock.textContent = 'Retry Face ID';
+    } else {
+      btnUnlock.style.display = 'none';
+    }
+  }
 }
+// Engage the Abyss
 bootApp();
 });
 
