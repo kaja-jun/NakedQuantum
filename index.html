@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum_dev v0.30</title>
+<title>NakedQuantum v0.33.5</title>
 <style>
 :root {
   --bg: #000000;
@@ -66,12 +66,12 @@ button {
 .cards-section-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.45; font-weight: 900; text-transform: uppercase; padding: 14px 0 8px; }
 .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (min-width: 540px) { .cards-grid { grid-template-columns: repeat(3, 1fr); } }
-.card:last-child:nth-child(odd) { grid-column: span 2; }
+.cards-grid .card:last-child:nth-child(odd) { grid-column: span 2; }
+
 .folder-card, .discourse-card, .character-card { user-select: none; -webkit-user-select: none; }
 .card-selected { border-color: var(--accent) !important; background: rgba(200,160,80,0.08) !important; }
 
-
-.folder-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 14px 12px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 90px; display: flex; flex-direction: column; justify-content: space-between; }
+.folder-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 14px 12px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; }
 .folder-card.long-pressing { background: var(--surface2); border-color: var(--accent); transform: scale(0.98); }
 .folder-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent-dim), transparent); opacity: 0.4; }
 .folder-card:active { border-color: var(--accent); background: var(--surface2); }
@@ -80,13 +80,13 @@ button {
 .folder-card-name { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px; }
 .folder-card-meta { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; margin-top: 3px; }
 
-.discourse-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 110px; display: flex; flex-direction: column; gap: 6px; }
+.discourse-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 200px; display: flex; flex-direction: column; gap: 6px; }
 .discourse-card.long-pressing { background: var(--surface2); border-color: var(--accent); transform: scale(0.98); }
 .discourse-card::after { content: ''; position: absolute; bottom: -3px; left: 4px; right: 4px; height: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; z-index: -1; opacity: 0.7; }
 .discourse-card::before { content: ''; position: absolute; bottom: -6px; left: 8px; right: 8px; height: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; z-index: -2; opacity: 0.5; }
 .discourse-card:active { border-color: var(--accent); background: var(--surface2); }
 .discourse-card-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.discourse-card-preview { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.discourse-card-preview { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; flex: 1; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
 .discourse-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
 .discourse-card-date { font-size: 9px; color: var(--muted); letter-spacing: 0.5px; opacity: 0.7; }
 .discourse-card-badges { display: flex; align-items: center; gap: 5px; }
@@ -119,6 +119,126 @@ button {
 .lighthouse-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 20px 60px; display: flex; flex-direction: column; gap: 16px; }
 /* LIGHTHOUSE VIEW FIXES (Expanded Textarea & Overlap) */
 .lighthouse-inner {display: flex;flex-direction: column;height: calc(100vh - 120px); /* Adjust based on your nav height */padding-bottom: 20px;}
+/* LIGHTHOUSE REFINED */
+.lh-save-indicator {
+  flex: 1;
+  font-size: 9px;
+  color: var(--accent-dim);
+  letter-spacing: 2px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  text-align: center;
+  pointer-events: none;
+}
+.lh-save-indicator.visible { opacity: 0.5; }
+.lh-save-indicator.saving { opacity: 1; color: var(--accent); animation: lhSavePulse 1s ease-in-out infinite; }
+@keyframes lhSavePulse { 0%,100%{opacity:0.5;} 50%{opacity:1;} }
+
+.lh-overflow-wrap { position: relative; }
+.lh-overflow-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 180px;
+  z-index: 2000;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+}
+.lh-overflow-menu.open { display: flex; }
+.lh-overflow-item {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px 12px;
+  border-radius: 7px;
+  text-align: left;
+  letter-spacing: 0.5px;
+  width: 100%;
+}
+.lh-overflow-item:active { background: var(--surface); }
+.lh-overflow-item.danger { color: #ff6060; }
+.lh-overflow-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* FORMAT SHEET */
+.lh-fmt-wrap { position: relative; }
+
+.lh-fmt-sheet {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  z-index: 2000;
+  display: none;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.9);
+  min-width: 260px;
+}
+.lh-fmt-sheet.open { display: block; }
+
+.lh-fmt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+
+.lh-fmt-col { display: flex; flex-direction: column; gap: 2px; }
+
+.lh-fmt-col-label {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--accent-dim);
+  font-weight: 900;
+  text-transform: uppercase;
+  padding: 0 8px 6px;
+  opacity: 0.6;
+}
+
+.lh-fmt-item {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font-serif);
+  padding: 9px 10px;
+  border-radius: 8px;
+  text-align: left;
+  width: 100%;
+  font-weight: 500;
+}
+.lh-fmt-item:active { background: var(--surface); color: var(--accent); }
+
+/* WRITING SURFACE -- Georgia, more breathing room */
+.discourse-title-input {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 700;
+  padding: 8px 0 14px;
+  outline: none;
+  font-family: var(--font-serif);
+  caret-color: var(--accent);
+  line-height: 1.3;
+}
+.content-textarea {
+  font-family: var(--font-serif) !important;
+  font-size: 16px !important;
+  line-height: 1.85 !important;
+  letter-spacing: 0.1px;
+}
+
 .discourse-title-input { width: 100%; background: none; border: none; border-bottom: 1px solid var(--border); color: var(--text); font-size: 22px; font-weight: 700; padding: 6px 0 12px; outline: none; font-family: var(--font-serif); caret-color: var(--accent); }
 .discourse-title-input::placeholder { color: var(--muted); opacity: 0.6; }
 .discourse-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
@@ -130,15 +250,21 @@ button {
   position: absolute; top: 0; bottom: 0; left: 0; width: 30px;
   z-index: 500; opacity: 0; pointer-events: none;
   transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-user-select: none;
+  user-select: none;
 }
 #gold-line-zone.awake {
   opacity: 1; pointer-events: auto;
+    -webkit-user-select: none;
+  user-select: none;
 }
 .gold-thread {
   position: absolute; top: 20px; bottom: 100px; left: 7px; width: 1px;
   background: linear-gradient(to bottom, transparent, var(--accent), var(--accent-dim), transparent);
   box-shadow: 0 0 10px rgba(200, 160, 80, 0.2);
   transform-origin: top;
+    -webkit-user-select: none;
+  user-select: none;
 }
 .gold-thread.wobble {
   animation: threadWobble 0.6s ease-out;
@@ -148,6 +274,8 @@ button {
   background: var(--accent);
   box-shadow: 0 0 5px var(--accent);
   transition: top 0.4s ease;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .gold-tick.current { width: 11px; left: 2px; height: 2px; }
 
@@ -287,7 +415,6 @@ button {
 .deep-soup-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; flex-shrink: 0; }
 .deep-soup-title { font-size: 9px; letter-spacing: 3px; color: var(--accent-dim); opacity: 0.7; font-weight: 900; text-transform: uppercase; }
 
-
 /* THE LINEAGE NAVIGATOR */
 #lineage-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1500; display: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 #lineage-overlay.active { display: block; }
@@ -390,8 +517,33 @@ button {
 .void-badge.discourse { background: rgba(200,160,80,0.15); color: var(--accent); }
 .void-badge.character { background: rgba(160,216,160,0.15); color: #a0d8a0; }
 
+/* SECTION SCROLL -- capped 2 rows, horizontal overflow */
+.section-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 -16px;
+  padding: 0 16px 4px;
+  display: flex;
+}
+.section-scroll-wrap::-webkit-scrollbar { display: none; }
+
+.section-grid {
+  display: inline-grid;
+  grid-template-rows: repeat(2, 200px);
+  grid-auto-flow: column;
+  grid-auto-columns: 160px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.section-grid.single-row {
+  grid-template-rows: 200px;
+}
+
+/* SANCTUARY */
 .sanctuary-view { background: transparent; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.character-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 100px; display: flex; flex-direction: column; justify-content: space-between; }
+
+.character-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; }
 .character-card:active { border-color: var(--accent); background: var(--surface2); }
 .character-card.long-pressing { background: var(--surface2); border-color: var(--accent); transform: scale(0.98); }
 .char-card-name { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
@@ -526,6 +678,71 @@ button {
   color: var(--accent-dim);
   text-transform: uppercase;
   text-align: center;
+}
+
+/* IE ENCOUNTER MODE */
+.ie-encounter .chat-messages {
+  padding: 24px 20px 120px;
+}
+
+/* User message in IE -- smaller, stepped back, right */
+.ie-encounter .chat-msg.user {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  text-align: right;
+  padding: 0 0 0 40px;
+  margin: 0 0 8px;
+  border-radius: 0;
+  max-width: 100%;
+  align-self: flex-end;
+  line-height: 1.6;
+}
+
+/* Separator line between exchanges */
+.ie-encounter .chat-msg.user::after {
+  content: '';
+  display: block;
+  height: 1px;
+  background: var(--border);
+  margin-top: 20px;
+  opacity: 0.4;
+}
+
+/* IE entity response -- full width, weighted, no bubble */
+.ie-encounter .chat-msg.char {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 15px;
+  font-family: var(--font-serif);
+  line-height: 1.9;
+  padding: 20px 0 8px;
+  border-radius: 0;
+  max-width: 100%;
+  align-self: flex-start;
+}
+
+/* IE header -- entity name larger, no persona pill */
+.ie-encounter .chat-char-name {
+  font-size: 15px;
+  letter-spacing: 2px;
+  font-weight: 900;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+/* IE input -- different placeholder feel */
+.ie-encounter .chat-input {
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* IE send button label */
+.ie-encounter #btn-send::after {
+  content: '';
 }
 
 /* SANCTUARY DIVIDER */
@@ -721,43 +938,100 @@ select.cosm-input {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 @media (max-width: 480px) { .lighthouse-tools { gap: 14px; } .tbtn { padding: 7px 8px; font-size: 12px; } .view-toggle-btn { padding: 6px 9px; } .cards-grid { gap: 8px; } .lighthouse-scroll { padding: 20px 14px 60px; } }
 
-/* GUARDIAN OF THE ABYSS ARCHIVES */
-.guardian-view { background: var(--bg); overflow: hidden; display: flex; flex-direction: column; }
+/* GUARDIAN OF THE ABYSS ARCHIVES -- COLD REALM */
+:root {
+  --g-bg: #000000;
+  --g-surface: #0a0a0a;
+  --g-border: #1f1f1f;
+  --g-accent: #c8a050;
+  --g-accent-dim: #8a6e35;
+  --g-text: #ccc5b9;
+  --g-muted: #6b6560;
+  --g-glow: rgba(200,160,80,0.15);
+}
+
+.guardian-view { background: var(--g-bg); overflow: hidden; display: flex; flex-direction: column; }
 .guardian-realm { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0 24px 120px; overflow-y: auto; -webkit-overflow-scrolling: touch; transition: opacity 1.2s ease; }
 .guardian-realm.dimming { opacity: 0.15; }
 .guardian-glyph-wrap { display: flex; flex-direction: column; align-items: center; padding-top: 60px; gap: 20px; user-select: none; }
-.guardian-glyph { font-size: 48px; line-height: 1; color: var(--accent); opacity: 0.7; transition: opacity 1.5s ease, text-shadow 1.5s ease; pointer-events: none; }
-.guardian-glyph.watching { opacity: 1; text-shadow: 0 0 30px rgba(200,160,80,0.4), 0 0 60px rgba(200,160,80,0.15); animation: guardianBreathe 4s ease-in-out infinite; }
-.guardian-glyph.dimmed { opacity: 0.2; }
-@keyframes guardianBreathe { 0%, 100% { text-shadow: 0 0 20px rgba(200,160,80,0.3); } 50% { text-shadow: 0 0 50px rgba(200,160,80,0.6), 0 0 80px rgba(200,160,80,0.2); } }
-.guardian-label { font-size: 9px; letter-spacing: 4px; color: var(--accent); opacity: 0.4; font-weight: 900; text-transform: uppercase; }
-.guardian-sub { font-size: 11px; color: var(--muted); letter-spacing: 1px; opacity: 0.6; text-align: center; line-height: 1.6; max-width: 260px; }
-.btn-summon { margin-top: 8px; background: none; border: 1px solid var(--accent-dim); color: var(--accent); font-size: 11px; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; padding: 12px 28px; border-radius: 20px; cursor: pointer; transition: border-color 0.2s, opacity 0.2s; }
+.guardian-glyph { font-size: 48px; line-height: 1; color: var(--g-accent); opacity: 0.6; transition: opacity 1.5s ease, text-shadow 1.5s ease; pointer-events: none; }
+.guardian-glyph.watching { opacity: 1; text-shadow: 0 0 30px rgba(138,154,181,0.3), 0 0 60px rgba(138,154,181,0.1); animation: guardianBreathe 6s ease-in-out infinite; }
+.guardian-glyph.dimmed { opacity: 0.15; }
+@keyframes guardianBreathe { 0%, 100% { text-shadow: 0 0 20px rgba(138,154,181,0.2); } 50% { text-shadow: 0 0 50px rgba(138,154,181,0.4), 0 0 80px rgba(138,154,181,0.1); } }
+.guardian-label { font-size: 9px; letter-spacing: 4px; color: var(--g-accent); opacity: 0.35; font-weight: 900; text-transform: uppercase; }
+.guardian-sub { font-size: 11px; color: var(--g-muted); letter-spacing: 1px; opacity: 0.6; text-align: center; line-height: 1.6; max-width: 260px; }
+.btn-summon { margin-top: 8px; background: none; border: 1px solid var(--g-accent-dim); color: var(--g-accent); font-size: 11px; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; padding: 12px 28px; border-radius: 20px; cursor: pointer; transition: border-color 0.2s, opacity 0.2s; }
 .btn-summon:active { opacity: 0.6; }
 .btn-summon:disabled { opacity: 0.3; pointer-events: none; }
 .guardian-response-wrap { width: 100%; max-width: 640px; margin-top: 40px; }
-.guardian-response { font-family: var(--font-serif); font-size: 15px; line-height: 1.9; color: var(--text); white-space: pre-wrap; letter-spacing: 0.2px; opacity: 0; transition: opacity 0.6s ease; }
+.guardian-response { font-family: var(--font-serif); font-size: 15px; line-height: 1.9; color: var(--g-text); white-space: pre-wrap; letter-spacing: 0.2px; opacity: 0; transition: opacity 0.6s ease; }
 .guardian-response.visible { opacity: 1; }
-.guardian-silence { text-align: center; font-size: 11px; letter-spacing: 3px; color: var(--muted); opacity: 0; text-transform: uppercase; font-weight: 700; margin-top: 20px; transition: opacity 0.8s ease; }
+.guardian-silence { text-align: center; font-size: 11px; letter-spacing: 3px; color: var(--g-muted); opacity: 0; text-transform: uppercase; font-weight: 700; margin-top: 20px; transition: opacity 0.8s ease; }
 .guardian-silence.visible { opacity: 0.4; }
 .guardian-input-area { display: none; width: 100%; max-width: 640px; margin-top: 32px; gap: 10px; flex-direction: column; }
 .guardian-input-area.visible { display: flex; }
-.guardian-input { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px 16px; border-radius: 12px; font-size: 14px; outline: none; caret-color: var(--accent); font-family: var(--font-serif); resize: none; line-height: 1.6; }
-.guardian-input:focus { border-color: var(--accent-dim); }
-.btn-guardian-send { align-self: flex-end; background: none; border: 1px solid var(--accent-dim); color: var(--accent); font-size: 10px; letter-spacing: 2px; font-weight: 900; padding: 8px 20px; border-radius: 12px; cursor: pointer; text-transform: uppercase; }
+.guardian-input { width: 100%; background: var(--g-surface); border: 1px solid var(--g-border); color: var(--g-text); padding: 12px 16px; border-radius: 12px; font-size: 14px; outline: none; caret-color: var(--g-accent); font-family: var(--font-serif); resize: none; line-height: 1.6; }
+.guardian-input:focus { border-color: var(--g-accent-dim); }
+.btn-guardian-send { align-self: flex-end; background: none; border: 1px solid var(--g-accent-dim); color: var(--g-accent); font-size: 10px; letter-spacing: 2px; font-weight: 900; padding: 8px 20px; border-radius: 12px; cursor: pointer; text-transform: uppercase; }
 .btn-guardian-send:disabled { opacity: 0.3; pointer-events: none; }
-.guardian-logs-section { width: 100%; max-width: 640px; margin-top: 48px; border-top: 1px solid var(--border); padding-top: 24px; }
-.guardian-logs-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.35; font-weight: 900; text-transform: uppercase; margin-bottom: 16px; }
-.guardian-log-item { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s; }
-.guardian-log-item:active { border-color: var(--accent-dim); }
-.guardian-log-date { font-size: 9px; letter-spacing: 1.5px; color: var(--accent-dim); text-transform: uppercase; margin-bottom: 8px; }
-.guardian-log-preview { font-size: 13px; color: var(--muted); font-style: italic; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.guardian-log-silent { font-size: 11px; color: var(--muted); opacity: 0.4; letter-spacing: 2px; text-transform: uppercase; }
-.guardian-log-detail { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
+.guardian-logs-section { width: 100%; max-width: 640px; margin-top: 48px; border-top: 1px solid var(--g-border); padding-top: 24px; }
+.guardian-logs-label { font-size: 9px; letter-spacing: 3px; color: var(--g-accent); opacity: 0.35; font-weight: 900; text-transform: uppercase; margin-bottom: 16px; }
+.guardian-log-item { border: 1px solid var(--g-border); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s; background: var(--g-surface); }
+.guardian-log-item:active { border-color: var(--g-accent-dim); }
+.guardian-log-date { font-size: 9px; letter-spacing: 1.5px; color: var(--g-accent-dim); text-transform: uppercase; margin-bottom: 8px; }
+.guardian-log-preview { font-size: 13px; color: var(--g-muted); font-style: italic; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.guardian-log-silent { font-size: 11px; color: var(--g-muted); opacity: 0.4; letter-spacing: 2px; text-transform: uppercase; }
+.guardian-log-detail { position: fixed; inset: 0; background: var(--g-bg); z-index: 2000; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
 .guardian-log-detail.open { transform: translateY(0); }
-.guardian-log-detail-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.guardian-log-detail-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 24px 80px; font-family: var(--font-serif); font-size: 15px; line-height: 1.9; color: var(--text); white-space: pre-wrap; }
+.guardian-log-detail-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--g-border); flex-shrink: 0; }
+.guardian-log-detail-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 24px 80px; font-family: var(--font-serif); font-size: 15px; line-height: 1.9; color: var(--g-text); white-space: pre-wrap; }
+/* GUARDIAN EDGE GLOW -- Ethereal Aura (Razor Thin) */
+#guardian-edge-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  
+  /* Absolute pixels (15px) instead of 12% ensures it stays a tight, thin rim of fog */
+  -webkit-mask-image: 
+    linear-gradient(to bottom, #000 0px, transparent 15px, transparent calc(100% - 15px), #000 100%),
+    linear-gradient(to right, #000 0px, transparent 15px, transparent calc(100% - 15px), #000 100%);
+  -webkit-mask-composite: source-over;
+  mask-composite: add;
+}
 
+#guardian-edge-glow.active {
+  opacity: 1;
+}
+
+/* Tighter spotlight with less blur */
+#guardian-edge-glow::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 280deg,
+    rgba(200, 160, 80, 0.1) 320deg,
+    rgba(200, 160, 80, 0.6) 350deg,
+    rgba(255, 255, 255, 0.8) 360deg
+  );
+  /* Reduced blur from 35px to 12px for a much sharper, thinner beam */
+  filter: blur(12px);
+  animation: guardianOrbitLight 16s linear infinite;
+}
+
+@keyframes guardianOrbitLight {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+/* GUARDIAN MODEL SELECTOR -- ghost pill */
+.guardian-model-selector { display: flex; align-items: center; justify-content: center; margin-top: 16px; }
+.guardian-model-pill { background: none; border: none; color: var(--g-muted); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; opacity: 0.4; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: opacity 0.2s; }
+.guardian-model-pill:active { opacity: 0.8; }
 
 /* FLOATING BOTTOM PILL */
 .bottom-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(10,10,10,0.85); border: 1px solid var(--border); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 700; padding: 6px; border-radius: 24px; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.9); width: max-content; max-width: 92vw; }
@@ -780,12 +1054,12 @@ select.cosm-input {
   -webkit-user-select: none;
 }
 
-
 </style>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js">
 </head>
 <body>
 <canvas id="firefly-canvas"></canvas>
+<div id="guardian-edge-glow"></div>
 
 <div id="lock-screen" style="position:fixed;inset:0;background:#000;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;">
   <div style="color:#a0d8a0;letter-spacing:5px;font-size:11px;font-weight:900;text-transform:uppercase;">NakedQuantum</div>
@@ -814,8 +1088,7 @@ select.cosm-input {
       <div class="gold-thread" id="gold-thread"></div>
       <div id="gold-ticks-container"></div>
     </div>
-    <div id="gold-line-trigger" style="position:absolute;top:0;bottom:0;left:0;width:20px;z-index:501;"></div>
-
+  <div id="gold-line-trigger" style="position:absolute;top:0;bottom:0;left:0;width:20px;z-index:501;-webkit-user-select:none;user-select:none;"></div>
     <div class="breadcrumb-bar" id="breadcrumb-bar"></div>
     <div class="search-bar-wrap" id="search-bar-wrap" style="display:none;">
       <input class="search-input" id="search-input" placeholder="Search discourses...">
@@ -886,63 +1159,73 @@ select.cosm-input {
     </div>
     <p style="font-size:9px;color:var(--muted);margin:6px 0 0 18px;" id="watcher-detail"></p>
     <div style="margin-top:12px;display:flex;gap:8px;">
-      <button onclick="devForcePass()" style="background:var(--surface2);color:var(--accent);border:1px solid var(--accent-dim);flex:1;height:36px;border-radius:8px;font-weight:900;font-size:10px;letter-spacing:1px;">Force Pass</button>
-      <button onclick="devClearWatcher()" style="background:#1a0000;color:var(--danger);border:1px solid #330000;flex:1;height:36px;border-radius:8px;font-weight:900;font-size:10px;letter-spacing:1px;">Clear Index</button>
+          <button onclick="devForcePass()" id="btn-dev-force-pass" style="display:none;background:var(--surface2);color:var(--accent);border:1px solid var(--accent-dim);flex:1;height:36px;border-radius:8px;font-weight:900;font-size:10px;letter-spacing:1px;">Force Pass</button>
+      <button onclick="devClearWatcher()" id="btn-dev-clear-watcher" style="display:none;background:#1a0000;color:var(--danger);border:1px solid #330000;flex:1;height:36px;border-radius:8px;font-weight:900;font-size:10px;letter-spacing:1px;">Clear Index</button>
     </div>
 
   </div>
 </div>
   <div class="view-panel lighthouse-view hidden" id="view-lighthouse">
     <div class="lighthouse-nav">
-      <button class="btn-back-table" id="btn-back-table" style="padding: 7px 10px;"><span class="btn-back-arrow">←</span></button>
+      <button class="btn-back-table" id="btn-back-table" style="padding:7px 10px;"><span class="btn-back-arrow">←</span></button>
+      <div class="lh-save-indicator" id="lh-save-indicator">◆</div>
       <div class="lighthouse-tools">
         <div class="view-toggle">
           <button class="view-toggle-btn active" id="btn-write">✎</button>
           <button class="view-toggle-btn" id="btn-view">ʘ</button>
         </div>
-      <button class="tbtn" id="btn-export-html">H ↓</button>
-        <button class="tbtn" id="btn-export-md">M ↓</button>
-        <button class="tbtn" id="btn-export-pdf">P ↓</button>
-        <button class="tbtn gold" id="btn-extract">◈</button>
-        <button class="tbtn danger" id="btn-delete-discourse">✕</button>
+               <button class="tbtn gold" id="btn-extract" title="Extract Mosaic">◈</button>
+        <div class="lh-fmt-wrap">
+          <button class="tbtn" id="btn-lh-format">✎≡</button>
+          <div class="lh-fmt-sheet" id="lh-fmt-sheet">
+            <div class="lh-fmt-grid">
+              <div class="lh-fmt-col">
+                <div class="lh-fmt-col-label">Text</div>
+                <button class="lh-fmt-item" id="fmt-bold"><b>Bold</b></button>
+                <button class="lh-fmt-item" id="fmt-italic"><i>Italic</i></button>
+                <button class="lh-fmt-item" id="fmt-underline"><u>Underline</u></button>
+                <button class="lh-fmt-item" id="fmt-h1">Heading 1</button>
+                <button class="lh-fmt-item" id="fmt-h2">Heading 2</button>
+                <button class="lh-fmt-item" id="fmt-h3">Heading 3</button>
+              </div>
+              <div class="lh-fmt-col">
+                <div class="lh-fmt-col-label">Insert</div>
+                <button class="lh-fmt-item" id="fmt-bullet">• Bullet</button>
+                <button class="lh-fmt-item" id="fmt-numbered">1. Numbered</button>
+                <button class="lh-fmt-item" id="fmt-quote">" Quote</button>
+                <button class="lh-fmt-item" id="fmt-code">` Inline Code</button>
+                <button class="lh-fmt-item" id="fmt-codeblock">``` Code Block</button>
+                <button class="lh-fmt-item" id="fmt-divider-line">-- Divider</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="lh-overflow-wrap">
+          <button class="tbtn" id="btn-lh-overflow">···</button>
+          <div class="lh-overflow-menu" id="lh-overflow-menu">
+            <button class="lh-overflow-item" id="btn-export-html">H ↓ Export HTML</button>
+            <button class="lh-overflow-item" id="btn-export-md">M ↓ Export Markdown</button>
+            <button class="lh-overflow-item" id="btn-export-pdf">P ↓ Export PDF</button>
+            <div class="lh-overflow-divider"></div>
+            <button class="lh-overflow-item danger" id="btn-delete-discourse">✕ Delete</button>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="lighthouse-scroll">
+      <div class="lighthouse-scroll">
       <div class="lighthouse-inner">
-        <input class="discourse-title-input" id="discourse-title" placeholder="Untitled Discourse" spellcheck="false">
         <div class="discourse-meta" id="discourse-meta"></div>
+        <input class="discourse-title-input" id="discourse-title" placeholder="Untitled..." spellcheck="false" style="display:none;">
         <div class="extract-loading" id="extract-loading">
           <div class="extract-dot"></div><div class="extract-dot"></div><div class="extract-dot"></div>
           <span>Extracting anchors...</span>
         </div>
         <div id="mosaic-display"></div>
-        
-        <textarea class="content-textarea" id="content-textarea" placeholder="Begin writing..."></textarea>
-        
-       <div class="format-toolbar" id="format-toolbar">
-          <button class="fmt-btn" id="fmt-bold"><b>B</b></button>
-          <button class="fmt-btn" id="fmt-italic"><i>I</i></button>
-          <button class="fmt-btn" id="fmt-underline"><u>U</u></button>
-          <div class="fmt-divider"></div>
-          <button class="fmt-btn" id="fmt-h1">H1</button>
-          <button class="fmt-btn" id="fmt-h2">H2</button>
-          <button class="fmt-btn" id="fmt-h3">H3</button>
-          <div class="fmt-divider"></div>
-          <button class="fmt-btn" id="fmt-bullet">• --</button>
-          <button class="fmt-btn" id="fmt-numbered">1.</button>
-          <div class="fmt-divider"></div>
-          <button class="fmt-btn" id="fmt-quote">"</button>
-          <button class="fmt-btn code-btn" id="fmt-code">`c`</button>
-          <button class="fmt-btn code-btn" id="fmt-codeblock">```</button>
-          <div class="fmt-divider"></div>
-          <button class="fmt-btn" id="fmt-divider-line">--</button>
-        </div>
-
+              <textarea class="content-textarea" id="content-textarea" placeholder="Title&#10;&#10;Begin writing..."></textarea>
         <div class="content-view" id="content-view"></div>
       </div>
     </div>
   </div>
-
 
   <div class="view-panel sanctuary-view hidden" id="view-sanctuary">
 <div class="breadcrumb-bar" id="sanctuary-breadcrumb-bar">
@@ -954,10 +1237,9 @@ select.cosm-input {
   </div>
   <div class="view-panel hidden" id="view-ie" style="background:var(--bg);display:flex;flex-direction:column;">
   <div class="lighthouse-nav">
-    <button class="btn-back-table" id="btn-ie-back">← Sanctuary</button>
-    <div style="font-size:10px;letter-spacing:2px;color:var(--accent);font-weight:900;">∞ IMMUTABLE</div> 
-    <div style="width:52px;"></div>
-  <button class="tbtn gold" id="btn-ie-dev-forge" style="font-size:10px;">+ Forge Draft</button>
+    <button class="btn-back-table" id="btn-ie-back">← Back</button>
+    <div style="font-size:10px;letter-spacing:2px;color:var(--accent);font-weight:900;white-space:nowrap;">∞ IMMUTABLE ENTITY</div>
+    <button class="tbtn gold" id="btn-ie-dev-forge" style="font-size:10px;white-space:nowrap;">Forge IE</button>
   </div>
   <div style="padding:12px 16px 8px;flex-shrink:0;">
     <input class="cosm-input" id="ie-search-input" placeholder="Search by name, archetype, or function..." style="font-size:13px;">
@@ -1077,19 +1359,21 @@ select.cosm-input {
       <div class="chat-char-name" id="chat-char-name">Character Name</div>
     </div>
 <div id="chat-persona-pill" style="font-size:9px;letter-spacing:1px;color:var(--accent-dim);border:1px solid var(--border);padding:3px 8px;border-radius:20px;cursor:pointer;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;">⚝ default</div>
-<div id="ie-model-chip" 
-  onclick="cycleIEModel()"
-  style="display:none;font-size:9px;letter-spacing:1px;
-  color:var(--accent);border:1px solid var(--accent-dim);
-  padding:4px 10px;border-radius:20px;cursor:pointer;
-  white-space:nowrap;max-width:120px;overflow:hidden;
-  text-overflow:ellipsis;background:rgba(200,160,80,0.06);">
-</div>
     <button class="tbtn" id="btn-chat-edit">✎</button>
     <button class="tbtn" id="btn-chat-clear">✕</button>
   </div>
   <div class="chat-messages" id="chat-messages"></div>
+   <div id="ie-model-bar" style="display:none;padding:0 16px 4px;text-align:left;">
+    <button id="ie-model-chip" onclick="cycleIEModel()"
+      style="background:none;border:none;color:var(--accent-dim);
+      font-size:9px;letter-spacing:1.5px;font-weight:700;
+      text-transform:uppercase;opacity:0.4;cursor:pointer;
+      padding:4px 0;transition:opacity 0.2s;">
+    </button>
+  </div>
   <div class="chat-input-area">
+  <!-- NEW: Retry / Regenerate Button -->
+  <button class="btn-send" id="btn-chat-retry" style="display:none; background:var(--surface2); color:var(--text); border:1px solid var(--border); font-size:16px;">↻</button>
     <textarea class="chat-input" id="chat-input" placeholder="Send a message..." rows="1"></textarea>
    <button class="btn-send" id="btn-send">⇡</button>
   </div>
@@ -1125,12 +1409,30 @@ select.cosm-input {
 </div>
 
 <div class="view-panel guardian-view hidden" id="view-guardian">
+  <div id="guardian-back-row" style="position:absolute;top:16px;left:16px;z-index:10;">
+    <button onclick="goBack()" style="background:none;border:none;color:var(--g-muted);font-size:11px;letter-spacing:2px;font-weight:700;opacity:0.4;padding:8px 4px;">← exit</button>
+  </div>
   <div class="guardian-realm" id="guardian-realm">
     <div class="guardian-glyph-wrap">
       <div class="guardian-glyph" id="guardian-glyph">&#9689;</div>
       <div class="guardian-label">Guardian of the Abyss Archives</div>
       <div class="guardian-sub" id="guardian-sub">The Abyss is listening.</div>
-      <button class="btn-summon" id="btn-summon-guardian">Summon</button>
+          <button class="btn-summon" id="btn-summon-guardian">Summon</button>
+          <!-- In the Guardian realm, near the model selector -->
+<div class="guardian-mapping-mode" style="margin-top: 12px; display: flex; align-items: center; gap: 8px; justify-content: center;">
+  <span style="font-size: 9px; color: var(--g-muted); letter-spacing: 1px;">MAPPING:</span>
+  <select id="guardian-mapping-select" 
+    style="background: var(--g-surface); border: 1px solid var(--g-border); color: var(--g-accent); font-size: 9px; letter-spacing: 1.5px; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;"
+    onchange="setMappingMode(this.value)">
+    <option value="sovereign">Sovereign (local)</option>
+    <option value="deep">Deep (API)</option>
+  </select>
+</div>
+      <div class="guardian-model-selector">
+        <button class="guardian-model-pill" id="guardian-model-pill" onclick="cycleGuardianModel()">
+          ◈ deepseek-v4-flash
+        </button>
+      </div>
     </div>
     <div class="guardian-response-wrap">
       <div class="guardian-response" id="guardian-response"></div>
@@ -1305,13 +1607,12 @@ select.cosm-input {
     <div id="ie-manifest-meta" style="font-size:9px;color:var(--muted);letter-spacing:0.5px;"></div>
     <div id="ie-manifest-models" style="font-size:9px;color:var(--accent-dim);letter-spacing:0.5px;"></div>
   </div>
-  <div class="modal-buttons" style="margin-top:14px;">
-    <button class="modal-btn-cancel" id="btn-ie-manifest-close">Close</button>
-    <button class="modal-btn-confirm" id="btn-ie-manifest-enter" style="letter-spacing:2px;">ENTER</button>
-    <button onclick="deleteImmutableEntity(document.getElementById('ie-manifest-modal').dataset.ieId)" 
-  style="background:none;border:1px solid var(--danger);color:#ff6060;font-size:11px;font-weight:700;padding:10px 18px;border-radius:10px;margin-top:8px;width:100%;letter-spacing:1px;">
-  ✕ Dissolve Entity
-</button>
+  <div class="modal-buttons" style="margin-top:14px;flex-direction:column;gap:8px;">
+    <div style="display:flex;gap:8px;width:100%;">
+      <button class="modal-btn-cancel" id="btn-ie-manifest-close" style="flex:1;">Close</button>
+      <button class="modal-btn-confirm" id="btn-ie-manifest-enter" style="flex:1;letter-spacing:2px;">ENTER</button>
+    </div>
+    <button class="modal-btn-cancel" onclick="deleteImmutableEntity(document.getElementById('ie-manifest-modal').dataset.ieId)" style="width:100%;border-color:#ff6060;color:#ff6060;">✕ Dissolve Entity</button>
   </div>
 </div>
 
@@ -1369,6 +1670,8 @@ let selectMode=false, selectedItems=new Set();
 let deepSoupFolderId = null;
 let deepSoupPath = [{id: null, name: '꩜ Deep Soup'}];
 
+let deepMapperLoadSuppressed = false;
+let deepMapperSuppressTimer = null;
 
 /* PERSONA */
 function getGlobalPersona(){
@@ -1451,7 +1754,7 @@ try {
 
   db.run("CREATE TABLE IF NOT EXISTS cosm_folders(id TEXT PRIMARY KEY, name TEXT, parent_id TEXT, created_at INTEGER, updated_at INTEGER, is_deleted INTEGER DEFAULT 0)");
   db.run("CREATE TABLE IF NOT EXISTS cosm_discourses(id TEXT PRIMARY KEY, title TEXT, raw_text TEXT, folder_id TEXT, source_link TEXT, item_type TEXT, tags TEXT, is_deleted INTEGER DEFAULT 0, deleted_at INTEGER, created_at INTEGER, updated_at INTEGER)");
- db.run("CREATE TABLE IF NOT EXISTS guardian_summaries(id TEXT PRIMARY KEY, discourse_id TEXT, summary TEXT, word_count INTEGER, created_at INTEGER, updated_at INTEGER)");
+ db.run("CREATE TABLE IF NOT EXISTS guardian_summaries(id TEXT PRIMARY KEY, discourse_id TEXT, summary TEXT, map_type TEXT, first_line TEXT, last_line TEXT, key_terms TEXT, emotional_arc TEXT, extractive_summary TEXT, watcher TEXT, word_count INTEGER, model TEXT, generated_at INTEGER, created_at INTEGER, updated_at INTEGER)");
  db.run("CREATE TABLE IF NOT EXISTS immutable_entities(id TEXT PRIMARY KEY, display_name TEXT NOT NULL, archetype_tag TEXT, existential_function TEXT, system_prompt_core TEXT, constraints TEXT, voice_limits TEXT, memory_policy TEXT DEFAULT 'stateless', model_variants TEXT, example_turns TEXT, watcher_thresholds TEXT, guardian_audit_hash TEXT, sigil_svg TEXT, locked_at INTEGER, signature TEXT, is_hidden INTEGER DEFAULT 0, created_at INTEGER, updated_at INTEGER)");
 db.run("CREATE TABLE IF NOT EXISTS immutable_entities_enc(id TEXT PRIMARY KEY, enc TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS characters(id TEXT PRIMARY KEY, name TEXT, role TEXT, backstory TEXT, personality TEXT, lorebook TEXT, scenario TEXT, inclination TEXT, relationships TEXT, pc_info TEXT, player_role_id TEXT, image TEXT, temperature REAL DEFAULT 1, is_deleted INTEGER DEFAULT 0, deleted_at INTEGER, created_at INTEGER, updated_at INTEGER)");
@@ -1821,7 +2124,15 @@ async function processWatcherQueue() {
     const item = watcherQueue.shift();
     try { await embedDiscourseMain(item.id, item.title, item.body, item.itemType, item.lastSeenActive); }
     catch (e) { console.warn('Watcher Embed Error', e); }
-    await new Promise(r => setTimeout(r, 250));
+    
+    // Yield entirely to the UI so typing never stutters.
+    await new Promise(r => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => setTimeout(r, 100), { timeout: 2000 });
+      } else {
+        setTimeout(r, 400);
+      }
+    });
   }
   updateWatcherStatusUI();
   refreshWatcherDot(); // NEW
@@ -1937,13 +2248,13 @@ async function devClearWatcher() {
 
 /* ── WATCHER GOLD DOT UI ───────────────────────────────────── */
 const WATCHER_ANCHORS = [
-  { top: '72px',  left: '50%'  },
-  { top: '72px',  right: '52px' },
+  { top: '175px',  left: '50%'  },
+  { top: '175px',  right: '20px' },
   { top: '30%',   right: '16px' },
   { top: '50%',   right: '16px' },
   { top: '70%',   right: '16px' },
-  { top: '30%',   left: '40px' },
-  { top: '50%',   left: '40px' },
+  { top: '30%',   left: '20px' },
+  { top: '50%',   left: '20px' },
   { bottom: '115px', left: '50%' },
 ];
 
@@ -2260,10 +2571,13 @@ async function openIEChat(id){
   const ie = await getImmutableEntity(id);
   if(!ie) return;
   // Reset stuck send state on every entry
-  isSending = false;
-  
+    isSending = false;
   activeCharId = id;
-  activeIE = ie; // Store the IE data for chat context
+  activeIE = ie;
+  document.getElementById('view-chat').classList.add('ie-encounter');
+  document.getElementById('chat-input').placeholder = 'Speak with intention...';
+  document.getElementById('chat-persona-pill').style.display = 'none';
+  document.getElementById('btn-chat-edit').style.display = 'none';
 
   // Use display_name for the chat header
   document.getElementById('chat-char-name').textContent = ie.display_name || 'Unnamed';
@@ -2279,14 +2593,14 @@ document.getElementById('chat-input').style.height = 'auto';
   (typeof ie.model_variants === 'string' ? JSON.parse(ie.model_variants) : ie.model_variants) 
   : [];
 const chip = document.getElementById('ie-model-chip');
+const bar = document.getElementById('ie-model-bar');
 if(chip && ieModels.length > 0){
-  // Use ieModels from THIS ie, not stale currentIEModels
-  chip.style.display = 'block';
+  if(bar) bar.style.display = 'block';
   chip.dataset.idx = '0';
   chip.dataset.models = JSON.stringify(ieModels); // THIS was missing
-  chip.textContent = `⟳ ${ieModels[0].model_id?.split('/').pop()} 1/${ieModels.length}`;
+  chip.textContent = `◈ ${ieModels[0].model_id?.split('/').pop() || 'model'}`;
 } else if(chip){
-  chip.style.display = 'none';
+  if(bar) bar.style.display = 'none';
   chip.dataset.models = '[]';
 }
   document.getElementById('chat-persona-pill').style.display = 'none';
@@ -2296,7 +2610,7 @@ if(chip && ieModels.length > 0){
   // Persona -- IEs don't have player_role_id, use default
   chatPersonaOverride = null;
   updatePersonaPill();
-  
+  await updateChatRetryButton();
   showPanel('view-chat');
 }
 
@@ -2307,8 +2621,10 @@ function cycleIEModel(){
   let idx = parseInt(chip.dataset.idx || '0');
   idx = (idx + 1) % currentIEModels.length;
   chip.dataset.idx = idx;
-  chip.textContent = `⟳ ${currentIEModels[idx].split('/').pop()} ${idx+1}/${currentIEModels.length}`;
-  showToast('Model: ' + currentIEModels[idx]);
+    chip.textContent = `◈ ${currentIEModels[idx].split('/').pop()}`;
+  chip.style.opacity = '1';
+  setTimeout(() => { chip.style.opacity = '0.4'; }, 800);
+  showToast('◈ ' + currentIEModels[idx].split('/').pop());
 }
 
 async function deleteImmutableEntity(id) {
@@ -2582,13 +2898,13 @@ async function restoreDiscourse(id) {
   const d = await getDiscourse(id);
   if (!d) return;
   
-  // The Abyss takes its tax if the grace period has passed
+// The Abyss takes its tax on the body AND the title
   const decayedText = applyVoidEntropy(d.raw_text || "", d.deleted_at);
+  const decayedTitle = applyVoidEntropy(d.title || "Untitled", d.deleted_at);
   
   const { isDeleted, deleted_at, ...rest } = d;
   
-  // Overwrite the text with the decayed version and clear deletion flags
-  await dbPut("cosm_discourses", { ...rest, raw_text: decayedText, updated_at: Date.now() });
+  await dbPut("cosm_discourses", { ...rest, title: decayedTitle, raw_text: decayedText, updated_at: Date.now() });
 }
 
 /* CHARACTERS */
@@ -2621,6 +2937,21 @@ const WA_CRED_KEY = 'nq_prf_cred_id';
 function bufToB64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
 function b64ToBuf(b64){ return Uint8Array.from(atob(b64), c=>c.charCodeAt(0)).buffer; }
 
+async function wrapSovereignKey(currentSKBytes, prfKeyBytes) {
+  const key = await crypto.subtle.importKey('raw', prfKeyBytes, {name: 'AES-GCM', length: 256}, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, currentSKBytes);
+  return JSON.stringify({ iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) });
+}
+
+// CRYPTOGRAPHIC WRAPPERS
+async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
+  const { iv, ct } = JSON.parse(wrappedJson);
+  const key = await crypto.subtle.importKey('raw', prfKeyBytes, {name: 'AES-GCM', length: 256}, false, ['decrypt']);
+  const dec = await crypto.subtle.decrypt({name: 'AES-GCM', iv: new Uint8Array(iv)}, key, new Uint8Array(ct));
+  return new Uint8Array(dec);
+}
+
 async function unlockWithPRF(){
   const stored = localStorage.getItem(WA_CRED_KEY);
   try {
@@ -2632,15 +2963,29 @@ async function unlockWithPRF(){
         timeout: 60000
       }
     };
-    if(stored) opts.publicKey.allowCredentials = [{ id: b64ToBuf(stored), type: 'public-key' }];
+    if(stored) opts.publicKey.allowCredentials =[{ id: b64ToBuf(stored), type: 'public-key' }];
 
     const assertion = await navigator.credentials.get(opts);
     const ext = assertion.getClientExtensionResults();
 
-   if(ext.prf?.results?.first){
-      const keyBytes = new Uint8Array(ext.prf.results.first);
-      setSovereignKey(keyBytes); // Capture in RAM for backup
-      await setEncryptionKey(keyBytes);
+    if(ext.prf?.results?.first){
+      let prfKey = new Uint8Array(ext.prf.results.first);
+      let finalKey = prfKey;
+      
+      // If we find a wrapped key, Face ID is acting as a wrapper. Unpack it.
+      const wrapped = localStorage.getItem('nq_wrapped_sk');
+      if (wrapped) {
+        try {
+          finalKey = await unwrapSovereignKey(wrapped, prfKey);
+        } catch(e) {
+          console.error("Failed to unwrap SK. PRF key mismatch.", e);
+          showToast('⚠ Face ID Key mismatch');
+          return false;
+        }
+      }
+      
+      setSovereignKey(finalKey); // Capture in RAM for backup/sync
+      await setEncryptionKey(finalKey);
       showToast('Sovereign key active ◆');
       return true;
     }
@@ -2652,7 +2997,7 @@ async function unlockWithPRF(){
             challenge: crypto.getRandomValues(new Uint8Array(32)),
             rp: { name: 'NakedQuantum', id: location.hostname },
             user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
-            pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+            pubKeyCredParams:[{ alg: -7, type: 'public-key' }],
             authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
             extensions: { prf: { eval: { first: getPRFSalt() } } },
             timeout: 60000
@@ -2670,28 +3015,63 @@ async function unlockWithPRF(){
   return false;
 }
 
-// ADD this new function:
+// WEBAUTHN RESET
 async function resetWebAuthnRegistration() {
-  if (!confirm('This will clear your Face ID registration. You will need to re-register on next unlock. Continue?')) return;
-  localStorage.removeItem('nq_prf_cred_id');
-  localStorage.removeItem('nq_prf_salt'); // if you implemented Fix 2
-  showToast('◈ Face ID cleared -- will re-register on next unlock');
-}
-
-let _sovereignKeyBytes = null;
-function getSovereignKey() { return _sovereignKeyBytes; }
-function setSovereignKey(bytes) { _sovereignKeyBytes = bytes; }
-function clearSovereignKey() { _sovereignKeyBytes = null; }
-
-function showSovereignKey() {
-  if(!getSovereignKey()) { showToast("Unlock Abyss first ◆"); return; }
-const b64 = bufToB64(getSovereignKey());
-  const displayInput = document.getElementById('export-key-display');
-  displayInput.value = b64;
-  displayInput.style.display = 'block';
-  displayInput.select();
-  document.execCommand('copy'); // Auto-copy to clipboard
-  showToast("Key Copied. Guard it with your life.");
+  const currentSK = getSovereignKey();
+  if (!currentSK) {
+    showToast('⚠ No active Sovereign Key. Unlock Abyss first.');
+    return;
+  }
+  
+  if (!confirm('This will bind a new Face ID to your existing Sovereign Key. You will be prompted to authenticate now. Continue?')) return;
+  
+  try {
+    // 1. Generate a brand new salt
+    const newSalt = crypto.getRandomValues(new Uint8Array(32));
+    localStorage.setItem('nq_prf_salt', bufToB64(newSalt.buffer));
+    
+    // 2. Create the new credential
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'NakedQuantum', id: location.hostname },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
+        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
+        extensions: { prf: { eval: { first: newSalt.buffer } } },
+        timeout: 60000
+      }
+    });
+    
+    localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
+    
+    // 3. Immediately assert to get the new PRF output
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        userVerification: 'required',
+        allowCredentials: [{ id: cred.rawId, type: 'public-key' }],
+        extensions: { prf: { eval: { first: newSalt.buffer } } },
+        timeout: 60000
+      }
+    });
+    
+    const ext = assertion.getClientExtensionResults();
+    if (ext.prf?.results?.first) {
+      const newPrfKey = new Uint8Array(ext.prf.results.first);
+      
+      // 4. Wrap the existing Sovereign Key with the new PRF key
+      const wrapped = await wrapSovereignKey(currentSK, newPrfKey);
+      localStorage.setItem('nq_wrapped_sk', wrapped);
+      
+      showToast('◈ Face ID Re-bound Safely');
+    } else {
+      throw new Error('PRF verification failed on bind');
+    }
+  } catch (e) {
+    console.error("Bind failed:", e);
+    showToast('⚠ Face ID update failed or was cancelled.');
+  }
 }
 
 async function unlockWithFallbackKey() {
@@ -2796,6 +3176,7 @@ async function init(){
   document.getElementById('input-api-key').value=await readSecureKey('nq_api_key')||'';
   document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
   initWatcher();
+  initGuardianModel();
 }
 
 /* BURN DISC */
@@ -2958,7 +3339,6 @@ function resetBottomBarTimer(){
     document.getElementById('bottom-bar').classList.remove('visible');
   }, 8000); // 8 seconds of inactivity
 }
-
 // Modify showBottomBar to also reset the timer
 const _origShowBottomBar=showBottomBar;
 showBottomBar=function(pills){
@@ -2966,16 +3346,13 @@ showBottomBar=function(pills){
   resetBottomBarTimer();
 };
 
-// Add touch/scroll listeners in DOMContentLoaded
-document.getElementById('view-soup').addEventListener('scroll',resetBottomBarTimer,{passive:true});
-document.getElementById('view-soup').addEventListener('touchstart',resetBottomBarTimer,{passive:true});
 
 function renderDefaultBar(mode) {
   if (mode === 'soup') {
-    showBottomBar([
+        showBottomBar([
       { icon: '▤', label: 'Folder', action: () => openFolderModal() },
-      { icon: '☆', label: 'Discourse', action: () => handleNewDiscourse() },
       { icon: '⌇', label: 'Spark', action: () => openQuickCapture() },
+      { icon: '◎', label: 'Chronicle', action: () => handleNewChronicle() },
       { icon: '⌬', label: 'Engram', action: () => openBurnDiscModal() }
     ]);
   } else {
@@ -2987,8 +3364,23 @@ function enterSelectMode(item){
   selectMode=true;
   if(!selectedItems) selectedItems=new Set();
   if(item&&item.id) selectedItems.add(item.id);
-  if(currentMode=='soup') renderTableView().then(()=>renderSelectBar());
-  else renderSanctuaryView().then(()=>renderSelectBar());
+    // Save scroll positions before re-render
+  const scrollPositions = new Map();
+  document.querySelectorAll('.section-scroll-wrap').forEach((el, i) => {
+    scrollPositions.set(i, el.scrollLeft);
+  });
+
+  if(currentMode=='soup'){
+    renderTableView().then(()=>{
+      renderSelectBar();
+      // Restore scroll positions after re-render
+      document.querySelectorAll('.section-scroll-wrap').forEach((el, i) => {
+        if(scrollPositions.has(i)) el.scrollLeft = scrollPositions.get(i);
+      });
+    });
+  } else {
+    renderSanctuaryView().then(()=>renderSelectBar());
+  }
 }
 
 function renderSelectBar(){
@@ -3018,13 +3410,16 @@ function renderSelectBar(){
     return;
   }
 
-  if(count===1 && !hasFolder){
+    if(count===1){
     const id=[...selectedItems][0];
     const isDiscourse=id.startsWith('d_')||id.startsWith('n_');
+    const isFolder=id.startsWith('f_');
     const pills=[
       {icon:'✎',label:'Rename',action:()=>{exitSelectMode();openRenameForItem(id);}},
-      {icon:'▤',label:'Move',action:()=>batchMove()},
     ];
+    if(!isFolder){
+      pills.push({icon:'▤',label:'Move',action:()=>batchMove()});
+    }
     if(isDiscourse){
       pills.push({icon:'↓',label:'Export',action:()=>{exitSelectMode();exportDiscourseHTML(id);}});
     }
@@ -3217,6 +3612,33 @@ function showPanel(id){
   'view-lighthouse', 'view-forge', 'view-chat', 'view-memory', 
   'view-persona', 'view-guardian', 'view-ie'
 ];
+
+  // ── GUARDIAN EXIT: free Cartographer, revive Watcher after delay ──
+  if (id !== 'view-guardian' && currentView === 'guardian') {
+    unloadDeepMapper();
+    // Revive Watcher after Safari has a moment to free Cartographer's WASM
+    setTimeout(() => {
+      if (!isWatcherReady && watcherDB) {
+        initWatcher();
+      }
+    }, 800);
+  }
+  
+  // ── GUARDIAN ENTRY: immediately exile Watcher, suppress Cartographer lazy load ──
+  if (id === 'view-guardian') {
+    if (watcherEmbedder) {
+      try { watcherEmbedder.dispose(); } catch(e){} // Free Watcher WASM memory
+      watcherEmbedder = null;
+      isWatcherReady = false;
+    }
+    // Prevent Cartographer from loading for 1.5 seconds so Safari GC can breathe
+    deepMapperLoadSuppressed = true;
+    if (deepMapperSuppressTimer) clearTimeout(deepMapperSuppressTimer);
+    deepMapperSuppressTimer = setTimeout(() => {
+      deepMapperLoadSuppressed = false;
+    }, 1500);
+  }
+  
   panels.forEach(p=>{
     const el=document.getElementById(p);
     if(el)el.classList.add('hidden');
@@ -3225,10 +3647,21 @@ function showPanel(id){
   if(active)active.classList.remove('hidden');
   currentView=id.replace('view-','');
   
-  if(id==='view-soup'){renderDefaultBar('soup');}
+    if(id==='view-soup'){renderDefaultBar('soup');}
   else if(id==='view-sanctuary'){renderDefaultBar('sanctuary');}
   else{hideBottomBar();}
   
+  // Guardian gets its own realm -- header hidden, edge glow active
+  const header = document.getElementById('nq-header') || document.querySelector('.nq-header');
+  const edgeGlow = document.getElementById('guardian-edge-glow');
+  if(id === 'view-guardian'){
+    if(header) header.style.display = 'none';
+    if(edgeGlow) edgeGlow.classList.add('active');
+  } else {
+    if(header) header.style.display = '';
+    if(edgeGlow) edgeGlow.classList.remove('active');
+  }
+
   firefly.sd(id==='view-lighthouse'||id==='view-chat'?80:20);
   teleportWatcherDot();
 }
@@ -3293,131 +3726,188 @@ function openSanctuarySearch(){
 async function renderTableView() {
   const surface = document.getElementById('table-surface');
   if (!surface) return;
-  surface.onclick = (e) => {
-  if(e.target===surface && selectMode){
-    exitSelectMode();
-  }
-};
+  surface.onclick = (e) => { if(e.target===surface && selectMode) exitSelectMode(); };
   surface.innerHTML = '';
   renderBreadcrumb();
 
   const safeMatch = (a, b) => {
-    const isANull = (!a || String(a) === 'null' || String(a) === 'root' || String(a) === 'undefined');
-    const isBNull = (!b || String(b) === 'null' || String(b) === 'root' || String(b) === 'undefined');
-    if (isANull && isBNull) return true;
+    const isANull = (!a || String(a)==='null' || String(a)==='root' || String(a)==='undefined');
+    const isBNull = (!b || String(b)==='null' || String(b)==='root' || String(b)==='undefined');
+    if(isANull && isBNull) return true;
     return String(a) === String(b);
   };
 
   const isAtRoot = (!currentFolderId || currentFolderId === 'root');
-
   const sw = document.getElementById('search-bar-wrap');
-  if (sw) sw.style.display = isAtRoot ? 'none' : 'block';
+  if(sw) sw.style.display = isAtRoot ? 'none' : 'block';
 
   const allF = (await getFolders()) || [];
   const allD = (await getDiscourses()) || [];
+  const allFolders = allF;
+  const allDiscs = allD;
 
-  const allFolders = await getFolders();
-const allDiscs = await dbGetAll("cosm_discourses");
+  if(window.firefly) firefly.sd(allD.reduce((s,d) => s+(d.raw_text||'').length, 0));
 
-const cf = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, currentFolderId));
-const notes = allD.filter(d => !d.isDeleted && d.item_type === 'note' && safeMatch(d.folder_id, currentFolderId));
-const discs = allD.filter(d => !d.isDeleted && d.item_type !== 'note' && safeMatch(d.folder_id, currentFolderId));
+  // ── ROOT: Dashboard mode ──────────────────────────────────────────────────
+  if(isAtRoot) {
+    // Folders -- 2 row horizontal scroll
+    const activeFolders = [];
+    for(const f of allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, null))) {
+      const vitality = await getFolderVitality(f.id, allFolders, allDiscs);
+      const phase = vitality ? decayPhase(vitality) : decayPhase(f.created_at||0);
+      if(phase === 'active' || phase === 'fading') activeFolders.push({...f, _phase: phase});
+    }
 
-// Decay filtering
-const activeFolders=[], fadingFolders=[], forgottenFolderCount={};
-for(const f of cf){
-  const vitality = await getFolderVitality(f.id, allFolders, allDiscs);
-  const phase = vitality ? decayPhase(vitality) : decayPhase(f.created_at||0);
-  if(phase==='active') activeFolders.push({...f, _phase:'active'});
-  else if(phase==='fading') activeFolders.push({...f, _phase:'fading'});
-  else if(phase==='forgotten'||phase==='gone') forgottenFolderCount[f.id]=true;
-}
+    if(activeFolders.length) {
+      const l = document.createElement('div'); l.className = 'cards-section-label'; l.textContent = 'Folders'; surface.appendChild(l);
+      const wrap = document.createElement('div'); wrap.className = 'section-scroll-wrap';
+      const g = document.createElement('div'); g.className = 'section-grid' + (activeFolders.length <= 2 ? ' single-row' : '');
+      for(const f of activeFolders) {
+        const dc = allD.filter(d => safeMatch(d.folder_id, f.id) && d.item_type !== 'note' && !d.isDeleted).length;
+        const nc = allD.filter(d => safeMatch(d.folder_id, f.id) && d.item_type === 'note' && !d.isDeleted).length;
+        const sc = allF.filter(sf => safeMatch(sf.parent_id, f.id) && !sf.isDeleted).length;
+        const meta = [];
+        if(dc > 0) meta.push(dc + (dc===1?' discourse':' discourses'));
+        if(nc > 0) meta.push(nc + (nc===1?' spark':' sparks'));
+        if(sc > 0) meta.push(sc + (sc===1?' folder':' folders'));
+        const card = document.createElement('div');
+        card.className = 'folder-card card' + (f._phase==='fading'?' card-fading':'');
+        if(typeof selectedItems !== 'undefined' && selectedItems.has(f.id)) card.classList.add('card-selected');
+        card.innerHTML = `<div class="folder-card-top"><span class="folder-icon-glyph">▤</span></div><div class="folder-card-name">${escHtml(f.name)}</div><div class="folder-card-meta">${meta.length?meta.join(' · '):'Empty'}</div>`;
+        card.onclick = () => { if(window.longPressConsumed){window.longPressConsumed=false;return;} if(typeof selectMode!=='undefined'&&selectMode){toggleSelectItem(f.id);return;} enterFolder(f.id, f.name); };
+        card.onmousedown = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f});
+        card.ontouchstart = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f}, {passive:true});
+        card.onmouseup = () => cancelLP(card);
+        card.onmouseleave = () => cancelLP(card);
+        card.ontouchend = () => cancelLP(card);
+        g.appendChild(card);
+      }
+      wrap.appendChild(g); surface.appendChild(wrap);
+    }
 
-const activeDiscs=[], fadingDiscs=[];
-let forgottenDiscCount=0, forgottenSparkCount=0;
-for(const d of [...discs,...notes]){
-  const phase = decayPhase(d.updated_at||d.created_at||0);
-  if(phase==='active') activeDiscs.push({...d,_phase:'active'});
-  else if(phase==='fading') activeDiscs.push({...d,_phase:'fading'});
-  else if(phase==='forgotten'||phase==='gone'){
-    if(d.item_type==='note') forgottenSparkCount++;
-    else forgottenDiscCount++;
-  }
-}
-const forgottenFolders=Object.keys(forgottenFolderCount).length;
+    // Recent sections helper -- 6 cards + lineage portal
+    const RECENT_MAX = 6;
 
+    async function renderRecentSection(label, items) {
+      if(!items.length) return;
+      const l = document.createElement('div'); l.className = 'cards-section-label'; l.textContent = label; surface.appendChild(l);
+      const wrap = document.createElement('div'); wrap.className = 'section-scroll-wrap';
+      const g = document.createElement('div'); g.className = 'section-grid single-row';
 
-  if (window.firefly) firefly.sd(allD.reduce((s, d) => s + (d.raw_text || '').length, 0));
+      const shown = items.slice(0, RECENT_MAX);
+      const hasMore = items.length > RECENT_MAX;
 
-  if (!activeFolders.length && !activeDiscs.length && !forgottenFolders && !forgottenDiscCount && !forgottenSparkCount) {
-    surface.innerHTML = `<div class="table-empty"><div class="table-empty-glyph">◈</div><div class="table-empty-text">${isAtRoot ? 'Create a folder to begin' : 'Empty Abyss'}</div></div>`;
+      for(const d of shown) {
+        const card = await buildDiscourseCard(d);
+        if(d._phase==='fading') card.classList.add('card-fading');
+        g.appendChild(card);
+      }
+
+      // 7th card -- lineage portal
+      if(hasMore) {
+        const portal = document.createElement('div');
+        portal.className = 'folder-card card';
+        portal.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;opacity:0.5;border-style:dashed;';
+        portal.innerHTML = `<div style="font-size:22px;color:var(--accent);">▤</div><div style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:900;text-transform:uppercase;">Browse All</div><div style="font-size:9px;color:var(--muted);text-align:center;padding:0 8px;">${items.length - RECENT_MAX} more</div>`;
+        portal.onclick = () => openLineage();
+        g.appendChild(portal);
+      }
+
+      wrap.appendChild(g); surface.appendChild(wrap);
+    }
+
+    // Pull recent across ALL folders, sorted by updated_at desc
+    const allActive = allD.filter(d => !d.isDeleted && decayPhase(d.updated_at||d.created_at||0) !== 'gone');
+    allActive.sort((a,b) => (b.updated_at||b.created_at||0) - (a.updated_at||a.created_at||0));
+
+    const recentDiscourses = allActive.filter(d => d.item_type === 'discourse' || (!d.item_type && d.item_type !== 'note' && d.item_type !== 'chronicle'));
+    const recentSparks = allActive.filter(d => d.item_type === 'note');
+    const recentChronicles = allActive.filter(d => d.item_type === 'chronicle');
+
+    await renderRecentSection('Recent Discourses', recentDiscourses);
+    await renderRecentSection('Recent Sparks', recentSparks);
+    await renderRecentSection('Recent Chronicles', recentChronicles);
+
+    // Decay motes across all
+    const forgottenCount = allD.filter(d => !d.isDeleted && (decayPhase(d.updated_at||d.created_at||0)==='forgotten'||decayPhase(d.updated_at||d.created_at||0)==='gone')).length;
+    if(forgottenCount > 0) spawnMotes(surface, forgottenCount, false);
     return;
   }
 
-  if (activeFolders.length) {
+  // ── FOLDER DRILL: standard grid inside a folder ───────────────────────────
+  const cf = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, currentFolderId));
+  const notes = allD.filter(d => !d.isDeleted && d.item_type === 'note' && safeMatch(d.folder_id, currentFolderId));
+  const discs = allD.filter(d => !d.isDeleted && safeMatch(d.folder_id, currentFolderId));
+
+  const activeFolders2 = [], forgottenFolderCount = {};
+  for(const f of cf) {
+    const vitality = await getFolderVitality(f.id, allFolders, allDiscs);
+    const phase = vitality ? decayPhase(vitality) : decayPhase(f.created_at||0);
+    if(phase==='active'||phase==='fading') activeFolders2.push({...f, _phase: phase});
+    else forgottenFolderCount[f.id] = true;
+  }
+
+  const activeDiscs = [];
+  let forgottenDiscCount = 0, forgottenSparkCount = 0;
+  for(const d of discs) {
+    const phase = decayPhase(d.updated_at||d.created_at||0);
+    if(phase==='active'||phase==='fading') activeDiscs.push({...d, _phase: phase});
+    else if(d.item_type==='note') forgottenSparkCount++;
+    else forgottenDiscCount++;
+  }
+  const forgottenFolders = Object.keys(forgottenFolderCount).length;
+
+  if(!activeFolders2.length && !activeDiscs.length && !forgottenFolders && !forgottenDiscCount && !forgottenSparkCount) {
+    surface.innerHTML = `<div class="table-empty"><div class="table-empty-glyph">◈</div><div class="table-empty-text">Empty Abyss</div></div>`;
+    return;
+  }
+
+  if(activeFolders2.length) {
     const l = document.createElement('div'); l.className = 'cards-section-label'; l.textContent = 'Folders'; surface.appendChild(l);
     const g = document.createElement('div'); g.className = 'cards-grid';
-    for (const f of activeFolders) {
-      const dc = allD.filter(d => safeMatch(d.folder_id, f.id) && d.item_type !== 'note' && !d.isDeleted).length;
-      const nc = allD.filter(d => safeMatch(d.folder_id, f.id) && d.item_type === 'note' && !d.isDeleted).length;
+    for(const f of activeFolders2) {
+      const dc = allD.filter(d => safeMatch(d.folder_id, f.id) && !d.isDeleted).length;
       const sc = allF.filter(sf => safeMatch(sf.parent_id, f.id) && !sf.isDeleted).length;
       const meta = [];
-      if (dc > 0) meta.push(dc + (dc === 1 ? ' discourse' : ' discourses'));
-      if (nc > 0) meta.push(nc + (nc === 1 ? ' note' : ' sparks'));
-      if (sc > 0) meta.push(sc + (sc === 1 ? ' folder' : ' folders'));
-
+      if(dc > 0) meta.push(dc + ' item' + (dc===1?'':'s'));
+      if(sc > 0) meta.push(sc + ' folder' + (sc===1?'':'s'));
       const card = document.createElement('div');
-      card.className = 'folder-card card';
-      if (typeof selectedItems !== 'undefined' && selectedItems.has(f.id)) card.classList.add('card-selected');
-      
-      card.innerHTML = `<div class="folder-card-top"><span class="folder-icon-glyph">▤</span></div><div class="folder-card-name">${escHtml(f.name)}</div><div class="folder-card-meta">${meta.length ? meta.join(' · ') : 'Empty'}</div>`;
-      
-      if(f._phase==='fading') card.classList.add('card-fading');
-      
-      card.onclick = () => {
-        if (window.longPressConsumed) { window.longPressConsumed = false; return; }
-        if (typeof selectMode !== 'undefined' && selectMode) { toggleSelectItem(f.id); return; }
-        enterFolder(f.id, f.name);
-      };
+      card.className = 'folder-card card' + (f._phase==='fading'?' card-fading':'');
+      card.innerHTML = `<div class="folder-card-top"><span class="folder-icon-glyph">▤</span></div><div class="folder-card-name">${escHtml(f.name)}</div><div class="folder-card-meta">${meta.length?meta.join(' · '):'Empty'}</div>`;
+      card.onclick = () => { if(window.longPressConsumed){window.longPressConsumed=false;return;} enterFolder(f.id, f.name); };
       card.onmousedown = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f});
       card.ontouchstart = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f}, {passive:true});
       card.onmouseup = () => cancelLP(card);
       card.onmouseleave = () => cancelLP(card);
       card.ontouchend = () => cancelLP(card);
-
       g.appendChild(card);
     }
     surface.appendChild(g);
   }
 
-  const activeDiscourses = activeDiscs.filter(d=>d.item_type!=='note');
-const activeSparks = activeDiscs.filter(d=>d.item_type==='note');
+  const folderDiscourses = activeDiscs.filter(d => d.item_type === 'discourse' || (!d.item_type && d.item_type !== 'note' && d.item_type !== 'chronicle'));
+  const folderSparks = activeDiscs.filter(d => d.item_type === 'note');
+  const folderChronicles = activeDiscs.filter(d => d.item_type === 'chronicle');
 
-if(activeDiscourses.length){
-  const l=document.createElement('div');l.className='cards-section-label';l.textContent='Discourses';surface.appendChild(l);
-  const g=document.createElement('div');g.className='cards-grid';
-  for(const d of activeDiscourses){
-    const card=await buildDiscourseCard(d);
-    if(d._phase==='fading') card.classList.add('card-fading');
-    g.appendChild(card);
+  async function renderFolderSection(label, items) {
+    if(!items.length) return;
+    const l = document.createElement('div'); l.className = 'cards-section-label'; l.textContent = label; surface.appendChild(l);
+    const g = document.createElement('div'); g.className = 'cards-grid';
+    for(const d of items) {
+      const card = await buildDiscourseCard(d);
+      if(d._phase==='fading') card.classList.add('card-fading');
+      g.appendChild(card);
+    }
+    surface.appendChild(g);
   }
-  surface.appendChild(g);
-}
 
-if(activeSparks.length){
-  const l=document.createElement('div');l.className='cards-section-label';l.textContent='Sparks';surface.appendChild(l);
-  const g=document.createElement('div');g.className='cards-grid';
-  for(const d of activeSparks){
-    const card=await buildDiscourseCard(d);
-    if(d._phase==='fading') card.classList.add('card-fading');
-    g.appendChild(card);
-  }
-  surface.appendChild(g);
-}
-// Spawn motes for forgotten items in this view
-const totalForgotten = forgottenDiscCount + forgottenSparkCount;
-if(totalForgotten > 0) spawnMotes(surface, totalForgotten, false);
-if(forgottenFolders > 0) spawnMotes(surface, forgottenFolders, true);
+  await renderFolderSection('Discourses', folderDiscourses);
+  await renderFolderSection('Sparks', folderSparks);
+  await renderFolderSection('Chronicles', folderChronicles);
+
+  const totalForgotten = forgottenDiscCount + forgottenSparkCount;
+  if(totalForgotten > 0) spawnMotes(surface, totalForgotten, false);
+  if(forgottenFolders > 0) spawnMotes(surface, forgottenFolders, true);
 }
 
 /* DECAY SYSTEM */
@@ -3474,11 +3964,10 @@ function spawnMotes(surface, count, heavy=false){
   }
 }
 
-
 async function buildDiscourseCard(d){
   const tile = await getMosaicTile(d.id), hasMosaic = tile && tile.anchors && tile.anchors.length > 0;
   const date = new Date(d.updated_at||d.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"});
-  const preview = d.raw_text ? d.raw_text.replace(/\n+/g,' ').slice(0,100) : '';
+  const preview = d.raw_text ? d.raw_text.replace(/\n+/g,' ').slice(0,220) : '';
   const card = document.createElement('div');
   card.className = 'discourse-card card';
   
@@ -3657,22 +4146,75 @@ function navToBc(idx){
 }
 
 async function openDiscourse(id){
-  if(currentDiscourseId&&id!==currentDiscourseId)await saveCurrentDiscourse(true);
-  const disc=await getDiscourse(id);if(!disc){showToast("Discourse not found ◆");return;}
-  currentDiscourseId=id;
-    // ---> SENSEI'S INCISION: Silent Attention Bump
+  if(currentDiscourseId && id !== currentDiscourseId) await saveCurrentDiscourse(true);
+  const disc = await getDiscourse(id); 
+  if(!disc){ showToast("Discourse not found ◆"); return; }
+  
+  currentDiscourseId = id;
+  
+  // Silent Attention Bump
   await dbPut("cosm_discourses", {...disc, updated_at: Date.now()}); 
-  document.getElementById("discourse-title").value=disc.title||"";
-  document.getElementById("content-textarea").value=disc.raw_text||"";
-  await renderMeta(disc);await renderMosaicDisplay(id);
-  setEditorMode('write');showPanel('view-lighthouse');
-  if(disc.folder_id&&currentFolderId!==disc.folder_id){const f=await dbGet("cosm_folders",disc.folder_id);if(f){breadcrumbPath=[{id:null,name:'◈ The Soup'},{id:disc.folder_id,name:f.name}];currentFolderId=disc.folder_id;}}
+  
+  document.getElementById("discourse-title").value = disc.title || "";
+  
+  // SAFELY RENDER UNIFIED TEXT
+  let contentText = disc.raw_text || "";
+  const savedTitle = disc.title ? disc.title.trim() : "";
+  
+  // Legacy Migration: If an old discourse had its title saved separately, 
+  // prepend it to the text area so it isn't lost in the void.
+  if (savedTitle && savedTitle !== "Untitled" && savedTitle !== "Untitled Discourse") {
+      const firstLine = (contentText.split('\n').find(l => l.trim().length > 0) || "").trim();
+      if (firstLine !== savedTitle && !firstLine.startsWith(savedTitle)) {
+          contentText = savedTitle + "\n\n" + contentText;
+      }
+  }
+  
+  const ta = document.getElementById("content-textarea");
+  ta.value = contentText;
+  
+  // Trigger auto-height after content loads
+  setTimeout(() => {
+    ta.style.height = 'auto';
+    ta.style.height = Math.max(ta.scrollHeight, window.innerHeight * 0.6) + 'px';
+  }, 50);
+  
+  await renderMeta(disc); 
+  await renderMosaicDisplay(id);
+
+  // Chronicle vs Discourse feel
+  const lhInner = document.querySelector('.lighthouse-inner');
+  if(disc.item_type === 'chronicle'){
+    ta.placeholder = 'What was brought in from outside...\n\nPaste, transcribe, or write what arrived from elsewhere.';
+    if(lhInner) lhInner.style.borderLeft = '2px solid var(--accent-dim)';
+    if(lhInner) lhInner.style.paddingLeft = '18px';
+  } else if(disc.item_type === 'note'){
+    ta.placeholder = 'A spark...\n\nWrite fast. Don\'t construct.';
+    if(lhInner) lhInner.style.borderLeft = 'none';
+    if(lhInner) lhInner.style.paddingLeft = '0';
+  } else {
+    ta.placeholder = 'Title\n\nBegin writing...';
+    if(lhInner) lhInner.style.borderLeft = 'none';
+    if(lhInner) lhInner.style.paddingLeft = '0';
+  }
+  
+  setEditorMode('write'); 
+  showPanel('view-lighthouse');
+  
+  if(disc.folder_id && currentFolderId !== disc.folder_id){
+    const f = await dbGet("cosm_folders", disc.folder_id);
+    if(f){
+      breadcrumbPath =[{id: null, name: '◈ The Soup'}, {id: disc.folder_id, name: f.name}];
+      currentFolderId = disc.folder_id;
+    }
+  }
 }
 
 async function renderMeta(disc){
   const el=document.getElementById("discourse-meta");
   const date=new Date(disc.created_at).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
-  let html=`<span>${date}</span>`;
+    const typeLabel = disc.item_type === 'chronicle' ? 'Chronicle' : disc.item_type === 'note' ? 'Spark' : 'Discourse';
+  let html = `<span>${date}</span><span class="meta-separator">·</span><span style="color:var(--accent-dim);font-size:9px;letter-spacing:1px;text-transform:uppercase;">${typeLabel}</span>`;
   if(disc.folder_id){const f=await dbGet("cosm_folders",disc.folder_id);if(f)html+=`<span class="meta-separator">·</span><span>▸ ${escHtml(f.name)}</span>`;}
   const bl=await getBacklink(disc.id);
   if(bl)html+=`<span class="meta-separator">·</span><a class="source-link" href="#">⟵ ${escHtml(bl.char_name||"Sanctuary")}</a>`;
@@ -3687,18 +4229,56 @@ async function renderMosaicDisplay(dId){
   document.getElementById('btn-clear-mosaic').addEventListener('click',confirmDeleteMosaic);
 }
 
+async function handleNewChronicle() {
+  const folders = await getFolders();
+  const sel = document.getElementById('discourse-modal-folder');
+  sel.innerHTML = '<option value="">-- Choose folder (or auto-wrap) --</option>';
+  folders.filter(f => !f.isDeleted).forEach(f => {
+    const o = document.createElement('option');
+    o.value = f.id; o.textContent = f.name;
+    if (f.id === currentFolderId) o.selected = true;
+    sel.appendChild(o);
+  });
+  const no = document.createElement('option');
+  no.value = '__new__'; no.textContent = '+ New folder...';
+  sel.appendChild(no);
+  document.getElementById('discourse-modal-title').value = '';
+  document.getElementById('discourse-modal-title').placeholder = 'Chronicle title...';
+  document.getElementById('discourse-modal-new-folder').style.display = 'none';
+  // Mark modal as chronicle mode
+  document.getElementById('discourse-modal').dataset.type = 'chronicle';
+  document.getElementById('discourse-modal').classList.add('visible');
+  document.getElementById('cosm-overlay').classList.add('active');
+  setTimeout(() => document.getElementById('discourse-modal-title').focus(), 100);
+}
+
 async function saveCurrentDiscourse(silent=false){
   if(!currentDiscourseId)return;
-  const title=document.getElementById("discourse-title").value.trim()||"Untitled Discourse";
-  const raw_text=document.getElementById("content-textarea").value;
-  await updateDiscourse(currentDiscourseId,{title,raw_text});
+  
+  const ta = document.getElementById("content-textarea");
+  const fullText = ta.value;
+  
+  // Extract the first non-empty line as the title for the database index
+  const lines = fullText.split('\n');
+  const title = lines.find(l => l.trim().length > 0)?.trim().slice(0, 120) || "Untitled";
+  
+  // The body IS the full text. No slicing. No data loss.
+  const raw_text = fullText;
+  
+  document.getElementById("discourse-title").value = title;
+  const ind = document.getElementById('lh-save-indicator');
+  if(ind){ ind.textContent='◆ saving'; ind.className='lh-save-indicator saving'; }
+  
+  await updateDiscourse(currentDiscourseId, {title, raw_text});
+  
+  if(ind){ ind.textContent='◆ saved'; ind.className='lh-save-indicator visible'; setTimeout(()=>{ ind.className='lh-save-indicator'; },2000); }
   if(!silent)showToast("Saved ◆");
   setTimeout(()=>backupToAkashic(),0);
+  
   if (isWatcherReady && currentDiscourseId) {
     const disc = await getDiscourse(currentDiscourseId);
     if (disc && disc.item_type) queueWatcherEmbed(currentDiscourseId, title, raw_text, disc.item_type);
-    // Background pre-summarise for Guardian -- non-blocking
-setTimeout(()=>presSummariseForGuardian(currentDiscourseId),2000);
+    generateFastMap(currentDiscourseId);
   }
 }
 
@@ -3742,10 +4322,12 @@ async function confirmNewDiscourse(){
     const f=await dbGet('cosm_folders',fId);
     if(f){breadcrumbPath=[{id:null,name:'◈ The Soup'},{id:fId,name:f.name}];currentFolderId=fId;}
   }
-  
   closeOverlay();
+  
   if(currentDiscourseId)await saveCurrentDiscourse(true);
-  const disc=await createDiscourse({title,raw_text:'',folder_id:fId});
+    const isChronicle = document.getElementById('discourse-modal').dataset.type === 'chronicle';
+  document.getElementById('discourse-modal').dataset.type = '';
+  const disc = await createDiscourse({title, raw_text:'', folder_id: fId, item_type: isChronicle ? 'chronicle' : 'discourse'});
   await openDiscourse(disc.id);
   setTimeout(()=>{
     const t=document.getElementById('discourse-title');
@@ -3985,11 +4567,13 @@ async function openChat(id){
   const ieCheck = await getImmutableEntity(id);
   if(ieCheck && ieCheck.signature){ openIEBottomSheet(id); return; }
   if(ieCheck && !ieCheck.signature){ showToast('◈ Draft -- go to ∞ page to forge'); return; }
-  
   // Reset IE state -- critical to prevent bleed from IE chat
-  activeIE = null;
-  isSending = false; // reset any stuck send state
-  
+    activeIE = null;
+  isSending = false;
+  document.getElementById('view-chat').classList.remove('ie-encounter');
+  document.getElementById('chat-input').placeholder = 'Send a message...';
+  document.getElementById('chat-persona-pill').style.display = '';
+  document.getElementById('btn-chat-edit').style.display = '';// reset any stuck send state
   activeCharId = id;
   const c = await getCharacter(id);
   document.getElementById('chat-char-name').textContent = c.name;
@@ -3998,8 +4582,8 @@ async function openChat(id){
 document.getElementById('chat-input').style.height = 'auto';
 
   // Hide IE-only elements
-  const chip = document.getElementById('ie-model-chip');
-  if(chip) chip.style.display = 'none';
+  const bar = document.getElementById('ie-model-bar');
+if(bar) bar.style.display = 'none';
   document.getElementById('chat-persona-pill').style.display = '';
   document.getElementById('btn-chat-edit').style.display = '';
   
@@ -4007,76 +4591,562 @@ document.getElementById('chat-input').style.height = 'auto';
   history.forEach(h => appendChatMessage(h.role, h.content));
   chatPersonaOverride = c.player_role_id || null;
   updatePersonaPill();
+  await updateChatRetryButton();
   showPanel('view-chat');
 }
 
+// UI Helper: The Abyss Rule - No Regrets.
+async function updateChatRetryButton() {
+  const retryBtn = document.getElementById('btn-chat-retry');
+  if (!retryBtn) return;
+  if (isSending || !activeCharId) {
+    retryBtn.style.display = 'none';
+    return;
+  }
+  
+  const history = await dbGetByIndex('history', 'charId', activeCharId);
+  if (history.length === 0) {
+    retryBtn.style.display = 'none';
+    return;
+  }
+  
+  history.sort((a,b) => a.created_at - b.created_at);
+  const lastMsg = history[history.length - 1];
+
+  // Only show retry if the API failed (the last message is still the user's)
+  retryBtn.style.display = (lastMsg.role === 'user') ? 'flex' : 'none';
+}
+
 let isSending = false;
-async function handleChatSend(){
-  if(isSending) return;
-  isSending = true;
+let chatAbortController = null;
+
+async function handleChatSend(isRetry = false) {
+  if (typeof isRetry !== 'boolean') isRetry = false;
+
+  // 1. THE KILL SWITCH
+  if (isSending) {
+    if (chatAbortController) chatAbortController.abort();
+    return;
+  }
+
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
-  if(!text ||!activeCharId){ isSending=false; return; }
-  input.value=''; input.style.height='auto';
-  appendChatMessage('user',text);
 
-  const now = Date.now();
-  // THE FIX: Generating a highly unique string ID to prevent sync collisions
-  const userMsgId = 'h_' + crypto.randomUUID();
-  await dbPut('history', { id: userMsgId, charId: activeCharId, role: 'user', content: text, created_at: now });
-    const char = activeIE ? activeIE : await getCharacter(activeCharId);
-  if(!char){ isSending=false; return; }
-  let history = await dbGetByIndex('history','charId',activeCharId);
-  history = history.map(h=>({...h})).sort((a,b)=>a.created_at-b.created_at);
+  let history = await dbGetByIndex('history', 'charId', activeCharId);
+  history.sort((a,b) => a.created_at - b.created_at);
 
-    try {
-    const response = await callAIForChat(char, history);
-    if(response){
-      appendChatMessage('char',response);
+  // 2. NETWORK RETRY OR NEW MESSAGE
+  if (isRetry) {
+    // Double-check that we are actually in a failed state
+    if (!history.length || history[history.length - 1].role !== 'user') return;
+  } else {
+    if (!text || !activeCharId) return;
+    input.value = ''; 
+    input.style.height = 'auto';
+    appendChatMessage('user', text);
+
+    const now = Date.now();
+    const userMsgId = 'h_' + crypto.randomUUID();
+    await dbPut('history', { id: userMsgId, charId: activeCharId, role: 'user', content: text, created_at: now });
+    history.push({ id: userMsgId, charId: activeCharId, role: 'user', content: text, created_at: now });
+  }
+
+  const char = activeIE ? activeIE : await getCharacter(activeCharId);
+  if (!char) return;
+
+  // 3. LOCK THE UI & ARM THE ABORT CONTROLLER
+  isSending = true;
+  const sendBtn = document.getElementById('btn-send');
+  sendBtn.textContent = '✕';
+  sendBtn.style.background = 'var(--danger)';
+  sendBtn.style.color = '#fff';
+  
+  const retryBtn = document.getElementById('btn-chat-retry');
+  if (retryBtn) retryBtn.style.display = 'none';
+
+  chatAbortController = new AbortController();
+
+  try {
+    const response = await streamChatResponse(char, history, chatAbortController.signal);
+    if (response && response.trim()) {
       const aiMsgId = 'h_' + crypto.randomUUID();
-      await dbPut('history', { id: aiMsgId, charId: activeCharId, role: 'char', content: response, created_at: now+1 });
+      await dbPut('history', { id: aiMsgId, charId: activeCharId, role: 'char', content: response.trim(), created_at: Date.now() });
     }
+  } catch (e) {
+    if (e.name !== 'AbortError') console.error(e);
   } finally {
+    // 4. UNLOCK UI & ASSESS STATE
     isSending = false;
+    chatAbortController = null;
+    sendBtn.textContent = '⇡';
+    sendBtn.style.background = 'var(--accent)';
+    sendBtn.style.color = '#000';
+    updateChatRetryButton(); // This will show the retry button ONLY if it failed again
   }
 }
 
-async function presSummariseForGuardian(discourseId){
-  const d=await getDiscourse(discourseId);
-  if(!d||!d.raw_text||d.raw_text.trim().length<30)return;
-  const key=await readSecureKey('nq_api_key')||'';
-  if(!key)return;
-  const existing=await dbGet('guardian_summaries',discourseId);
-  // Skip if already summarised and not updated since
-  if(existing&&existing.updated_at>=d.updated_at)return;
-  const wordCount=d.raw_text.trim().split(/\s+/).filter(Boolean).length;
-  if(wordCount<30)return;
-  try{
-    const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
-      method:'POST',
-      headers:{'Authorization':`Bearer ${key}`,'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'deepseek/deepseek-v4-flash',
-        max_tokens:300,
-        messages:[
-          {role:'system',content:'Precise summariser. One dense paragraph, max 100 words. Core themes, tensions, emotional texture. No preamble.'},
-          {role:'user',content:`Title: ${d.title}\n\n${d.raw_text.slice(0,2000)}`}
-        ]
-      })
-    });
-    const data=await res.json();
-    const summary=data.choices?.[0]?.message?.content?.trim()||d.raw_text.slice(0,200);
-    await dbPut('guardian_summaries',{
-      id:discourseId,
-      discourse_id:discourseId,
-      summary,
-      word_count:wordCount,
-      created_at:Date.now(),
-      updated_at:Date.now()
-    });
-  }catch(e){}
+function extractEdges(text) {
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
+  if (lines.length === 0) return { first_line: '', last_line: '' };
+  return {
+    first_line: lines[0].trim().slice(0, 200),
+    last_line: lines[lines.length - 1].trim().slice(0, 200)
+  };
 }
 
+const STOPWORDS = new Set([
+  'the','a','an','is','was','were','be','been','being','have','has','had',
+  'do','does','did','will','would','shall','should','may','might','must',
+  'can','could','i','me','my','mine','myself','you','your','yours',
+  'he','him','his','she','her','hers','it','its','itself',
+  'we','us','our','ours','they','them','their','theirs',
+  'this','that','these','those','what','which','who','whom',
+  'and','but','or','nor','not','so','yet','for','if','to','of','in',
+  'on','at','by','from','with','about','into','through','during',
+  'after','above','below','between','out','off','over','under',
+  'again','further','then','once','here','there','when','where',
+  'why','how','all','both','each','few','more','most','other','some',
+  'such','only','own','same','than','too','very','just','now',
+  'also','even','still','already','always','never','sometimes'
+]);
+
+function extractKeyTerms(text, maxTerms = 10) {
+  const words = text.toLowerCase()
+    .replace(/[^\w\s']/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STOPWORDS.has(w));
+  
+  // Count frequencies
+  const freq = {};
+  for (const w of words) {
+    freq[w] = (freq[w] || 0) + 1;
+  }
+  
+  // Simple TF-IDF approximation: TF * log(totalWords / (1 + docCount))
+  // For a single document, IDF is approximated by uniqueness
+  const totalWords = words.length;
+  const terms = Object.entries(freq)
+    .map(([term, count]) => ({
+      term,
+      count,
+      tfidf: (count / totalWords) * Math.log(totalWords / (1 + count)) 
+      // Rarer words get higher weight
+    }))
+    .sort((a, b) => b.tfidf - a.tfidf)
+    .slice(0, maxTerms);
+  
+  return terms;
+}
+
+const SENTIMENT = {
+  positive: new Set([
+    'love','hope','light','warm','open','free','peace','calm','soft',
+    'gentle','bright','clear','true','whole','heal','grow','bloom',
+    'rise','reach','hold','safe','trust','grace','grateful'
+  ]),
+  negative: new Set([
+    'fear','pain','dark','cold','close','trapped','heavy','hard',
+    'sharp','lost','broken','wound','fall','sink','empty','alone',
+    'silence','never','nothing','hollow','bitter','ache','weight'
+  ]),
+  tentative: new Set([
+    'perhaps','maybe','sometimes','could','might','seems','almost',
+    'trying','wondering','question','uncertain','hesitate'
+  ]),
+  confessional: new Set([
+    'truth','honest','admit','confess','real','raw','naked',
+    'bare','expose','reveal','actually','felt','feel','feeling'
+  ]),
+  resolved: new Set([
+    'accept','chose','decide','finally','enough','done','settle',
+    'rest','still','quiet','understood','understand','knowing'
+  ])
+};
+
+function detectEmotionalArc(text) {
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
+  if (lines.length < 3) return { direction: 'too short', opening_tone: 'neutral', closing_tone: 'neutral', tension_shift: 0 };
+  
+  const firstThird = lines.slice(0, Math.ceil(lines.length / 3)).join(' ').toLowerCase();
+  const lastThird = lines.slice(-Math.ceil(lines.length / 3)).join(' ').toLowerCase();
+  
+  function score(text, lexicon) {
+    const words = text.split(/\s+/);
+    let hits = 0;
+    for (const w of words) {
+      if (lexicon.has(w)) hits++;
+    }
+    return hits / Math.max(words.length, 1);
+  }
+  
+  // Classify opening tone
+  const openingTones = [
+    { name: 'tentative', score: score(firstThird, SENTIMENT.tentative) },
+    { name: 'confessional', score: score(firstThird, SENTIMENT.confessional) },
+    { name: 'negative', score: score(firstThird, SENTIMENT.negative) },
+    { name: 'positive', score: score(firstThird, SENTIMENT.positive) }
+  ].sort((a, b) => b.score - a.score);
+  
+  // Classify closing tone
+  const closingTones = [
+    { name: 'resolved', score: score(lastThird, SENTIMENT.resolved) + score(lastThird, SENTIMENT.positive) },
+    { name: 'confessional', score: score(lastThird, SENTIMENT.confessional) },
+    { name: 'negative', score: score(lastThird, SENTIMENT.negative) },
+    { name: 'tentative', score: score(lastThird, SENTIMENT.tentative) }
+  ].sort((a, b) => b.score - a.score);
+  
+  const openingTone = openingTones[0].name;
+  const closingTone = closingTones[0].name;
+  
+  // Tension shift: positive = more tense, negative = resolved
+  const openNeg = score(firstThird, SENTIMENT.negative);
+  const closeNeg = score(lastThird, SENTIMENT.negative);
+  const tensionShift = openNeg - closeNeg;
+  
+  // Direction string
+  let direction;
+  if (tensionShift > 0.02) direction = `${openingTone} → resolving`;
+  else if (tensionShift < -0.02) direction = `${openingTone} → escalating`;
+  else direction = `${openingTone} → ${closingTone}`;
+  
+  return {
+    direction,
+    opening_tone: openingTone,
+    closing_tone: closingTone,
+    tension_shift: parseFloat(tensionShift.toFixed(3))
+  };
+}
+
+function extractiveSummary(text, maxSentences = 5) {
+  const sentences = text
+    .replace(/([.!?])\s+/g, '$1|')
+    .split('|')
+    .filter(s => s.trim().length > 20);
+  
+  if (sentences.length <= maxSentences) return sentences.join(' ').trim();
+  
+  const keyTerms = extractKeyTerms(text, 15);
+  const keyTermSet = new Set(keyTerms.map(t => t.term));
+  
+  // Score each sentence
+  const scored = sentences.map((s, i) => {
+    const words = s.toLowerCase().split(/\s+/);
+    let termScore = 0;
+    for (const w of words) {
+      if (keyTermSet.has(w)) termScore++;
+    }
+    
+    // Position bonus: first and last sentences matter more
+    const positionBonus = (i === 0 || i === sentences.length - 1) ? 0.5 : 
+                          (i < 3 || i > sentences.length - 3) ? 0.2 : 0;
+    
+    return {
+      sentence: s.trim(),
+      score: (termScore / words.length) + positionBonus,
+      index: i
+    };
+  });
+  
+  // Pick top N, then sort by original position to preserve flow
+  const top = scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxSentences)
+    .sort((a, b) => a.index - b.index);
+  
+  return top.map(t => t.sentence).join(' ').trim();
+}
+
+async function injectWatcherFlags(fastMap, discourseId) {
+  if (!isWatcherReady || !watcherDB) return fastMap;
+  
+  const current = await wdb.get('embeddings', discourseId);
+  if (!current || !current.vector) return fastMap;
+  
+  const allEmbeds = await wdb.getAll('embeddings');
+  const currentVec = new Float32Array(current.vector);
+  
+  const similarities = [];
+  for (const e of allEmbeds) {
+    if (e.id === discourseId) continue;
+    const sim = watcherCosine(currentVec, new Float32Array(e.vector));
+    similarities.push({ id: e.id, score: sim });
+  }
+  
+  similarities.sort((a, b) => b.score - a.score);
+  
+  // Top similar (exclude self)
+  const topSimilar = similarities.slice(0, 3);
+  
+  // Potential contradictions: high similarity but need to check emotional arc
+  // Simplified: flag any with similarity > 0.7
+  const topContradictory = [];
+for(const s of similarities.filter(s => s.score > 0.65)){
+  const otherMap = await dbGet('guardian_summaries', s.id);
+  if(!otherMap) continue;
+  const currentArc = fastMap.emotional_arc?.tension_shift || 0;
+  const otherArc = otherMap.emotional_arc?.tension_shift || 0;
+  // Opposite directions = one resolving, one escalating
+    if((currentArc > 0.02 && otherArc < -0.02) || (currentArc < -0.02 && otherArc > 0.02)){
+    topContradictory.push(s);
+  }
+}
+
+  // Resolve discourse titles
+  async function resolveTitle(id) {
+    const d = await getDiscourse(id);
+    return d ? d.title || 'Untitled' : 'Unknown';
+  }
+  
+  fastMap.watcher = {
+    top_similar: await Promise.all(topSimilar.map(async s => ({
+      id: s.id,
+      score: parseFloat(s.score.toFixed(3)),
+      title: await resolveTitle(s.id)
+    }))),
+    top_contradictory: await Promise.all(topContradictory.map(async s => ({
+      id: s.id,
+      score: parseFloat(s.score.toFixed(3)),
+      title: await resolveTitle(s.id)
+    })))
+  };
+  
+  return fastMap;
+}
+
+async function generateFastMap(discourseId) {
+  try {
+    const d = await getDiscourse(discourseId);
+    if (!d || !d.raw_text) return;
+
+    const words = d.raw_text.trim().split(/\s+/).filter(Boolean);
+    const wordCount = words.length;
+    if (wordCount < 30) return;
+
+    const existing = await dbGet('guardian_summaries', discourseId);
+    // Skip if already mapped and word count is unchanged
+    if (existing && existing.map_type === 'fast' && existing.word_count === wordCount) return;
+
+    // Run your sovereign local heuristics
+    const edges = extractEdges(d.raw_text);
+    const terms = extractKeyTerms(d.raw_text, 10);
+    const arc = detectEmotionalArc(d.raw_text);
+    const extract = extractiveSummary(d.raw_text, 3);
+
+    let fastMap = {
+      id: discourseId,
+      discourse_id: discourseId,
+      map_type: 'fast',
+      first_line: edges.first_line,
+      last_line: edges.last_line,
+      key_terms: terms,
+      emotional_arc: arc,
+      extractive_summary: extract,
+      word_count: wordCount,
+      model: 'local-heuristic',
+      generated_at: Date.now(),
+      created_at: existing ? existing.created_at : Date.now(),
+      updated_at: Date.now()
+    };
+
+    // Inject the Watcher's vector echoes
+    fastMap = await injectWatcherFlags(fastMap, discourseId);
+
+    await dbPut('guardian_summaries', fastMap);
+    console.log(`◈ Sovereign Fast Map generated for ${discourseId}`);
+  } catch (err) {
+    console.error('Fast Map error:', err);
+  }
+}
+
+// ── LOCAL DEEP MAPPER ────────────────────────────────────
+// Loaded only on Guardian summon when sovereign mode is active
+
+let deepMapper = null;
+let deepMapperLoading = false;
+let deepMapperReady = false;
+
+const DEEP_MAPPER_MODEL = 'Xenova/distilbart-cnn-6-6';
+
+let deepMapperLastUnload = 0;
+
+async function unloadDeepMapper() {
+  if (deepMapper) {
+    try { 
+      // This is the magic command that frees the WebAssembly RAM
+      await deepMapper.dispose(); 
+    } catch(e) { console.warn("DeepMapper dispose error", e); }
+  }
+  deepMapper = null;
+  deepMapperReady = false;
+  deepMapperLastUnload = Date.now();
+}
+
+async function initDeepMapper() {
+  // GUARD: Cartographer suppressed (Watcher still vacating memory)
+  if (deepMapperLoadSuppressed) {
+    console.log('[DeepMapper] Suppressed -- waiting for Watcher memory to free');
+    return false;
+  }
+  
+  // Don't reload if unloaded less than 2 seconds ago
+  if (Date.now() - deepMapperLastUnload < 2000) {
+    console.log('[DeepMapper] Cooling down, waiting...');
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  if (deepMapperReady) return true;
+  if (deepMapperLoading) {
+    // Wait for existing load to complete
+    return new Promise((resolve) => {
+      const check = setInterval(() => {
+        if (deepMapperReady) { clearInterval(check); resolve(true); }
+        if (!deepMapperLoading) { clearInterval(check); resolve(false); }
+      }, 500);
+    });
+  }
+  
+  deepMapperLoading = true;
+  
+  try {
+    const { pipeline, env } = await import(
+      'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js'
+    );
+    
+    env.useBrowserCache = true;
+    env.allowLocalModels = false;
+    env.backends.onnx.wasm.wasmPaths = 
+      'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
+    
+    // Update the summoning UI
+    const subEl = document.getElementById('guardian-sub');
+    if (subEl) subEl.textContent = 'Loading the Cartographer...';
+    
+    deepMapper = await pipeline('summarization', DEEP_MAPPER_MODEL, {
+      quantized: true,
+      progress_callback: (progress) => {
+        if (progress.status === 'downloading' && subEl) {
+          const loaded = Math.round((progress.loaded || 0) / 1024 / 1024);
+          const total = Math.round((progress.total || 306) / 1024 / 1024);
+          subEl.textContent = `Cartographer: ${loaded}MB / ${total}MB`;
+        }
+        if (progress.status === 'ready' && subEl) {
+          subEl.textContent = 'Cartographer ready. Mapping...';
+        }
+      }
+    });
+    
+    deepMapperReady = true;
+    deepMapperLoading = false;
+    return true;
+    
+  } catch (err) {
+    console.error('[DeepMapper] Failed to load:', err);
+    deepMapperLoading = false;
+    deepMapper = null;
+    return false;
+  }
+}
+
+async function generateDeepMap(discourseId, rawText) {
+  if (!deepMapperReady || !deepMapper) return null;
+  
+  // Truncate to model's max input (typically 1024 tokens for distilbart)
+  const truncated = rawText.trim().slice(0, 3000);
+  
+  try {
+    const result = await deepMapper(truncated, {
+      max_length: 150,
+      min_length: 40,
+      do_sample: false  // deterministic -- no hallucination risk
+    });
+    
+    const summary = result[0]?.summary_text || '';
+    
+    if (summary.trim().length < 20) return null;
+    
+    return {
+      id: discourseId,
+      discourse_id: discourseId,
+      map_type: 'deep_local',
+      summary: summary.trim(),
+      word_count: rawText.trim().split(/\s+/).filter(Boolean).length,
+      model: DEEP_MAPPER_MODEL,
+      generated_at: Date.now()
+    };
+    
+  } catch (err) {
+    console.error('[DeepMapper] Generation failed for', discourseId, err);
+    return null;
+  }
+}
+
+// Select urgent discourses using Watcher intelligence
+async function selectUrgentDiscourses(discs, maxCount = 5) {
+  const candidates = [];
+  
+  for (const d of discs) {
+    const fastMap = await dbGet('guardian_summaries', d.id);
+    let urgencyScore = 0;
+    
+    // Factor 1: Has Watcher contradictions (very urgent)
+    if (fastMap?.watcher?.top_contradictory?.length > 0) {
+      urgencyScore += fastMap.watcher.top_contradictory.length * 3;
+    }
+    
+    // Factor 2: Has strong echoes (the user is circling something)
+    if (fastMap?.watcher?.top_similar?.length > 0) {
+      const highSim = fastMap.watcher.top_similar.filter(s => s.score > 0.8);
+      urgencyScore += highSim.length * 2;
+    }
+    
+    // Factor 3: Emotional arc is escalating (unresolved tension)
+    if (fastMap?.emotional_arc?.tension_shift > 0.02) {
+      urgencyScore += 2;
+    }
+    
+    // Factor 4: Longer text -- more substance to analyze
+    const wordCount = fastMap?.word_count || 
+      (d.raw_text || '').trim().split(/\s+/).filter(Boolean).length;
+    if (wordCount > 500) urgencyScore += 1;
+    
+    // Factor 5: Recent -- written within last 7 days
+    const age = Date.now() - (d.created_at || 0);
+    if (age < 7 * 86400000) urgencyScore += 2;
+    
+    // Factor 6: No deep map exists yet
+    const deepMap = await dbGet('guardian_summaries', d.id + '_deep');
+    if (!deepMap) urgencyScore += 1;
+    
+    candidates.push({
+      id: d.id,
+      title: d.title || 'Untitled',
+      rawText: d.raw_text || '',
+      urgencyScore,
+      fastMap
+    });
+  }
+  
+  // Sort by urgency, take top N
+  candidates.sort((a, b) => b.urgencyScore - a.urgencyScore);
+  return candidates.slice(0, maxCount);
+}
+
+function setMappingMode(mode) {
+  localStorage.setItem('nq_cartographer_mode', mode);
+  
+  if (mode === 'sovereign') {
+    showToast('◈ Sovereign -- Cartographer runs locally, no network');
+  } else {
+    showToast('◈ Deep -- API-powered maps (uses your key)');
+  }
+}
+
+// Set initial value on Guardian view open
+function initMappingModeUI() {
+  const select = document.getElementById('guardian-mapping-select');
+  if (select) {
+    select.value = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
+  }
+}
 
 async function summariseHistory(charId,messages){
   const key=await readSecureKey('nq_api_key')||"";
@@ -4248,7 +5318,7 @@ function openPersonaPillSelector(){
   document.getElementById('cosm-overlay').classList.add('active');
 }
 
-// Notice 'text' is removed from parameters
+// CALL AI FOR CHAT
 async function callAIForChat(char, history){
   const key=await readSecureKey('nq_api_key')||"";
   if(!key){showToast("Add API Key in Settings");return null;}
@@ -4348,11 +5418,134 @@ const model = (activeIE && chip && chip.style.display !== 'none')
   }
 }
 
+// STREAM CHAT
+// Add 'signal' to the parameters
+async function streamChatResponse(char, history, signal) {
+  const key = await readSecureKey('nq_api_key') || "";
+  if(!key){ showToast("Add API Key in Settings"); return null; }
+
+  const memoryContext = await getMemoryContext(char.id);
+  const memoryBlock = memoryContext ? `\n\n[MEMORY FRAGMENTS]\n${memoryContext}` : "";
+  const p = getGlobalPersona();
+  const roles = getPersonaRoles();
+  const roleId = chatPersonaOverride || char.player_role_id || null;
+  const assignedRole = roleId ? roles.find(r => r.id === roleId) : null;
+  const personaBlock = activeIE ? '' : `\n\nPlayer is ${p.bio||'the user'}. ${p.personality?'Personality: '+p.personality+'.':''} ${assignedRole?'In this encounter they are: '+assignedRole.description+'.':''}`;
+
+  let sys;
+  if(activeIE && activeIE.id === char.id){
+    const ieModels = activeIE.model_variants ?
+      (typeof activeIE.model_variants === 'string' ? JSON.parse(activeIE.model_variants) : activeIE.model_variants) :[];
+    const modelNote = ieModels.length ? '\n\nYou were battle-tested with: ' + ieModels.map(m => m.model_id?.split('/').pop()).join(', ') : '';
+    sys = `${activeIE.system_prompt_core || 'You are ' + activeIE.display_name}
+Existential function: ${activeIE.existential_function || 'To be present.'}
+Constraints: ${activeIE.constraints || 'Will not soften. Will not perform.'}
+Voice: ${activeIE.voice_limits || 'As required by truth.'}${modelNote}${memoryBlock}`;
+  } else {
+    sys = `You are ${char.name}. ${char.role}.
+Personality: ${char.personality}.
+Backstory: ${char.backstory}.
+Lore: ${char.lorebook}.
+Scenario: ${char.scenario}.
+Inclination: ${char.inclination}.
+Relationships: ${char.relationships}.
+Respond in character, concise and evocative.${personaBlock}${memoryBlock}`;
+  }
+
+  const sortedHistory = [...history].sort((a,b) => a.created_at - b.created_at).slice(-12);
+  let safeMsgs =[];
+  for(const h of sortedHistory){
+    const role = h.role === 'user' ? 'user' : 'assistant';
+    const content = h.content ? h.content.trim() : "...";
+    if(!content) continue;
+    if(safeMsgs.length > 0 && safeMsgs[safeMsgs.length-1].role === role){
+      safeMsgs[safeMsgs.length-1].content += "\n\n" + content;
+    } else {
+      safeMsgs.push({role, content});
+    }
+  }
+  if(safeMsgs.length > 0 && safeMsgs[0].role !== 'user') safeMsgs.shift();
+
+  const chip = document.getElementById('ie-model-chip');
+  const model = (activeIE && chip && chip.style.display !== 'none')
+    ? (JSON.parse(chip.dataset.models || '[]')[parseInt(chip.dataset.idx || '0')]?.model_id || localStorage.getItem("nq_model") || "deepseek/deepseek-v4-flash")
+    : (localStorage.getItem("nq_model") || "deepseek/deepseek-v4-flash");
+
+  const msgs =[{role:'system', content:sys}, ...safeMsgs];
+
+  const c = document.getElementById('chat-messages');
+  const m = document.createElement('div');
+  m.className = 'chat-msg char';
+  m.textContent = '...'; // Little thinking indicator
+  c.appendChild(m);
+  c.scrollTop = c.scrollHeight;
+
+  // We declare fullText outside the try block so the catch block can return it if aborted
+  let fullText = '';
+
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${key}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://nakedquantum.com",
+        "X-Title": "NakedQuantum"
+      },
+      body: JSON.stringify({model, messages: msgs, stream: true, temperature: char.temperature || 1.0}),
+      signal: signal // INJECT ABORT SIGNAL HERE
+    });
+
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    m.textContent = ''; // clear thinking indicator
+
+    while(true){
+      const chunk = await reader.read();
+      if(chunk.done) break;
+      const lines = decoder.decode(chunk.value, {stream:true}).split('\n').filter(l => l.indexOf('data: ') === 0);
+      for(const line of lines){
+        const raw = line.slice(6).trim();
+        if(raw === '[DONE]') break;
+        try {
+          const parsed = JSON.parse(raw);
+          const token = parsed.choices?.[0]?.delta?.content || '';
+          fullText += token;
+          m.textContent = fullText;
+          c.scrollTop = c.scrollHeight;
+        } catch(e){}
+      }
+    }
+
+    return fullText || null;
+
+  } catch(err){
+    // If we deliberately killed it, keep whatever text it managed to write
+    if (err.name === 'AbortError') {
+      return fullText || null; 
+    }
+    console.error(err);
+    if (!fullText) m.remove(); // only delete the bubble if it failed before writing anything
+    showToast("AI network failure ◆");
+    return fullText || null;
+  }
+}
+
 function appendChatMessage(role,text){
   const c=document.getElementById('chat-messages');const m=document.createElement('div');m.className=`chat-msg ${role==='user'?'user':'char'}`;m.textContent=text;c.appendChild(m);c.scrollTop=c.scrollHeight;
 }
 
-async function clearChatHistory(){if(!activeCharId||!confirm("Clear chat history?"))return;const h=await dbGetByIndex('history','charId',activeCharId);for(const x of h)await dbDelete('history',x.id);document.getElementById('chat-messages').innerHTML='';showToast("History cleared");}
+async function clearChatHistory(){
+if(!activeCharId||!confirm("Clear chat history?"))
+return;
+const h=await dbGetByIndex('history','charId',activeCharId);
+for(const x of h)await dbDelete('history',x.id);
+document.getElementById('chat-messages').innerHTML='';
+showToast("History cleared");
+await updateChatRetryButton();
+}
 
 /* VOID */
 function closeVoidView(){goBack();}
@@ -4736,6 +5929,8 @@ function applyFormat(cfg){
   else if(cfg.block){if(sel){nt=before+cfg.block+sel+cfg.end+after;cp=start+cfg.block.length+sel.length+cfg.end.length;}else{nt=before+cfg.block+cfg.end+after;cp=start+cfg.block.length;}}
   else if(cfg.line){const ls=before.lastIndexOf('\n')+1;const lp=ta.value.slice(ls,start);if(lp.startsWith(cfg.line)){nt=ta.value.slice(0,ls)+lp.slice(cfg.line.length)+ta.value.slice(start);cp=start-cfg.line.length;}else{nt=ta.value.slice(0,ls)+cfg.line+ta.value.slice(ls);cp=start+cfg.line.length;}}
   ta.value=nt;ta.setSelectionRange(cp,cp);ta.focus();
+    document.getElementById('lh-fmt-sheet')?.classList.remove('open');
+  ta.focus();
 }
 
 function renderContent(raw){
@@ -4754,6 +5949,34 @@ function renderContent(raw){
   t=out.join('\n');bm.forEach((h,i)=>{t=t.replace('%%BL'+i+'%%',h);});cb.forEach((h,i)=>{t=t.replace('%%CB'+i+'%%',h);});ic.forEach((h,i)=>{t=t.replace('%%IC'+i+'%%',h);});
   t=t.replace(/<p><\/p>/g,'');t=t.replace(/<p>%%[A-Z0-9]+%%<\/p>/g,m=>m.slice(3,-4));return t;
 }
+
+function toggleLHOverflow() {
+  const menu = document.getElementById('lh-overflow-menu');
+  menu.classList.toggle('open');
+}
+
+// Close on outside tap
+document.addEventListener('click', (e) => {
+  const wrap = document.querySelector('.lh-overflow-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('lh-overflow-menu')?.classList.remove('open');
+  }
+});
+
+function toggleLHFormat() {
+  const sheet = document.getElementById('lh-fmt-sheet');
+  const overflow = document.getElementById('lh-overflow-menu');
+  overflow?.classList.remove('open'); // close overflow if open
+  sheet.classList.toggle('open');
+}
+
+// Close format sheet on outside tap
+document.addEventListener('click', (e) => {
+  const wrap = document.querySelector('.lh-fmt-wrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('lh-fmt-sheet')?.classList.remove('open');
+  }
+});
 
 async function exportHTML(){
   if(!currentDiscourseId)return;
@@ -4943,8 +6166,13 @@ async function handleSync() {
       if (row.deleted_at) {
          await dbDelete(row.store, row.id);
       } else if (row.data_enc) {
-         const obj = await decFromCloud(row.data_enc);
-         await dbPut(row.store, obj);
+         try {
+           const obj = await decFromCloud(row.data_enc);
+           await dbPut(row.store, obj);
+         } catch (decErr) {
+           console.warn("◈ Voided a corrupted cloud engram:", row.id);
+           // It skips the corrupted row but keeps the sync alive.
+         }
       }
     }
 
@@ -5003,6 +6231,8 @@ async function openGuardianView(){
   showPanel('view-guardian');
   guardianState = 'resting';
   resetGuardianUI();
+  initMappingModeUI();
+  initDeepMapper();
   await renderGuardianLogs();
 }
 
@@ -5026,6 +6256,33 @@ function resetGuardianUI(){
   sub.textContent = 'The Abyss is listening.';
 }
 
+const GUARDIAN_MODELS = [
+  'deepseek/deepseek-v4-flash',
+  'deepseek/deepseek-r1',
+  'google/gemini-2.5-flash',
+  'anthropic/claude-sonnet-4-5'
+];
+let guardianModelIdx = 0;
+
+function cycleGuardianModel() {
+  guardianModelIdx = (guardianModelIdx + 1) % GUARDIAN_MODELS.length;
+  const m = GUARDIAN_MODELS[guardianModelIdx];
+  const pill = document.getElementById('guardian-model-pill');
+  if(pill) pill.textContent = '◈ ' + m.split('/').pop();
+  localStorage.setItem('nq_guardian_model', m);
+  showToast('◈ ' + m.split('/').pop());
+}
+
+function initGuardianModel() {
+  const stored = localStorage.getItem('nq_guardian_model');
+  if(stored) {
+    const idx = GUARDIAN_MODELS.indexOf(stored);
+    if(idx >= 0) guardianModelIdx = idx;
+  }
+  const pill = document.getElementById('guardian-model-pill');
+  if(pill) pill.textContent = '◈ ' + GUARDIAN_MODELS[guardianModelIdx].split('/').pop();
+}
+
 async function summonGuardian(userAddition){
   var apiKey = await readSecureKey('nq_api_key');
   if(!apiKey){ showToast('No API key in Settings'); return; }
@@ -5043,22 +6300,95 @@ async function summonGuardian(userAddition){
   sub.textContent = '';
   try {
     var allDiscs = (await getDiscourses()).filter(function(d){ return !d.deleted_at && !d.isDeleted; });
+
+    // ── SOVEREIGN DEEP MAPPER (if enabled) ────────────────
+    var mappingMode = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
+    var subEl = document.getElementById('guardian-sub');
+    
+    if (mappingMode === 'sovereign') {
+      var urgentDiscs = await selectUrgentDiscourses(allDiscs, 5);
+      
+      if (urgentDiscs && urgentDiscs.length > 0) {
+        var loaded = await initDeepMapper();
+        
+        if (loaded) {
+          var mapped = 0;
+          for (var d of urgentDiscs) {
+            if (subEl) subEl.textContent = 'Mapping: ' + (d.title || 'Untitled').slice(0, 40) + '... (' + (++mapped) + '/' + urgentDiscs.length + ')';
+            
+            var existingDeep = await dbGet('guardian_summaries', d.id + '_deep');
+            if (existingDeep && (Date.now() - existingDeep.generated_at < 7 * 86400000)) {
+              continue;
+            }
+            
+            var deepMap = await generateDeepMap(d.id, d.rawText);
+            if (deepMap) {
+              await dbPut('guardian_summaries', {
+                id: d.id + '_deep',
+                discourse_id: d.id,
+                map_type: 'deep_local',
+                summary: deepMap.summary,
+                word_count: deepMap.word_count,
+                model: deepMap.model,
+                generated_at: deepMap.generated_at
+              });
+            }
+            
+            await new Promise(function(r) { setTimeout(r, 100); });
+          }
+          
+  if (subEl) subEl.textContent = urgentDiscs.length + ' terrains mapped. Speaking...';
+          
+          // THE FIX: We MUST unload the heavy local model before streaming the Guardian
+          // OpenRouter streams take memory. If we hold both, Safari crashes.
+          await unloadDeepMapper(); 
+          
+        } else {
+          // Cartographer couldn't load (memory pressure, suppressed, or failed)
+          if (subEl) subEl.textContent = 'Cartographer resting. Using Fast Maps.';
+        }
+        
+      } else {
+        // No urgent discourses found
+        if (subEl) subEl.textContent = 'No urgent terrain to map. Using Fast Maps.';
+      }
+    }
+
+    // ── BUILD CONTEXT FROM FAST MAPS + DEEP MAPS ──────────
     var summaries = await buildGuardianContext(allDiscs);
+    
+    // GUARD: If buildGuardianContext failed silently
+    if (!summaries) {
+      throw new Error('buildGuardianContext returned empty');
+    }
+    
     var allLogs = await dbGetAll('guardian_logs');
     var recentLogs = allLogs.filter(function(l){ return !l.was_silent; }).sort(function(a,b){ return b.invoked_at - a.invoked_at; }).slice(0,2);
     var contextBlock = 'ARCHIVE SUMMARIES (' + allDiscs.length + ' discourses):\n\n' + summaries;
-    if(recentLogs.length){
-      var timeSinceLast = Math.floor((Date.now() - recentLogs[0].invoked_at) / 86400000);
-      var prevBlock = recentLogs.map(function(l){
-        return '[My Previous Witness Record - ' + new Date(l.invoked_at).toLocaleDateString() + ']\n' + l.response_text;
-      }).join('\n\n---\n\n');
-      
-      contextBlock += '\n\n---\n\nGUARDIAN INSTRUCTION:\n';
-      contextBlock += 'You last spoke to them ' + timeSinceLast + ' days ago.\n';
-      contextBlock += 'Review your Previous Witness Records. Compare them to the Current Archive Summaries.\n';
-      contextBlock += 'Are they circling the exact same narrative? Have they moved? Address the gap between what you told them last time, and what they have written since. If they have stagnated, be ruthless about the repetition.\n\n';
-      contextBlock += prevBlock;
-    }
+    
+if (recentLogs.length) {
+  var timeSinceLast = Math.floor((Date.now() - recentLogs[0].invoked_at) / 86400000);
+  
+  contextBlock += '\n═══════════════════════════════════\n';
+  contextBlock += 'GUARDIAN INSTRUCTION\n';
+  contextBlock += '═══════════════════════════════════\n\n';
+  contextBlock += `You last spoke to them ${timeSinceLast} days ago.\n\n`;
+  contextBlock += 'Review your Previous Witness Records below. Compare them to the Witness Records above.\n\n';
+  contextBlock += 'Look for:\n';
+  contextBlock += '· Are they circling the exact same narrative?\n';
+  contextBlock += '· Have they moved? Where? By how much?\n';
+  contextBlock += '· What did you tell them last time, and did they act on it or resist it?\n';
+  contextBlock += '· What appears in the records that they haven\'t named directly?\n';
+  contextBlock += '· Where do the emotional arcs tell a different story than the words?\n\n';
+  contextBlock += 'If they have stagnated, be ruthless about the repetition.\n';
+  contextBlock += 'If they have genuinely shifted, acknowledge the movement -- but don\'t congratulate. Just witness it.\n\n';
+  
+  contextBlock += '── PREVIOUS WITNESS RECORDS ──\n\n';
+  for (const log of recentLogs) {
+    contextBlock += `[${new Date(log.invoked_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}]\n`;
+    contextBlock += log.response_text + '\n\n---\n\n';
+  }
+}
     if(userAddition){ contextBlock += '\n\n---\n\nThe person has offered this after silence:\n' + userAddition; }
     realm.classList.remove('dimming');
     glyph.className = 'guardian-glyph watching';
@@ -5075,23 +6405,209 @@ async function summonGuardian(userAddition){
   }
 }
 
-async function buildGuardianContext(discs){
-  const results=[];
-  for(const d of discs){
-    const wordCount=(d.raw_text||'').trim().split(/\s+/).filter(Boolean).length;
-    const date=new Date(d.created_at||Date.now()).toLocaleDateString('en-US',{month:'short',year:'numeric'});
-    // Try pre-stored summary first
-    const stored=await dbGet('guardian_summaries',d.id);
-    if(stored&&stored.summary){
-      results.push(`[${date}] "${d.title||'Untitled'}" (${wordCount}w): ${stored.summary}`);
-    } else if(wordCount<30){
-      results.push(`[${date}] "${d.title||'Untitled'}" (${wordCount}w): ${(d.raw_text||'').slice(0,200)}`);
+async function buildGuardianContext(discs) {
+  const now = Date.now();
+  let contextBlock = '';
+  
+  // ── ARCHIVE OVERVIEW ────────────────────────────────────
+  const totalWords = discs.reduce((sum, d) => 
+    sum + ((d.raw_text || '').trim().split(/\s+/).filter(Boolean).length), 0
+  );
+  
+  const dates = discs
+    .filter(d => d.created_at)
+    .map(d => d.created_at)
+    .sort((a, b) => a - b);
+  
+  const firstDate = dates.length ? new Date(dates[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'unknown';
+  const lastDate = dates.length ? new Date(dates[dates.length - 1]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'unknown';
+  
+  contextBlock += '═══════════════════════════════════\n';
+  contextBlock += 'ARCHIVE WITNESS RECORDS\n';
+  contextBlock += '═══════════════════════════════════\n\n';
+  contextBlock += `Total discourses in the Soup: ${discs.length}\n`;
+  contextBlock += `Time span: ${firstDate} – ${lastDate}\n`;
+  contextBlock += `Total words: ${totalWords.toLocaleString()}\n\n`;
+  
+  // ── FAST MAPS ───────────────────────────────────────────
+  contextBlock += '── FAST MAPS (structured metadata for all discourses) ──\n\n';
+  
+  // Sort by date, newest first
+  const sorted = [...discs].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+  
+  let mapNum = 0;
+  for (const d of sorted) {
+    mapNum++;
+    const fastMap = await dbGet('guardian_summaries', d.id);
+    const wordCount = (d.raw_text || '').trim().split(/\s+/).filter(Boolean).length;
+    const date = new Date(d.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    
+    contextBlock += `[DISCOURSE ${mapNum}] "${d.title || 'Untitled'}"\n`;
+    contextBlock += `Words: ${wordCount.toLocaleString()} · ${date}\n`;
+    
+    if (fastMap && fastMap.map_type === 'fast') {
+      // Use the Fast Map
+      if (fastMap.first_line) {
+        contextBlock += `First: "${fastMap.first_line.slice(0, 150)}"\n`;
+      }
+      if (fastMap.last_line) {
+        contextBlock += `Last: "${fastMap.last_line.slice(0, 150)}"\n`;
+      }
+      if (fastMap.key_terms && fastMap.key_terms.length) {
+        const termStr = fastMap.key_terms
+          .slice(0, 5)
+          .map(t => `${t.term}(${t.count})`)
+          .join(', ');
+        contextBlock += `Key terms: ${termStr}\n`;
+      }
+      if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
+        contextBlock += `Emotional arc: ${fastMap.emotional_arc.direction}\n`;
+      }
+      if (fastMap.extractive_summary) {
+        contextBlock += `Excerpt: "${fastMap.extractive_summary.slice(0, 300)}"\n`;
+      }
+      if (fastMap.watcher) {
+        if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
+          const echoes = fastMap.watcher.top_similar
+            .map(s => `d_${s.id.slice(-4)} (${s.score})`)
+            .join(', ');
+          contextBlock += `Watcher: echoes ${echoes}\n`;
+        }
+        if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
+          const contradicts = fastMap.watcher.top_contradictory
+            .map(s => `d_${s.id.slice(-4)} (${s.score})`)
+            .join(', ');
+          contextBlock += `Watcher: contradicts ${contradicts}\n`;
+        }
+      }
     } else {
-      // Fallback to first 200 chars if no pre-summary
-      results.push(`[${date}] "${d.title||'Untitled'}" (${wordCount}w): ${(d.raw_text||'').slice(0,200)}...`);
+      // Fallback: no Fast Map yet -- use raw text snippet
+      const rawText = (d.raw_text || '').trim();
+      if (rawText.length > 0) {
+        contextBlock += `First: "${rawText.split('\n').find(l => l.trim().length > 0)?.trim().slice(0, 150) || '...'}"\n`;
+        if (wordCount <= 300) {
+          contextBlock += `Full text: "${rawText.slice(0, 400)}"\n`;
+        } else {
+          contextBlock += `Excerpt: "${rawText.slice(0, 300)}..."\n`;
+        }
+        contextBlock += `[Note: Unmapped terrain -- Fast Map will be generated on next save]\n`;
+      }
+    }
+    
+    contextBlock += '\n';
+  }
+  
+  // ── DEEP MAPS (local or API) ──────────────────────────────
+  const deepMaps = [];
+  for (const d of sorted) {
+    const deepMap = await dbGet('guardian_summaries', d.id + '_deep');
+    if (deepMap && deepMap.summary) {
+      deepMaps.push({
+        title: d.title || 'Untitled',
+        summary: deepMap.summary,
+        model: deepMap.model || 'unknown'
+      });
     }
   }
-  return results.join('\n\n');
+
+  if (deepMaps.length > 0) {
+    contextBlock += '\n── DEEP MAPS (rich local summaries for urgent discourses) ──\n\n';
+    for (const dm of deepMaps) {
+      contextBlock += `"${dm.title}": ${dm.summary}\n\n`;
+    }
+    contextBlock += `Generated by: ${deepMaps[0].model} (${deepMaps.length} discourses mapped)\n\n`;
+  }
+  
+  // ── WATCHER PATTERN FLAGS ───────────────────────────────
+  if (isWatcherReady && watcherDB) {
+    const allLinks = await wdb.getAll('links');
+    const allEmbs = await wdb.getAll('embeddings');
+    
+    if (allLinks.length > 0) {
+      contextBlock += '── WATCHER PATTERN FLAGS ──\n\n';
+      
+      // Top echoes (high similarity pairs)
+      const topLinks = [...allLinks]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      
+      if (topLinks.length) {
+        contextBlock += 'High-similarity pairs (potential echoes):\n';
+        for (const link of topLinks) {
+          const discA = discTitleMap(discs, link.a);
+          const discB = discTitleMap(discs, link.b);
+          contextBlock += `· "${discA}" ↔ "${discB}" (${Math.round(link.score * 100)}%)\n`;
+        }
+        contextBlock += '\n';
+      }
+      
+      // Recurring terms across 3+ discourses
+      const allTerms = {};
+      for (const d of sorted) {
+        const fastMap = await dbGet('guardian_summaries', d.id);
+        if (fastMap && fastMap.key_terms) {
+          for (const term of fastMap.key_terms.slice(0, 5)) {
+            if (!allTerms[term.term]) allTerms[term.term] = [];
+            allTerms[term.term].push(d.title || 'Untitled');
+          }
+        }
+      }
+      
+      const recurringTerms = Object.entries(allTerms)
+        .filter(([, titles]) => titles.length >= 3)
+        .sort((a, b) => b[1].length - a[1].length)
+        .slice(0, 10);
+      
+      if (recurringTerms.length) {
+        contextBlock += 'Recurring terms across 3+ discourses:\n';
+        for (const [term, titles] of recurringTerms) {
+          contextBlock += `· "${term}" -- ${titles.length} discourses: ${titles.slice(0, 3).map(t => `"${t}"`).join(', ')}${titles.length > 3 ? `, +${titles.length - 3} more` : ''}\n`;
+        }
+        contextBlock += '\n';
+      }
+      
+      // Emotional arc patterns
+      const arcs = [];
+      for (const d of sorted) {
+        const fastMap = await dbGet('guardian_summaries', d.id);
+        if (fastMap && fastMap.emotional_arc && fastMap.emotional_arc.direction) {
+          arcs.push(fastMap.emotional_arc);
+        }
+      }
+      
+      if (arcs.length >= 3) {
+        const resolved = arcs.filter(a => a.tension_shift < -0.01).length;
+        const escalated = arcs.filter(a => a.tension_shift > 0.01).length;
+        const flat = arcs.filter(a => Math.abs(a.tension_shift) <= 0.01).length;
+        
+        // Most common arc
+        const arcCounts = {};
+        for (const a of arcs) {
+          const key = a.direction.split('→')[0]?.trim() || a.direction;
+          arcCounts[key] = (arcCounts[key] || 0) + 1;
+        }
+        const topArc = Object.entries(arcCounts).sort((a, b) => b[1] - a[1])[0];
+        
+        contextBlock += 'Emotional arc patterns across all discourses:\n';
+        contextBlock += `· ${resolved} resolved · ${escalated} escalated · ${flat} flat\n`;
+        if (topArc) {
+          contextBlock += `· Most common opening tone: "${topArc[0]}" (${topArc[1]} discourses)\n`;
+        }
+        contextBlock += '\n';
+      }
+    } else {
+      contextBlock += '── WATCHER PATTERN FLAGS ──\n\n';
+      contextBlock += 'No resonance links detected yet. The Watcher needs more material.\n\n';
+    }
+  }
+  
+  return contextBlock;
+}
+
+// Helper: resolve discourse title from ID
+function discTitleMap(discs, id) {
+  const d = discs.find(x => x.id === id);
+  return d ? (d.title || 'Untitled') : 'Unknown';
 }
 
 async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
@@ -5240,6 +6756,19 @@ document.getElementById('btn-data-back').addEventListener('click', ()=>{
   saveSupaFromDataPage(); // auto-save on leave
   goBack();
 });
+document.getElementById('btn-lh-overflow').addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleLHOverflow();
+});
+const ta = document.getElementById('content-textarea');
+ta.addEventListener('input', function(){
+  this.style.height = 'auto';
+  this.style.height = Math.max(this.scrollHeight, window.innerHeight * 0.6) + 'px';
+});
+document.getElementById('btn-lh-format').addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleLHFormat();
+});
 document.getElementById('btn-data-export-page').addEventListener('click', ()=>exportJSON());
 document.getElementById('import-json-input-page').onchange = e => importJSON(e);
 document.getElementById('btn-data-sync-page').addEventListener('click', ()=>handleSync());
@@ -5306,6 +6835,8 @@ localStorage.setItem('nq_api_key', document.getElementById('input-api-key').valu
   document.getElementById('btn-chat-edit').addEventListener('click',()=>openCharacterForge(activeCharId));
   document.getElementById('btn-chat-clear').addEventListener('click',clearChatHistory);
   document.getElementById('btn-send').addEventListener('click',handleChatSend);
+  document.getElementById('btn-send').addEventListener('click', handleChatSend); // Already exists
+  document.getElementById('btn-chat-retry').addEventListener('click', () => handleChatSend(true)); // ADD THIS
   document.getElementById('chat-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.stopPropagation(); // newline only
@@ -5322,6 +6853,10 @@ localStorage.setItem('nq_api_key', document.getElementById('input-api-key').valu
   });
 
 document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key==="s"){e.preventDefault();if(currentView==='lighthouse')saveCurrentDiscourse();}if(e.key==="Escape"&&currentView==='lighthouse')goBack();if(e.key==="Enter"&&document.getElementById("folder-modal").classList.contains("visible"))confirmNewFolder();if(e.key==="Enter"&&document.getElementById("rename-modal").classList.contains("visible"))confirmRename();if(e.key==="Escape"&&document.getElementById("global-search-modal").classList.contains("visible"))closeGlobalSearch();});
+// Add touch/scroll listeners in DOMContentLoaded
+document.getElementById('view-soup').addEventListener('scroll',resetBottomBarTimer,{passive:true});
+document.getElementById('view-soup').addEventListener('touchstart',resetBottomBarTimer,{passive:true});
+
 document.getElementById('watcher-dot')?.addEventListener('click', openWatcherPanel);
 document.addEventListener('click', (e) => {
   const panel = document.getElementById('watcher-panel');
@@ -5355,14 +6890,15 @@ async function bootApp() {
   if (DEV_MODE) {
   try {
     document.getElementById('lock-screen').style.display = 'none';
-    await init();
+        await init();
+    document.getElementById('btn-dev-force-pass').style.display = 'flex';
+    document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
   } catch(e) {
     console.error('DEV boot failed:', e);
     alert('Boot error: ' + e.message);
   }
   return;
 }
-
   const lockScreen = document.getElementById('lock-screen');
   const statusEl = document.getElementById('lock-status'); // add this element (see HTML patch below)
   let faceAttempts = 0;
@@ -5423,10 +6959,8 @@ async function bootApp() {
       statusEl.textContent = 'Face ID rejected. Use sovereign key.';
     }
   }
-
   tryFaceID(); // kick off on boot
 }
-
 bootApp();
 });
 
@@ -5439,9 +6973,7 @@ window.cosmOSPinDisc=async function({title,raw_text,source_link,backlink}){const
 <div class="bottom-bar" id="bottom-bar">
   <div class="bottom-bar-scroll" id="bottom-bar-scroll"></div>
 </div>
-
 <div class="watcher-loading-dot" id="watcher-loading-dot"></div>
-
 <div class="watcher-dot" id="watcher-dot"></div>
 <div class="watcher-panel" id="watcher-panel">
   <div class="watcher-panel-title">◈ Resonance</div>
