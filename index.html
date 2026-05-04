@@ -2953,11 +2953,9 @@ async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
   const { iv, ct } = JSON.parse(wrappedJson);
   const key = await crypto.subtle.importKey('raw', prfKeyBytes, {name: 'AES-GCM', length: 256}, false, ['decrypt']);
   const dec = await crypto.subtle.decrypt({name: 'AES-GCM', iv: new Uint8Array(iv)}, key, new Uint8Array(ct));
-  return new Uint8Array(dec);
-}
-
-async function unlockWithPRF(){
+async function unlockWithPRF() {
   const stored = localStorage.getItem(WA_CRED_KEY);
+
   try {
     const opts = {
       publicKey: {
@@ -2967,58 +2965,98 @@ async function unlockWithPRF(){
         timeout: 60000
       }
     };
-    if(stored) opts.publicKey.allowCredentials =[{ id: b64ToBuf(stored), type: 'public-key' }];
 
-    const assertion = await navigator.credentials.get(opts);
-    const ext = assertion.getClientExtensionResults();
+    if (stored) {
+      opts.publicKey.allowCredentials = [{ id: b64ToBuf(stored), type: 'public-key' }];
 
-    if(ext.prf?.results?.first){
-      let prfKey = new Uint8Array(ext.prf.results.first);
-      let finalKey = prfKey;
-      
-      // If we find a wrapped key, Face ID is acting as a wrapper. Unpack it.
-      const wrapped = localStorage.getItem('nq_wrapped_sk');
-      if (wrapped) {
-        try {
-          finalKey = await unwrapSovereignKey(wrapped, prfKey);
-        } catch(e) {
-          console.error("Failed to unwrap SK. PRF key mismatch.", e);
-          showToast('⚠ Face ID Key mismatch');
-          return false;
-        }
-      }
-      
-      setSovereignKey(finalKey); // Capture in RAM for backup/sync
-      await setEncryptionKey(finalKey);
-      showToast('Sovereign key active ◆');
-      return true;
-    }
-  } catch(e) {
-    if(!stored){
-      try {
-        const cred = await navigator.credentials.create({
-          publicKey: {
-            challenge: crypto.getRandomValues(new Uint8Array(32)),
-            rp: { name: 'NakedQuantum', id: location.hostname },
-            user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
-            pubKeyCredParams:[{ alg: -7, type: 'public-key' }],
-            authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
-            extensions: { prf: { eval: { first: getPRFSalt() } } },
-            timeout: 60000
+      const assertion = await navigator.credentials.get(opts);
+      const ext = assertion.getClientExtensionResults();
+
+      if (ext.prf?.results?.first) {
+        let prfKey = new Uint8Array(ext.prf.results.first);
+        let finalKey = prfKey;
+
+        const wrapped = localStorage.getItem('nq_wrapped_sk');
+        if (wrapped) {
+          try {
+            finalKey = await unwrapSovereignKey(wrapped, prfKey);
+          } catch (e) {
+            showToast('⚠ Face ID mismatch – use sovereign key');
+            return false;
           }
-        });
-        localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-        showToast('◈ Face ID registered -- unlock now');
-        return await unlockWithPRF();
-      } catch(regErr) {
-        console.error('PRF register failed:', regErr);
+        }
+
+        setSovereignKey(finalKey);
+        await setEncryptionKey(finalKey);
+        showToast('Sovereign key active ◆');
+        return true;
       }
+    }
+  } catch (e) {
+    // No credential or user cancelled — continue to registration
+  }
+
+  // ── NO VALID FACE ID → REGISTER ──────────────────
+  if (!stored) {
+    try {
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: 'NakedQuantum', id: location.hostname },
+          user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
+          pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+          authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
+          extensions: { prf: { eval: { first: getPRFSalt() } } },
+          timeout: 60000
+        }
+      });
+
+      // Store as Base64 first
+      localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
+      showToast('◈ Face ID registered – trying PRF …');
+
+      // Use the stored Base64 → buffer for consistency
+      const storedId = localStorage.getItem(WA_CRED_KEY);
+      const getOpts = {
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          userVerification: 'required',
+          allowCredentials: [{ id: b64ToBuf(storedId), type: 'public-key' }],
+          extensions: { prf: { eval: { first: getPRFSalt() } } },
+          timeout: 60000
+        }
+      };
+
+      try {
+        const assertion = await navigator.credentials.get(getOpts);
+        const ext = assertion.getClientExtensionResults();
+
+        if (ext.prf?.results?.first) {
+          const prfKey = new Uint8Array(ext.prf.results.first);
+          setSovereignKey(prfKey);
+          await setEncryptionKey(prfKey);
+          showToast('Sovereign key active ◆');
+          return true;
+        }
+      } catch (assertErr) {
+        // PRF get failed — fall through
+      }
+
+      // ── PRF NOT AVAILABLE → RANDOM KEY ──────────
+      showToast('◈ Face ID registered, PRF unavailable. Backup key created.');
+      const fallbackKey = crypto.getRandomValues(new Uint8Array(32));
+      setSovereignKey(fallbackKey);
+      await setEncryptionKey(fallbackKey);
+      return true;
+
+    } catch (regErr) {
+      console.error('Face ID registration failed:', regErr);
+      return false;
     }
   }
-  showToast('⚠ Running without encryption');
+
   return false;
 }
-
 // WEBAUTHN RESET
 async function resetWebAuthnRegistration() {
   const currentSK = getSovereignKey();
