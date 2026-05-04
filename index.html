@@ -2953,6 +2953,9 @@ async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
   const { iv, ct } = JSON.parse(wrappedJson);
   const key = await crypto.subtle.importKey('raw', prfKeyBytes, {name: 'AES-GCM', length: 256}, false, ['decrypt']);
   const dec = await crypto.subtle.decrypt({name: 'AES-GCM', iv: new Uint8Array(iv)}, key, new Uint8Array(ct));
+  return new Uint8Array(dec);
+}
+
 async function unlockWithPRF() {
   const stored = localStorage.getItem(WA_CRED_KEY);
 
@@ -3054,6 +3057,8 @@ async function unlockWithPRF() {
       return false;
     }
   }
+  return false;
+}
 
 // WEBAUTHN RESET
 async function resetWebAuthnRegistration() {
