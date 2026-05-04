@@ -2959,7 +2959,7 @@ async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
 async function unlockWithPRF() {
   const stored = localStorage.getItem(WA_CRED_KEY);
 
-  // ── TRY EXISTING CREDENTIAL FIRST ──────────────────
+  // ── TRY EXISTING CREDENTIAL ────────────────────────────
   if (stored) {
     try {
       const assertion = await navigator.credentials.get({
@@ -2973,7 +2973,6 @@ async function unlockWithPRF() {
       });
 
       const ext = assertion.getClientExtensionResults();
-
       if (ext.prf?.results?.first) {
         let prfKey = new Uint8Array(ext.prf.results.first);
         let finalKey = prfKey;
@@ -2994,11 +2993,11 @@ async function unlockWithPRF() {
         return true;
       }
     } catch (e) {
-      // Existing credential failed — continue to fresh start
+      // existing credential failed – will continue
     }
   }
 
-  // ── NO EXISTING CREDENTIAL → CREATE ONE ──────────────
+  // ── NO VALID CREDENTIAL → REGISTER NEW ONE ──────────────
   try {
     const cred = await navigator.credentials.create({
       publicKey: {
@@ -3013,35 +3012,13 @@ async function unlockWithPRF() {
     });
 
     localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
+    showToast('◈ Face ID registered. Generating local key …');
 
-    // Try PRF immediately
-    try {
-      const assertion = await navigator.credentials.get({
-        publicKey: {
-          challenge: crypto.getRandomValues(new Uint8Array(32)),
-          userVerification: 'required',
-          allowCredentials: [{ id: cred.rawId, type: 'public-key' }],
-          extensions: { prf: { eval: { first: getPRFSalt() } } },
-          timeout: 30000
-        }
-      });
-
-      const ext = assertion.getClientExtensionResults();
-      if (ext.prf?.results?.first) {
-        const prfKey = new Uint8Array(ext.prf.results.first);
-        setSovereignKey(prfKey);
-        await setEncryptionKey(prfKey);
-        showToast('Sovereign key active ◆');
-        return true;
-      }
-    } catch (e) {
-      // PRF get failed — fall through
-    }
   } catch (e) {
-    // Face ID creation failed entirely — fall through
+    // registration failed – will fall through
   }
 
-  // ── EVERYTHING FAILED → GENERATE LOCAL KEY ──────────
+  // ── ALWAYS PROCEED WITH A LOCAL KEY ──────────────────────
   showToast('◈ Local key created. Save it in Data Sovereignty.');
   const localKey = crypto.getRandomValues(new Uint8Array(32));
   setSovereignKey(localKey);
