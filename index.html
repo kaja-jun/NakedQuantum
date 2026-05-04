@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.33.6</title>
+<title>NakedQuantum v0.33.5</title>
 <style>
 :root {
   --bg: #000000;
@@ -1953,7 +1953,14 @@ function initWorker(){
 
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
-const NQ_DEV_MODE = true;
+const NQ_DEV_MODE = (function() {
+  try {
+    const host = window.location.hostname;
+    return host.includes('alpha') || host.includes('beta') || host === 'localhost';
+  } catch(e) {
+    return true; // If we can't detect, assume dev (safe default)
+  }
+})();
 
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
 const W_SIMILARITY_THRESHOLD = NQ_DEV_MODE ? 0.50 : 0.73;
