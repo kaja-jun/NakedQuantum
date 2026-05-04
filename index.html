@@ -6885,9 +6885,8 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   
 // bootApp function
 async function bootApp() {
-  const DEV_MODE = true; // flip to false for production
   
-  if (DEV_MODE) {
+  if (NQ_DEV_MODE) {
   try {
     document.getElementById('lock-screen').style.display = 'none';
         await init();
