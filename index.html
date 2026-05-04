@@ -1656,7 +1656,9 @@ let db=null,currentMode='soup',currentDiscourseId=null,currentFolderId=null,
     breadcrumbPath=[{id:null,name:'◈  The soup'}],editorMode='write',currentView='table',
     mosaicCache={},searchQuery='',activeCharId=null,sanctuarySearchQuery='';
 const AKASHIC_URL='https://wandering-violet-964a.gazajar.workers.dev';
-
+let _sovereignKey = null;
+function getSovereignKey() { return _sovereignKey; }
+function setSovereignKey(keyBytes) { _sovereignKey = keyBytes; }
 let cosmUserId=localStorage.getItem('cosm_user_id')||crypto.randomUUID();
 localStorage.setItem('cosm_user_id',cosmUserId);
 
@@ -6948,7 +6950,7 @@ async function bootApp() {
     btnUnlock.style.display = 'none';
     statusEl.textContent = 'Authenticating...';
     
-    const success = await executeAuthFlow();
+const success = await handleAuthFlow();
     if (success) {
       lockScreen.style.display = 'none';
       await init();
