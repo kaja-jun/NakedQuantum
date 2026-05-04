@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.33.5</title>
+<title>NakedQuantum v0.33.6</title>
 <style>
 :root {
   --bg: #000000;
@@ -6913,7 +6913,18 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
 async function bootApp() {
   const DEV_MODE = false; // Set to false to test true lock flow
   const isDev = typeof NQ_DEV_MODE !== 'undefined' ? NQ_DEV_MODE : DEV_MODE;
-
+// --- FRESH START ESCAPE HATCH ---
+if (localStorage.getItem('nq_fresh_start') === '1') {
+  localStorage.removeItem('nq_fresh_start');
+  // Generate a brand new sovereign key
+  const freshKey = crypto.getRandomValues(new Uint8Array(32));
+  setSovereignKey(freshKey);
+  await setEncryptionKey(freshKey);
+  document.getElementById('lock-screen').style.display = 'none';
+  await init();
+  return;  // skip the entire lock flow
+}
+// --- END ESCAPE HATCH ---
   if (isDev) {
     try {
       document.getElementById('lock-screen').style.display = 'none';
@@ -6944,17 +6955,19 @@ async function bootApp() {
     btnWipe.innerHTML = '✕ Burn Vault & Start Fresh';
     btnWipe.style.cssText = 'display:none; background:none; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:10px 20px; border-radius:8px; margin-top:40px; text-transform:uppercase;';
     btnWipe.onclick = async () => {
-      if (!confirm('WARNING: This will obliterate your Sovereign Vault. All memory, maps, and entities will be permanently destroyed. Are you absolutely sure?')) return;
-      if (!confirm('FINAL WARNING: There is no undo. Burn the Abyss?')) return;
-      
-      localStorage.clear();
-      try {
-        const root = await navigator.storage.getDirectory();
-        await root.removeEntry('nq.db');
-      } catch(e) {}
-      
-      location.reload(); // Reload the app completely fresh
-    };
+  if (!confirm('WARNING: This will obliterate your Sovereign Vault. All memory, maps, and entities will be permanently destroyed. Are you absolutely sure?')) return;
+  if (!confirm('FINAL WARNING: There is no undo. Burn the Abyss?')) return;
+  
+  localStorage.clear();
+  try {
+    const root = await navigator.storage.getDirectory();
+    await root.removeEntry('nq.db');
+  } catch(e) {}
+  
+  // Set a flag so we know to start fresh on next load
+  localStorage.setItem('nq_fresh_start', '1');
+  location.reload();
+};
     lockScreen.appendChild(btnWipe);
   }
 
