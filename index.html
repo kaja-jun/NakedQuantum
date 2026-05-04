@@ -6661,181 +6661,171 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   
 // ─── AUTHENTICATION FLOW ─────────────────────────────────────────────────────
 
+// In-memory sovereign key - never persisted, lives only for this session
+let _sovereignKey = null;
+function getSovereignKey() { return _sovereignKey; }
+function setSovereignKey(keyBytes) { _sovereignKey = keyBytes; }
+
 async function checkVaultExists() {
   try {
     const root = await navigator.storage.getDirectory();
     await root.getFileHandle('nq.db');
     return true;
   } catch(e) {
-    return false; // No database found
-  }
-}
-
-async function handleAuthFlow() {
-  const storedCred = localStorage.getItem(WA_CRED_KEY);
-  const vaultExists = await checkVaultExists();
-
-  if (storedCred) {
-    // We have a Face ID saved. Attempt to unlock.
-    return await attemptUnlock(storedCred);
-  } else if (vaultExists) {
-    // SAFEGUARD: The vault exists, but the Face ID is gone (e.g. cleared cache).
-    // We CANNOT create a new passkey, or it will overwrite the vault key and brick it.
-    showToast('⚠ Vault found but Passkey lost. Use Backup Key.');
     return false;
-  } else {
-    // Fresh universe. No passkey, no vault. Safe to register.
-    return await attemptRegistration();
   }
 }
 
-async function attemptUnlock(storedCred) {
+// Single responsibility: get PRF bytes from an existing credential.
+// Returns Uint8Array or null. Never throws to caller.
+async function getPRFBytes(credIdB64) {
   try {
+    const salt = getPRFSalt();
     const assertion = await navigator.credentials.get({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
         userVerification: 'required',
-        allowCredentials:[{ id: b64ToBuf(storedCred), type: 'public-key' }],
-        extensions: { prf: { eval: { first: getPRFSalt() } } },
+        allowCredentials: [{ id: b64ToBuf(credIdB64), type: 'public-key' }],
+        extensions: { prf: { eval: { first: salt } } },
         timeout: 60000
       }
     });
-
-    if (assertion.getClientExtensionResults().prf?.results?.first) {
-      let prfKey = new Uint8Array(assertion.getClientExtensionResults().prf.results.first);
-      let finalKey = prfKey;
-
-      const wrapped = localStorage.getItem('nq_wrapped_sk');
-      if (wrapped) {
-        try {
-          finalKey = await unwrapSovereignKey(wrapped, prfKey);
-        } catch(e) {
-          console.error("Unwrap failed", e);
-          showToast('⚠ Key mismatch');
-          return false;
-        }
-      }
-
-      setSovereignKey(finalKey);
-      await setEncryptionKey(finalKey);
-      showToast('Abyss Unlocked ◆');
-      return true;
+    const result = assertion.getClientExtensionResults().prf?.results?.first;
+    if (!result) {
+      console.error('NQ Auth: PRF returned no result', JSON.stringify(assertion.getClientExtensionResults()));
+      return null;
     }
-  } catch (e) {
-    console.warn("Unlock assertion failed/cancelled:", e);
+    return new Uint8Array(result);
+  } catch(e) {
+    if (e.name !== 'NotAllowedError') console.error('NQ Auth: assertion error', e);
+    return null;
   }
-  return false;
 }
 
-async function attemptRegistration() {
+// Creates a new passkey then immediately asserts to get PRF bytes.
+// iOS Safari does NOT return PRF bytes in the create response - must assert separately.
+// Returns { credIdB64, prfBytes } or null on failure.
+async function registerPasskey() {
   try {
+    const salt = getPRFSalt();
     const cred = await navigator.credentials.create({
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
         rp: { name: 'NakedQuantum', id: location.hostname },
-        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
-        pubKeyCredParams:[{ alg: -7, type: 'public-key' }],
-        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
-        extensions: { prf: { eval: { first: getPRFSalt() } } },
+        user: {
+          id: crypto.getRandomValues(new Uint8Array(16)),
+          name: 'kaja',
+          displayName: 'Kaja'
+        },
+        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+          residentKey: 'required'
+        },
+        extensions: { prf: { eval: { first: salt } } },
         timeout: 60000
       }
     });
 
-    localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-    showToast('◈ Face ID registered');
-    
-    // Immediately unlock using the newly created credential
-    return await attemptUnlock(bufToB64(cred.rawId));
-  } catch (e) {
-    console.error("Registration failed/cancelled:", e);
+    const credIdB64 = bufToB64(cred.rawId);
+    const prfBytes = await getPRFBytes(credIdB64);
+    if (!prfBytes) {
+      console.error('NQ Auth: registration ok but PRF assertion returned nothing');
+      localStorage.removeItem(WA_CRED_KEY);
+      return null;
+    }
+
+    localStorage.setItem(WA_CRED_KEY, credIdB64);
+    return { credIdB64, prfBytes };
+  } catch(e) {
+    if (e.name !== 'NotAllowedError') console.error('NQ Auth: create error', e);
+    return null;
   }
-  return false;
 }
 
-// WEBAUTHN RESET (In-App Bind Update)
+// Given PRF bytes, derives and sets the sovereign key in memory.
+// Fresh install: PRF bytes ARE the sovereign key.
+// Existing vault: unwraps the stored encrypted sovereign key using PRF bytes.
+async function unlockFromPRF(prfBytes) {
+  try {
+    const wrapped = localStorage.getItem('nq_wrapped_sk');
+    let finalKey;
+    if (wrapped) {
+      try {
+        finalKey = await unwrapSovereignKey(wrapped, prfBytes);
+      } catch(e) {
+        console.error('NQ Auth: unwrap failed', e);
+        showToast('Key mismatch. Use Sovereign Key backup.');
+        return false;
+      }
+    } else {
+      finalKey = prfBytes;
+    }
+    setSovereignKey(finalKey);
+    await setEncryptionKey(finalKey);
+    return true;
+  } catch(e) {
+    console.error('NQ Auth: unlockFromPRF error', e);
+    return false;
+  }
+}
+
+// Re-binds a new passkey to the existing sovereign key. Called from Settings.
 async function resetWebAuthnRegistration() {
   const currentSK = getSovereignKey();
   if (!currentSK) {
-    showToast('⚠ No active Sovereign Key. Unlock Abyss first.');
+    showToast('No active Sovereign Key. Unlock Abyss first.');
     return;
   }
-  
-  if (!confirm('This will bind a new Face ID to your existing Sovereign Key. You will be prompted to authenticate now. Continue?')) return;
-  
-  try {
-    const newSalt = crypto.getRandomValues(new Uint8Array(32));
-    localStorage.setItem('nq_prf_salt', bufToB64(newSalt.buffer));
-    
-    const cred = await navigator.credentials.create({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: { name: 'NakedQuantum', id: location.hostname },
-        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
-        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
-        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
-        extensions: { prf: { eval: { first: newSalt.buffer } } },
-        timeout: 60000
-      }
-    });
-    
-    localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-    
-    const assertion = await navigator.credentials.get({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        userVerification: 'required',
-        allowCredentials:[{ id: cred.rawId, type: 'public-key' }],
-        extensions: { prf: { eval: { first: newSalt.buffer } } },
-        timeout: 60000
-      }
-    });
-    
-    const ext = assertion.getClientExtensionResults();
-    if (ext.prf?.results?.first) {
-      const newPrfKey = new Uint8Array(ext.prf.results.first);
-      const wrapped = await wrapSovereignKey(currentSK, newPrfKey);
-      localStorage.setItem('nq_wrapped_sk', wrapped);
-      showToast('◈ Face ID Re-bound Safely');
-    } else {
-      throw new Error('PRF verification failed on bind');
-    }
-  } catch (e) {
-    console.error("Bind failed:", e);
-    showToast('⚠ Face ID update failed or was cancelled.');
+  if (!confirm('This will bind a new Face ID to your existing Sovereign Key. Continue?')) return;
+
+  const newSalt = crypto.getRandomValues(new Uint8Array(32));
+  localStorage.setItem('nq_prf_salt', bufToB64(newSalt.buffer));
+
+  const result = await registerPasskey();
+  if (!result) {
+    showToast('Face ID update failed or was cancelled.');
+    return;
   }
+
+  const wrapped = await wrapSovereignKey(currentSK, result.prfBytes);
+  localStorage.setItem('nq_wrapped_sk', wrapped);
+  localStorage.setItem(WA_CRED_KEY, result.credIdB64);
+  showToast('Face ID Re-bound Safely');
 }
 
 async function unlockWithFallbackKey() {
   const inputEl = document.getElementById('fallback-key-input');
   const input = inputEl.value.trim();
   const showError = (msg) => {
-    inputEl.value = ''; inputEl.placeholder = msg; inputEl.style.borderColor = '#ff6060';
-    setTimeout(() => { inputEl.style.borderColor = 'var(--border)'; inputEl.placeholder = 'Paste Sovereign Key...'; }, 2500);
+    inputEl.value = '';
+    inputEl.placeholder = msg;
+    inputEl.style.borderColor = '#ff6060';
+    setTimeout(() => {
+      inputEl.style.borderColor = 'var(--border)';
+      inputEl.placeholder = 'Paste Sovereign Key...';
+    }, 2500);
   };
-  
-  if(!input) { showError("⚠ PASTE KEY FIRST"); return; }
-  
+  if (!input) { showError('PASTE KEY FIRST'); return; }
   try {
-    const buf = b64ToBuf(input);
-    const keyBytes = new Uint8Array(buf);
-    if(keyBytes.length !== 32) throw new Error("Incorrect key length");
-    
+    const keyBytes = new Uint8Array(b64ToBuf(input));
+    if (keyBytes.length !== 32) throw new Error('bad length');
     setSovereignKey(keyBytes);
     await setEncryptionKey(keyBytes);
     document.getElementById('lock-screen').style.display = 'none';
-    showToast("Abyss Unlocked ◆"); 
+    showToast('Abyss Unlocked');
     await init();
-  } catch(e) { showError("⚠ INVALID KEY"); }
+  } catch(e) { showError('INVALID KEY'); }
 }
 
-// ─── SECURE KEY STORAGE ─────────────────────────────────────────────────────
 async function storeSecureKey(storageKey, value) {
   if (!getSovereignKey() || !value) { localStorage.setItem(storageKey, value); return; }
   const cryptoKey = await getCloudCryptoKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, new TextEncoder().encode(value));
   localStorage.setItem(storageKey + '_enc', JSON.stringify({ iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) }));
-  localStorage.removeItem(storageKey); 
+  localStorage.removeItem(storageKey);
 }
 
 async function readSecureKey(storageKey) {
@@ -6846,28 +6836,26 @@ async function readSecureKey(storageKey) {
       const cryptoKey = await getCloudCryptoKey();
       const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(iv) }, cryptoKey, new Uint8Array(ct));
       return new TextDecoder().decode(dec);
-    } catch (e) { console.error('Key decrypt failed:', e); }
+    } catch(e) { console.error('Key decrypt failed:', e); }
   }
   return localStorage.getItem(storageKey) || '';
 }
 
-/* INIT */
-async function init(){
+async function init() {
   await _workerReady;
-  if(navigator.storage&&navigator.storage.persist){
-    navigator.storage.persist().then(granted => { if(granted) console.log('◆ Storage persistence granted'); });
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().then(g => { if (g) console.log('Storage persistence granted'); });
   }
-  currentMode = 'soup'; currentView = 'soup'; currentFolderId = null; breadcrumbPath =[{id: null, name: '◈ The Soup'}];
+  currentMode = 'soup'; currentView = 'soup'; currentFolderId = null;
+  breadcrumbPath = [{ id: null, name: 'The Soup' }];
   updateHeaderButtons(); showPanel('view-soup'); await renderTableView();
-  document.getElementById('input-api-key').value=await readSecureKey('nq_api_key')||'';
-  document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
+  document.getElementById('input-api-key').value = await readSecureKey('nq_api_key') || '';
+  document.getElementById('input-model').value = localStorage.getItem('nq_model') || 'deepseek/deepseek-v4-flash';
   initWatcher(); initGuardianModel();
 }
 
-// ─── BOOT LOGIC & THE GRACEFUL CROSSROADS ───────────────────────────────────
 async function bootApp() {
-  const DEV_MODE = false; 
-  const isDev = typeof NQ_DEV_MODE !== 'undefined' ? NQ_DEV_MODE : DEV_MODE;
+  const isDev = typeof NQ_DEV_MODE !== 'undefined' ? NQ_DEV_MODE : false;
 
   if (isDev) {
     try {
@@ -6879,107 +6867,118 @@ async function bootApp() {
     return;
   }
 
-  const lockScreen = document.getElementById('lock-screen');
-  const statusEl = document.getElementById('lock-status');
-  const btnUnlock = document.getElementById('btn-manual-unlock');
-  const btnFallbackUnlock = document.getElementById('btn-fallback-unlock');
+  const lockScreen    = document.getElementById('lock-screen');
+  const statusEl      = document.getElementById('lock-status');
+  const btnUnlock     = document.getElementById('btn-manual-unlock');
+  const btnFallback   = document.getElementById('btn-fallback-unlock');
   const fallbackInput = document.getElementById('fallback-key-input');
-  
-  const oldRetryBtn = document.getElementById('btn-faceid-retry');
-  if (oldRetryBtn) oldRetryBtn.style.display = 'none';
 
-  // THE ESCAPE HATCH: Bulletproof OPFS Wipe & Cache Bust
   let btnWipe = document.getElementById('btn-wipe-abyss');
   if (!btnWipe) {
     btnWipe = document.createElement('button');
     btnWipe.id = 'btn-wipe-abyss';
-    btnWipe.innerHTML = '✕ Lost Key? Burn Vault & Start Fresh';
+    btnWipe.innerHTML = 'Lost Key? Burn Vault & Start Fresh';
     btnWipe.style.cssText = 'display:none; background:none; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:12px 24px; border-radius:8px; margin-top:40px; text-transform:uppercase; cursor:pointer;';
-    
-    btnWipe.onclick = async () => {
-  if (!confirm('This will permanently delete your database to let you start fresh. Your old data cannot be recovered. Proceed?')) return;
-
-  localStorage.clear();
-
-  if (typeof window._worker !== 'undefined' && window._worker) {
-    window._worker.terminate();
-    window._worker = null;
-  }
-
-  // Give the worker time to release the file lock, then delete, then reload
-  await new Promise(r => setTimeout(r, 300));
-
-  try {
-    const root = await navigator.storage.getDirectory();
-    await root.removeEntry('nq.db');
-  } catch(e) { console.warn('OPFS already gone:', e); }
-
-  // Wait for deletion to flush before navigating
-  await new Promise(r => setTimeout(r, 200));
-
-  window.location.href = window.location.pathname + '?reset=' + Date.now();
-};
-
     lockScreen.appendChild(btnWipe);
   }
 
-  // Determine App State smoothly
-  btnUnlock.style.display = 'block';
-  const vaultStatus = await checkVaultExists();
-  const hasFaceID = !!localStorage.getItem(WA_CRED_KEY);
+  btnWipe.onclick = async () => {
+    if (!confirm('This will permanently delete your database. Your old data cannot be recovered. Proceed?')) return;
 
-  if (hasFaceID) {
-      btnUnlock.textContent = 'Tap to Unlock';
-      statusEl.textContent = 'Awaiting Resonance.';
-  } else if (vaultStatus) {
-      // The Crossroads: Vault exists, but FaceID is missing.
-      btnUnlock.textContent = 'Enter Backup Key';
-      statusEl.textContent = 'Face ID link missing. Provide Sovereign Key.';
-  } else {
-      btnUnlock.textContent = 'Setup Face ID';
-      statusEl.textContent = 'Welcome to NakedQuantum.';
-  }
+    localStorage.clear();
 
-  // Trigger Auth
-  btnUnlock.onclick = async () => {
-    // If DB exists but passkey is gone, tapping the button bypasses WebAuthn and forces fallback directly
-    if (!hasFaceID && vaultStatus) { 
-      triggerFallbackUI(); 
-      return; 
+    if (typeof window._worker !== 'undefined' && window._worker) {
+      window._worker.terminate();
+      window._worker = null;
     }
 
-    btnUnlock.style.display = 'none';
-    statusEl.textContent = 'Authenticating...';
-    
-const success = await handleAuthFlow();
-    if (success) {
-      lockScreen.style.display = 'none';
-      await init();
-    } else {
-      triggerFallbackUI();
-    }
+    await new Promise(r => setTimeout(r, 400));
+
+    try {
+      const root = await navigator.storage.getDirectory();
+      await root.removeEntry('nq.db');
+    } catch(e) { console.warn('OPFS wipe:', e); }
+
+    await new Promise(r => setTimeout(r, 300));
+
+    window.location.href = window.location.pathname + '?reset=' + Date.now();
   };
 
-  function triggerFallbackUI() {
+  function showFallbackUI(reason) {
+    console.warn('NQ Auth: fallback reason=', reason);
     statusEl.textContent = 'Enter your Sovereign Key to unlock.';
     fallbackInput.style.display = 'block';
-    btnFallbackUnlock.style.display = 'block';
-    btnFallbackUnlock.onclick = unlockWithFallbackKey;
-    
-    // Show the "Start Fresh" button prominently
+    btnFallback.style.display = 'block';
+    btnFallback.onclick = unlockWithFallbackKey;
     btnWipe.style.display = 'block';
-    
-    // Only show "Retry Face ID" if they actually HAVE a Face ID saved
-    if (hasFaceID) {
+    if (localStorage.getItem(WA_CRED_KEY)) {
       btnUnlock.style.display = 'block';
       btnUnlock.textContent = 'Retry Face ID';
     } else {
       btnUnlock.style.display = 'none';
     }
   }
+
+  async function getState() {
+    return {
+      hasCred:  !!localStorage.getItem(WA_CRED_KEY),
+      hasVault: await checkVaultExists()
+    };
+  }
+
+  const state = await getState();
+
+  if (state.hasCred) {
+    statusEl.textContent = 'Awaiting Resonance.';
+    btnUnlock.textContent = 'Tap to Unlock';
+  } else if (state.hasVault) {
+    statusEl.textContent = 'Face ID link missing. Provide Sovereign Key.';
+    btnUnlock.textContent = 'Enter Backup Key';
+  } else {
+    statusEl.textContent = 'Welcome to NakedQuantum.';
+    btnUnlock.textContent = 'Setup Face ID';
+  }
+  btnUnlock.style.display = 'block';
+
+  btnUnlock.onclick = async () => {
+    const s = await getState();
+
+    if (!s.hasCred && s.hasVault) {
+      showFallbackUI('vault-exists-no-cred');
+      return;
+    }
+
+    btnUnlock.style.display = 'none';
+    statusEl.textContent = 'Authenticating...';
+
+    let success = false;
+
+    if (s.hasCred) {
+      const prfBytes = await getPRFBytes(localStorage.getItem(WA_CRED_KEY));
+      if (prfBytes) {
+        success = await unlockFromPRF(prfBytes);
+        if (success) showToast('Abyss Unlocked');
+      }
+    } else {
+      statusEl.textContent = 'Setting up Face ID...';
+      const reg = await registerPasskey();
+      if (reg) {
+        success = await unlockFromPRF(reg.prfBytes);
+        if (success) showToast('Abyss Initialised');
+      }
+    }
+
+    if (success) {
+      lockScreen.style.display = 'none';
+      await init();
+    } else {
+      showFallbackUI(s.hasCred ? 'prf-assertion-failed' : 'registration-failed');
+    }
+  };
 }
 // Engage the Abyss
 bootApp();
+
 });
 
 
