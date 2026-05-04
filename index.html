@@ -1070,10 +1070,15 @@ select.cosm-input {
 
 <!-- ADD: cooldown retry button (hidden by default) -->
 <button id="btn-faceid-retry" style="display:none;background:none;border:1px solid var(--accent-dim);color:var(--accent);font-size:11px;letter-spacing:1px;font-weight:700;padding:8px 18px;border-radius:8px;margin-top:8px;">◈ Try Face ID</button>
-
+<button id="btn-wipe-abyss" style="display:none;
+  background:#1a0000; border:1px solid var(--danger); color:#ff6060;
+  font-size:10px; letter-spacing:1px; font-weight:700;
+  padding:10px 20px; border-radius:8px; margin-top:40px;
+  text-transform:uppercase;">
+  ✕ Burn Vault & Start Fresh
+</button>
   <button id="btn-fallback-unlock" style="display:none; background:var(--accent); color:#000; font-weight:900; padding:12px 24px; border-radius:20px; border:none; text-transform:uppercase; font-size:11px; letter-spacing:1px;">Force Unlock</button>
 </div>
-
 <div class="nq-header">
   <div class="nq-wordmark" id="nq-wordmark">NakedQuantum</div>
   <div class="header-actions" id="header-actions"></div>
@@ -6903,6 +6908,43 @@ async function bootApp() {
   return;
 }
   const lockScreen = document.getElementById('lock-screen');
+  // Inside bootApp(), right after the const lockScreen = ... block and before tryFaceID()
+if (localStorage.getItem('nq_fresh_start') === '1') {
+  localStorage.removeItem('nq_fresh_start');
+  const freshKey = crypto.getRandomValues(new Uint8Array(32));
+  setSovereignKey(freshKey);
+  await setEncryptionKey(freshKey);
+  lockScreen.style.display = 'none';
+  await init();
+  return;
+}
+  // Right inside bootApp(), after const lockScreen = ...
+let btnWipe = document.getElementById('btn-wipe-abyss');
+if (!btnWipe) {
+  // Create it if it wasn't already in the HTML (safety net)
+  btnWipe = document.createElement('button');
+  btnWipe.id = 'btn-wipe-abyss';
+  btnWipe.style.cssText = 'display:none; background:#1a0000; border:1px solid var(--danger); color:#ff6060; font-size:10px; letter-spacing:1px; font-weight:700; padding:10px 20px; border-radius:8px; margin-top:40px; text-transform:uppercase;';
+  btnWipe.textContent = '✕ Burn Vault & Start Fresh';
+  lockScreen.appendChild(btnWipe);
+}
+btnWipe.onclick = async () => {
+  if (!confirm('WARNING: All memory, maps, and entities will be obliterated. Continue?')) return;
+  if (!confirm('FINAL WARNING: No undo. Burn the Abyss?')) return;
+  
+  localStorage.clear();
+  try {
+    const root = await navigator.storage.getDirectory();
+    await root.removeEntry('nq.db');
+  } catch(e) {}
+  
+  // Generate a fresh key so the app doesn't lock on next load
+  const freshKey = crypto.getRandomValues(new Uint8Array(32));
+  setSovereignKey(freshKey);
+  await setEncryptionKey(freshKey);
+  localStorage.setItem('nq_fresh_start', '1');
+  location.reload();
+};
   const statusEl = document.getElementById('lock-status'); // add this element (see HTML patch below)
   let faceAttempts = 0;
   const MAX_FACE_ATTEMPTS = 3;
@@ -6928,14 +6970,15 @@ async function bootApp() {
   }
 
   function showBackupKeyInput() {
-    statusEl.textContent = 'Enter sovereign backup key.';
-    document.getElementById('fallback-key-input').style.display = 'block';
-    document.getElementById('btn-fallback-unlock').style.display = 'block';
-    document.getElementById('btn-fallback-unlock').onclick = unlockWithFallbackKey;
-    // Offer one cooldown Face ID retry
-    document.getElementById('btn-faceid-retry').style.display = 'block'; // add this button (see HTML patch)
-    document.getElementById('btn-faceid-retry').onclick = () => tryCooldownFaceID();
-  }
+  statusEl.textContent = 'Enter sovereign backup key.';
+  document.getElementById('fallback-key-input').style.display = 'block';
+  document.getElementById('btn-fallback-unlock').style.display = 'block';
+  document.getElementById('btn-fallback-unlock').onclick = unlockWithFallbackKey;
+  document.getElementById('btn-faceid-retry').style.display = 'block';
+  document.getElementById('btn-faceid-retry').onclick = () => tryCooldownFaceID();
+  // ADD THIS:
+  document.getElementById('btn-wipe-abyss').style.display = 'block';
+}
 
   async function tryCooldownFaceID() {
     if (cooldownActive) return;
