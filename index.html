@@ -6909,23 +6909,72 @@ async function bootApp() {
   let cooldownActive = false;
 
   async function tryFaceID() {
-    if (faceAttempts >= MAX_FACE_ATTEMPTS) {
-      showBackupKeyInput();
-      return;
+  // Check if PRF is even registered on this device
+  const stored = localStorage.getItem('nq_prf_cred_id');
+  
+  if (!stored) {
+    // No Face ID registered — attempt registration once
+    statusEl.textContent = 'No Face ID found. Attempting registration...';
+    try {
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: 'NakedQuantum', id: window.location.hostname },
+          user: { 
+            id: crypto.getRandomValues(new Uint8Array(16)), 
+            name: 'kaja', 
+            displayName: 'Kaja' 
+          },
+          pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+          authenticatorSelection: { 
+            authenticatorAttachment: 'platform', 
+            userVerification: 'required', 
+            residentKey: 'required' 
+          },
+          extensions: { prf: { eval: { first: getPRFSalt() } } },
+          timeout: 60000
+        }
+      });
+      
+      localStorage.setItem('nq_prf_cred_id', bufToB64(cred.rawId));
+      statusEl.textContent = 'Face ID registered. Unlocking...';
+      
+      // Now try to unlock with the new credential
+      const unlocked = await unlockWithPRF();
+      if (unlocked) {
+        lockScreen.style.display = 'none';
+        await init();
+        return;
+      }
+    } catch(regErr) {
+      console.error('PRF registration failed:', regErr);
     }
-    faceAttempts++;
-    statusEl.textContent = `Face ID attempt ${faceAttempts} of ${MAX_FACE_ATTEMPTS}...`;
-    const unlocked = await unlockWithPRF();
-    if (unlocked) {
-      lockScreen.style.display = 'none';
-      await init();
-    } else if (faceAttempts < MAX_FACE_ATTEMPTS) {
-      statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempt${MAX_FACE_ATTEMPTS - faceAttempts > 1 ? 's' : ''} remaining.`;
-      setTimeout(tryFaceID, 800); // brief pause between attempts
-    } else {
-      showBackupKeyInput();
-    }
+    
+    // Registration failed or user cancelled — go straight to backup key
+    showBackupKeyInput();
+    return;
   }
+  
+  // Face ID exists — try up to MAX_FACE_ATTEMPTS
+  if (faceAttempts >= MAX_FACE_ATTEMPTS) {
+    showBackupKeyInput();
+    return;
+  }
+  
+  faceAttempts++;
+  statusEl.textContent = `Face ID attempt ${faceAttempts} of ${MAX_FACE_ATTEMPTS}...`;
+  
+  const unlocked = await unlockWithPRF();
+  if (unlocked) {
+    lockScreen.style.display = 'none';
+    await init();
+  } else if (faceAttempts < MAX_FACE_ATTEMPTS) {
+    statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempt${MAX_FACE_ATTEMPTS - faceAttempts > 1 ? 's' : ''} remaining.`;
+    setTimeout(tryFaceID, 800);
+  } else {
+    showBackupKeyInput();
+  }
+}
 
   function showBackupKeyInput() {
     statusEl.textContent = 'Enter sovereign backup key.';
