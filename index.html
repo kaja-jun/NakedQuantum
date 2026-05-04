@@ -6909,71 +6909,114 @@ async function bootApp() {
   let cooldownActive = false;
 
   async function tryFaceID() {
-  // Check if PRF is even registered on this device
   const stored = localStorage.getItem('nq_prf_cred_id');
   
   if (!stored) {
-    // No Face ID registered — attempt registration once
-    statusEl.textContent = 'No Face ID found. Attempting registration...';
-    try {
-      const cred = await navigator.credentials.create({
-        publicKey: {
-          challenge: crypto.getRandomValues(new Uint8Array(32)),
-          rp: { name: 'NakedQuantum', id: window.location.hostname },
-          user: { 
-            id: crypto.getRandomValues(new Uint8Array(16)), 
-            name: 'kaja', 
-            displayName: 'Kaja' 
-          },
-          pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
-          authenticatorSelection: { 
-            authenticatorAttachment: 'platform', 
-            userVerification: 'required', 
-            residentKey: 'required' 
-          },
-          extensions: { prf: { eval: { first: getPRFSalt() } } },
-          timeout: 60000
-        }
-      });
-      
-      localStorage.setItem('nq_prf_cred_id', bufToB64(cred.rawId));
-      statusEl.textContent = 'Face ID registered. Unlocking...';
-      
-      // Now try to unlock with the new credential
-      const unlocked = await unlockWithPRF();
-      if (unlocked) {
-        lockScreen.style.display = 'none';
-        await init();
-        return;
+    // No stored credential — attempt fresh registration immediately
+    await attemptRegistration();
+    return;
+  }
+  
+  // Stored credential exists — try once
+  statusEl.textContent = 'Face ID unlocking...';
+  
+  try {
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        userVerification: 'required',
+        allowCredentials: [{ id: b64ToBuf(stored), type: 'public-key' }],
+        extensions: { prf: { eval: { first: getPRFSalt() } } },
+        timeout: 10000
       }
-    } catch(regErr) {
-      console.error('PRF registration failed:', regErr);
-    }
+    });
     
-    // Registration failed or user cancelled — go straight to backup key
-    showBackupKeyInput();
-    return;
+    const ext = assertion.getClientExtensionResults();
+    if (ext.prf?.results?.first) {
+      // Success — derive key and enter
+      let prfKey = new Uint8Array(ext.prf.results.first);
+      let finalKey = prfKey;
+      const wrapped = localStorage.getItem('nq_wrapped_sk');
+      if (wrapped) {
+        try {
+          finalKey = await unwrapSovereignKey(wrapped, prfKey);
+        } catch(e) {
+          console.error('Failed to unwrap SK:', e);
+          showBackupKeyInput();
+          return;
+        }
+      }
+      setSovereignKey(finalKey);
+      await setEncryptionKey(finalKey);
+      lockScreen.style.display = 'none';
+      await init();
+      return;
+    }
+  } catch(e) {
+    // Face ID failed — credential might be stale
+    console.warn('Face ID assertion failed:', e.name);
+    
+    // If the error is "no credential found" or user cancelled
+    if (e.name === 'NotAllowedError' || e.name === 'InvalidStateError') {
+      // Clear stale credential and attempt fresh registration
+      localStorage.removeItem('nq_prf_cred_id');
+      localStorage.removeItem('nq_wrapped_sk');
+      statusEl.textContent = 'Face ID data was reset. Re-registering...';
+      await attemptRegistration();
+      return;
+    }
   }
   
-  // Face ID exists — try up to MAX_FACE_ATTEMPTS
-  if (faceAttempts >= MAX_FACE_ATTEMPTS) {
-    showBackupKeyInput();
-    return;
-  }
-  
-  faceAttempts++;
-  statusEl.textContent = `Face ID attempt ${faceAttempts} of ${MAX_FACE_ATTEMPTS}...`;
-  
-  const unlocked = await unlockWithPRF();
-  if (unlocked) {
-    lockScreen.style.display = 'none';
-    await init();
-  } else if (faceAttempts < MAX_FACE_ATTEMPTS) {
-    statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempt${MAX_FACE_ATTEMPTS - faceAttempts > 1 ? 's' : ''} remaining.`;
+  // If we get here, try up to remaining attempts (less aggressive)
+  if (faceAttempts < MAX_FACE_ATTEMPTS) {
+    faceAttempts++;
+    statusEl.textContent = `Face ID attempt ${faceAttempts} of ${MAX_FACE_ATTEMPTS}...`;
     setTimeout(tryFaceID, 800);
   } else {
     showBackupKeyInput();
   }
+}
+
+async function attemptRegistration() {
+  statusEl.textContent = 'Registering Face ID...';
+  
+  try {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'NakedQuantum', id: window.location.hostname },
+        user: { 
+          id: crypto.getRandomValues(new Uint8Array(16)), 
+          name: 'kaja', 
+          displayName: 'Kaja' 
+        },
+        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+        authenticatorSelection: { 
+          authenticatorAttachment: 'platform', 
+          userVerification: 'required', 
+          residentKey: 'required' 
+        },
+        extensions: { prf: { eval: { first: getPRFSalt() } } },
+        timeout: 60000
+      }
+    });
+    
+    localStorage.setItem('nq_prf_cred_id', bufToB64(cred.rawId));
+    statusEl.textContent = 'Face ID registered. Unlocking...';
+    
+    // Immediately try to unlock with the fresh credential
+    const unlocked = await unlockWithPRF();
+    if (unlocked) {
+      lockScreen.style.display = 'none';
+      await init();
+      return;
+    }
+  } catch(e) {
+    console.error('Registration failed:', e);
+  }
+  
+  // Registration failed or user cancelled
+  showBackupKeyInput();
 }
 
   function showBackupKeyInput() {
