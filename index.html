@@ -1953,7 +1953,11 @@ function initWorker(){
 
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
-const NQ_DEV_MODE = true;
+const NQ_DEV_MODE = (function() {
+  const host = window.location.hostname;
+  return host === 'nakedquantum-alp.pages.dev' ||
+         host === 'nakedquantum-beta.pages.dev';
+})();
 
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
 const W_SIMILARITY_THRESHOLD = NQ_DEV_MODE ? 0.50 : 0.73;
