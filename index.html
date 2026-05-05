@@ -6675,20 +6675,39 @@ async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
 }
 
 // ── RAM KEY STATE & EXPORTER ──
+// ── RAM KEY STATE & EXPORTER ──
 let _sovereignKey = null;
 function setSovereignKey(keyBytes) { _sovereignKey = keyBytes; }
 function getSovereignKey() { return _sovereignKey; }
 
-function showSovereignKey() {
+// Expose globally so the HTML button can see it
+window.showSovereignKey = function() {
   const sk = getSovereignKey();
   if (!sk) { showToast("⚠ Abyss Locked. No key in memory."); return; }
+  
   const b64 = bufToB64(sk);
   const el = document.getElementById('export-key-display');
   el.value = b64;
   el.style.display = 'block';
-  navigator.clipboard.writeText(b64).catch(e => console.log("Clipboard blocked"));
-  showToast("Key copied to clipboard ◆");
-}
+  
+  // iOS Safari failsafe: physically highlight the text
+  el.select();
+  el.setSelectionRange(0, 99999); 
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(b64)
+      .then(() => showToast("Key copied to clipboard ◆"))
+      .catch(() => showToast("Key revealed. Tap to copy. ◆"));
+  } else {
+    // Ancient fallback just in case
+    try {
+      document.execCommand('copy');
+      showToast("Key copied to clipboard ◆");
+    } catch(e) {
+      showToast("Key revealed. Tap to copy. ◆");
+    }
+  }
+};
 
 async function unlockWithPRF(){
   const stored = localStorage.getItem(WA_CRED_KEY);
@@ -6776,7 +6795,6 @@ async function unlockWithPRF(){
 }
 
 // ── THE SELF-DESTRUCT SEQUENCE ──
-// ── THE SELF-DESTRUCT SEQUENCE ──
 async function obliterateAbyss() {
   if (!confirm("WARNING: This will permanently delete ALL data, characters, and settings. This cannot be undone. Continue?")) return;
   
@@ -6807,7 +6825,7 @@ async function obliterateAbyss() {
 }
 
 // WEBAUTHN RESET
-async function resetWebAuthnRegistration() {
+window.resetWebAuthnRegistration = async function() {
   const currentSK = getSovereignKey();
   if (!currentSK) {
     showToast('⚠ No active Sovereign Key. Unlock Abyss first.');
