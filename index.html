@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.33.5</title>
+<title>NakedQuantum v0.34</title>
 <style>
 :root {
   --bg: #000000;
@@ -1953,7 +1953,7 @@ function initWorker(){
 
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
-const NQ_DEV_MODE = true;
+const NQ_DEV_MODE = false;
 
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
 const W_SIMILARITY_THRESHOLD = NQ_DEV_MODE ? 0.50 : 0.73;
@@ -2220,32 +2220,6 @@ function scheduleWatcherPass() {
   }
 }
 
-async function devForcePass() {
-  if (!isWatcherReady) { showToast('Watcher not ready yet'); return; }
-  localStorage.removeItem('nq_watcher_last_pass');
-  showToast('Running pass...');
-  await runSimilarityPassMain();
-  await updateWatcherStatusUI();
-  await refreshWatcherDot();
-  showToast('Pass complete');
-}
-
-async function devClearWatcher() {
-  if (!watcherDB) { showToast('No watcher DB'); return; }
-  const embs = await wdb.getAll('embeddings');
-  const links = await wdb.getAll('links');
-  for (const e of embs) await wdb.delete('embeddings', e.id);
-  for (const l of links) await wdb.delete('links', l.id);
-  localStorage.removeItem('nq_watcher_last_pass');
-  localStorage.removeItem('nq_watcher_awakened');
-  _watcherHasLinks = false;
-  _watcherCurrentLinks = [];
-  hideWatcherDot();
-  await updateWatcherStatusUI();
-  showToast('Watcher index cleared');
-}
-
-
 /* ── WATCHER GOLD DOT UI ───────────────────────────────────── */
 const WATCHER_ANCHORS = [
   { top: '175px',  left: '50%'  },
@@ -2383,7 +2357,6 @@ const setEncryptionKey = (keyBytes) => _workerReady.then(() => new Promise((res,
 }));
 
 /* IMMUTABLE ENTITY */
-
 const getImmutableEntities = () => dbGetAll("immutable_entities");
 const getImmutableEntity = (id) => dbGet("immutable_entities", id);
 async function saveImmutableEntity(data) {
@@ -2634,7 +2607,32 @@ async function deleteImmutableEntity(id) {
   renderIEList();
 }
 
-/* IE DEV DOOR */
+/* DEV DOOR */
+async function devForcePass() {
+  if (!isWatcherReady) { showToast('Watcher not ready yet'); return; }
+  localStorage.removeItem('nq_watcher_last_pass');
+  showToast('Running pass...');
+  await runSimilarityPassMain();
+  await updateWatcherStatusUI();
+  await refreshWatcherDot();
+  showToast('Pass complete');
+}
+
+async function devClearWatcher() {
+  if (!watcherDB) { showToast('No watcher DB'); return; }
+  const embs = await wdb.getAll('embeddings');
+  const links = await wdb.getAll('links');
+  for (const e of embs) await wdb.delete('embeddings', e.id);
+  for (const l of links) await wdb.delete('links', l.id);
+  localStorage.removeItem('nq_watcher_last_pass');
+  localStorage.removeItem('nq_watcher_awakened');
+  _watcherHasLinks = false;
+  _watcherCurrentLinks = [];
+  hideWatcherDot();
+  await updateWatcherStatusUI();
+  showToast('Watcher index cleared');
+}
+
 async function devCreateIEDraft(){
   // No prompt -- just create with a default name
   const defaultName = 'Entity ' + new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'});
@@ -2880,6 +2878,7 @@ async function deleteDiscourse(id){const d=await getDiscourse(id);if(!d)return;a
 
 async function purgeDiscourse(id){await dbDelete("cosm_discourses",id);if(isWatcherReady) pruneWatcherDiscourse(id);const t=await dbGetByIndex("cosm_mosaic_tiles","discourse_id",id);for(const x of t)await dbDelete("cosm_mosaic_tiles",x.id);const b=await dbGetByIndex("cosm_backlinks","discourse_id",id);for(const x of b)await dbDelete("cosm_backlinks",x.id);}
 
+/* VOID ENTROPY */
 function applyVoidEntropy(rawText, deletedAt) {
   if (!rawText || !deletedAt) return rawText;
   const daysInVoid = (Date.now() - deletedAt) / 86400000; // 86400000 ms = 1 day
@@ -2922,262 +2921,6 @@ async function getMosaicTile(dId){if(mosaicCache[dId]!==undefined)return mosaicC
 async function saveMosaicTile(dId,anchors){const e=await getMosaicTile(dId);if(e)await dbDelete("cosm_mosaic_tiles",e.id);const id="m_"+Date.now(),tile={id,discourse_id:dId,anchors,created_at:Date.now()};await dbPut("cosm_mosaic_tiles",tile);mosaicCache[dId]=tile;}
 async function deleteMosaicTile(dId){const t=await getMosaicTile(dId);if(t)await dbDelete("cosm_mosaic_tiles",t.id);mosaicCache[dId]=null;}
 async function getBacklink(dId){const l=await dbGetByIndex("cosm_backlinks","discourse_id",dId);return l.length>0?l[0]:null;}
-
-/* PRF UNLOCK */
-function getPRFSalt() {
-  const stored = localStorage.getItem('nq_prf_salt');
-  if (stored) return b64ToBuf(stored);
-  // First time: generate and persist
-  const salt = crypto.getRandomValues(new Uint8Array(32));
-  localStorage.setItem('nq_prf_salt', bufToB64(salt.buffer));
-  return salt.buffer;
-}
-const WA_CRED_KEY = 'nq_prf_cred_id';
-
-function bufToB64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
-function b64ToBuf(b64){ return Uint8Array.from(atob(b64), c=>c.charCodeAt(0)).buffer; }
-
-async function wrapSovereignKey(currentSKBytes, prfKeyBytes) {
-  const key = await crypto.subtle.importKey('raw', prfKeyBytes, {name: 'AES-GCM', length: 256}, false, ['encrypt']);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, currentSKBytes);
-  return JSON.stringify({ iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) });
-}
-
-// CRYPTOGRAPHIC WRAPPERS
-async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
-  const { iv, ct } = JSON.parse(wrappedJson);
-  const key = await crypto.subtle.importKey('raw', prfKeyBytes, {name: 'AES-GCM', length: 256}, false, ['decrypt']);
-  const dec = await crypto.subtle.decrypt({name: 'AES-GCM', iv: new Uint8Array(iv)}, key, new Uint8Array(ct));
-  return new Uint8Array(dec);
-}
-
-async function unlockWithPRF(){
-  const stored = localStorage.getItem(WA_CRED_KEY);
-  try {
-    const opts = {
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        userVerification: 'required',
-        extensions: { prf: { eval: { first: getPRFSalt() } } },
-        timeout: 60000
-      }
-    };
-    if(stored) opts.publicKey.allowCredentials =[{ id: b64ToBuf(stored), type: 'public-key' }];
-
-    const assertion = await navigator.credentials.get(opts);
-    const ext = assertion.getClientExtensionResults();
-
-    if(ext.prf?.results?.first){
-      let prfKey = new Uint8Array(ext.prf.results.first);
-      let finalKey = prfKey;
-      
-      // If we find a wrapped key, Face ID is acting as a wrapper. Unpack it.
-      const wrapped = localStorage.getItem('nq_wrapped_sk');
-      if (wrapped) {
-        try {
-          finalKey = await unwrapSovereignKey(wrapped, prfKey);
-        } catch(e) {
-          console.error("Failed to unwrap SK. PRF key mismatch.", e);
-          showToast('⚠ Face ID Key mismatch');
-          return false;
-        }
-      }
-      
-      setSovereignKey(finalKey); // Capture in RAM for backup/sync
-      await setEncryptionKey(finalKey);
-      showToast('Sovereign key active ◆');
-      return true;
-    }
-  } catch(e) {
-    if(!stored){
-      try {
-        const cred = await navigator.credentials.create({
-          publicKey: {
-            challenge: crypto.getRandomValues(new Uint8Array(32)),
-            rp: { name: 'NakedQuantum', id: location.hostname },
-            user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
-            pubKeyCredParams:[{ alg: -7, type: 'public-key' }],
-            authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
-            extensions: { prf: { eval: { first: getPRFSalt() } } },
-            timeout: 60000
-          }
-        });
-        localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-        showToast('◈ Face ID registered -- unlock now');
-        return await unlockWithPRF();
-      } catch(regErr) {
-        console.error('PRF register failed:', regErr);
-      }
-    }
-  }
-  showToast('⚠ Running without encryption');
-  return false;
-}
-
-// WEBAUTHN RESET
-async function resetWebAuthnRegistration() {
-  const currentSK = getSovereignKey();
-  if (!currentSK) {
-    showToast('⚠ No active Sovereign Key. Unlock Abyss first.');
-    return;
-  }
-  
-  if (!confirm('This will bind a new Face ID to your existing Sovereign Key. You will be prompted to authenticate now. Continue?')) return;
-  
-  try {
-    // 1. Generate a brand new salt
-    const newSalt = crypto.getRandomValues(new Uint8Array(32));
-    localStorage.setItem('nq_prf_salt', bufToB64(newSalt.buffer));
-    
-    // 2. Create the new credential
-    const cred = await navigator.credentials.create({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: { name: 'NakedQuantum', id: location.hostname },
-        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
-        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
-        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
-        extensions: { prf: { eval: { first: newSalt.buffer } } },
-        timeout: 60000
-      }
-    });
-    
-    localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-    
-    // 3. Immediately assert to get the new PRF output
-    const assertion = await navigator.credentials.get({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        userVerification: 'required',
-        allowCredentials: [{ id: cred.rawId, type: 'public-key' }],
-        extensions: { prf: { eval: { first: newSalt.buffer } } },
-        timeout: 60000
-      }
-    });
-    
-    const ext = assertion.getClientExtensionResults();
-    if (ext.prf?.results?.first) {
-      const newPrfKey = new Uint8Array(ext.prf.results.first);
-      
-      // 4. Wrap the existing Sovereign Key with the new PRF key
-      const wrapped = await wrapSovereignKey(currentSK, newPrfKey);
-      localStorage.setItem('nq_wrapped_sk', wrapped);
-      
-      showToast('◈ Face ID Re-bound Safely');
-    } else {
-      throw new Error('PRF verification failed on bind');
-    }
-  } catch (e) {
-    console.error("Bind failed:", e);
-    showToast('⚠ Face ID update failed or was cancelled.');
-  }
-}
-
-async function unlockWithFallbackKey() {
-  const inputEl = document.getElementById('fallback-key-input');
-  const input = inputEl.value.trim();
-  
-  // Helper to flash error directly on the input box
-  const showError = (msg) => {
-    inputEl.value = '';
-    inputEl.placeholder = msg;
-    inputEl.style.borderColor = '#ff6060';
-    setTimeout(() => {
-      inputEl.style.borderColor = 'var(--border)';
-      inputEl.placeholder = 'Paste Sovereign Key...';
-    }, 2500);
-  };
-  
-  if(!input) {
-    showError("⚠ PASTE KEY FIRST");
-    return;
-  }
-  
-  try {
-    const buf = b64ToBuf(input);
-    const keyBytes = new Uint8Array(buf);
-    
-    if(keyBytes.length !== 32) throw new Error("Incorrect key length");
-    
-    setSovereignKey(keyBytes);
-    await setEncryptionKey(keyBytes);
-    
-    document.getElementById('lock-screen').style.display = 'none';
-    showToast("Abyss Unlocked ◆"); // This toast is fine because the keyboard drops when app loads
-    await init();
-  } catch(e) {
-    showError("⚠ INVALID KEY");
-  }
-}
-
-// ─── SECURE KEY STORAGE ─────────────────────────────────────────────────────
-
-async function storeSecureKey(storageKey, value) {
-  if (!getSovereignKey() || !value) {
-    // No sovereign key yet (DEV_MODE) -- fall back to plaintext
-    localStorage.setItem(storageKey, value);
-    return;
-  }
-  const cryptoKey = await getCloudCryptoKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    cryptoKey,
-    new TextEncoder().encode(value)
-  );
-  localStorage.setItem(
-    storageKey + '_enc',
-    JSON.stringify({ iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) })
-  );
-  localStorage.removeItem(storageKey); // remove any old plaintext
-}
-
-async function readSecureKey(storageKey) {
-  const enc = localStorage.getItem(storageKey + '_enc');
-  if (enc && getSovereignKey()) {
-    try {
-      const { iv, ct } = JSON.parse(enc);
-      const cryptoKey = await getCloudCryptoKey();
-      const dec = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: new Uint8Array(iv) },
-        cryptoKey,
-        new Uint8Array(ct)
-      );
-      return new TextDecoder().decode(dec);
-    } catch (e) {
-      console.error('Key decrypt failed:', e);
-    }
-  }
-  // Fallback: plaintext (DEV_MODE or pre-migration)
-  return localStorage.getItem(storageKey) || '';
-}
-
-/* INIT */
-async function init(){
-  await _workerReady;
-  
-  // Ask iOS nicely to not erase us
-  if(navigator.storage&&navigator.storage.persist){
-    navigator.storage.persist().then(granted=>{
-      if(granted)console.log('◆ Storage persistence granted');
-    });
-  }
-  
-  currentMode = 'soup';
-  currentView = 'soup';
-  currentFolderId = null;
-  breadcrumbPath = [{id: null, name: '◈ The Soup'}];
-  
-  updateHeaderButtons();
-  showPanel('view-soup'); 
-  await renderTableView();
-  
-  document.getElementById('input-api-key').value=await readSecureKey('nq_api_key')||'';
-  document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
-  initWatcher();
-  initGuardianModel();
-}
 
 /* BURN DISC */
 async function openBurnDiscModal(){
@@ -4138,8 +3881,8 @@ function enterFolder(id, name){
 }
 
 function navToBc(idx){
-  breadcrumbPath=breadcrumbPath.slice(0,idx+1);
-  currentFolderId=breadcrumbPath[breadcrumbPath.length-1].id;
+breadcrumbPath=breadcrumbPath.slice(0,idx+1);
+currentFolderId=breadcrumbPath[breadcrumbPath.length-1].id;
   renderTableView();
   renderGoldTicks(); // NEW
   awakenGoldLine();  // NEW
@@ -6058,10 +5801,15 @@ async function exportDiscourseHTML(id){
 
 /* EXPORTS */
 async function exportMarkdown(){if(!currentDiscourseId)return;await saveCurrentDiscourse(true);const d=await getDiscourse(currentDiscourseId);if(!d)return;const tile=await getMosaicTile(currentDiscourseId);let md=`# ${d.title}\n\n`;if(tile&&tile.anchors&&tile.anchors.length)md+=`> **Mosaic**\n${tile.anchors.map(a=>`> - ${a}`).join('\n')}\n\n`;md+=d.raw_text||" ";const blob=new Blob([md],{type:"text/markdown"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`${(d.title||"discourse").replace(/[^a-z0-9]/gi,"_").toLowerCase()}.md`;a.click();URL.revokeObjectURL(url);showToast("Exported as Markdown ◆");}
+
 async function exportPDF(){if(!currentDiscourseId)return;await saveCurrentDiscourse(true);const d=await getDiscourse(currentDiscourseId);if(!d)return;const tile=await getMosaicTile(currentDiscourseId);let mh="";if(tile&&tile.anchors&&tile.anchors.length)mh=`<div style="border-left:3px solid #c8a050;padding:10px 16px;margin:16px 0;background:#f9f5ee;"><div style="font-size:11px;letter-spacing:2px;font-weight:900;margin-bottom:8px;color:#8a6e35;">◈ MOSAIC</div>${tile.anchors.map(a=>`<div style="margin:4px 0;">• ${escHtml(a)}</div>`).join('')}</div>`;const content=renderContent(d.raw_text||"");const fh=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escHtml(d.title||"Discourse")}</title><style>body{font-family:Georgia,serif;max-width:700px;margin:0 auto;padding:20px;color:#1a1a1a;line-height:1.8;}h1{font-size:26px;border-bottom:1px solid #ddd;padding-bottom:10px;margin-bottom:6px;}.meta{font-size:12px;color:#888;margin-bottom:24px;}h2{font-size:20px;}h3{font-size:16px;color:#555;}pre{background:#f4f4f4;padding:14px;border-radius:6px;overflow-x:auto;}code{font-family:monospace;font-size:13px;}blockquote{border-left:3px solid #ccc;padding-left:14px;color:#666;font-style:italic;margin:12px 0;}</style></head><body><h1>${escHtml(d.title||"Untitled")}</h1><div class="meta">${new Date(d.created_at).toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})}</div>${mh}${content}</body></html>`;const iframe=document.createElement('iframe');iframe.style.cssText='position:absolute;width:0;height:0;border:none;';document.body.appendChild(iframe);const doc=iframe.contentWindow.document;doc.open();doc.write(fh);doc.close();setTimeout(()=>{iframe.contentWindow.focus();iframe.contentWindow.print();setTimeout(()=>document.body.removeChild(iframe),10000);},500);}
+
 async function exportDiscourseMarkdown(id){const d=await getDiscourse(id);if(!d)return;const tile=await getMosaicTile(id);let md=`# ${d.title}\n\n`;if(tile&&tile.anchors&&tile.anchors.length)md+=`> **Mosaic**\n${tile.anchors.map(a=>`> - ${a}`).join('\n')}\n\n`;md+=d.raw_text||" ";const blob=new Blob([md],{type:"text/markdown"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`${(d.title||"discourse").replace(/[^a-z0-9]/gi,"_").toLowerCase()}.md`;a.click();URL.revokeObjectURL(url);showToast("Exported");}
+
 async function exportFolderContents(fId){const discs=(await dbGetByIndex("cosm_discourses","folder_id",fId)).filter(d=>!d.isDeleted);if(!discs.length){showToast("No discourses to export ◆");return;}let md=`# Folder Export\n\n`;for(const d of discs){const t=await getMosaicTile(d.id);md+=`## ${d.title}\n\n`;if(t&&t.anchors&&t.anchors.length)md+=`> **Mosaic**\n${t.anchors.map(a=>`> - ${a}`).join('\n')}\n\n`;md+=d.raw_text||" ";md+=`\n\n---\n\n`;}const blob=new Blob([md],{type:"text/markdown"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`folder_export_${new Date().toISOString().slice(0,10)}.md`;a.click();URL.revokeObjectURL(url);showToast(`Exported ${discs.length} discourse(s)`);}
+
 async function exportJSON(){const f=await dbGetAll("cosm_folders"),d=await dbGetAll("cosm_discourses"),m=await dbGetAll("cosm_mosaic_tiles"),b=await dbGetAll("cosm_backlinks"),c=await dbGetAll("characters"),h=await dbGetAll("history"),s=await dbGetAll("summaries"),gl=await dbGetAll("guardian_logs"),gs=await dbGetAll("guardian_summaries"),ie=await dbGetAll("immutable_entities");const payload={version:"NakedQuantum",exported_at:new Date().toISOString(),cosm_folders:f,cosm_discourses:d,cosm_mosaic_tiles:m,cosm_backlinks:b,characters:c,history:h,summaries:s,guardian_logs:gl,guardian_summaries:gs,immutable_entities:ie};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`NQ_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);showToast("Backup exported ◆");}
+
 async function importJSON(event){const file=event.target.files[0];if(!file)return;if(!confirm("Import will merge with existing data. Continue?")){event.target.value='';return;}try{const text=await file.text();const payload=JSON.parse(text);const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store]))for(const item of payload[store])await dbPut(store,item);}mosaicCache={};if(currentMode==='soup')await renderTableView();else await renderSanctuaryView();showToast("Import complete ✓");}catch(err){console.error(err);showToast("Import failed");}event.target.value='';}
 
 /* MOSAIC EXTRACT */
@@ -6074,7 +5822,7 @@ async function extractMemory(){
   const anchors=raw.split("\n").map(l=>l.trim()).filter(l=>l.length>3&&!l.startsWith("#"));
   await saveMosaicTile(currentDiscourseId,anchors);await renderMosaicDisplay(currentDiscourseId);showToast("Mosaic anchored ◆");
   }catch(err){console.error(err);showToast("Extraction failed ◆");}
-  finally{document.getElementById("extract-loading").classList.remove("visible");}
+finally{document.getElementById("extract-loading").classList.remove("visible");}
 }
 
 async function confirmDeleteMosaic(){if(!currentDiscourseId)return;if(!confirm("Clear mosaic anchors?"))return;await deleteMosaicTile(currentDiscourseId);await renderMosaicDisplay(currentDiscourseId);showToast("Mosaic cleared ◆");}
@@ -6882,27 +6630,373 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   document.getElementById('lineage-overlay').addEventListener('click', closeLineage);
   // Initial draw
   renderGoldTicks();
-  
-// bootApp function
-async function bootApp() {
-  
-  if (NQ_DEV_MODE) {
-  try {
-    document.getElementById('lock-screen').style.display = 'none';
-        await init();
-    document.getElementById('btn-dev-force-pass').style.display = 'flex';
-    document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
-  } catch(e) {
-    console.error('DEV boot failed:', e);
-    alert('Boot error: ' + e.message);
-  }
-  return;
+
+/* NQ ABYSS GATEKEEPER */
+/* PRF UNLOCK */
+function getPRFSalt() {
+  const stored = localStorage.getItem('nq_prf_salt');
+  if (stored) return b64ToBuf(stored);
+  // First time: generate and persist
+  const salt = crypto.getRandomValues(new Uint8Array(32));
+  localStorage.setItem('nq_prf_salt', bufToB64(salt.buffer));
+  return salt.buffer;
 }
+const WA_CRED_KEY = 'nq_prf_cred_id';
+
+function bufToB64(buf){
+  let binary = '';
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.byteLength; i++) { binary += String.fromCharCode(bytes[i]); }
+  return btoa(binary);
+}
+function b64ToBuf(b64){
+  // Fix Apple's URL-safe base64 and missing padding
+  let safeB64 = b64.replace(/-/g, '+').replace(/_/g, '/');
+  while (safeB64.length % 4) { safeB64 += '='; }
+  const binary = atob(safeB64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) { bytes[i] = binary.charCodeAt(i); }
+  return bytes.buffer;
+}
+
+async function wrapSovereignKey(currentSKBytes, prfKeyBytes) {
+  const key = await crypto.subtle.importKey('raw', prfKeyBytes, {name: 'AES-GCM', length: 256}, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, currentSKBytes);
+  return JSON.stringify({ iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) });
+}
+
+// CRYPTOGRAPHIC WRAPPERS
+async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
+  const { iv, ct } = JSON.parse(wrappedJson);
+  const key = await crypto.subtle.importKey('raw', prfKeyBytes, {name: 'AES-GCM', length: 256}, false, ['decrypt']);
+  const dec = await crypto.subtle.decrypt({name: 'AES-GCM', iv: new Uint8Array(iv)}, key, new Uint8Array(ct));
+  return new Uint8Array(dec);
+}
+
+// ── RAM KEY STATE & EXPORTER ──
+let _sovereignKey = null;
+function setSovereignKey(keyBytes) { _sovereignKey = keyBytes; }
+function getSovereignKey() { return _sovereignKey; }
+
+function showSovereignKey() {
+  const sk = getSovereignKey();
+  if (!sk) { showToast("⚠ Abyss Locked. No key in memory."); return; }
+  const b64 = bufToB64(sk);
+  const el = document.getElementById('export-key-display');
+  el.value = b64;
+  el.style.display = 'block';
+  navigator.clipboard.writeText(b64).catch(e => console.log("Clipboard blocked"));
+  showToast("Key copied to clipboard ◆");
+}
+
+async function unlockWithPRF(){
+  const stored = localStorage.getItem(WA_CRED_KEY);
+  const saltBuffer = getPRFSalt();
+  
+  // 1. REGISTRATION PATH
+  if (!stored) {
+    try {
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: 'NakedQuantum', id: location.hostname },
+          user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
+          pubKeyCredParams:[{ alg: -7, type: 'public-key' }, { alg: -257, type: 'public-key' }],
+          authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
+          extensions: { prf: { eval: { first: saltBuffer } } },
+          timeout: 60000
+        }
+      });
+      
+      localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
+      
+      // Extract PRF directly from creation! Prevents the immediate iOS .get() failure.
+      const ext = cred.getClientExtensionResults();
+      if (ext.prf?.results?.first) {
+        let prfKey = new Uint8Array(ext.prf.results.first);
+        setSovereignKey(prfKey);
+        await setEncryptionKey(prfKey);
+        showToast('◈ Face ID registered');
+        return true;
+      } else {
+        // If device delays PRF, fallback to a get call
+        return await unlockWithPRF();
+      }
+    } catch(regErr) {
+      console.error('PRF register failed:', regErr);
+      showToast('⚠ Face ID Registration Failed');
+      return false;
+    }
+  }
+  
+  // 2. UNLOCK PATH
+  try {
+    const opts = {
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        userVerification: 'required',
+        // We omit allowCredentials here to force iOS to show ALL discoverable passkeys. 
+        // This prevents NotAllowedError if the local ID slightly mismatches iCloud.
+        extensions: { prf: { eval: { first: saltBuffer } } },
+        timeout: 60000
+      }
+    };
+
+    const assertion = await navigator.credentials.get(opts);
+    const ext = assertion.getClientExtensionResults();
+
+    if(ext.prf?.results?.first){
+      let prfKey = new Uint8Array(ext.prf.results.first);
+      let finalKey = prfKey;
+      
+      const wrapped = localStorage.getItem('nq_wrapped_sk');
+      if (wrapped) {
+        try {
+          finalKey = await unwrapSovereignKey(wrapped, prfKey);
+        } catch(e) {
+          console.error("Unwrap failed", e);
+          showToast('⚠ Face ID Key mismatch');
+          return false;
+        }
+      }
+      
+      setSovereignKey(finalKey); 
+      await setEncryptionKey(finalKey); 
+      showToast('Sovereign key active ◆');
+      return true;
+    } else {
+      showToast('⚠ PRF failed to evaluate');
+      return false;
+    }
+  } catch(e) {
+    console.error('PRF get failed:', e);
+    return false;
+  }
+}
+
+// ── THE SELF-DESTRUCT SEQUENCE ──
+// ── THE SELF-DESTRUCT SEQUENCE ──
+async function obliterateAbyss() {
+  if (!confirm("WARNING: This will permanently delete ALL data, characters, and settings. This cannot be undone. Continue?")) return;
+  
+  const check = prompt("To strip the Abyss back to nothing and start over, type NAKED AGAIN:");
+  
+  // Exact match required. 
+  if (check !== "NAKED AGAIN") {
+    showToast("The Abyss remains.");
+    return;
+  }
+  
+  showToast("Stripping back to zero...");
+  
+  // 1. Destroy OPFS SQLite DB
+  try {
+    const root = await navigator.storage.getDirectory();
+    await root.removeEntry('nq.db');
+  } catch(e) { console.log("No DB found to burn."); }
+  
+  // 2. Destroy IndexedDB Watcher
+  try { indexedDB.deleteDatabase('nq_watcher'); } catch(e) {}
+  
+  // 3. Purge LocalStorage
+  localStorage.clear();
+  
+  // 4. Reload to pure blank state
+  setTimeout(() => window.location.reload(), 1000);
+}
+
+// WEBAUTHN RESET
+async function resetWebAuthnRegistration() {
+  const currentSK = getSovereignKey();
+  if (!currentSK) {
+    showToast('⚠ No active Sovereign Key. Unlock Abyss first.');
+    return;
+  }
+  
+  if (!confirm('This will bind a new Face ID to your existing Sovereign Key. You will be prompted to authenticate now. Continue?')) return;
+  
+  try {
+    // 1. Generate a brand new salt
+    const newSalt = crypto.getRandomValues(new Uint8Array(32));
+    localStorage.setItem('nq_prf_salt', bufToB64(newSalt.buffer));
+    
+    // 2. Create the new credential
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'NakedQuantum', id: location.hostname },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
+        pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
+        extensions: { prf: { eval: { first: newSalt.buffer } } },
+        timeout: 60000
+      }
+    });
+    
+    localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
+    
+    // 3. Immediately assert to get the new PRF output
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        userVerification: 'required',
+        allowCredentials: [{ id: cred.rawId, type: 'public-key' }],
+        extensions: { prf: { eval: { first: newSalt.buffer } } },
+        timeout: 60000
+      }
+    });
+    
+    const ext = assertion.getClientExtensionResults();
+    if (ext.prf?.results?.first) {
+      const newPrfKey = new Uint8Array(ext.prf.results.first);
+      
+      // 4. Wrap the existing Sovereign Key with the new PRF key
+      const wrapped = await wrapSovereignKey(currentSK, newPrfKey);
+      localStorage.setItem('nq_wrapped_sk', wrapped);
+      
+      showToast('◈ Face ID Re-bound Safely');
+    } else {
+      throw new Error('PRF verification failed on bind');
+    }
+  } catch (e) {
+    console.error("Bind failed:", e);
+    showToast('⚠ Face ID update failed or was cancelled.');
+  }
+}
+
+async function unlockWithFallbackKey() {
+  const inputEl = document.getElementById('fallback-key-input');
+  const input = inputEl.value.trim();
+  
+  // Helper to flash error directly on the input box
+  const showError = (msg) => {
+    inputEl.value = '';
+    inputEl.placeholder = msg;
+    inputEl.style.borderColor = '#ff6060';
+    setTimeout(() => {
+      inputEl.style.borderColor = 'var(--border)';
+      inputEl.placeholder = 'Paste Sovereign Key...';
+    }, 2500);
+  };
+  
+  if(!input) {
+    showError("⚠ PASTE KEY FIRST");
+    return;
+  }
+  
+  try {
+    const buf = b64ToBuf(input);
+    const keyBytes = new Uint8Array(buf);
+    
+    if(keyBytes.length !== 32) throw new Error("Incorrect key length");
+    
+    setSovereignKey(keyBytes);
+    await setEncryptionKey(keyBytes);
+    
+    document.getElementById('lock-screen').style.display = 'none';
+    showToast("Abyss Unlocked ◆"); // This toast is fine because the keyboard drops when app loads
+    await init();
+  } catch(e) {
+    showError("⚠ INVALID KEY");
+  }
+}
+
+// ─── SECURE KEY STORAGE ─────────────────────────────────────────────────────
+async function storeSecureKey(storageKey, value) {
+  if (!getSovereignKey() || !value) {
+    // No sovereign key yet (DEV_MODE) -- fall back to plaintext
+    localStorage.setItem(storageKey, value);
+    return;
+  }
+  const cryptoKey = await getCloudCryptoKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    cryptoKey,
+    new TextEncoder().encode(value)
+  );
+  localStorage.setItem(
+    storageKey + '_enc',
+    JSON.stringify({ iv: Array.from(iv), ct: Array.from(new Uint8Array(ct)) })
+  );
+  localStorage.removeItem(storageKey); // remove any old plaintext
+}
+
+async function readSecureKey(storageKey) {
+  const enc = localStorage.getItem(storageKey + '_enc');
+  if (enc && getSovereignKey()) {
+    try {
+      const { iv, ct } = JSON.parse(enc);
+      const cryptoKey = await getCloudCryptoKey();
+      const dec = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: new Uint8Array(iv) },
+        cryptoKey,
+        new Uint8Array(ct)
+      );
+      return new TextDecoder().decode(dec);
+    } catch (e) {
+      console.error('Key decrypt failed:', e);
+    }
+  }
+  // Fallback: plaintext (DEV_MODE or pre-migration)
+  return localStorage.getItem(storageKey) || '';
+}
+
+/* INIT */
+async function init(){
+  await _workerReady;
+// Ask iOS nicely to not erase us
+if(navigator.storage&&navigator.storage.persist){
+    navigator.storage.persist().then(granted=>{
+      if(granted)console.log('◆ Storage persistence granted');
+    });
+  }
+  
+  currentMode = 'soup';
+  currentView = 'soup';
+  currentFolderId = null;
+  breadcrumbPath = [{id: null, name: '◈ The Soup'}];
+  
+  updateHeaderButtons();
+  showPanel('view-soup'); 
+  await renderTableView();
+  
+  document.getElementById('input-api-key').value=await readSecureKey('nq_api_key')||'';
+  document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
+  initWatcher();
+  initGuardianModel();
+}
+
+// BOOTUP
+async function bootApp() {
+  if (NQ_DEV_MODE) {
+    try {
+      document.getElementById('lock-screen').style.display = 'none';
+      await init();
+      document.getElementById('btn-dev-force-pass').style.display = 'flex';
+      document.getElementById('btn-dev-clear-watcher').style.display = 'flex';
+    } catch(e) {
+      console.error('DEV boot failed:', e);
+      alert('Boot error: ' + e.message);
+    }
+    return;
+  }
+
   const lockScreen = document.getElementById('lock-screen');
-  const statusEl = document.getElementById('lock-status'); // add this element (see HTML patch below)
+  const statusEl = document.getElementById('lock-status'); 
+  const btnManualUnlock = document.getElementById('btn-manual-unlock');
+
   let faceAttempts = 0;
   const MAX_FACE_ATTEMPTS = 3;
   let cooldownActive = false;
+
+  // Make the unlock button visible and wait for user gesture
+  btnManualUnlock.style.display = 'block';
+  btnManualUnlock.onclick = async () => {
+    btnManualUnlock.style.display = 'none'; // Hide upon interaction
+    await tryFaceID();
+  };
 
   async function tryFaceID() {
     if (faceAttempts >= MAX_FACE_ATTEMPTS) {
@@ -6911,26 +7005,40 @@ async function bootApp() {
     }
     faceAttempts++;
     statusEl.textContent = `Face ID attempt ${faceAttempts} of ${MAX_FACE_ATTEMPTS}...`;
+    
     const unlocked = await unlockWithPRF();
     if (unlocked) {
       lockScreen.style.display = 'none';
       await init();
     } else if (faceAttempts < MAX_FACE_ATTEMPTS) {
-      statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempt${MAX_FACE_ATTEMPTS - faceAttempts > 1 ? 's' : ''} remaining.`;
-      setTimeout(tryFaceID, 800); // brief pause between attempts
+      statusEl.textContent = `Failed. ${MAX_FACE_ATTEMPTS - faceAttempts} attempt(s) remaining.`;
+      setTimeout(() => {
+        btnManualUnlock.style.display = 'block';
+        btnManualUnlock.textContent = 'Tap to Retry';
+      }, 500); 
     } else {
       showBackupKeyInput();
     }
   }
 
   function showBackupKeyInput() {
-    statusEl.textContent = 'Enter sovereign backup key.';
+    statusEl.textContent = 'Face ID locked. Enter sovereign backup key.';
     document.getElementById('fallback-key-input').style.display = 'block';
     document.getElementById('btn-fallback-unlock').style.display = 'block';
     document.getElementById('btn-fallback-unlock').onclick = unlockWithFallbackKey;
-    // Offer one cooldown Face ID retry
-    document.getElementById('btn-faceid-retry').style.display = 'block'; // add this button (see HTML patch)
+    
+    document.getElementById('btn-faceid-retry').style.display = 'block'; 
     document.getElementById('btn-faceid-retry').onclick = () => tryCooldownFaceID();
+
+    // Injecting the Self-Destruct Button dynamically
+    if (!document.getElementById('btn-obliterate')) {
+      const burnBtn = document.createElement('button');
+      burnBtn.id = 'btn-obliterate';
+      burnBtn.textContent = '✕ Burn Abyss (Start Fresh)';
+      burnBtn.style.cssText = 'background:none; border:1px solid var(--danger); color:#ff6060; font-size:10px; font-weight:900; padding:10px 18px; border-radius:10px; letter-spacing:1px; text-transform:uppercase; margin-top:24px;';
+      burnBtn.onclick = obliterateAbyss;
+      document.getElementById('lock-screen').appendChild(burnBtn);
+    }
   }
 
   async function tryCooldownFaceID() {
@@ -6949,7 +7057,7 @@ async function bootApp() {
         cooldownActive = false;
       }
     }, 1000);
-    // Attempt immediately, cooldown prevents re-tap
+    
     const unlocked = await unlockWithPRF();
     if (unlocked) {
       lockScreen.style.display = 'none';
@@ -6958,7 +7066,6 @@ async function bootApp() {
       statusEl.textContent = 'Face ID rejected. Use sovereign key.';
     }
   }
-  tryFaceID(); // kick off on boot
 }
 bootApp();
 });
