@@ -6643,9 +6643,21 @@ function getPRFSalt() {
 }
 const WA_CRED_KEY = 'nq_prf_cred_id';
 
-function bufToB64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
-
-function b64ToBuf(b64){ return Uint8Array.from(atob(b64), c=>c.charCodeAt(0)).buffer; }
+function bufToB64(buf){
+  let binary = '';
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.byteLength; i++) { binary += String.fromCharCode(bytes[i]); }
+  return btoa(binary);
+}
+function b64ToBuf(b64){
+  // Fix Apple's URL-safe base64 and missing padding
+  let safeB64 = b64.replace(/-/g, '+').replace(/_/g, '/');
+  while (safeB64.length % 4) { safeB64 += '='; }
+  const binary = atob(safeB64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) { bytes[i] = binary.charCodeAt(i); }
+  return bytes.buffer;
+}
 
 async function wrapSovereignKey(currentSKBytes, prfKeyBytes) {
   const key = await crypto.subtle.importKey('raw', prfKeyBytes, {name: 'AES-GCM', length: 256}, false, ['encrypt']);
@@ -6680,8 +6692,9 @@ function showSovereignKey() {
 
 async function unlockWithPRF(){
   const stored = localStorage.getItem(WA_CRED_KEY);
+  const saltBuffer = getPRFSalt();
   
-  // 1. REGISTRATION PATH (First time / No key found)
+  // 1. REGISTRATION PATH
   if (!stored) {
     try {
       const cred = await navigator.credentials.create({
@@ -6689,16 +6702,27 @@ async function unlockWithPRF(){
           challenge: crypto.getRandomValues(new Uint8Array(32)),
           rp: { name: 'NakedQuantum', id: location.hostname },
           user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'kaja', displayName: 'Kaja' },
-          pubKeyCredParams:[{ alg: -7, type: 'public-key' }, { alg: -257, type: 'public-key' }], // ES256 & RS256 for max hardware support
+          pubKeyCredParams:[{ alg: -7, type: 'public-key' }, { alg: -257, type: 'public-key' }],
           authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'required' },
-          extensions: { prf: { eval: { first: getPRFSalt() } } },
+          extensions: { prf: { eval: { first: saltBuffer } } },
           timeout: 60000
         }
       });
+      
       localStorage.setItem(WA_CRED_KEY, bufToB64(cred.rawId));
-      showToast('◈ Face ID registered');
-      // Recurse once to execute the GET path and pull the active PRF key into RAM
-      return await unlockWithPRF();
+      
+      // Extract PRF directly from creation! Prevents the immediate iOS .get() failure.
+      const ext = cred.getClientExtensionResults();
+      if (ext.prf?.results?.first) {
+        let prfKey = new Uint8Array(ext.prf.results.first);
+        setSovereignKey(prfKey);
+        await setEncryptionKey(prfKey);
+        showToast('◈ Face ID registered');
+        return true;
+      } else {
+        // If device delays PRF, fallback to a get call
+        return await unlockWithPRF();
+      }
     } catch(regErr) {
       console.error('PRF register failed:', regErr);
       showToast('⚠ Face ID Registration Failed');
@@ -6706,14 +6730,15 @@ async function unlockWithPRF(){
     }
   }
   
-  // 2. UNLOCK PATH (Stored credential exists)
+  // 2. UNLOCK PATH
   try {
     const opts = {
       publicKey: {
         challenge: crypto.getRandomValues(new Uint8Array(32)),
         userVerification: 'required',
-        allowCredentials:[{ id: b64ToBuf(stored), type: 'public-key' }],
-        extensions: { prf: { eval: { first: getPRFSalt() } } },
+        // We omit allowCredentials here to force iOS to show ALL discoverable passkeys. 
+        // This prevents NotAllowedError if the local ID slightly mismatches iCloud.
+        extensions: { prf: { eval: { first: saltBuffer } } },
         timeout: 60000
       }
     };
@@ -6736,18 +6761,45 @@ async function unlockWithPRF(){
         }
       }
       
-      setSovereignKey(finalKey); // Capture in RAM
-      await setEncryptionKey(finalKey); // Hand to Web Worker DB
+      setSovereignKey(finalKey); 
+      await setEncryptionKey(finalKey); 
       showToast('Sovereign key active ◆');
       return true;
     } else {
-      showToast('⚠ PRF not supported by hardware');
+      showToast('⚠ PRF failed to evaluate');
       return false;
     }
   } catch(e) {
     console.error('PRF get failed:', e);
     return false;
   }
+}
+
+// ── THE SELF-DESTRUCT SEQUENCE ──
+async function obliterateAbyss() {
+  if (!confirm("WARNING: This will permanently delete ALL data, characters, and settings. This cannot be undone. Continue?")) return;
+  const check = prompt("Type BURN to permanently destroy your Abyss:");
+  if (check !== "BURN") {
+    showToast("Obliteration cancelled.");
+    return;
+  }
+  
+  showToast("Burning the Abyss...");
+  
+  // 1. Destroy OPFS SQLite DB
+  try {
+    const root = await navigator.storage.getDirectory();
+    await root.removeEntry('nq.db');
+  } catch(e) { console.log("No DB found to burn."); }
+  
+  // 2. Destroy IndexedDB Watcher
+  try { indexedDB.deleteDatabase('nq_watcher'); } catch(e) {}
+  
+  // 3. Purge LocalStorage
+  localStorage.clear();
+  
+  // 4. Reload to pure blank state
+  setTimeout(() => window.location.reload(), 1000);
 }
 
 // WEBAUTHN RESET
@@ -6847,7 +6899,6 @@ async function unlockWithFallbackKey() {
 }
 
 // ─── SECURE KEY STORAGE ─────────────────────────────────────────────────────
-
 async function storeSecureKey(storageKey, value) {
   if (!getSovereignKey() || !value) {
     // No sovereign key yet (DEV_MODE) -- fall back to plaintext
@@ -6891,9 +6942,8 @@ async function readSecureKey(storageKey) {
 /* INIT */
 async function init(){
   await _workerReady;
-  
-  // Ask iOS nicely to not erase us
-  if(navigator.storage&&navigator.storage.persist){
+// Ask iOS nicely to not erase us
+if(navigator.storage&&navigator.storage.persist){
     navigator.storage.persist().then(granted=>{
       if(granted)console.log('◆ Storage persistence granted');
     });
@@ -6975,6 +7025,16 @@ async function bootApp() {
     
     document.getElementById('btn-faceid-retry').style.display = 'block'; 
     document.getElementById('btn-faceid-retry').onclick = () => tryCooldownFaceID();
+
+    // Injecting the Self-Destruct Button dynamically
+    if (!document.getElementById('btn-obliterate')) {
+      const burnBtn = document.createElement('button');
+      burnBtn.id = 'btn-obliterate';
+      burnBtn.textContent = '✕ Burn Abyss (Start Fresh)';
+      burnBtn.style.cssText = 'background:none; border:1px solid var(--danger); color:#ff6060; font-size:10px; font-weight:900; padding:10px 18px; border-radius:10px; letter-spacing:1px; text-transform:uppercase; margin-top:24px;';
+      burnBtn.onclick = obliterateAbyss;
+      document.getElementById('lock-screen').appendChild(burnBtn);
+    }
   }
 
   async function tryCooldownFaceID() {
