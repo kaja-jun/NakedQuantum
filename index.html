@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.34.5</title>
+<title>NakedQuantum v0.34.6</title>
 <style>
 :root {
   --bg: #000000;
@@ -622,6 +622,19 @@ button {
   justify-content: center;
   margin-top: 4px;
 }
+#ie-list-surface {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 16px 100px;
+}
+/* IE PAGE CARDS GRID */
+.ie-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
 /* IE DECK STRIP */
 .ie-strip {
   display: flex;
