@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.34</title>
+<title>NakedQuantum v0.34.5</title>
 <style>
 :root {
   --bg: #000000;
@@ -607,77 +607,236 @@ button {
   font-family: var(--font-serif); font-size: 14px; color: var(--text);
   line-height: 1.7; opacity: 0.85;
 }
+.ie-card-meta {
+  font-size: 9px;
+  color: var(--muted);
+  opacity: 0.6;
+  letter-spacing: 0.5px;
+  margin-top: 6px;
+  text-align: center;
+}
+.ie-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
 /* IE DECK STRIP */
 .ie-strip {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   padding: 0 16px 12px;
   flex-shrink: 0;
 }
-.ie-strip::-webkit-scrollbar { display: none; }
+.ie-strip .ie-card {
+  flex: 0 0 auto;
+  width: 160px;
+}
 
-.ie-deck-card {
+/* UNIFIED IE CARD -- used in Sanctuary strip & IE page grid */
+.ie-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.15s, background 0.15s;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  background: var(--surface);
-  border: 1px solid #d4af37;
-  border-radius: 8px;
-  padding: 10px 8px;
-  min-width: 100px;
-  max-width: 110px;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
 }
-.ie-deck-card:active {
+.ie-card:active {
   background: var(--surface2);
   border-color: var(--accent);
 }
-.ie-deck-card.draft {
+.ie-card.draft {
   border-color: var(--border);
   opacity: 0.6;
 }
-.ie-deck-sigil {
-  width: 80px;
-  height: 80px;
-  border: 1px solid var(--accent-dim);
-  border-radius: 4px;
+
+/* Gold bar */
+.ie-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-dim), transparent);
+  opacity: 0.4;
+}
+.ie-card.draft::before {
+  opacity: 0.2;
+}
+
+/* Text block */
+.ie-card-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 24px 10px 0;
+  width: 100%;
+  min-height: 0;
+}
+
+.ie-card-name {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.25;
+  letter-spacing: 0.1px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.ie-card-archetype {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.ie-card-function {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  text-align: center;
+  margin-top: 8px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+/* Sigil */
+.ie-card-sigil {
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: auto;
+  margin-bottom: 10px;
   flex-shrink: 0;
-  background: var(--bg);
 }
-.ie-deck-sigil svg {
-  width: 48px;
-  height: 48px;
+.ie-card-sigil svg {
+  width: 100%;
+  height: 100%;
+  animation: ieSigilSpin 30s linear infinite;
 }
-.ie-deck-info {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+@keyframes ieSigilSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
-.ie-deck-name {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text);
-  text-align: center;
-  white-space: normal;
-  word-break: break-word;
-  line-height: 1.3;
+.ie-card-sigil.pulse svg {
+  animation: ieSigilSpin 30s linear infinite, ieSigilGlow 4s ease-in-out infinite;
 }
-.ie-deck-archetype {
-  font-size: 8px;
-  letter-spacing: 1.5px;
-  color: var(--accent-dim);
-  text-transform: uppercase;
-  text-align: center;
+@keyframes ieSigilGlow {
+  0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(200,160,80,0.3)); }
+  50%      { opacity: 1;   filter: drop-shadow(0 0 5px rgba(200,160,80,0.7)); }
+}
+
+/* CHARACTER AVATAR */
+.char-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: #141414;
+  border: 1px solid #1f1f1f;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600; color: #6b6560;
+  flex-shrink: 0;
+  overflow: hidden;
+  cursor: pointer;
+}
+.char-avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover; border-radius: 50%;
+}
+.char-card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.char-card-header-info { flex: 1; min-width: 0; padding-top: 1px; }
+.char-card-header-info .char-card-name { margin-bottom: 2px; }
+
+/* PHOTO SLOTS IN FORGE */
+.forge-photo-slots { display: flex; gap: 10px; padding: 4px 0 8px; }
+.forge-photo-slot {
+  width: 72px; height: 72px;
+  border-radius: 10px;
+  border: 1px dashed #2a2a2a;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative; overflow: hidden;
+  background: #0a0a0a; flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+.forge-photo-slot:active { border-color: var(--accent); }
+.forge-photo-slot img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 9px;
+}
+.forge-photo-slot.is-primary { border: 1.5px solid #d4b978; }
+.forge-photo-slot .slot-empty-label {
+  font-size: 9px; color: #333; letter-spacing: 1px; text-transform: uppercase; text-align: center; line-height: 1.4;
+}
+.forge-photo-slot .slot-remove {
+  position: absolute; top: 3px; right: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(0,0,0,0.7); border: none;
+  color: #888; font-size: 10px; line-height: 16px; text-align: center;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.forge-photo-slot .slot-primary-badge {
+  position: absolute; bottom: 3px; left: 3px;
+  font-size: 7px; letter-spacing: 0.5px; color: #d4b978;
+  background: rgba(0,0,0,0.8); padding: 1px 4px; border-radius: 3px;
+  text-transform: uppercase; font-weight: 700;
+}
+
+/* CHAT HEADER AVATAR PILL */
+.chat-avatar-pill {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #141414; border: 1px solid #1f1f1f;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: #6b6560;
+  flex-shrink: 0; overflow: hidden; cursor: pointer;
+}
+.chat-avatar-pill img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+/* PHOTO LIGHTBOX */
+.photo-lightbox {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.92);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px;
+}
+.photo-lightbox img {
+  max-width: 90vw; max-height: 75vh;
+  border-radius: 12px; object-fit: contain;
+}
+.photo-lightbox-dots { display: flex; gap: 6px; }
+.photo-lightbox-dots .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #333; transition: background 0.2s;
+}
+.photo-lightbox-dots .dot.active { background: #d4b978; }
+.photo-lightbox-close {
+  position: absolute; top: 20px; right: 20px;
+  background: none; border: none; color: #555;
+  font-size: 22px; cursor: pointer; padding: 8px;
 }
 
 /* IE ENCOUNTER MODE */
@@ -1250,6 +1409,7 @@ select.cosm-input {
   <div class="view-panel forge-view hidden" id="view-forge">
     <div class="forge-scroll">
       <div class="forge-container" id="forge-container">
+              <div id="forge-photo-section" style="padding:4px 0 16px;display:none;"></div>
         <div class="forge-section open">
           <div class="forge-section-header">
             <span class="forge-section-title">Identity & Backstory</span>
@@ -1354,7 +1514,8 @@ select.cosm-input {
   </div>
 
  <div class="view-panel chat-view hidden" id="view-chat">
-  <div class="chat-header">
+    <div class="chat-header">
+    <div id="chat-avatar-pill" class="chat-avatar-pill"></div>
     <div class="chat-char-info">
       <div class="chat-char-name" id="chat-char-name">Character Name</div>
     </div>
@@ -2375,9 +2536,7 @@ function openIEPage(){
 function renderIEList(filterQuery = ''){
   const surface = document.getElementById('ie-list-surface');
   
-  // Show debug info on screen
   let debugInfo = '';
-  
   surface.innerHTML = '<div style="padding:20px;color:var(--muted);">Loading entities...</div>';
   
   getImmutableEntities().then(entities => {
@@ -2388,8 +2547,7 @@ function renderIEList(filterQuery = ''){
         <div class="ie-empty">
           No immutable entities yet.<br>
           These are forged over time.
-        </div>
-        <div style="margin-top:20px;padding:12px;background:#1a1a00;border:1px solid #333;border-radius:8px;font-size:10px;color:#888;white-space:pre-wrap;font-family:monospace;">DEBUG:\n${debugInfo}entities array is empty or null</div>`;
+        </div>`;
       return;
     }
     
@@ -2405,95 +2563,109 @@ function renderIEList(filterQuery = ''){
           || (e.archetype_tag||'').toLowerCase().includes(q)
           || (e.existential_function||'').toLowerCase().includes(q);
       });
-      debugInfo += 'After filter: ' + filtered.length + ' entities\n';
     } catch(filterErr) {
       surface.innerHTML = '<div style="padding:20px;color:#ff6060;background:#1a0000;border:1px solid #ff6060;border-radius:12px;font-size:14px;">FILTER ERROR -- check console.</div>';
-console.error('IE filter error:', filterErr);
+      console.error('IE filter error:', filterErr);
       return;
     }
     
     if(!filtered.length){
-      surface.innerHTML = `
-        <div class="ie-empty">
-          ${q ? 'No entities match search' : 'No immutable entities yet.'}
-        </div>
-       <div class="ie-empty">${q ? 'No entities match search' : 'No immutable entities yet.'}</div>`;
+      surface.innerHTML = `<div class="ie-empty">${q ? 'No entities match search' : 'No immutable entities yet.'}</div>`;
       return;
     }
     
     surface.innerHTML = '';
-    
-    let renderErrors = '';
-    
+    const grid = document.createElement('div');
+    grid.className = 'ie-cards-grid';
+
     filtered.forEach((e, idx) => {
-      try {
-        const isLocked = !!e.signature;
-        const date = new Date(e.locked_at || e.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-        
-        let models = [];
-        if (Array.isArray(e.model_variants)) {
-          models = e.model_variants;
-        } else if (typeof e.model_variants === 'string') {
-          try { models = JSON.parse(e.model_variants); } catch(err) { models = []; }
-        }
-        const modelStr = models.length ? models.map(m => m.model_id?.split('/').pop()).filter(Boolean).join(' · ') : '';
-        
-        const row = document.createElement('div');
-        row.className = 'ie-row';
-        row.innerHTML = `
-          <div class="ie-sigil${isLocked ? '' : ' draft'}">${e.sigil_svg || '◈'}</div>
-          <div class="ie-info">
-            <div class="ie-name">${escHtml(e.display_name||'Unnamed')}${isLocked ? '<span class="diamond">◆</span>' : ''}</div>
-            ${e.archetype_tag ? '<div class="ie-archetype">' + escHtml(e.archetype_tag) + '</div>' : ''}
-            ${e.existential_function ? '<div class="ie-function">' + escHtml(e.existential_function) + '</div>' : ''}
-            <div class="ie-meta">${isLocked ? 'locked' : 'draft'} · ${date}${modelStr ? ' · ' + modelStr : ''}</div>
-          </div>
-        `;
-        
-        if(!isLocked){
-          const lockBtn = document.createElement('button');
-          lockBtn.textContent = '◆ Lock';
-          lockBtn.style.cssText = 'margin-top:6px;background:none;border:1px solid var(--accent-dim);color:var(--accent);font-size:9px;padding:3px 10px;border-radius:6px;font-weight:700;letter-spacing:1px;';
-          lockBtn.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            devQuickLock(e.id);
-          });
-          row.querySelector('.ie-info').appendChild(lockBtn);
-        }
-        
-       row.addEventListener('click', () => {
-  if(isLocked) openIEBottomSheet(e.id);
-  // draft -- do nothing on row tap
+  try {
+    const isLocked = !!e.signature;
+    const date = new Date(e.locked_at || e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    let models = [];
+    if (Array.isArray(e.model_variants)) {
+      models = e.model_variants;
+    } else if (typeof e.model_variants === 'string') {
+      try { models = JSON.parse(e.model_variants); } catch(err) { models = []; }
+    }
+    const modelStr = models.length ? models.map(m => m.model_id?.split('/').pop()).filter(Boolean).join(' · ') : '';
+
+    const card = document.createElement('div');
+card.className = 'ie-card' + (isLocked ? '' : ' draft');
+card.innerHTML = `
+  <div class="ie-card-text">
+    <div class="ie-card-name">${escHtml(e.display_name || 'Unnamed')}${isLocked ? ' ◆' : ''}</div>
+    ${e.archetype_tag ? '<div class="ie-card-archetype">' + escHtml(e.archetype_tag) + '</div>' : ''}
+    ${e.existential_function ? '<div class="ie-card-function">' + escHtml(e.existential_function) + '</div>' : ''}
+    <div class="ie-card-meta">${isLocked ? 'locked' : 'draft'} · ${date}${modelStr ? ' · ' + modelStr : ''}</div>
+    <div class="ie-card-actions"></div>
+  </div>
+  <div class="ie-card-sigil pulse">
+    ${generateIESigil(e.id)}
+  </div>
+`;
+    const actions = card.querySelector('.ie-card-actions');
+
+    if (!isLocked) {
+      const lockBtn = document.createElement('button');
+      lockBtn.textContent = '◆ Lock';
+      lockBtn.style.cssText = 'background:none;border:1px solid var(--accent-dim);color:var(--accent);font-size:9px;padding:3px 10px;border-radius:6px;font-weight:700;letter-spacing:1px;';
+      lockBtn.addEventListener('click', ev => { ev.stopPropagation(); devQuickLock(e.id); });
+      actions.appendChild(lockBtn);
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = '✎ Edit';
+      editBtn.style.cssText = 'background:none;border:1px solid var(--border);color:var(--muted);font-size:9px;padding:3px 10px;border-radius:6px;font-weight:700;letter-spacing:1px;';
+      editBtn.addEventListener('click', ev => { ev.stopPropagation(); openIEForge(e.id); });
+      actions.appendChild(editBtn);
+    }
+
+    card.addEventListener('click', () => { if (isLocked) openIEBottomSheet(e.id); });
+
+    // long‑press unlock (dev)
+    let devLP = null;
+    card.addEventListener('touchstart', () => { devLP = setTimeout(() => devUnlockIE(e.id), 2000); }, { passive: true });
+    card.addEventListener('touchend', () => clearTimeout(devLP));
+
+    grid.appendChild(card);
+
+  } catch(innerErr) {
+    console.error('IE card render error', idx, e.id, innerErr);
+  }
 });
 
-// DEV ONLY -- remove before release
-let devLongPress = null;
-row.addEventListener('touchstart', () => {
-  devLongPress = setTimeout(() => devUnlockIE(e.id), 2000);
-}, {passive:true});
-row.addEventListener('touchend', () => clearTimeout(devLongPress));
+    surface.appendChild(grid);
 
-if(!isLocked){
-  const editBtn = document.createElement('button');
-  editBtn.style.cssText = 'background:none;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:5px 10px;border-radius:8px;font-weight:700;white-space:nowrap;flex-shrink:0;margin-left:auto;';
-  editBtn.textContent = '✎ Edit';
-  editBtn.addEventListener('click', ev => {
-    ev.stopPropagation();
-    openIEForge(e.id);
-  });
-  row.appendChild(editBtn);
-}
-surface.appendChild(row);
-
-      } catch(innerErr) {
-        console.error('IE render error entity', idx, e.id, innerErr);
-      }
-    });
-    
   }).catch(err => {
     surface.innerHTML = '<div style="padding:20px;color:#ff6060;background:#1a0000;border:1px solid #ff6060;border-radius:12px;font-size:14px;">DATABASE ERROR -- check console.</div>';
-console.error('IE list DB error:', err);
+    console.error('IE list DB error:', err);
   });
+}
+
+// SIGIL GENERATOR
+function generateIESigil(id) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash) + id.charCodeAt(i);
+    hash |= 0;
+  }
+  const abs = Math.abs(hash);
+  const r1 = 14 + (abs % 6);
+  const r2 = 6  + (abs % 5);
+  const angle = (abs % 360) * (Math.PI / 180);
+  const x2 = 22 + Math.cos(angle) * 8;
+  const y2 = 22 + Math.sin(angle) * 8;
+  const rot = (abs % 360);
+  return `<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+    <g transform="rotate(${rot} 22 22)">
+      <circle cx="22" cy="22" r="${r1}" fill="none" stroke="#c8a050" stroke-width="1"/>
+      <circle cx="22" cy="22" r="${r2}" fill="#c8a050" opacity="0.7"/>
+      <line x1="${22 - r1}" y1="22" x2="${22 + r1}" y2="22" stroke="#c8a050" stroke-width="0.5" opacity="0.5"/>
+      <line x1="22" y1="${22 - r1}" x2="22" y2="${22 + r1}" stroke="#c8a050" stroke-width="0.5" opacity="0.5"/>
+      <circle cx="${x2}" cy="${y2}" r="2" fill="#fff" opacity="0.6"/>
+    </g>
+  </svg>`;
 }
 
 function openIEBottomSheet(id){
@@ -2669,10 +2841,8 @@ async function openIEForge(id){
     showToast('Entity not found');
     return;
   }
-
   activeCharId = null;
-  
-  // Map IE fields to forge field IDs
+// Map IE fields to forge field IDs
   document.getElementById('forge-name').value = ie.display_name || '';
   document.getElementById('forge-role').value = ie.archetype_tag || '';
   document.getElementById('forge-backstory').value = ie.system_prompt_core || '';
@@ -2909,17 +3079,30 @@ async function restoreDiscourse(id) {
 /* CHARACTERS */
 const getCharacters=()=>dbGetAll("characters");
 const getCharacter=id=>dbGet("characters",id);
+
 async function createCharacter(data={}){const id="c_"+Date.now(),now=Date.now(),char={id,name:"New Character",role:"",backstory:"",personality:"",lorebook:"",scenario:"",inclination:"",relationships:"",pc_info:"",temperature:1,created_at:now,updated_at:now,...data};await dbPut("characters",char);return char;}
+
 async function updateCharacter(id,updates){const char=await getCharacter(id);if(!char)return;const u={...char,...updates,updated_at:Date.now()};await dbPut("characters",u);return u;}
-async function deleteCharacter(id){const c=await getCharacter(id);if(!c)return;await dbPut("characters",{...c,isDeleted:true,deleted_at:Date.now()});}
+
+async function deleteCharacter(id){
+  const c = await getCharacter(id);
+  if (!c) return;
+  await deleteAllCharacterPhotos(id);
+  await dbPut("characters", {...c, isDeleted:true, deleted_at:Date.now()});
+}
+
 const purgeCharacter=id=>dbDelete("characters",id);
 async function restoreCharacter(id){const c=await getCharacter(id);if(!c)return;const{isDeleted,deleted_at,...rest}=c;await dbPut("characters",{...rest,updated_at:Date.now()});}
+
 async function getDeletedCharacters(){const a=await dbGetAll("characters");return a.filter(c=>c.isDeleted).sort((a,b)=>b.deleted_at-a.deleted_at);}
 
 /* MOSAIC */
 async function getMosaicTile(dId){if(mosaicCache[dId]!==undefined)return mosaicCache[dId];const t=await dbGetByIndex("cosm_mosaic_tiles","discourse_id",dId);if(!t.length){mosaicCache[dId]=null;return null;}t.sort((a,b)=>b.created_at-a.created_at);mosaicCache[dId]=t[0];return t[0];}
+
 async function saveMosaicTile(dId,anchors){const e=await getMosaicTile(dId);if(e)await dbDelete("cosm_mosaic_tiles",e.id);const id="m_"+Date.now(),tile={id,discourse_id:dId,anchors,created_at:Date.now()};await dbPut("cosm_mosaic_tiles",tile);mosaicCache[dId]=tile;}
+
 async function deleteMosaicTile(dId){const t=await getMosaicTile(dId);if(t)await dbDelete("cosm_mosaic_tiles",t.id);mosaicCache[dId]=null;}
+
 async function getBacklink(dId){const l=await dbGetByIndex("cosm_backlinks","discourse_id",dId);return l.length>0?l[0]:null;}
 
 /* BURN DISC */
@@ -4128,30 +4311,43 @@ async function renderSanctuaryView(){
     const strip = document.createElement('div');
     strip.className = 'ie-strip';
     
-    for (const ie of filteredIEs) {
-      const isLocked = !!ie.signature;
-      const card = document.createElement('div');
-      card.className = 'ie-deck-card' + (isLocked ? '' : ' draft');
-      
-      card.innerHTML = `
-        <div class="ie-deck-sigil">${ie.sigil_svg || '◈'}</div>
-        <div class="ie-deck-info">
-          <div class="ie-deck-name">${escHtml(ie.display_name || 'Unnamed')}${isLocked ? '' : ' ◇'}</div>
-          ${ie.archetype_tag ? `<div class="ie-deck-archetype">${escHtml(ie.archetype_tag)}</div>` : ''}
-        </div>
-      `;
-      
-      card.addEventListener('click', () => {
-        if (isLocked) {
-          openIEBottomSheet(ie.id);
-        } else {
-          showToast('◈ Draft Entity. Go to ∞ Immutable page to forge.');
-        }
-      });
-      
-      strip.appendChild(card);
-    }
-    
+        // Shuffle on every render
+    const shuffledIEs = [...filteredIEs].sort(() => Math.random() - 0.5);
+
+    for (const ie of shuffledIEs) {
+  const isLocked = !!ie.signature;
+  const card = document.createElement('div');
+  card.className = 'ie-card' + (isLocked ? '' : ' draft');
+  card.innerHTML = `
+    <div class="ie-card-text">
+      <div class="ie-card-name">${escHtml(ie.display_name || 'Unnamed')}${isLocked ? ' ◆' : ''}</div>
+      ${ie.archetype_tag ? '<div class="ie-card-archetype">' + escHtml(ie.archetype_tag) + '</div>' : ''}
+      ${ie.existential_function ? '<div class="ie-card-function">' + escHtml(ie.existential_function) + '</div>' : ''}
+    </div>
+    <div class="ie-card-sigil pulse">
+      ${generateIESigil(ie.id)}
+    </div>
+  `;
+  card.addEventListener('click', () => {
+    if (isLocked) openIEBottomSheet(ie.id);
+    else showToast('◈ Draft Entity. Go to ∞ Immutable page to forge.');
+  });
+  strip.appendChild(card);
+}
+        // CTA card -- always last
+    const ctaCard = document.createElement('div');
+ctaCard.className = 'ie-card';
+ctaCard.style.cssText = 'border-style: dashed; opacity: 0.6;';
+ctaCard.innerHTML = `
+  <div class="ie-card-text">
+    <div class="ie-card-name" style="color: var(--accent-dim);">All Entities</div>
+    <div class="ie-card-function">View the full archive</div>
+  </div>
+  <div class="ie-card-sigil" style="opacity: 0.5;">∞</div>
+`;
+ctaCard.addEventListener('click', () => openIEPage());
+strip.appendChild(ctaCard);
+
     surface.appendChild(strip);
   }
 
@@ -4182,16 +4378,27 @@ async function renderSanctuaryView(){
       card.className = 'character-card card';
       if (selectedItems.has(c.id)) card.classList.add('card-selected'); 
       
+            const primarySlot = (c.image !== undefined && c.image !== null && c.image !== '') ? Number(c.image) : -1;
       card.innerHTML = `
-        <div>
-          <div class="char-card-name">${escHtml(c.name)}</div>
-          <div class="char-card-role">${escHtml(c.role || 'No role assigned')}</div>
+        <div class="char-card-header">
+          <div class="char-avatar" id="cavatar-${c.id}">${escHtml(c.name.charAt(0).toUpperCase())}</div>
+          <div class="char-card-header-info">
+            <div class="char-card-name">${escHtml(c.name)}</div>
+            <div class="char-card-role">${escHtml(c.role || 'No role assigned')}</div>
+          </div>
         </div>
         <div class="char-card-footer">
-          <div class="char-card-meta">STANDARD · ${new Date(c.updated_at).toLocaleDateString()}</div>
+          <div class="char-card-meta">CUSTOM · ${new Date(c.updated_at).toLocaleDateString()}</div>
         </div>
       `;
-      
+      if (primarySlot >= 0) {
+        loadCharacterPhoto(c.id, primarySlot).then(url => {
+          if (!url) return;
+          const av = card.querySelector('#cavatar-' + c.id);
+          if (!av) return;
+          av.innerHTML = '<img src="' + url + '" alt="">';
+        });
+      }
       card.addEventListener('click', () => {
         if (longPressConsumed) { longPressConsumed = false; return; }
         if (selectMode) { toggleSelectItem(c.id); return; } 
@@ -4229,6 +4436,14 @@ async function openCharacterForge(id){
   document.getElementById('forge-temp').value=c.temperature||1;
   document.getElementById('forge-temp-val').textContent=Number(c.temperature||1).toFixed(1);
   showPanel('view-forge');
+    // Photo slots -- custom characters only
+  const photoSection = document.getElementById('forge-photo-section');
+  if (id) {
+    photoSection.style.display = 'block';
+    await renderForgePhotoSlots(id);
+  } else {
+    photoSection.style.display = 'none';
+  }
 const roles=getPersonaRoles();
 const roleSel=document.getElementById('forge-persona-role');
 roleSel.innerHTML='<option value="">Default (global persona only)</option>';
@@ -4319,7 +4534,22 @@ async function openChat(id){
   document.getElementById('btn-chat-edit').style.display = '';// reset any stuck send state
   activeCharId = id;
   const c = await getCharacter(id);
-  document.getElementById('chat-char-name').textContent = c.name;
+    // Avatar pill -- show primary photo or letter initial
+  const pill = document.getElementById('chat-avatar-pill');
+  pill.innerHTML = escHtml(c.name.charAt(0).toUpperCase());
+  pill.onclick = null;
+  const primarySlot = (c.image !== undefined && c.image !== null && c.image !== '') ? Number(c.image) : -1;
+  if (primarySlot >= 0) {
+    loadCharacterPhoto(c.id, primarySlot).then(url => {
+      if (url) pill.innerHTML = '<img src="' + url + '" alt="">';
+    });
+  }
+  // Tap pill to open lightbox if photos exist
+  pill.onclick = async () => {
+    const urls = (await Promise.all([0,1,2].map(s => loadCharacterPhoto(c.id, s)))).filter(Boolean);
+    if (!urls.length) return;
+    openPhotoLightbox(urls);
+  };
   document.getElementById('chat-messages').innerHTML = '';
   document.getElementById('chat-input').value = '';
 document.getElementById('chat-input').style.height = 'auto';
@@ -5871,6 +6101,123 @@ function cancelLP(card){
 /* TOAST & UTILS */
 function showToast(msg){const t=document.getElementById("cosm-toast");t.textContent=msg;t.style.opacity="1";clearTimeout(t._timer);t._timer=setTimeout(()=>{t.style.opacity="0";},2200);}
 function escHtml(str){if(!str)return"";return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;");}
+
+function openPhotoLightbox(urls) {
+  let current = 0;
+  const lb = document.createElement('div');
+  lb.className = 'photo-lightbox';
+  const render = () => {
+    lb.innerHTML = '';
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'photo-lightbox-close';
+    closeBtn.textContent = '✕';
+    closeBtn.onclick = () => lb.remove();
+    lb.appendChild(closeBtn);
+    const img = document.createElement('img');
+    img.src = urls[current];
+    lb.appendChild(img);
+    if (urls.length > 1) {
+      const dots = document.createElement('div');
+      dots.className = 'photo-lightbox-dots';
+      urls.forEach((_, i) => {
+        const d = document.createElement('div');
+        d.className = 'dot' + (i === current ? ' active' : '');
+        d.onclick = () => { current = i; render(); };
+        dots.appendChild(d);
+      });
+      lb.appendChild(dots);
+    }
+    lb.onclick = e => { if (e.target === lb) lb.remove(); };
+  };
+  render();
+  document.body.appendChild(lb);
+}
+
+async function renderForgePhotoSlots(charId) {
+  const container = document.getElementById('forge-photo-section');
+  if (!container) return;
+  const c = charId ? await getCharacter(charId) : null;
+  const primarySlot = c && c.image !== '' && c.image !== null && c.image !== undefined ? Number(c.image) : 0;
+
+  container.innerHTML = '';
+  const label = document.createElement('div');
+  label.style.cssText = 'font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;font-weight:700;opacity:0.6;';
+  label.textContent = 'Photos';
+  container.appendChild(label);
+
+  const slots = document.createElement('div');
+  slots.className = 'forge-photo-slots';
+
+  for (let i = 0; i < 3; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'forge-photo-slot' + (i === primarySlot ? ' is-primary' : '');
+    slot.dataset.slot = i;
+
+    const url = charId ? await loadCharacterPhoto(charId, i) : null;
+    if (url) {
+      const img = document.createElement('img');
+      img.src = url;
+      slot.appendChild(img);
+
+      if (i === primarySlot) {
+        const badge = document.createElement('div');
+        badge.className = 'slot-primary-badge';
+        badge.textContent = 'Primary';
+        slot.appendChild(badge);
+      }
+
+      const rmBtn = document.createElement('button');
+      rmBtn.className = 'slot-remove';
+      rmBtn.textContent = '✕';
+      rmBtn.onclick = async e => {
+        e.stopPropagation();
+        if (!confirm('Remove this photo?')) return;
+        await deleteCharacterPhoto(charId, i);
+        // If removed primary, reset to first available
+        if (i === primarySlot) await updateCharacter(charId, { image: '' });
+        await renderForgePhotoSlots(charId);
+      };
+      slot.appendChild(rmBtn);
+
+      // Tap photo to set as primary
+      slot.onclick = async () => {
+        await updateCharacter(charId, { image: String(i) });
+        await renderForgePhotoSlots(charId);
+      };
+    } else {
+      const lbl = document.createElement('div');
+      lbl.className = 'slot-empty-label';
+      lbl.innerHTML = '+<br>Photo';
+      slot.appendChild(lbl);
+
+      slot.onclick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async () => {
+          const file = input.files[0];
+          if (!file) return;
+          if (file.size > 3 * 1024 * 1024) { showToast('Max 3MB per photo.'); return; }
+          showToast('Encrypting...');
+          await storeCharacterPhoto(charId, i, file);
+          // Set as primary if no primary yet
+          if (!c || c.image === '' || c.image === null || c.image === undefined) {
+            await updateCharacter(charId, { image: String(i) });
+          }
+          await renderForgePhotoSlots(charId);
+        };
+        input.click();
+      };
+    }
+    slots.appendChild(slot);
+  }
+  container.appendChild(slots);
+  const hint = document.createElement('div');
+  hint.style.cssText = 'font-size:9px;color:var(--muted);opacity:0.4;margin-top:6px;';
+  hint.textContent = 'Tap photo to set as primary. Max 3MB each.';
+  container.appendChild(hint);
+}
+
 /* SUPABASE DELTA SYNC ENGINE */
 async function getCloudCryptoKey() {
   if (!getSovereignKey()) throw new Error("Key not loaded");
@@ -6900,6 +7247,54 @@ async function unlockWithFallbackKey() {
   } catch(e) {
     showError("⚠ INVALID KEY");
   }
+}
+
+// ── CHARACTER PHOTO STORAGE (OPFS, AES-256-GCM) ──────────────────────────────
+async function storeCharacterPhoto(charId, slot, file) {
+  const ab = await file.arrayBuffer();
+  const cryptoKey = await getCloudCryptoKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, ab);
+  const payload = JSON.stringify({
+    iv: Array.from(iv),
+    ct: Array.from(new Uint8Array(ct)),
+    mime: file.type
+  });
+  const root = await navigator.storage.getDirectory();
+  const fh = await root.getFileHandle('cp_' + charId + '_' + slot, { create: true });
+  const w = await fh.createWritable();
+  await w.write(new TextEncoder().encode(payload));
+  await w.close();
+}
+
+async function loadCharacterPhoto(charId, slot) {
+  try {
+    const root = await navigator.storage.getDirectory();
+    const fh = await root.getFileHandle('cp_' + charId + '_' + slot, { create: false });
+    const file = await fh.getFile();
+    const text = await file.text();
+    const { iv, ct, mime } = JSON.parse(text);
+    const cryptoKey = await getCloudCryptoKey();
+    const dec = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: new Uint8Array(iv) },
+      cryptoKey,
+      new Uint8Array(ct)
+    );
+    return URL.createObjectURL(new Blob([dec], { type: mime }));
+  } catch(e) { return null; }
+}
+
+async function deleteCharacterPhoto(charId, slot) {
+  try {
+    const root = await navigator.storage.getDirectory();
+    await root.removeEntry('cp_' + charId + '_' + slot);
+  } catch(e) {}
+}
+
+async function deleteAllCharacterPhotos(charId) {
+  await deleteCharacterPhoto(charId, 0);
+  await deleteCharacterPhoto(charId, 1);
+  await deleteCharacterPhoto(charId, 2);
 }
 
 // ─── SECURE KEY STORAGE ─────────────────────────────────────────────────────
