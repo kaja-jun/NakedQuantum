@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.33.5</title>
+<title>NakedQuantum v0.34</title>
 <style>
 :root {
   --bg: #000000;
@@ -6776,15 +6776,19 @@ async function unlockWithPRF(){
 }
 
 // ── THE SELF-DESTRUCT SEQUENCE ──
+// ── THE SELF-DESTRUCT SEQUENCE ──
 async function obliterateAbyss() {
   if (!confirm("WARNING: This will permanently delete ALL data, characters, and settings. This cannot be undone. Continue?")) return;
-  const check = prompt("Type BURN to permanently destroy your Abyss:");
-  if (check !== "BURN") {
-    showToast("Obliteration cancelled.");
+  
+  const check = prompt("To strip the Abyss back to nothing and start over, type NAKED AGAIN:");
+  
+  // Exact match required. 
+  if (check !== "NAKED AGAIN") {
+    showToast("The Abyss remains.");
     return;
   }
   
-  showToast("Burning the Abyss...");
+  showToast("Stripping back to zero...");
   
   // 1. Destroy OPFS SQLite DB
   try {
