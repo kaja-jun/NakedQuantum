@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.34.6</title>
+<title>NakedQuantum v0.35</title>
 <style>
 :root {
   --bg: #000000;
@@ -2596,6 +2596,157 @@ const setEncryptionKey = (keyBytes) => _workerReady.then(() => new Promise((res,
   _worker.postMessage({ id: msgId, action: 'SET_KEY', data: { keyBytes: Array.from(keyBytes) } });
 }));
 
+// --- PHOTO STORAGE ENGINE (Unencrypted IndexedDB) ---
+function openPhotoDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('nq_photos', 1);
+    req.onupgradeneeded = (e) => {
+      e.target.result.createObjectStore('photos');
+    };
+    req.onsuccess = (e) => resolve(e.target.result);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+async function loadCharacterPhoto(charId, slot) {
+  try {
+    const db = await openPhotoDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction('photos', 'readonly');
+      const req = tx.objectStore('photos').get(`${charId}_${slot}`);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch (e) { return null; }
+}
+
+async function saveCharacterPhoto(charId, slot, dataUrl) {
+  const db = await openPhotoDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('photos', 'readwrite');
+    tx.objectStore('photos').put(dataUrl, `${charId}_${slot}`);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e);
+  });
+}
+
+async function deleteCharacterPhoto(charId, slot) {
+  const db = await openPhotoDB();
+  return new Promise((resolve) => {
+    const tx = db.transaction('photos', 'readwrite');
+    tx.objectStore('photos').delete(`${charId}_${slot}`);
+    tx.oncomplete = () => resolve();
+  });
+}
+
+async function deleteAllCharacterPhotos(charId) {
+  for(let i=0; i<3; i++) {
+    await deleteCharacterPhoto(charId, i);
+  }
+}
+
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = e => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 512; // Keep it tight to save quota
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+        } else {
+          if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#1a1812'; // Matte background for transparent PNGs
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => reject('Image load failed');
+    };
+    reader.onerror = () => reject('File read failed');
+  });
+}
+
+// --- PHOTO UI RENDERER ---
+async function renderForgePhotos(charId, primarySlotStr) {
+  const section = document.getElementById('forge-photo-section');
+  if (!section) return;
+  
+  let primarySlot = (primarySlotStr !== undefined && primarySlotStr !== null && primarySlotStr !== '') ? Number(primarySlotStr) : -1;
+  
+  section.innerHTML = `<div class="cards-section-label" style="margin-top:0;">Visages</div><div class="forge-photo-slots"></div>`;
+  const slotsContainer = section.querySelector('.forge-photo-slots');
+  
+  for (let i = 0; i < 3; i++) {
+    const slot = document.createElement('div');
+    const isPrimary = (i === primarySlot);
+    slot.className = 'forge-photo-slot' + (isPrimary ? ' is-primary' : '');
+    
+    const photoData = await loadCharacterPhoto(charId, i);
+    
+    if (photoData) {
+      slot.innerHTML = `
+        <img src="${photoData}" alt="">
+        ${isPrimary ? `<div class="slot-primary-badge">Primary</div>` : ''}
+        <div class="slot-remove">✕</div>
+      `;
+      
+      // Delete
+      slot.querySelector('.slot-remove').onclick = async (e) => {
+        e.stopPropagation();
+        await deleteCharacterPhoto(charId, i);
+        if (isPrimary) {
+           await updateCharacter(charId, { image: '' }); // Unset primary
+        }
+        renderForgePhotos(charId, isPrimary ? '' : primarySlotStr);
+      };
+      
+      // Set as Primary
+      slot.onclick = async () => {
+         if (primarySlot === i) return;
+         await updateCharacter(charId, { image: String(i) });
+         renderForgePhotos(charId, String(i));
+      };
+      
+    } else {
+      slot.innerHTML = `<div class="slot-empty-label">+</div>`;
+      slot.onclick = () => {
+         const input = document.createElement('input');
+         input.type = 'file';
+         input.accept = 'image/*';
+         input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+              const compressed = await compressImage(file);
+              await saveCharacterPhoto(charId, i, compressed);
+              // Auto-set as primary if it's the first photo
+              if (primarySlot === -1) {
+                 await updateCharacter(charId, { image: String(i) });
+                 primarySlot = i;
+              }
+              renderForgePhotos(charId, String(primarySlot));
+            } catch(err) {
+              showToast("Failed to process photo");
+            }
+         };
+         input.click();
+      };
+    }
+    slotsContainer.appendChild(slot);
+  }
+}
+
 /* IMMUTABLE ENTITY */
 const getImmutableEntities = () => dbGetAll("immutable_entities");
 const getImmutableEntity = (id) => dbGet("immutable_entities", id);
@@ -4558,7 +4709,18 @@ roles.forEach(r=>{
   if(r.id===c.player_role_id)o.selected=true;
   roleSel.appendChild(o);
 });
-}
+// ---> INJECT AT THE BOTTOM OF openCharacterForge() <---
+  const photoSection = document.getElementById('forge-photo-section');
+  if (photoSection) {
+    // Only show photos for standard characters, keep hidden for Immutable Entities
+    if (id && document.getElementById('forge-container').dataset.isIE !== 'true') {
+      photoSection.style.display = 'block';
+      renderForgePhotos(id, c.image);
+    } else {
+      photoSection.style.display = 'none';
+    }
+  }
+} // end of openCharacterForge
 
 async function saveCharacterForge(){
   const isIE = document.getElementById('forge-container').dataset.isIE === 'true';
@@ -7168,7 +7330,6 @@ async function unlockWithPRF(){
   }
 }
 
-// ── THE SELF-DESTRUCT SEQUENCE ──
 // ── THE SELF-DESTRUCT SEQUENCE ──
 async function obliterateAbyss() {
   if (!confirm("WARNING: This will permanently delete ALL data, characters, and settings. This cannot be undone. Continue?")) return;
