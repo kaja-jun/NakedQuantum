@@ -4579,7 +4579,6 @@ async function saveCharacterForge(){
       return;
     }
 
-    // Parse model variants from the model textarea
     const modelVariants = currentIEModels.length > 0 
       ? currentIEModels.map(line => ({model_id: line}))
       : [{model_id: 'google/gemini-2.5-flash-lite'}, {model_id: 'deepseek/deepseek-v4-flash'}];
@@ -4603,7 +4602,7 @@ async function saveCharacterForge(){
     return;
   }
 
-  // --- Regular character save (only runs if NOT IE mode) ---
+  // --- Regular character save ---
   const data = {
     name: document.getElementById('forge-name').value.trim() || "Unnamed Soul",
     role: document.getElementById('forge-role').value.trim(),
@@ -4618,36 +4617,16 @@ async function saveCharacterForge(){
     temperature: parseFloat(document.getElementById('forge-temp').value)
   };
   
-  let savedId = activeCharId;
-  if (activeCharId) {
+  let savedChar;
+  if(activeCharId) {
     await updateCharacter(activeCharId, data);
-    savedId = activeCharId;
+    savedChar = await getCharacter(activeCharId);
   } else {
-    const newChar = await createCharacter(data);
-    savedId = newChar.id;
+    savedChar = await createCharacter(data);
+    activeCharId = savedChar.id;
   }
-
-  // FLUSH PENDING PHOTOS
-  if (Object.keys(pendingForgePhotos).length > 0) {
-    try {
-      for (const [slot, file] of Object.entries(pendingForgePhotos)) {
-        await storeCharacterPhoto(savedId, Number(slot), file);
-      }
-      const primaryToSave = pendingForgePrimary >= 0
-        ? pendingForgePrimary
-        : Number(Object.keys(pendingForgePhotos).pop());
-      await updateCharacter(savedId, { image: String(primaryToSave) });
-      pendingForgePhotos = {};
-      pendingForgePrimary = -1;
-      showToast("Soul & Photos Anchored ◆");
-    } catch(e) {
-      console.error('Photo save failed:', e);
-      showToast("Soul saved, photos failed ◆");
-    }
-  } else {
-    showToast("Soul Anchored ◆");
-  }
-
+  
+  showToast("Soul Anchored ◆");
   closeCharacterForge();
 }
 
@@ -6299,99 +6278,76 @@ async function renderForgePhotoSlots(charId) {
   const container = document.getElementById('forge-photo-section');
   if (!container) return;
 
-  // Load existing character
+  // Load existing state
   let c = null;
   try {
     c = charId ? await getCharacter(charId) : null;
-  } catch (e) {
+  } catch(e) {
     console.error('getCharacter failed:', e);
     c = null;
   }
 
   let primarySlot = -1;
-
   if (c && c.image !== '' && c.image !== null && c.image !== undefined) {
     primarySlot = Number(c.image);
   }
 
-  // Build slot data
+  // Build slot data: for existing chars load from OPFS, for new use pendingForgePhotos
   const slotUrls = [null, null, null];
-
   if (charId) {
-    // Existing character → load from storage
     for (let i = 0; i < 3; i++) {
       try {
         slotUrls[i] = await loadCharacterPhoto(charId, i);
-      } catch (e) {
+      } catch(e) {
         slotUrls[i] = null;
       }
     }
   } else {
-    // New character → use pending
     for (let i = 0; i < 3; i++) {
       if (pendingForgePhotos[i]) {
         try {
           slotUrls[i] = URL.createObjectURL(pendingForgePhotos[i]);
-        } catch (e) {
+        } catch(e) {
           slotUrls[i] = null;
         }
       }
     }
-
     // Auto-primary for pending
     if (pendingForgePrimary === -1) {
       for (let i = 2; i >= 0; i--) {
-        if (pendingForgePhotos[i]) {
-          primarySlot = i;
-          break;
-        }
+        if (pendingForgePhotos[i]) { primarySlot = i; break; }
       }
     } else {
       primarySlot = pendingForgePrimary;
     }
   }
 
-  // Auto-primary fallback for existing
+  // Auto-primary for existing: last uploaded if user hasn't set one
   if (charId && primarySlot === -1) {
     for (let i = 2; i >= 0; i--) {
-      if (slotUrls[i]) {
-        primarySlot = i;
-        break;
-      }
+      if (slotUrls[i]) { primarySlot = i; break; }
     }
   }
 
-  // CLEAR UI
+  // CLEAR AND REBUILD
   container.innerHTML = '';
 
-  // Label
   const label = document.createElement('div');
-  label.style.cssText = `
-    font-size:9px;
-    letter-spacing:2px;
-    color:var(--text);
-    text-transform:uppercase;
-    margin-bottom:10px;
-    font-weight:700;
-    opacity:0.6;
-  `;
+  label.style.cssText = 'font-size:9px;letter-spacing:2px;color:var(--text);text-transform:uppercase;margin-bottom:10px;font-weight:700;opacity:0.6;';
   label.textContent = 'Photos';
   container.appendChild(label);
 
-  // Wrapper
   const slotsWrapper = document.createElement('div');
   slotsWrapper.className = 'forge-photo-slots';
 
-  // Build slots
   for (let i = 0; i < 3; i++) {
     const slot = document.createElement('div');
     const isPrimary = (i === primarySlot);
-
     slot.className = 'forge-photo-slot' + (isPrimary ? ' is-primary' : '');
     slot.dataset.slot = i;
 
     if (slotUrls[i]) {
-      // FILLED SLOT
+      // Filled slot
       const img = document.createElement('img');
       img.src = slotUrls[i];
       slot.appendChild(img);
@@ -6403,22 +6359,19 @@ async function renderForgePhotoSlots(charId) {
         slot.appendChild(badge);
       }
 
-      // Click → open menu
-      slot.onclick = () => {
-        showSlotMenu(i, charId, slotUrls[i], primarySlot);
-      };
+      slot.onclick = () => showSlotMenu(i, charId, slotUrls[i], primarySlot);
 
     } else {
-      // EMPTY SLOT
+      // Empty slot
       const lbl = document.createElement('div');
       lbl.className = 'slot-empty-label';
       lbl.innerHTML = '+<br>Photo';
       slot.appendChild(lbl);
 
-      // Click → upload
-      slot.onclick = () => {
-        triggerPhotoUpload(i, charId);
-      };
+      // FIX: Capture values in closure to prevent stale references
+      const capturedCharId = charId;
+      const capturedSlotIndex = i;
+      slot.onclick = () => triggerPhotoUpload(capturedSlotIndex, capturedCharId);
     }
 
     slotsWrapper.appendChild(slot);
@@ -7623,43 +7576,26 @@ async function unlockWithFallbackKey() {
 
 // ── CHARACTER PHOTO STORAGE (OPFS, AES-256-GCM) ──────────────────────────────
 async function storeCharacterPhoto(charId, slot, file) {
-  // Since we passed a Blob, arrayBuffer() is safe and guaranteed to work here.
-  const ab = await file.arrayBuffer();
-  
-  let cryptoKey;
-  try {
-    cryptoKey = await getCloudCryptoKey();
-  } catch(e) {
-    cryptoKey = null; // Key not loaded, will safely fall back
+  // FIX: Guard against missing Sovereign Key
+  if (!getSovereignKey()) {
+    showToast('⚠ Unlock Abyss first');
+    return;
   }
-
+  const ab = await file.arrayBuffer();
+  const cryptoKey = await getCloudCryptoKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, ab);
+  const payload = JSON.stringify({
+    iv: Array.from(iv),
+    ct: Array.from(new Uint8Array(ct)),
+    mime: file.type
+  });
   const root = await navigator.storage.getDirectory();
   const fh = await root.getFileHandle('cp_' + charId + '_' + slot, { create: true });
-
-  if (cryptoKey) {
-    try {
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, ab);
-      const payload = JSON.stringify({
-        iv: Array.from(iv),
-        ct: Array.from(new Uint8Array(ct)),
-        mime: file.type
-      });
-      const w = await fh.createWritable();
-      await w.write(new TextEncoder().encode(payload));
-      await w.close();
-      return; // Success, exit early
-    } catch(e) {
-      console.warn('Encrypted photo save failed, falling back:', e.message);
-    }
-  }
-
-  // Fallback: store unencrypted (Either no key, or encryption pipeline failed)
   const w = await fh.createWritable();
-  await w.write(ab);
+  await w.write(new TextEncoder().encode(payload));
   await w.close();
 }
-
 async function loadCharacterPhoto(charId, slot) {
   try {
     const root = await navigator.storage.getDirectory();
