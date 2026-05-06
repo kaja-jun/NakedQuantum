@@ -7186,7 +7186,7 @@ async function obliterateAbyss() {
 }
 
 // WEBAUTHN RESET
-async function resetWebAuthnRegistration() {
+window.resetWebAuthnRegistration = async function() {
   const currentSK = getSovereignKey();
   if (!currentSK) {
     showToast('⚠ No active Sovereign Key. Unlock Abyss first.');
