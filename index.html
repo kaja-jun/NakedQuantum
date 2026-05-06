@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.35.3</title>
+<title>NakedQuantum v0.35.4</title>
 <style>
 :root {
   --bg: #000000;
@@ -478,18 +478,19 @@ button {
 .lineage-level.root .lineage-level-name { opacity: 0.9; }
 /* Expand/collapse toggle */
 .lineage-expand {
-  width: 32px;
-  height: 32px;
-  line-height: 32px;
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
   text-align: center;
-  font-size: 12px;
+  font-size: 16px;
   color: var(--muted);
   cursor: pointer;
   flex-shrink: 0;
-  opacity: 0.5;
+  opacity: 0.55;
   transition: opacity 0.15s, transform 0.2s;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .lineage-expand:active { opacity: 0.9; }
 .lineage-expand.open { transform: rotate(90deg); }
@@ -4395,7 +4396,6 @@ async function openLineage() {
   const allD = await dbGetAll("cosm_discourses");
   const safeMatch = (a, b) => (String(a || 'null') === String(b || 'null'));
 
-  // Auto-expand the branch leading to currentFolderId
   lineageExpandedFolders = new Set();
   if (currentFolderId) {
     let fid = currentFolderId;
@@ -4406,7 +4406,6 @@ async function openLineage() {
     }
   }
 
-  // Check if a folder has any content (discourses or non-empty subfolders)
   async function folderHasContent(fId) {
     const hasDiscs = allD.some(d => !d.isDeleted && safeMatch(d.folder_id, fId));
     if (hasDiscs) return true;
@@ -4417,27 +4416,24 @@ async function openLineage() {
     return false;
   }
 
-  // Recursive render
   async function renderFolder(folder, depth, isLast) {
     const hasSubfolders = allF.some(f => !f.isDeleted && safeMatch(f.parent_id, folder.id));
     const hasContent = await folderHasContent(folder.id);
     const isEmpty = !hasContent;
     const isExpanded = lineageExpandedFolders.has(folder.id);
     const isCurrent = (String(folder.id || '') === String(currentFolderId || ''));
+
     const levelDiv = document.createElement('div');
     levelDiv.className = 'lineage-level' 
-      + (depth === 0 ? ' root' : '')
       + (isCurrent ? ' current' : '')
       + (isEmpty ? ' empty' : '')
       + (isLast ? ' last-visible' : '');
     levelDiv.style.marginLeft = (depth * 20) + 'px';
 
-    // Dot
     const dot = document.createElement('div');
     dot.className = 'lineage-level-dot';
     levelDiv.appendChild(dot);
 
-    // Expand toggle (only if has subfolders with content)
     if (hasSubfolders && !isEmpty) {
       const expandBtn = document.createElement('span');
       expandBtn.className = 'lineage-expand' + (isExpanded ? ' open' : '');
@@ -4449,29 +4445,35 @@ async function openLineage() {
         } else {
           lineageExpandedFolders.add(folder.id);
         }
-        await openLineage(); // re-render
+        await openLineage();
       });
       levelDiv.appendChild(expandBtn);
     } else {
-      // Spacer for alignment when no expand button
       const spacer = document.createElement('span');
-      spacer.style.cssText = 'display:inline-block;width:26px;';
+      spacer.style.cssText = 'display:inline-block;width:36px;flex-shrink:0;';
       levelDiv.appendChild(spacer);
     }
 
-    // Name
     const nameBtn = document.createElement('span');
     nameBtn.className = 'lineage-level-name';
     nameBtn.textContent = folder.name;
     nameBtn.addEventListener('click', () => {
-      enterFolder(folder.id, folder.name);
-      closeLineage();
+      if (hasSubfolders && !isEmpty) {
+        if (lineageExpandedFolders.has(folder.id)) {
+          lineageExpandedFolders.delete(folder.id);
+        } else {
+          lineageExpandedFolders.add(folder.id);
+        }
+        openLineage();
+    } else {
+        enterFolder(folder.id, folder.name, depth);
+        closeLineage();
+      }
     });
     levelDiv.appendChild(nameBtn);
 
     content.appendChild(levelDiv);
 
-    // Children
     if (hasSubfolders && isExpanded) {
       const childrenContainer = document.createElement('div');
       childrenContainer.className = 'lineage-children open';
@@ -4486,15 +4488,14 @@ async function openLineage() {
 
   content.innerHTML = '';
 
-  // Root: The Soup
-  const rootDiv = document.createElement('div');
   const atRoot = !currentFolderId || currentFolderId === 'null' || currentFolderId === 'undefined';
-rootDiv.className = 'lineage-level root' + (atRoot ? ' current' : '');
+  const rootDiv = document.createElement('div');
+  rootDiv.className = 'lineage-level root' + (atRoot ? ' current' : '');
   const rootDot = document.createElement('div');
   rootDot.className = 'lineage-level-dot';
   rootDiv.appendChild(rootDot);
   const spacer = document.createElement('span');
-  spacer.style.cssText = 'display:inline-block;width:26px;';
+  spacer.style.cssText = 'display:inline-block;width:36px;flex-shrink:0;';
   rootDiv.appendChild(spacer);
   const rootName = document.createElement('span');
   rootName.className = 'lineage-level-name';
@@ -4506,7 +4507,6 @@ rootDiv.className = 'lineage-level root' + (atRoot ? ' current' : '');
   rootDiv.appendChild(rootName);
   content.appendChild(rootDiv);
 
-  // Top-level folders
   const topFolders = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, null));
   topFolders.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   for (let i = 0; i < topFolders.length; i++) {
@@ -4522,12 +4522,17 @@ function closeLineage() {
   document.getElementById('lineage-overlay').classList.remove('active');
 }
 
-function enterFolder(id, name){
+function enterFolder(id, name, depth){
   const folderId = (id === 'root') ? null : id;
+  
+  // If depth is provided (from lineage), slice the breadcrumb to that depth first
+  if (typeof depth === 'number') {
+    breadcrumbPath = breadcrumbPath.slice(0, depth);
+  }
+  
   // Check if folder already exists in breadcrumb path
   const existingIndex = breadcrumbPath.findIndex(seg => String(seg.id) === String(folderId));
   if (existingIndex >= 0) {
-    // Slice to that point -- don't duplicate
     breadcrumbPath = breadcrumbPath.slice(0, existingIndex + 1);
   } else {
     breadcrumbPath.push({id: folderId, name: name});
