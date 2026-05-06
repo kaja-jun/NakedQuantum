@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.34.7</title>
+<title>NakedQuantum v0.34.6</title>
 <style>
 :root {
   --bg: #000000;
@@ -787,48 +787,99 @@ button {
 .char-card-header-info .char-card-name { margin-bottom: 2px; }
 
 /* PHOTO SLOTS IN FORGE */
+#forge-photo-section {
+  padding: 0 0 20px;
+}
+
 .forge-photo-slots {
   display: flex;
-  gap: 10px;
-  padding: 4px 0 8px;
+  gap: 14px;
+  padding: 6px 0 8px;
 }
 
 .forge-photo-slot {
-  /* Remove the flex/gap/padding from here */
-  width: 72px;
-  height: 72px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  border: 1px dashed #666;
-  background: #141414;
+  width: 100%;
+  flex: 1;
+  aspect-ratio: 1 / 1;
+  max-width: 120px;
+  border-radius: 12px;
+  border: 2px dashed #b3934d;
+  background: #1a1812;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
 }
-.forge-photo-slot:active { border-color: var(--accent); }
+
+.forge-photo-slot:active {
+  border-color: var(--accent);
+  background: #242011;
+  transform: scale(0.96);
+}
+
 .forge-photo-slot img {
-  width: 100%; height: 100%; object-fit: cover; border-radius: 9px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
 }
-.forge-photo-slot.is-primary { border: 1.5px solid #d4b978; }
+
 .forge-photo-slot .slot-empty-label {
-  font-size: 9px; color: #333; letter-spacing: 1px; text-transform: uppercase; text-align: center; line-height: 1.4;
+  font-size: 13px;
+  color: #bdaa70;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.5;
+  font-weight: 700;
+  opacity: 0.8;
 }
-.forge-photo-slot .slot-remove {
-  position: absolute; top: 3px; right: 3px;
-  width: 16px; height: 16px; border-radius: 50%;
-  background: rgba(0,0,0,0.7); border: none;
-  color: #888; font-size: 10px; line-height: 16px; text-align: center;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
+
+.forge-photo-slot.is-primary {
+  border: 2px solid #d4b978;
+  box-shadow: 0 0 12px rgba(212, 185, 120, 0.3);
 }
+
 .forge-photo-slot .slot-primary-badge {
-  position: absolute; bottom: 3px; left: 3px;
-  font-size: 7px; letter-spacing: 0.5px; color: #d4b978;
-  background: rgba(0,0,0,0.8); padding: 1px 4px; border-radius: 3px;
-  text-transform: uppercase; font-weight: 700;
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #1a1a1a;
+  background: #d4b978;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.forge-photo-slot .slot-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid #444;
+  color: #999;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.forge-photo-slot .slot-remove:active {
+  color: #ff6060;
+  border-color: #ff6060;
 }
 
 /* CHAT HEADER AVATAR PILL */
@@ -4567,37 +4618,65 @@ async function saveCharacterForge(){
     temperature: parseFloat(document.getElementById('forge-temp').value)
   };
   
-    let savedId = activeCharId;
-  if(activeCharId) {
+  let savedId = activeCharId;
+  if (activeCharId) {
     await updateCharacter(activeCharId, data);
+    savedId = activeCharId;
   } else {
     const newChar = await createCharacter(data);
     savedId = newChar.id;
   }
 
-  // Flush pending photos from memory to OPFS
+  // FLUSH PENDING PHOTOS
   if (Object.keys(pendingForgePhotos).length > 0) {
-    for (const [slot, file] of Object.entries(pendingForgePhotos)) {
-      await storeCharacterPhoto(savedId, Number(slot), file);
+    try {
+      for (const [slot, file] of Object.entries(pendingForgePhotos)) {
+        await storeCharacterPhoto(savedId, Number(slot), file);
+      }
+      const primaryToSave = pendingForgePrimary >= 0
+        ? pendingForgePrimary
+        : Number(Object.keys(pendingForgePhotos).pop());
+      await updateCharacter(savedId, { image: String(primaryToSave) });
+      pendingForgePhotos = {};
+      pendingForgePrimary = -1;
+      showToast("Soul & Photos Anchored ◆");
+    } catch(e) {
+      console.error('Photo save failed:', e);
+      showToast("Soul saved, photos failed ◆");
     }
-    const primaryToSave = pendingForgePrimary >= 0
-      ? pendingForgePrimary
-      : Number(Object.keys(pendingForgePhotos).pop());
-    await updateCharacter(savedId, { image: String(primaryToSave) });
-    pendingForgePhotos = {};
-    pendingForgePrimary = -1;
+  } else {
+    showToast("Soul Anchored ◆");
   }
-  showToast("Soul Anchored ◆");
+
   closeCharacterForge();
 }
 
-function closeCharacterForge(){
-  if(document.getElementById('forge-container').dataset.isIE === 'true'){
+function closeCharacterForge() {
+  if (document.getElementById('forge-container').dataset.isIE === 'true') {
     closeIEForge();
     return;
   }
+
+  // Flush pending photos even on cancel
+  if (Object.keys(pendingForgePhotos).length > 0 && activeCharId) {
+    Promise.all(
+      Object.entries(pendingForgePhotos).map(([slot, file]) =>
+        storeCharacterPhoto(activeCharId, Number(slot), file)
+      )
+    ).then(async () => {
+      const primaryToSave = pendingForgePrimary >= 0
+        ? pendingForgePrimary
+        : Number(Object.keys(pendingForgePhotos).pop());
+      await updateCharacter(activeCharId, { image: String(primaryToSave) });
+      pendingForgePhotos = {};
+      pendingForgePrimary = -1;
+    }).catch(e => console.error('Cancel-save photos failed:', e));
+  }
+
   showPanel('view-sanctuary');
-  document.getElementById('btn-chat-edit').style.display = '';activeCharId=null;renderSanctuaryView();
+  document.getElementById('btn-chat-edit').style.display = '';
+  activeCharId = null;
+  renderSanctuaryView();
 }
 
 /* CHAT */
@@ -6213,8 +6292,6 @@ function openPhotoLightbox(urls) {
   document.body.appendChild(lb);
 }
 
-// pendingForgePhotos holds in-memory files for new characters not yet saved
-// structure: { 0: File|null, 1: File|null, 2: File|null }
 let pendingForgePhotos = {};
 let pendingForgePrimary = -1; // -1 = auto
 
@@ -6222,60 +6299,99 @@ async function renderForgePhotoSlots(charId) {
   const container = document.getElementById('forge-photo-section');
   if (!container) return;
 
-  // Load existing state
-  const c = charId ? await getCharacter(charId) : null;
+  // Load existing character
+  let c = null;
+  try {
+    c = charId ? await getCharacter(charId) : null;
+  } catch (e) {
+    console.error('getCharacter failed:', e);
+    c = null;
+  }
+
   let primarySlot = -1;
+
   if (c && c.image !== '' && c.image !== null && c.image !== undefined) {
     primarySlot = Number(c.image);
   }
 
-  // Build slot data: for existing chars load from OPFS, for new use pendingForgePhotos
+  // Build slot data
   const slotUrls = [null, null, null];
+
   if (charId) {
+    // Existing character → load from storage
     for (let i = 0; i < 3; i++) {
-      slotUrls[i] = await loadCharacterPhoto(charId, i);
-    }
-  } else {
-    for (let i = 0; i < 3; i++) {
-      if (pendingForgePhotos[i]) {
-        slotUrls[i] = URL.createObjectURL(pendingForgePhotos[i]);
+      try {
+        slotUrls[i] = await loadCharacterPhoto(charId, i);
+      } catch (e) {
+        slotUrls[i] = null;
       }
     }
+  } else {
+    // New character → use pending
+    for (let i = 0; i < 3; i++) {
+      if (pendingForgePhotos[i]) {
+        try {
+          slotUrls[i] = URL.createObjectURL(pendingForgePhotos[i]);
+        } catch (e) {
+          slotUrls[i] = null;
+        }
+      }
+    }
+
     // Auto-primary for pending
     if (pendingForgePrimary === -1) {
       for (let i = 2; i >= 0; i--) {
-        if (pendingForgePhotos[i]) { primarySlot = i; break; }
+        if (pendingForgePhotos[i]) {
+          primarySlot = i;
+          break;
+        }
       }
     } else {
       primarySlot = pendingForgePrimary;
     }
   }
 
-  // Auto-primary for existing: last uploaded if user hasn't set one
+  // Auto-primary fallback for existing
   if (charId && primarySlot === -1) {
     for (let i = 2; i >= 0; i--) {
-      if (slotUrls[i]) { primarySlot = i; break; }
+      if (slotUrls[i]) {
+        primarySlot = i;
+        break;
+      }
     }
   }
 
+  // CLEAR UI
   container.innerHTML = '';
 
+  // Label
   const label = document.createElement('div');
-  label.style.cssText = 'font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;font-weight:700;opacity:0.6;';
+  label.style.cssText = `
+    font-size:9px;
+    letter-spacing:2px;
+    color:var(--text);
+    text-transform:uppercase;
+    margin-bottom:10px;
+    font-weight:700;
+    opacity:0.6;
+  `;
   label.textContent = 'Photos';
   container.appendChild(label);
 
-  const slots = document.createElement('div');
-  slots.className = 'forge-photo-slots';
+  // Wrapper
+  const slotsWrapper = document.createElement('div');
+  slotsWrapper.className = 'forge-photo-slots';
 
+  // Build slots
   for (let i = 0; i < 3; i++) {
     const slot = document.createElement('div');
     const isPrimary = (i === primarySlot);
+
     slot.className = 'forge-photo-slot' + (isPrimary ? ' is-primary' : '');
     slot.dataset.slot = i;
 
     if (slotUrls[i]) {
-      // Filled slot
+      // FILLED SLOT
       const img = document.createElement('img');
       img.src = slotUrls[i];
       slot.appendChild(img);
@@ -6287,22 +6403,28 @@ async function renderForgePhotoSlots(charId) {
         slot.appendChild(badge);
       }
 
-      slot.onclick = () => showSlotMenu(i, charId, slotUrls[i], primarySlot);
+      // Click → open menu
+      slot.onclick = () => {
+        showSlotMenu(i, charId, slotUrls[i], primarySlot);
+      };
 
     } else {
-      // Empty slot
+      // EMPTY SLOT
       const lbl = document.createElement('div');
       lbl.className = 'slot-empty-label';
       lbl.innerHTML = '+<br>Photo';
       slot.appendChild(lbl);
 
-      slot.onclick = () => triggerPhotoUpload(i, charId);
+      // Click → upload
+      slot.onclick = () => {
+        triggerPhotoUpload(i, charId);
+      };
     }
 
-    slots.appendChild(slot);
+    slotsWrapper.appendChild(slot);
   }
 
-  container.appendChild(slots);
+  container.appendChild(slotsWrapper);
 }
 
 function showSlotMenu(slotIndex, charId, photoUrl, currentPrimary) {
@@ -6399,33 +6521,72 @@ function showSlotMenu(slotIndex, charId, photoUrl, currentPrimary) {
   document.body.appendChild(menu);
 }
 
-function triggerPhotoUpload(slotIndex, charId, isReupload = false) {
+function triggerPhotoUpload(slotIndex, charId) {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/*';
-  input.onchange = async () => {
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
+  input.addEventListener('change', async () => {
     const file = input.files[0];
-    if (!file) return;
-    if (file.size > 3 * 1024 * 1024) { showToast('Max 3MB per photo.'); return; }
+
+    if (!file) {
+      if (input.parentNode) document.body.removeChild(input);
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      showToast('Max 3MB per photo.');
+      if (input.parentNode) document.body.removeChild(input);
+      return;
+    }
+
     showToast('Saving photo...');
-    if (charId) {
-      await storeCharacterPhoto(charId, slotIndex, file);
-      // Auto-primary: if this is the only photo or no primary set
-      const c = await getCharacter(charId);
-      const hasOthers = [0,1,2].filter(s => s !== slotIndex).some(async s => await loadCharacterPhoto(charId, s));
-      if (!c || c.image === '' || c.image === null || c.image === undefined || isReupload) {
-        // Keep existing primary unless this is first photo ever
-        const existingPrimary = c && c.image !== '' && c.image !== null ? Number(c.image) : -1;
-        if (existingPrimary === -1) await updateCharacter(charId, { image: String(slotIndex) });
+
+    // 1. SURGICAL FIX: Immediately extract the ArrayBuffer into a safe DOM-independent Blob.
+    // This stops iOS Safari from destroying the file reference when the input is removed.
+    let safeBlob;
+    try {
+      const buffer = await file.arrayBuffer();
+      safeBlob = new Blob([buffer], { type: file.type });
+    } catch (e) {
+      console.error('File read error:', e);
+      showToast('Photo read failed');
+      if (input.parentNode) document.body.removeChild(input);
+      return;
+    }
+    
+    if (input.parentNode) document.body.removeChild(input);
+
+    const char = charId ? await getCharacter(charId) : null;
+
+    if (charId && char) {
+      // EXISTING CHARACTER: Save the Safe Blob
+      try {
+        await storeCharacterPhoto(charId, slotIndex, safeBlob);
+        
+        // 2. SURGICAL FIX: Actually claim the primary slot in the DB (removed the double-save)
+        if (char.image === '' || char.image === null || char.image === undefined) {
+          await updateCharacter(charId, { image: String(slotIndex) });
+        }
+        
+        showToast('Photo saved ◆');
+        await renderForgePhotoSlots(charId);
+      } catch(e) {
+        console.error('Save failed:', e);
+        showToast('Photo save failed');
       }
     } else {
-      pendingForgePhotos[slotIndex] = file;
-      // Auto-primary: last uploaded
-      if (pendingForgePrimary === -1) pendingForgePrimary = slotIndex;
-      else pendingForgePrimary = slotIndex; // always update to last uploaded unless manually set
+      // NEW CHARACTER: Stage the Safe Blob in memory (it will survive until saveCharacterForge runs)
+      pendingForgePhotos[slotIndex] = safeBlob;
+      if (pendingForgePrimary === -1) {
+        pendingForgePrimary = slotIndex;
+      }
+      showToast('Photo staged ◆');
+      await renderForgePhotoSlots(null);
     }
-    await renderForgePhotoSlots(charId);
-  };
+  });
+
   input.click();
 }
 
@@ -7462,19 +7623,40 @@ async function unlockWithFallbackKey() {
 
 // ── CHARACTER PHOTO STORAGE (OPFS, AES-256-GCM) ──────────────────────────────
 async function storeCharacterPhoto(charId, slot, file) {
+  // Since we passed a Blob, arrayBuffer() is safe and guaranteed to work here.
   const ab = await file.arrayBuffer();
-  const cryptoKey = await getCloudCryptoKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, ab);
-  const payload = JSON.stringify({
-    iv: Array.from(iv),
-    ct: Array.from(new Uint8Array(ct)),
-    mime: file.type
-  });
+  
+  let cryptoKey;
+  try {
+    cryptoKey = await getCloudCryptoKey();
+  } catch(e) {
+    cryptoKey = null; // Key not loaded, will safely fall back
+  }
+
   const root = await navigator.storage.getDirectory();
   const fh = await root.getFileHandle('cp_' + charId + '_' + slot, { create: true });
+
+  if (cryptoKey) {
+    try {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, ab);
+      const payload = JSON.stringify({
+        iv: Array.from(iv),
+        ct: Array.from(new Uint8Array(ct)),
+        mime: file.type
+      });
+      const w = await fh.createWritable();
+      await w.write(new TextEncoder().encode(payload));
+      await w.close();
+      return; // Success, exit early
+    } catch(e) {
+      console.warn('Encrypted photo save failed, falling back:', e.message);
+    }
+  }
+
+  // Fallback: store unencrypted (Either no key, or encryption pipeline failed)
   const w = await fh.createWritable();
-  await w.write(new TextEncoder().encode(payload));
+  await w.write(ab);
   await w.close();
 }
 
@@ -7483,16 +7665,35 @@ async function loadCharacterPhoto(charId, slot) {
     const root = await navigator.storage.getDirectory();
     const fh = await root.getFileHandle('cp_' + charId + '_' + slot, { create: false });
     const file = await fh.getFile();
+    
+    // Try to read as text (encrypted JSON)
     const text = await file.text();
-    const { iv, ct, mime } = JSON.parse(text);
-    const cryptoKey = await getCloudCryptoKey();
-    const dec = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: new Uint8Array(iv) },
-      cryptoKey,
-      new Uint8Array(ct)
-    );
-    return URL.createObjectURL(new Blob([dec], { type: mime }));
-  } catch(e) { return null; }
+    
+    // Check if it's our encrypted format
+    if (text.startsWith('{')) {
+      const { iv, ct, mime } = JSON.parse(text);
+      const cryptoKey = await getCloudCryptoKey();
+      const dec = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: new Uint8Array(iv) },
+        cryptoKey,
+        new Uint8Array(ct)
+      );
+      return URL.createObjectURL(new Blob([dec], { type: mime }));
+    } else {
+      // It's actually a binary file (fell through text decode)
+      return URL.createObjectURL(file);
+    }
+  } catch(e) {
+    // Try reading as binary (plain fallback)
+    try {
+      const root = await navigator.storage.getDirectory();
+      const fh = await root.getFileHandle('cp_' + charId + '_' + slot, { create: false });
+      const file = await fh.getFile();
+      return URL.createObjectURL(file);
+    } catch(e2) {
+      return null;
+    }
+  }
 }
 
 async function deleteCharacterPhoto(charId, slot) {
