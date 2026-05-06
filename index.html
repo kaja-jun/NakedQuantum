@@ -6436,10 +6436,14 @@ async function importJSON(event){const file=event.target.files[0];if(!file)retur
 
 /* MOSAIC EXTRACT */
 async function extractMemory(){
-  if(!currentDiscourseId)return;const rawText=document.getElementById("content-textarea").value.trim();if(!rawText||rawText.length<50){showToast("Write more before extracting ◆");return;}
-  const key=localStorage.getItem("nexus_v7_key")||await readSecureKey('nq_api_key')||"";if(!key){showToast("Add OpenRouter key in Settings");return;}
+  if(!currentDiscourseId)return;const rawText=document.getElementById("content-textarea").value.trim();
+  if(!rawText||rawText.length<50){showToast("Write more before extracting ◆");
+  return;}
+  const key = await readSecureKey('nq_api_key') || "";
+  if(!key){showToast("Add OpenRouter key in Settings");
+  return;}
   document.getElementById("extract-loading").classList.add("visible");
-  try{const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model:localStorage.getItem("activeModel_v1")||localStorage.getItem("nq_model")||"deepseek/deepseek-v4-flash",max_tokens:350,messages:[{role:"system",content:`You are a conceptual anchor extractor. Read the text and return exactly 4-6 anchor phrases. Format: one per line, \"Category: brief anchor phrase\". Categories: Core tension, Open question, Key concept, Hidden assumption, Named force, Recurring image. Reply with ONLY the list.`},{role:"user",content:rawText.slice(0,3000)}]})});
+  try{const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model: localStorage.getItem("nq_model") || "deepseek/deepseek-v4-flash",max_tokens:350,messages:[{role:"system",content:`You are a conceptual anchor extractor. Read the text and return exactly 4-6 anchor phrases. Format: one per line, \"Category: brief anchor phrase\". Categories: Core tension, Open question, Key concept, Hidden assumption, Named force, Recurring image. Reply with ONLY the list.`},{role:"user",content:rawText.slice(0,3000)}]})});
   const data=await res.json();const raw=data.choices?.[0]?.message?.content||"";if(!raw.trim()){showToast("Nothing extracted ◆");return;}
   const anchors=raw.split("\n").map(l=>l.trim()).filter(l=>l.length>3&&!l.startsWith("#"));
   await saveMosaicTile(currentDiscourseId,anchors);await renderMosaicDisplay(currentDiscourseId);showToast("Mosaic anchored ◆");
@@ -7740,6 +7744,7 @@ async function bootApp() {
 }
 bootApp();
 });
+
 
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');
 
