@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.34.6</title>
+<title>NakedQuantum v0.34.7</title>
 <style>
 :root {
   --bg: #000000;
@@ -787,15 +787,27 @@ button {
 .char-card-header-info .char-card-name { margin-bottom: 2px; }
 
 /* PHOTO SLOTS IN FORGE */
-.forge-photo-slots { display: flex; gap: 10px; padding: 4px 0 8px; }
+.forge-photo-slots {
+  display: flex;
+  gap: 10px;
+  padding: 4px 0 8px;
+}
+
 .forge-photo-slot {
-  width: 72px; height: 72px;
+  /* Remove the flex/gap/padding from here */
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
   border-radius: 10px;
-  border: 1px dashed #2a2a2a;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; position: relative; overflow: hidden;
-  background: #0a0a0a; flex-shrink: 0;
-  transition: border-color 0.15s;
+  border: 1px dashed #666;
+  background: #141414;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.15s, background 0.15s;
 }
 .forge-photo-slot:active { border-color: var(--accent); }
 .forge-photo-slot img {
@@ -1506,7 +1518,7 @@ select.cosm-input {
               </div>
             </div>
           </div>
-  <div class="forge-input-group">
+  <div class="forge-input-group" id="forge-model-section" style="display:none;">
   <span class="forge-label">Model Variants</span>
   <div class="model-scroller" id="ie-model-list"></div>
   <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
@@ -1516,9 +1528,12 @@ select.cosm-input {
     <button id="ie-model-add-btn" class="tbtn gold">+ Add</button>
   </div>
 </div>
-
         </div>
       </div>
+    </div>
+     <div class="forge-unmake-zone" id="forge-unmake-zone" style="padding:24px 20px 8px;display:none;">
+      <div style="height:1px;background:#1a1a1a;margin-bottom:20px;"></div>
+      <button id="btn-forge-unmake" style="width:100%;background:none;border:1px solid #8b0000;color:#ff3030;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:14px;border-radius:10px;cursor:pointer;">✕ Unmake</button>
     </div>
     <div class="forge-footer">
       <button class="btn-forge-close" id="btn-forge-close">Cancel</button>
@@ -2786,10 +2801,7 @@ function cycleIEModel(){
 }
 
 async function deleteImmutableEntity(id) {
-  if(!confirm('Delete this Immutable Entity? This cannot be undone.')) return;
   await dbDelete('immutable_entities', id);
-  showToast('Entity dissolved ◆');
-  renderIEList();
 }
 
 /* DEV DOOR */
@@ -2890,14 +2902,33 @@ async function openIEForge(id){
   document.getElementById('forge-container').dataset.isIE = 'true';
 
   // Hide persona role selector
+    // Hide persona role selector
   const personaRoleParent = document.getElementById('forge-persona-role').parentElement;
   if (personaRoleParent) personaRoleParent.style.display = 'none';
 
-  // Show model section, hide temperature section
-  const tempSection = document.getElementById('forge-temp').closest('.forge-input-group');
+  // Hide model section (removed from UI), keep temperature visible
   const modelSection = document.getElementById('forge-model-section');
-  if (tempSection) tempSection.style.display = 'none';
-  if (modelSection) modelSection.style.display = 'flex';
+  if (modelSection) modelSection.style.display = 'none';
+
+  // Hide photos for IEs
+  const photoSection = document.getElementById('forge-photo-section');
+  if (photoSection) photoSection.style.display = 'none';
+
+  // Unmake button for IEs
+  const unmakeZone = document.getElementById('forge-unmake-zone');
+  const unmakeBtn = document.getElementById('btn-forge-unmake');
+  if (unmakeZone) unmakeZone.style.display = 'block';
+  if (unmakeBtn) {
+    unmakeBtn.onclick = async () => {
+      if (!confirm('Unmake this Immutable Entity? This cannot be undone.')) return;
+      if (!confirm('Final warning. This entity will cease to exist. Continue?')) return;
+      await deleteImmutableEntity(id);
+      showToast('Entity dissolved.');
+      closeIEForge();
+      showPanel('view-ie');
+      renderIEList();
+    };
+  }
 
   // Change labels
   const sectionTitles = document.querySelectorAll('.forge-section-title');
@@ -4450,12 +4481,30 @@ async function openCharacterForge(id){
   document.getElementById('forge-temp-val').textContent=Number(c.temperature||1).toFixed(1);
   showPanel('view-forge');
     // Photo slots -- custom characters only
+  // Reset pending photos for new characters
+  if (!id) { pendingForgePhotos = {}; pendingForgePrimary = -1; }
+
+  // Photos always visible for custom characters
   const photoSection = document.getElementById('forge-photo-section');
+  photoSection.style.display = 'block';
+  await renderForgePhotoSlots(id || null);
+
+  // Unmake button -- only for existing characters
+  const unmakeZone = document.getElementById('forge-unmake-zone');
+  const unmakeBtn = document.getElementById('btn-forge-unmake');
   if (id) {
-    photoSection.style.display = 'block';
-    await renderForgePhotoSlots(id);
+    unmakeZone.style.display = 'block';
+    unmakeBtn.onclick = async () => {
+      if (!confirm('Unmake this character? This cannot be undone.')) return;
+      if (!confirm('Final warning. All data and photos will be destroyed. Continue?')) return;
+      await deleteAllCharacterPhotos(id);
+      await purgeCharacter(id);
+      showToast('Character unbound from existence.');
+      showPanel('view-sanctuary');
+      renderSanctuaryView();
+    };
   } else {
-    photoSection.style.display = 'none';
+    unmakeZone.style.display = 'none';
   }
 const roles=getPersonaRoles();
 const roleSel=document.getElementById('forge-persona-role');
@@ -4518,8 +4567,26 @@ async function saveCharacterForge(){
     temperature: parseFloat(document.getElementById('forge-temp').value)
   };
   
-  if(activeCharId) await updateCharacter(activeCharId, data);
-  else await createCharacter(data);
+    let savedId = activeCharId;
+  if(activeCharId) {
+    await updateCharacter(activeCharId, data);
+  } else {
+    const newChar = await createCharacter(data);
+    savedId = newChar.id;
+  }
+
+  // Flush pending photos from memory to OPFS
+  if (Object.keys(pendingForgePhotos).length > 0) {
+    for (const [slot, file] of Object.entries(pendingForgePhotos)) {
+      await storeCharacterPhoto(savedId, Number(slot), file);
+    }
+    const primaryToSave = pendingForgePrimary >= 0
+      ? pendingForgePrimary
+      : Number(Object.keys(pendingForgePhotos).pop());
+    await updateCharacter(savedId, { image: String(primaryToSave) });
+    pendingForgePhotos = {};
+    pendingForgePrimary = -1;
+  }
   showToast("Soul Anchored ◆");
   closeCharacterForge();
 }
@@ -6146,15 +6213,55 @@ function openPhotoLightbox(urls) {
   document.body.appendChild(lb);
 }
 
+// pendingForgePhotos holds in-memory files for new characters not yet saved
+// structure: { 0: File|null, 1: File|null, 2: File|null }
+let pendingForgePhotos = {};
+let pendingForgePrimary = -1; // -1 = auto
+
 async function renderForgePhotoSlots(charId) {
   const container = document.getElementById('forge-photo-section');
   if (!container) return;
+
+  // Load existing state
   const c = charId ? await getCharacter(charId) : null;
-  const primarySlot = c && c.image !== '' && c.image !== null && c.image !== undefined ? Number(c.image) : 0;
+  let primarySlot = -1;
+  if (c && c.image !== '' && c.image !== null && c.image !== undefined) {
+    primarySlot = Number(c.image);
+  }
+
+  // Build slot data: for existing chars load from OPFS, for new use pendingForgePhotos
+  const slotUrls = [null, null, null];
+  if (charId) {
+    for (let i = 0; i < 3; i++) {
+      slotUrls[i] = await loadCharacterPhoto(charId, i);
+    }
+  } else {
+    for (let i = 0; i < 3; i++) {
+      if (pendingForgePhotos[i]) {
+        slotUrls[i] = URL.createObjectURL(pendingForgePhotos[i]);
+      }
+    }
+    // Auto-primary for pending
+    if (pendingForgePrimary === -1) {
+      for (let i = 2; i >= 0; i--) {
+        if (pendingForgePhotos[i]) { primarySlot = i; break; }
+      }
+    } else {
+      primarySlot = pendingForgePrimary;
+    }
+  }
+
+  // Auto-primary for existing: last uploaded if user hasn't set one
+  if (charId && primarySlot === -1) {
+    for (let i = 2; i >= 0; i--) {
+      if (slotUrls[i]) { primarySlot = i; break; }
+    }
+  }
 
   container.innerHTML = '';
+
   const label = document.createElement('div');
-  label.style.cssText = 'font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;font-weight:700;opacity:0.6;';
+  label.style.cssText = 'font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;font-weight:700;opacity:0.6;';
   label.textContent = 'Photos';
   container.appendChild(label);
 
@@ -6163,72 +6270,163 @@ async function renderForgePhotoSlots(charId) {
 
   for (let i = 0; i < 3; i++) {
     const slot = document.createElement('div');
-    slot.className = 'forge-photo-slot' + (i === primarySlot ? ' is-primary' : '');
+    const isPrimary = (i === primarySlot);
+    slot.className = 'forge-photo-slot' + (isPrimary ? ' is-primary' : '');
     slot.dataset.slot = i;
 
-    const url = charId ? await loadCharacterPhoto(charId, i) : null;
-    if (url) {
+    if (slotUrls[i]) {
+      // Filled slot
       const img = document.createElement('img');
-      img.src = url;
+      img.src = slotUrls[i];
       slot.appendChild(img);
 
-      if (i === primarySlot) {
+      if (isPrimary) {
         const badge = document.createElement('div');
         badge.className = 'slot-primary-badge';
         badge.textContent = 'Primary';
         slot.appendChild(badge);
       }
 
-      const rmBtn = document.createElement('button');
-      rmBtn.className = 'slot-remove';
-      rmBtn.textContent = '✕';
-      rmBtn.onclick = async e => {
-        e.stopPropagation();
-        if (!confirm('Remove this photo?')) return;
-        await deleteCharacterPhoto(charId, i);
-        // If removed primary, reset to first available
-        if (i === primarySlot) await updateCharacter(charId, { image: '' });
-        await renderForgePhotoSlots(charId);
-      };
-      slot.appendChild(rmBtn);
+      slot.onclick = () => showSlotMenu(i, charId, slotUrls[i], primarySlot);
 
-      // Tap photo to set as primary
-      slot.onclick = async () => {
-        await updateCharacter(charId, { image: String(i) });
-        await renderForgePhotoSlots(charId);
-      };
     } else {
+      // Empty slot
       const lbl = document.createElement('div');
       lbl.className = 'slot-empty-label';
       lbl.innerHTML = '+<br>Photo';
       slot.appendChild(lbl);
 
-      slot.onclick = () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = async () => {
-          const file = input.files[0];
-          if (!file) return;
-          if (file.size > 3 * 1024 * 1024) { showToast('Max 3MB per photo.'); return; }
-          showToast('Encrypting...');
-          await storeCharacterPhoto(charId, i, file);
-          // Set as primary if no primary yet
-          if (!c || c.image === '' || c.image === null || c.image === undefined) {
-            await updateCharacter(charId, { image: String(i) });
-          }
-          await renderForgePhotoSlots(charId);
-        };
-        input.click();
-      };
+      slot.onclick = () => triggerPhotoUpload(i, charId);
     }
+
     slots.appendChild(slot);
   }
+
   container.appendChild(slots);
-  const hint = document.createElement('div');
-  hint.style.cssText = 'font-size:9px;color:var(--muted);opacity:0.4;margin-top:6px;';
-  hint.textContent = 'Tap photo to set as primary. Max 3MB each.';
-  container.appendChild(hint);
+}
+
+function showSlotMenu(slotIndex, charId, photoUrl, currentPrimary) {
+  // Remove any existing menu
+  const existing = document.getElementById('slot-action-menu');
+  if (existing) existing.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'slot-action-menu';
+  menu.style.cssText = `
+    position:fixed; inset:0; z-index:8000;
+    display:flex; align-items:flex-end; justify-content:center;
+    background:rgba(0,0,0,0.5);
+  `;
+
+  const sheet = document.createElement('div');
+  sheet.style.cssText = `
+    width:100%; max-width:480px;
+    background:#111; border-radius:14px 14px 0 0;
+    padding:8px 0 32px; margin:0;
+  `;
+
+  const actions = [
+    {
+      label: 'View Full Picture',
+      action: () => { menu.remove(); openPhotoLightbox([photoUrl]); }
+    },
+    {
+      label: 'Set as Profile Picture',
+      dimmed: slotIndex === currentPrimary,
+      action: async () => {
+        menu.remove();
+        if (charId) {
+          await updateCharacter(charId, { image: String(slotIndex) });
+        } else {
+          pendingForgePrimary = slotIndex;
+        }
+        await renderForgePhotoSlots(charId);
+      }
+    },
+    {
+      label: 'Reupload',
+      action: () => { menu.remove(); triggerPhotoUpload(slotIndex, charId, true); }
+    },
+    {
+      label: 'Delete Photo',
+      danger: true,
+      action: async () => {
+        menu.remove();
+        if (!confirm('Delete this photo?')) return;
+        if (charId) {
+          await deleteCharacterPhoto(charId, slotIndex);
+          if (slotIndex === currentPrimary) await updateCharacter(charId, { image: '' });
+        } else {
+          delete pendingForgePhotos[slotIndex];
+          if (slotIndex === pendingForgePrimary) pendingForgePrimary = -1;
+        }
+        await renderForgePhotoSlots(charId);
+      }
+    }
+  ];
+
+  actions.forEach((a, idx) => {
+    if (idx > 0) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'height:1px;background:#1f1f1f;margin:0 16px;';
+      sheet.appendChild(sep);
+    }
+    const btn = document.createElement('button');
+    btn.style.cssText = `
+      width:100%; background:none; border:none;
+      padding:16px 20px; text-align:center;
+      font-size:14px; letter-spacing:0.2px;
+      color:${a.danger ? '#ff3030' : (a.dimmed ? '#444' : '#ccc5b9')};
+      cursor:${a.dimmed ? 'default' : 'pointer'};
+    `;
+    btn.textContent = a.label;
+    if (!a.dimmed) btn.onclick = a.action;
+    sheet.appendChild(btn);
+  });
+
+  // Cancel row
+  const cancelSep = document.createElement('div');
+  cancelSep.style.cssText = 'height:8px;background:#0a0a0a;margin-top:8px;';
+  sheet.appendChild(cancelSep);
+  const cancelBtn = document.createElement('button');
+  cancelBtn.style.cssText = 'width:100%;background:none;border:none;padding:16px 20px;text-align:center;font-size:14px;font-weight:700;color:#888;cursor:pointer;';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = () => menu.remove();
+  sheet.appendChild(cancelBtn);
+
+  menu.appendChild(sheet);
+  menu.onclick = e => { if (e.target === menu) menu.remove(); };
+  document.body.appendChild(menu);
+}
+
+function triggerPhotoUpload(slotIndex, charId, isReupload = false) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { showToast('Max 3MB per photo.'); return; }
+    showToast('Saving photo...');
+    if (charId) {
+      await storeCharacterPhoto(charId, slotIndex, file);
+      // Auto-primary: if this is the only photo or no primary set
+      const c = await getCharacter(charId);
+      const hasOthers = [0,1,2].filter(s => s !== slotIndex).some(async s => await loadCharacterPhoto(charId, s));
+      if (!c || c.image === '' || c.image === null || c.image === undefined || isReupload) {
+        // Keep existing primary unless this is first photo ever
+        const existingPrimary = c && c.image !== '' && c.image !== null ? Number(c.image) : -1;
+        if (existingPrimary === -1) await updateCharacter(charId, { image: String(slotIndex) });
+      }
+    } else {
+      pendingForgePhotos[slotIndex] = file;
+      // Auto-primary: last uploaded
+      if (pendingForgePrimary === -1) pendingForgePrimary = slotIndex;
+      else pendingForgePrimary = slotIndex; // always update to last uploaded unless manually set
+    }
+    await renderForgePhotoSlots(charId);
+  };
+  input.click();
 }
 
 /* SUPABASE DELTA SYNC ENGINE */
