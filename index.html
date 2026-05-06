@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.35</title>
+<title>NakedQuantum v0.35.1</title>
 <style>
 :root {
   --bg: #000000;
@@ -2881,21 +2881,99 @@ function generateIESigil(id) {
     hash |= 0;
   }
   const abs = Math.abs(hash);
-  const r1 = 14 + (abs % 6);
-  const r2 = 6  + (abs % 5);
-  const angle = (abs % 360) * (Math.PI / 180);
-  const x2 = 22 + Math.cos(angle) * 8;
-  const y2 = 22 + Math.sin(angle) * 8;
+  
+  // More varied parameters
+  const sides = 3 + (abs % 5);              // 3-7 sided polygon base
+  const rings = 1 + (abs % 3);              // 1-3 rings
+  const segments = 4 + (abs % 8);           // 4-11 radial segments
+  const spikeCount = 2 + (abs % 5);         // 2-6 spike elements
   const rot = (abs % 360);
-  return `<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
-    <g transform="rotate(${rot} 22 22)">
-      <circle cx="22" cy="22" r="${r1}" fill="none" stroke="#c8a050" stroke-width="1"/>
-      <circle cx="22" cy="22" r="${r2}" fill="#c8a050" opacity="0.7"/>
-      <line x1="${22 - r1}" y1="22" x2="${22 + r1}" y2="22" stroke="#c8a050" stroke-width="0.5" opacity="0.5"/>
-      <line x1="22" y1="${22 - r1}" x2="22" y2="${22 + r1}" stroke="#c8a050" stroke-width="0.5" opacity="0.5"/>
-      <circle cx="${x2}" cy="${y2}" r="2" fill="#fff" opacity="0.6"/>
-    </g>
-  </svg>`;
+  const glowColor = abs % 3 === 0 ? '#c8a050' : abs % 3 === 1 ? '#8a6e35' : '#a0d8a0';
+  
+  let svg = `<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+    <g transform="rotate(${rot} 22 22)">`;
+  
+  // Base rings
+  for (let i = 0; i < rings; i++) {
+    const r = 20 - (i * 4);
+    const dash = 2 + (abs % 3);
+    svg += `<circle cx="22" cy="22" r="${r}" fill="none" 
+      stroke="${i === 0 ? '#c8a050' : '#8a6e35'}" 
+      stroke-width="${0.5 + (i * 0.3)}" 
+      stroke-dasharray="${dash} ${dash * 2}" 
+      opacity="${0.9 - (i * 0.2)}"/>`;
+  }
+  
+  // Polygon base
+  const polygon = [];
+  for (let i = 0; i < sides; i++) {
+    const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
+    const r = 12 + (abs % 8);
+    polygon.push(`${22 + Math.cos(angle) * r},${22 + Math.sin(angle) * r}`);
+  }
+  svg += `<polygon points="${polygon.join(' ')}" 
+    fill="none" stroke="${glowColor}" stroke-width="1" opacity="0.6"/>`;
+  
+  // Radial segments (like a compass or star map)
+  for (let i = 0; i < segments; i++) {
+    const angle = (i / segments) * Math.PI * 2;
+    const inner = 8 + (abs % 4);
+    const outer = 18 + (abs % 4);
+    const x1 = 22 + Math.cos(angle) * inner;
+    const y1 = 22 + Math.sin(angle) * inner;
+    const x2 = 22 + Math.cos(angle) * outer;
+    const y2 = 22 + Math.sin(angle) * outer;
+    const draw = (abs + i) % 3 === 0;
+    if (draw) {
+      svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
+        stroke="${glowColor}" stroke-width="0.5" opacity="0.4"/>`;
+    }
+  }
+  
+  // Distinctive mark (replaces the meaningless dot)
+  const markAngle = (abs % 360) * Math.PI / 180;
+  const markR = 14 + (abs % 6);
+  const mx = 22 + Math.cos(markAngle) * markR;
+  const my = 22 + Math.sin(markAngle) * markR;
+  
+  // Different marks based on hash
+  const markType = abs % 5;
+  if (markType === 0) {
+    // Diamond
+    svg += `<polygon points="${mx},${my-3} ${mx+2},${my} ${mx},${my+3} ${mx-2},${my}" 
+      fill="${glowColor}" opacity="0.8"/>`;
+  } else if (markType === 1) {
+    // Circle
+    svg += `<circle cx="${mx}" cy="${my}" r="2.5" fill="${glowColor}" opacity="0.8"/>`;
+  } else if (markType === 2) {
+    // Cross
+    svg += `<line x1="${mx-2}" y1="${my}" x2="${mx+2}" y2="${my}" stroke="${glowColor}" stroke-width="1.5"/>
+            <line x1="${mx}" y1="${my-2}" x2="${mx}" y2="${my+2}" stroke="${glowColor}" stroke-width="1.5"/>`;
+  } else if (markType === 3) {
+    // Triangle
+    svg += `<polygon points="${mx},${my-3} ${mx+2.5},${my+2} ${mx-2.5},${my+2}" 
+      fill="none" stroke="${glowColor}" stroke-width="1"/>`;
+  } else {
+    // Hollow circle
+    svg += `<circle cx="${mx}" cy="${my}" r="2.5" fill="none" stroke="${glowColor}" stroke-width="1.5"/>`;
+  }
+  
+  // Small orbiting dots
+  for (let i = 0; i < spikeCount; i++) {
+    const angle = markAngle + (i / spikeCount) * Math.PI * 2;
+    const orbR = 14 + (abs % 6) + (i * 2);
+    const ox = 22 + Math.cos(angle) * orbR;
+    const oy = 22 + Math.sin(angle) * orbR;
+    const size = 0.5 + (abs % 2) * 0.5;
+    const draw = (abs + i * 7) % 3 !== 0;
+    if (draw) {
+      svg += `<circle cx="${ox}" cy="${oy}" r="${size}" 
+        fill="${glowColor}" opacity="${0.3 + (i * 0.1)}"/>`;
+    }
+  }
+  
+  svg += '</g></svg>';
+  return svg;
 }
 
 function openIEBottomSheet(id){
@@ -3033,11 +3111,10 @@ async function devClearWatcher() {
 }
 
 async function devCreateIEDraft(){
-  // No prompt -- just create with a default name
   const defaultName = 'Entity ' + new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'});
-  
+  const tempId = 'ie_' + Date.now();
   const entity = {
-    id: 'ie_' + Date.now(),
+    id: tempId,
     display_name: defaultName,
     archetype_tag: '',
     existential_function: '',
@@ -3057,16 +3134,23 @@ async function devCreateIEDraft(){
     created_at: Date.now(),
     updated_at: Date.now()
   };
-  
-  await saveImmutableEntity(entity);
-  openIEForge(entity.id);
+  document.getElementById('forge-container').dataset.tempIE = JSON.stringify(entity);
+  document.getElementById('forge-container').dataset.isNew = 'true';
+  openIEForge(entity);
+  document.getElementById('forge-container').dataset.isNew = 'true';
+  openIEForge(entity);
 }
 
-async function openIEForge(id){
-  const ie = await getImmutableEntity(id);
-  if(!ie) {
-    showToast('Entity not found');
-    return;
+async function openIEForge(idOrEntity){
+  let ie;
+  if (typeof idOrEntity === 'object') {
+    ie = idOrEntity;
+  } else {
+    ie = await getImmutableEntity(idOrEntity);
+    if(!ie) {
+      showToast('Entity not found');
+      return;
+    }
   }
   activeCharId = null;
 // Map IE fields to forge field IDs
@@ -3100,7 +3184,7 @@ async function openIEForge(id){
   }
   renderIEModelList();
   // Store IE id for save
-  document.getElementById('forge-container').dataset.ieId = id;
+  document.getElementById('forge-container').dataset.ieId = ie.id;
   document.getElementById('forge-container').dataset.isIE = 'true';
 
   // Hide persona role selector
@@ -3124,7 +3208,7 @@ async function openIEForge(id){
     unmakeBtn.onclick = async () => {
       if (!confirm('Unmake this Immutable Entity? This cannot be undone.')) return;
       if (!confirm('Final warning. This entity will cease to exist. Continue?')) return;
-      await deleteImmutableEntity(id);
+      await deleteImmutableEntity(ie.id);
       showToast('Entity dissolved.');
       closeIEForge();
       showPanel('view-ie');
@@ -4665,11 +4749,35 @@ strip.appendChild(ctaCard);
   }
 }
 
-async function handleNewCharacter(){const c=await createCharacter();openCharacterForge(c.id);}
+async function handleNewCharacter(){
+  const tempId = "c_" + Date.now();
+  const tempChar = {
+    id: tempId,
+    name: "New Character",
+    role: "",
+    backstory: "",
+    personality: "",
+    lorebook: "",
+    scenario: "",
+    inclination: "",
+    relationships: "",
+    pc_info: "",
+    temperature: 1
+  };
+  openCharacterForge(tempChar);
+}
 
-async function openCharacterForge(id){
-  activeCharId=id||null;
-  const c=id?await getCharacter(id):{name:"",role:"",backstory:"",personality:"",lorebook:"",scenario:"",inclination:"",relationships:"",pc_info:"",temperature:1};
+async function openCharacterForge(idOrChar){
+  let c;
+  if (typeof idOrChar === 'object') {
+    c = idOrChar;
+    activeCharId = c.id;
+    document.getElementById('forge-container').dataset.isNew = 'true';
+  } else {
+    activeCharId = idOrChar || null;
+    c = idOrChar ? await getCharacter(idOrChar) : {name:"",role:"",backstory:"",personality:"",lorebook:"",scenario:"",inclination:"",relationships:"",pc_info:"",temperature:1};
+    document.getElementById('forge-container').dataset.isNew = 'false';
+  }
   document.getElementById('forge-name').value=c.name||"";
   document.getElementById('forge-role').value=c.role||"";
   document.getElementById('forge-backstory').value=c.backstory||"";
@@ -4727,7 +4835,13 @@ async function saveCharacterForge(){
   const ieId = document.getElementById('forge-container').dataset.ieId;
 
   if(isIE && ieId){
-    const ie = await getImmutableEntity(ieId);
+    const isNew = document.getElementById('forge-container').dataset.isNew === 'true';
+    let ie;
+    if (isNew) {
+      ie = JSON.parse(document.getElementById('forge-container').dataset.tempIE || '{}');
+    } else {
+      ie = await getImmutableEntity(ieId);
+    }
     if(!ie) {
       showToast('Entity not found');
       return;
@@ -4751,11 +4865,11 @@ async function saveCharacterForge(){
     };
 
     await saveImmutableEntity(updated);
-    showToast('◆ IE Draft updated');
+    document.getElementById('forge-container').dataset.isNew = 'false';
+    showToast(isNew ? '◆ Entity Created' : '◆ IE Draft updated');
     closeIEForge();
     return;
   }
-
   // --- Regular character save ---
   const data = {
     name: document.getElementById('forge-name').value.trim() || "Unnamed Soul",
@@ -4772,12 +4886,14 @@ async function saveCharacterForge(){
   };
   
   let savedChar;
-  if(activeCharId) {
-    await updateCharacter(activeCharId, data);
-    savedChar = await getCharacter(activeCharId);
-  } else {
+  const isNew = document.getElementById('forge-container').dataset.isNew === 'true';
+  if (isNew) {
     savedChar = await createCharacter(data);
     activeCharId = savedChar.id;
+    document.getElementById('forge-container').dataset.isNew = 'false';
+  } else if(activeCharId) {
+    await updateCharacter(activeCharId, data);
+    savedChar = await getCharacter(activeCharId);
   }
   
   showToast("Soul Anchored ◆");
@@ -4789,6 +4905,7 @@ function closeCharacterForge() {
     closeIEForge();
     return;
   }
+  document.getElementById('forge-container').dataset.isNew = 'false';
   showPanel('view-sanctuary');
   document.getElementById('btn-chat-edit').style.display = '';
   activeCharId = null;
