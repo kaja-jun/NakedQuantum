@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.35.2</title>
+<title>NakedQuantum v0.35.3</title>
 <style>
 :root {
   --bg: #000000;
@@ -425,22 +425,88 @@ button {
 .lineage-header { padding: 20px 16px; font-size: 10px; letter-spacing: 3px; color: var(--accent); font-weight: 900; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
 .lineage-content { flex: 1; overflow-y: auto; padding: 24px 0 100px 0; }
 
-.lineage-level { position: relative; padding: 0 0 24px 24px; }
-.lineage-level::before { content: ''; position: absolute; left: 26px; top: 22px; bottom: -10px; width: 1px; background: var(--border); }
-.lineage-level:last-child::before { display: none; }
+/* Tree leaf rows */
+.lineage-level {
+  padding: 0 0 2px 0;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+}
+.lineage-level.root { padding-bottom: 12px; }
+.lineage-level.root .lineage-level-name {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+.lineage-level-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.35;
+  flex-shrink: 0;
+  margin: 0 8px 0 16px;
+  transition: opacity 0.25s, box-shadow 0.25s, width 0.25s, height 0.25s;
+  position: static;
+}
+.lineage-level.root .lineage-level-dot { opacity: 0.7; }
+.lineage-level.empty .lineage-level-dot { background: var(--muted); opacity: 0.2; }
+.lineage-level.current .lineage-level-dot {
+  opacity: 1;
+  box-shadow: 0 0 10px var(--accent);
+  width: 9px;
+  height: 9px;
+}
+.lineage-level-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 6px 0;
+  cursor: pointer;
+  transition: color 0.2s, opacity 0.2s;
+  opacity: 0.7;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lineage-level-name:active { opacity: 0.5; }
+.lineage-level.empty .lineage-level-name { color: var(--muted); opacity: 0.45; }
+.lineage-level.current .lineage-level-name { color: var(--accent); opacity: 1; }
+.lineage-level.root .lineage-level-name { opacity: 0.9; }
+/* Expand/collapse toggle */
+.lineage-expand {
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.15s, transform 0.2s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.lineage-expand:active { opacity: 0.9; }
+.lineage-expand.open { transform: rotate(90deg); }
 
-.lineage-level-dot { position: absolute; left: 24px; top: 6px; width: 5px; height: 5px; border-radius: 50%; background: var(--muted); z-index: 2; transition: background 0.3s; }
-.lineage-level.current .lineage-level-dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); width: 7px; height: 7px; left: 23px; top: 5px; }
+/* Indented children container */
+.lineage-children {
+  padding-left: 20px;
+  border-left: 1px solid rgba(255,255,255,0.04);
+  margin-left: 9px;
+  display: none;
+}
+.lineage-children.open { display: block; }
 
-.lineage-level-name { font-size: 14px; font-weight: 700; color: var(--text); padding-left: 20px; margin-bottom: 10px; cursor: pointer; display: inline-block; transition: color 0.2s; }
-.lineage-level-name:active { opacity: 0.6; }
-.lineage-level.current .lineage-level-name { color: var(--accent); }
-
-/* The Sideways Glances (Siblings) */
-.lineage-siblings { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 8px 44px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+/* Remove old horizontal siblings */
+.lineage-siblings { display: none; }
+.lineage-sibling-btn { display: none; }
 .lineage-siblings::-webkit-scrollbar { display: none; }
-.lineage-sibling-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 6px 12px; border-radius: 8px; white-space: nowrap; font-weight: 700; }
-.lineage-sibling-btn:active { background: var(--surface3); border-color: var(--accent-dim); color: var(--text); }
 
 .mosaic-block { border-left: 2px solid var(--accent-dim); padding: 10px 14px; background: rgba(200,160,80,0.04); border-radius: 0 8px 8px 0; }
 .mosaic-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -4317,72 +4383,136 @@ const spacing = depth > 1 ? (i * (availableHeight / (depth - 1))) : 0;
 }
 
 /* LINEAGE NAVIGATOR LOGIC */
+let lineageExpandedFolders = new Set();
+
 async function openLineage() {
   const panel = document.getElementById('lineage-panel');
   const overlay = document.getElementById('lineage-overlay');
   const content = document.getElementById('lineage-content');
   if (!panel || !overlay || !content) return;
 
-  const allFRaw = await getFolders();
-const allDRaw = await dbGetAll("cosm_discourses");
-// Filter out forgotten folders from lineage
-const allF = [];
-for(const f of allFRaw){
-  if(f.isDeleted) continue;
-  const vitality = await getFolderVitality(f.id, allFRaw, allDRaw);
-  const phase = vitality ? decayPhase(vitality) : decayPhase(f.created_at||0);
-  if(phase==='active'||phase==='fading') allF.push(f);
-}
+  const allF = await getFolders();
+  const allD = await dbGetAll("cosm_discourses");
   const safeMatch = (a, b) => (String(a || 'null') === String(b || 'null'));
-  
-  content.innerHTML = '';
-  
-  for (let i = 0; i < breadcrumbPath.length; i++) {
-    const seg = breadcrumbPath[i];
-    const isCurrent = (i === breadcrumbPath.length - 1);
-    
-    const levelDiv = document.createElement('div');
-    levelDiv.className = 'lineage-level' + (isCurrent ? ' current' : '');
-    
-    // The vertical node
-    levelDiv.innerHTML = `
-      <div class="lineage-level-dot"></div>
-      <div class="lineage-level-name" onclick="navToBc(${i}); closeLineage();">${escHtml(seg.name)}</div>
-    `;
-    
-    // NEW LOGIC: The sideways glances are the OTHER children of this level
-    // What path did we actually take?
-    const nextSeg = isCurrent ? null : breadcrumbPath[i+1];
-    
-    // Get all folders that live inside THIS segment
-    const childrenOfThisLevel = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, seg.id));
-    
-    // Filter out the path we took, leaving only the alternative "glances"
-    const alternativePaths = nextSeg 
-        ? childrenOfThisLevel.filter(f => !safeMatch(f.id, nextSeg.id))
-        : childrenOfThisLevel; // If it's the bottom folder, show all children as quick-links
 
-    if (alternativePaths.length > 0) {
-      const sibContainer = document.createElement('div');
-      sibContainer.className = 'lineage-siblings';
-      for (const alt of alternativePaths) {
-        const btn = document.createElement('button');
-        btn.className = 'lineage-sibling-btn';
-        btn.textContent = escHtml(alt.name);
-        btn.onclick = () => {
-          // Slice the path down to THIS level, then step into the new alternative path
-          breadcrumbPath = breadcrumbPath.slice(0, i + 1);
-          enterFolder(alt.id, alt.name);
-          closeLineage();
-        };
-        sibContainer.appendChild(btn);
-      }
-      levelDiv.appendChild(sibContainer);
+  // Auto-expand the branch leading to currentFolderId
+  lineageExpandedFolders = new Set();
+  if (currentFolderId) {
+    let fid = currentFolderId;
+    while (fid) {
+      lineageExpandedFolders.add(fid);
+      const f = allF.find(x => x.id === fid);
+      fid = f ? f.parent_id : null;
     }
-    
-    content.appendChild(levelDiv);
   }
-  
+
+  // Check if a folder has any content (discourses or non-empty subfolders)
+  async function folderHasContent(fId) {
+    const hasDiscs = allD.some(d => !d.isDeleted && safeMatch(d.folder_id, fId));
+    if (hasDiscs) return true;
+    const subs = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, fId));
+    for (const sub of subs) {
+      if (await folderHasContent(sub.id)) return true;
+    }
+    return false;
+  }
+
+  // Recursive render
+  async function renderFolder(folder, depth, isLast) {
+    const hasSubfolders = allF.some(f => !f.isDeleted && safeMatch(f.parent_id, folder.id));
+    const hasContent = await folderHasContent(folder.id);
+    const isEmpty = !hasContent;
+    const isExpanded = lineageExpandedFolders.has(folder.id);
+    const isCurrent = (String(folder.id || '') === String(currentFolderId || ''));
+    const levelDiv = document.createElement('div');
+    levelDiv.className = 'lineage-level' 
+      + (depth === 0 ? ' root' : '')
+      + (isCurrent ? ' current' : '')
+      + (isEmpty ? ' empty' : '')
+      + (isLast ? ' last-visible' : '');
+    levelDiv.style.marginLeft = (depth * 20) + 'px';
+
+    // Dot
+    const dot = document.createElement('div');
+    dot.className = 'lineage-level-dot';
+    levelDiv.appendChild(dot);
+
+    // Expand toggle (only if has subfolders with content)
+    if (hasSubfolders && !isEmpty) {
+      const expandBtn = document.createElement('span');
+      expandBtn.className = 'lineage-expand' + (isExpanded ? ' open' : '');
+      expandBtn.textContent = '▸';
+      expandBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (lineageExpandedFolders.has(folder.id)) {
+          lineageExpandedFolders.delete(folder.id);
+        } else {
+          lineageExpandedFolders.add(folder.id);
+        }
+        await openLineage(); // re-render
+      });
+      levelDiv.appendChild(expandBtn);
+    } else {
+      // Spacer for alignment when no expand button
+      const spacer = document.createElement('span');
+      spacer.style.cssText = 'display:inline-block;width:26px;';
+      levelDiv.appendChild(spacer);
+    }
+
+    // Name
+    const nameBtn = document.createElement('span');
+    nameBtn.className = 'lineage-level-name';
+    nameBtn.textContent = folder.name;
+    nameBtn.addEventListener('click', () => {
+      enterFolder(folder.id, folder.name);
+      closeLineage();
+    });
+    levelDiv.appendChild(nameBtn);
+
+    content.appendChild(levelDiv);
+
+    // Children
+    if (hasSubfolders && isExpanded) {
+      const childrenContainer = document.createElement('div');
+      childrenContainer.className = 'lineage-children open';
+      const subs = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, folder.id));
+      subs.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      for (let i = 0; i < subs.length; i++) {
+        await renderFolder(subs[i], depth + 1, i === subs.length - 1);
+      }
+      content.appendChild(childrenContainer);
+    }
+  }
+
+  content.innerHTML = '';
+
+  // Root: The Soup
+  const rootDiv = document.createElement('div');
+  const atRoot = !currentFolderId || currentFolderId === 'null' || currentFolderId === 'undefined';
+rootDiv.className = 'lineage-level root' + (atRoot ? ' current' : '');
+  const rootDot = document.createElement('div');
+  rootDot.className = 'lineage-level-dot';
+  rootDiv.appendChild(rootDot);
+  const spacer = document.createElement('span');
+  spacer.style.cssText = 'display:inline-block;width:26px;';
+  rootDiv.appendChild(spacer);
+  const rootName = document.createElement('span');
+  rootName.className = 'lineage-level-name';
+  rootName.textContent = 'The Soup';
+  rootName.addEventListener('click', () => {
+    goHome();
+    closeLineage();
+  });
+  rootDiv.appendChild(rootName);
+  content.appendChild(rootDiv);
+
+  // Top-level folders
+  const topFolders = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, null));
+  topFolders.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  for (let i = 0; i < topFolders.length; i++) {
+    await renderFolder(topFolders[i], 1, i === topFolders.length - 1);
+  }
+
   panel.classList.add('open');
   overlay.classList.add('active');
 }
@@ -4393,12 +4523,19 @@ function closeLineage() {
 }
 
 function enterFolder(id, name){
-  const folderId=(id==='root')?null:id;
-  breadcrumbPath.push({id:folderId, name:name});
-  currentFolderId=folderId;
+  const folderId = (id === 'root') ? null : id;
+  // Check if folder already exists in breadcrumb path
+  const existingIndex = breadcrumbPath.findIndex(seg => String(seg.id) === String(folderId));
+  if (existingIndex >= 0) {
+    // Slice to that point -- don't duplicate
+    breadcrumbPath = breadcrumbPath.slice(0, existingIndex + 1);
+  } else {
+    breadcrumbPath.push({id: folderId, name: name});
+  }
+  currentFolderId = folderId;
   renderTableView();
-  renderGoldTicks(); // NEW
-  awakenGoldLine();  // NEW
+  renderGoldTicks();
+  awakenGoldLine();
 }
 
 function navToBc(idx){
