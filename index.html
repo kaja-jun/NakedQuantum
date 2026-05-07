@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.35</title>
+<title>NakedQuantum v0.35.8</title>
 <style>
 :root {
   --bg: #000000;
@@ -425,22 +425,89 @@ button {
 .lineage-header { padding: 20px 16px; font-size: 10px; letter-spacing: 3px; color: var(--accent); font-weight: 900; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
 .lineage-content { flex: 1; overflow-y: auto; padding: 24px 0 100px 0; }
 
-.lineage-level { position: relative; padding: 0 0 24px 24px; }
-.lineage-level::before { content: ''; position: absolute; left: 26px; top: 22px; bottom: -10px; width: 1px; background: var(--border); }
-.lineage-level:last-child::before { display: none; }
+/* Tree leaf rows */
+.lineage-level {
+  padding: 0 0 2px 0;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+}
+.lineage-level.root { padding-bottom: 12px; }
+.lineage-level.root .lineage-level-name {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--text);
+  letter-spacing: 0.5px;
+}
+.lineage-level-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.35;
+  flex-shrink: 0;
+  margin: 0 8px 0 16px;
+  transition: opacity 0.25s, box-shadow 0.25s, width 0.25s, height 0.25s;
+  position: static;
+}
+.lineage-level.root .lineage-level-dot { opacity: 0.7; }
+.lineage-level.empty .lineage-level-dot { background: var(--muted); opacity: 0.2; }
+.lineage-level.current .lineage-level-dot {
+  opacity: 1;
+  box-shadow: 0 0 10px var(--accent);
+  width: 9px;
+  height: 9px;
+}
+.lineage-level-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 6px 0;
+  cursor: pointer;
+  transition: color 0.2s, opacity 0.2s;
+  opacity: 0.7;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lineage-level-name:active { opacity: 0.5; }
+.lineage-level.empty .lineage-level-name { color: var(--muted); opacity: 0.45; }
+.lineage-level.current .lineage-level-name { color: var(--accent); opacity: 1; }
+.lineage-level.root .lineage-level-name { opacity: 0.9; }
+/* Expand/collapse toggle */
+.lineage-expand {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  text-align: center;
+  font-size: 16px;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: opacity 0.15s, transform 0.2s;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.lineage-expand:active { opacity: 0.9; }
+.lineage-expand.open { transform: rotate(90deg); }
 
-.lineage-level-dot { position: absolute; left: 24px; top: 6px; width: 5px; height: 5px; border-radius: 50%; background: var(--muted); z-index: 2; transition: background 0.3s; }
-.lineage-level.current .lineage-level-dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); width: 7px; height: 7px; left: 23px; top: 5px; }
+/* Indented children container */
+.lineage-children {
+  padding-left: 20px;
+  border-left: 1px solid rgba(255,255,255,0.04);
+  margin-left: 9px;
+  display: none;
+}
+.lineage-children.open { display: block; }
 
-.lineage-level-name { font-size: 14px; font-weight: 700; color: var(--text); padding-left: 20px; margin-bottom: 10px; cursor: pointer; display: inline-block; transition: color 0.2s; }
-.lineage-level-name:active { opacity: 0.6; }
-.lineage-level.current .lineage-level-name { color: var(--accent); }
-
-/* The Sideways Glances (Siblings) */
-.lineage-siblings { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 8px 44px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+/* Remove old horizontal siblings */
+.lineage-siblings { display: none; }
+.lineage-sibling-btn { display: none; }
 .lineage-siblings::-webkit-scrollbar { display: none; }
-.lineage-sibling-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 6px 12px; border-radius: 8px; white-space: nowrap; font-weight: 700; }
-.lineage-sibling-btn:active { background: var(--surface3); border-color: var(--accent-dim); color: var(--text); }
 
 .mosaic-block { border-left: 2px solid var(--accent-dim); padding: 10px 14px; background: rgba(200,160,80,0.04); border-radius: 0 8px 8px 0; }
 .mosaic-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -461,7 +528,7 @@ button {
 /* THE FORMATTING PILL */
 .format-toolbar {
   margin-top: auto; /* Pushes it to the bottom of the writing space */
-  margin-bottom: 20px; /* The safety buffer to dodge the iOS Home Indicator */
+  margin-bottom: max(20px, env(safe-area-inset-bottom, 20px) + 8px); /* The safety buffer to dodge the iOS Home Indicator */
   background: rgba(10,10,10,0.85);
   border: 1px solid var(--border);
   backdrop-filter: blur(12px);
@@ -2284,8 +2351,11 @@ async function updateWatcherStatusUI() {
   const detail = document.getElementById('watcher-detail');
   
   if (!text) return;
-  
   if (embs.length === 0) {
+    if (dot) dot.style.opacity = '0.3';
+    text.textContent = 'Slumbering';
+    if (detail) detail.textContent = 'Waiting for enough material to observe';
+  } else if (rich.length < 5) {
     if (dot) dot.style.opacity = '0.3';
     text.textContent = 'Slumbering';
     if (detail) detail.textContent = 'Waiting for enough material to observe';
@@ -2316,6 +2386,7 @@ async function initWatcher() {
     env.useBrowserCache = true;
     env.allowLocalModels = false;
     env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
+    env.backends.onnx.wasm.numThreads = 1; // ABYSS FIX: Stop iOS Safari from RAM-crashing
     watcherEmbedder = await pipeline('feature-extraction', W_MODEL_ID, {
       quantized: true,
       progress_callback: (progress) => {
@@ -2325,9 +2396,9 @@ async function initWatcher() {
       }
     });
     isWatcherReady = true;
+localStorage.removeItem('nq_watcher_offline_since');
 const firstAwakening = !localStorage.getItem('nq_watcher_awakened');
 if (firstAwakening) {
-  localStorage.setItem('nq_watcher_awakened', '1');
   showToast('◈ The Watcher has awakened');
   // One-time reindex of all existing content
   setTimeout(async () => {
@@ -2881,21 +2952,99 @@ function generateIESigil(id) {
     hash |= 0;
   }
   const abs = Math.abs(hash);
-  const r1 = 14 + (abs % 6);
-  const r2 = 6  + (abs % 5);
-  const angle = (abs % 360) * (Math.PI / 180);
-  const x2 = 22 + Math.cos(angle) * 8;
-  const y2 = 22 + Math.sin(angle) * 8;
+  
+  // More varied parameters
+  const sides = 3 + (abs % 5);              // 3-7 sided polygon base
+  const rings = 1 + (abs % 3);              // 1-3 rings
+  const segments = 4 + (abs % 8);           // 4-11 radial segments
+  const spikeCount = 2 + (abs % 5);         // 2-6 spike elements
   const rot = (abs % 360);
-  return `<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
-    <g transform="rotate(${rot} 22 22)">
-      <circle cx="22" cy="22" r="${r1}" fill="none" stroke="#c8a050" stroke-width="1"/>
-      <circle cx="22" cy="22" r="${r2}" fill="#c8a050" opacity="0.7"/>
-      <line x1="${22 - r1}" y1="22" x2="${22 + r1}" y2="22" stroke="#c8a050" stroke-width="0.5" opacity="0.5"/>
-      <line x1="22" y1="${22 - r1}" x2="22" y2="${22 + r1}" stroke="#c8a050" stroke-width="0.5" opacity="0.5"/>
-      <circle cx="${x2}" cy="${y2}" r="2" fill="#fff" opacity="0.6"/>
-    </g>
-  </svg>`;
+  const glowColor = abs % 3 === 0 ? '#c8a050' : abs % 3 === 1 ? '#8a6e35' : '#a0d8a0';
+  
+  let svg = `<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+    <g transform="rotate(${rot} 22 22)">`;
+  
+  // Base rings
+  for (let i = 0; i < rings; i++) {
+    const r = 20 - (i * 4);
+    const dash = 2 + (abs % 3);
+    svg += `<circle cx="22" cy="22" r="${r}" fill="none" 
+      stroke="${i === 0 ? '#c8a050' : '#8a6e35'}" 
+      stroke-width="${0.5 + (i * 0.3)}" 
+      stroke-dasharray="${dash} ${dash * 2}" 
+      opacity="${0.9 - (i * 0.2)}"/>`;
+  }
+  
+  // Polygon base
+  const polygon = [];
+  for (let i = 0; i < sides; i++) {
+    const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
+    const r = 12 + (abs % 8);
+    polygon.push(`${22 + Math.cos(angle) * r},${22 + Math.sin(angle) * r}`);
+  }
+  svg += `<polygon points="${polygon.join(' ')}" 
+    fill="none" stroke="${glowColor}" stroke-width="1" opacity="0.6"/>`;
+  
+  // Radial segments (like a compass or star map)
+  for (let i = 0; i < segments; i++) {
+    const angle = (i / segments) * Math.PI * 2;
+    const inner = 8 + (abs % 4);
+    const outer = 18 + (abs % 4);
+    const x1 = 22 + Math.cos(angle) * inner;
+    const y1 = 22 + Math.sin(angle) * inner;
+    const x2 = 22 + Math.cos(angle) * outer;
+    const y2 = 22 + Math.sin(angle) * outer;
+    const draw = (abs + i) % 3 === 0;
+    if (draw) {
+      svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" 
+        stroke="${glowColor}" stroke-width="0.5" opacity="0.4"/>`;
+    }
+  }
+  
+  // Distinctive mark (replaces the meaningless dot)
+  const markAngle = (abs % 360) * Math.PI / 180;
+  const markR = 14 + (abs % 6);
+  const mx = 22 + Math.cos(markAngle) * markR;
+  const my = 22 + Math.sin(markAngle) * markR;
+  
+  // Different marks based on hash
+  const markType = abs % 5;
+  if (markType === 0) {
+    // Diamond
+    svg += `<polygon points="${mx},${my-3} ${mx+2},${my} ${mx},${my+3} ${mx-2},${my}" 
+      fill="${glowColor}" opacity="0.8"/>`;
+  } else if (markType === 1) {
+    // Circle
+    svg += `<circle cx="${mx}" cy="${my}" r="2.5" fill="${glowColor}" opacity="0.8"/>`;
+  } else if (markType === 2) {
+    // Cross
+    svg += `<line x1="${mx-2}" y1="${my}" x2="${mx+2}" y2="${my}" stroke="${glowColor}" stroke-width="1.5"/>
+            <line x1="${mx}" y1="${my-2}" x2="${mx}" y2="${my+2}" stroke="${glowColor}" stroke-width="1.5"/>`;
+  } else if (markType === 3) {
+    // Triangle
+    svg += `<polygon points="${mx},${my-3} ${mx+2.5},${my+2} ${mx-2.5},${my+2}" 
+      fill="none" stroke="${glowColor}" stroke-width="1"/>`;
+  } else {
+    // Hollow circle
+    svg += `<circle cx="${mx}" cy="${my}" r="2.5" fill="none" stroke="${glowColor}" stroke-width="1.5"/>`;
+  }
+  
+  // Small orbiting dots
+  for (let i = 0; i < spikeCount; i++) {
+    const angle = markAngle + (i / spikeCount) * Math.PI * 2;
+    const orbR = 14 + (abs % 6) + (i * 2);
+    const ox = 22 + Math.cos(angle) * orbR;
+    const oy = 22 + Math.sin(angle) * orbR;
+    const size = 0.5 + (abs % 2) * 0.5;
+    const draw = (abs + i * 7) % 3 !== 0;
+    if (draw) {
+      svg += `<circle cx="${ox}" cy="${oy}" r="${size}" 
+        fill="${glowColor}" opacity="${0.3 + (i * 0.1)}"/>`;
+    }
+  }
+  
+  svg += '</g></svg>';
+  return svg;
 }
 
 function openIEBottomSheet(id){
@@ -3033,11 +3182,10 @@ async function devClearWatcher() {
 }
 
 async function devCreateIEDraft(){
-  // No prompt -- just create with a default name
   const defaultName = 'Entity ' + new Date().toLocaleDateString('en-US', {month:'short', day:'numeric'});
-  
+  const tempId = 'ie_' + Date.now();
   const entity = {
-    id: 'ie_' + Date.now(),
+    id: tempId,
     display_name: defaultName,
     archetype_tag: '',
     existential_function: '',
@@ -3057,16 +3205,23 @@ async function devCreateIEDraft(){
     created_at: Date.now(),
     updated_at: Date.now()
   };
-  
-  await saveImmutableEntity(entity);
-  openIEForge(entity.id);
+  document.getElementById('forge-container').dataset.tempIE = JSON.stringify(entity);
+  document.getElementById('forge-container').dataset.isNew = 'true';
+  openIEForge(entity);
+  document.getElementById('forge-container').dataset.isNew = 'true';
+  openIEForge(entity);
 }
 
-async function openIEForge(id){
-  const ie = await getImmutableEntity(id);
-  if(!ie) {
-    showToast('Entity not found');
-    return;
+async function openIEForge(idOrEntity){
+  let ie;
+  if (typeof idOrEntity === 'object') {
+    ie = idOrEntity;
+  } else {
+    ie = await getImmutableEntity(idOrEntity);
+    if(!ie) {
+      showToast('Entity not found');
+      return;
+    }
   }
   activeCharId = null;
 // Map IE fields to forge field IDs
@@ -3100,7 +3255,7 @@ async function openIEForge(id){
   }
   renderIEModelList();
   // Store IE id for save
-  document.getElementById('forge-container').dataset.ieId = id;
+  document.getElementById('forge-container').dataset.ieId = ie.id;
   document.getElementById('forge-container').dataset.isIE = 'true';
 
   // Hide persona role selector
@@ -3124,7 +3279,7 @@ async function openIEForge(id){
     unmakeBtn.onclick = async () => {
       if (!confirm('Unmake this Immutable Entity? This cannot be undone.')) return;
       if (!confirm('Final warning. This entity will cease to exist. Continue?')) return;
-      await deleteImmutableEntity(id);
+      await deleteImmutableEntity(ie.id);
       showToast('Entity dissolved.');
       closeIEForge();
       showPanel('view-ie');
@@ -3408,6 +3563,7 @@ if (isWatcherReady && engramDisc) queueWatcherEmbed(engramDisc.id, title, raw_te
   
   // 3. Close the modal
   closeOverlay();
+renderDefaultBar(currentMode); // Force pill return
   
   // 4. THE FIX: Force the active view to re-render immediately
   if (currentMode === 'soup') {
@@ -3797,11 +3953,16 @@ function showPanel(id){
   }
   
   // ── GUARDIAN ENTRY: immediately exile Watcher, suppress Cartographer lazy load ──
+  // ── GUARDIAN ENTRY: immediately exile Watcher, suppress Cartographer lazy load ──
   if (id === 'view-guardian') {
     if (watcherEmbedder) {
-      try { watcherEmbedder.dispose(); } catch(e){} // Free Watcher WASM memory
-      watcherEmbedder = null;
-      isWatcherReady = false;
+      try { 
+        let oldWatcher = watcherEmbedder;
+        watcherEmbedder = null;
+        isWatcherReady = false;
+        // Asynchronous disposal prevents UI thread stutter and allows clean memory unmapping
+        Promise.resolve().then(() => oldWatcher.dispose()).catch(()=>{}); 
+      } catch(e){}
     }
     // Prevent Cartographer from loading for 1.5 seconds so Safari GC can breathe
     deepMapperLoadSuppressed = true;
@@ -4225,72 +4386,135 @@ const spacing = depth > 1 ? (i * (availableHeight / (depth - 1))) : 0;
 }
 
 /* LINEAGE NAVIGATOR LOGIC */
+let lineageExpandedFolders = new Set();
+
 async function openLineage() {
   const panel = document.getElementById('lineage-panel');
   const overlay = document.getElementById('lineage-overlay');
   const content = document.getElementById('lineage-content');
   if (!panel || !overlay || !content) return;
 
-  const allFRaw = await getFolders();
-const allDRaw = await dbGetAll("cosm_discourses");
-// Filter out forgotten folders from lineage
-const allF = [];
-for(const f of allFRaw){
-  if(f.isDeleted) continue;
-  const vitality = await getFolderVitality(f.id, allFRaw, allDRaw);
-  const phase = vitality ? decayPhase(vitality) : decayPhase(f.created_at||0);
-  if(phase==='active'||phase==='fading') allF.push(f);
-}
+  const allF = await getFolders();
+  const allD = await dbGetAll("cosm_discourses");
   const safeMatch = (a, b) => (String(a || 'null') === String(b || 'null'));
-  
-  content.innerHTML = '';
-  
-  for (let i = 0; i < breadcrumbPath.length; i++) {
-    const seg = breadcrumbPath[i];
-    const isCurrent = (i === breadcrumbPath.length - 1);
-    
-    const levelDiv = document.createElement('div');
-    levelDiv.className = 'lineage-level' + (isCurrent ? ' current' : '');
-    
-    // The vertical node
-    levelDiv.innerHTML = `
-      <div class="lineage-level-dot"></div>
-      <div class="lineage-level-name" onclick="navToBc(${i}); closeLineage();">${escHtml(seg.name)}</div>
-    `;
-    
-    // NEW LOGIC: The sideways glances are the OTHER children of this level
-    // What path did we actually take?
-    const nextSeg = isCurrent ? null : breadcrumbPath[i+1];
-    
-    // Get all folders that live inside THIS segment
-    const childrenOfThisLevel = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, seg.id));
-    
-    // Filter out the path we took, leaving only the alternative "glances"
-    const alternativePaths = nextSeg 
-        ? childrenOfThisLevel.filter(f => !safeMatch(f.id, nextSeg.id))
-        : childrenOfThisLevel; // If it's the bottom folder, show all children as quick-links
 
-    if (alternativePaths.length > 0) {
-      const sibContainer = document.createElement('div');
-      sibContainer.className = 'lineage-siblings';
-      for (const alt of alternativePaths) {
-        const btn = document.createElement('button');
-        btn.className = 'lineage-sibling-btn';
-        btn.textContent = escHtml(alt.name);
-        btn.onclick = () => {
-          // Slice the path down to THIS level, then step into the new alternative path
-          breadcrumbPath = breadcrumbPath.slice(0, i + 1);
-          enterFolder(alt.id, alt.name);
-          closeLineage();
-        };
-        sibContainer.appendChild(btn);
-      }
-      levelDiv.appendChild(sibContainer);
+  lineageExpandedFolders = new Set();
+  if (currentFolderId) {
+    let fid = currentFolderId;
+    while (fid) {
+      lineageExpandedFolders.add(fid);
+      const f = allF.find(x => x.id === fid);
+      fid = f ? f.parent_id : null;
     }
-    
-    content.appendChild(levelDiv);
   }
-  
+
+  async function folderHasContent(fId) {
+    const hasDiscs = allD.some(d => !d.isDeleted && safeMatch(d.folder_id, fId));
+    if (hasDiscs) return true;
+    const subs = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, fId));
+    for (const sub of subs) {
+      if (await folderHasContent(sub.id)) return true;
+    }
+    return false;
+  }
+
+  async function renderFolder(folder, depth, isLast) {
+    const hasSubfolders = allF.some(f => !f.isDeleted && safeMatch(f.parent_id, folder.id));
+    const hasContent = await folderHasContent(folder.id);
+    const isEmpty = !hasContent;
+    const isExpanded = lineageExpandedFolders.has(folder.id);
+    const isCurrent = (String(folder.id || '') === String(currentFolderId || ''));
+
+    const levelDiv = document.createElement('div');
+    levelDiv.className = 'lineage-level' 
+      + (isCurrent ? ' current' : '')
+      + (isEmpty ? ' empty' : '')
+      + (isLast ? ' last-visible' : '');
+    levelDiv.style.marginLeft = (depth * 20) + 'px';
+
+    const dot = document.createElement('div');
+    dot.className = 'lineage-level-dot';
+    levelDiv.appendChild(dot);
+
+    if (hasSubfolders && !isEmpty) {
+      const expandBtn = document.createElement('span');
+      expandBtn.className = 'lineage-expand' + (isExpanded ? ' open' : '');
+      expandBtn.textContent = '▸';
+      expandBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (lineageExpandedFolders.has(folder.id)) {
+          lineageExpandedFolders.delete(folder.id);
+        } else {
+          lineageExpandedFolders.add(folder.id);
+        }
+        await openLineage();
+      });
+      levelDiv.appendChild(expandBtn);
+    } else {
+      const spacer = document.createElement('span');
+      spacer.style.cssText = 'display:inline-block;width:36px;flex-shrink:0;';
+      levelDiv.appendChild(spacer);
+    }
+
+    const nameBtn = document.createElement('span');
+    nameBtn.className = 'lineage-level-name';
+    nameBtn.textContent = folder.name;
+    nameBtn.addEventListener('click', () => {
+      if (hasSubfolders && !isEmpty) {
+        if (lineageExpandedFolders.has(folder.id)) {
+          lineageExpandedFolders.delete(folder.id);
+        } else {
+          lineageExpandedFolders.add(folder.id);
+        }
+        openLineage();
+    } else {
+        enterFolder(folder.id, folder.name, depth);
+        closeLineage();
+      }
+    });
+    levelDiv.appendChild(nameBtn);
+
+    content.appendChild(levelDiv);
+
+    if (hasSubfolders && isExpanded) {
+      const childrenContainer = document.createElement('div');
+      childrenContainer.className = 'lineage-children open';
+      const subs = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, folder.id));
+      subs.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      for (let i = 0; i < subs.length; i++) {
+        await renderFolder(subs[i], depth + 1, i === subs.length - 1);
+      }
+      content.appendChild(childrenContainer);
+    }
+  }
+
+  content.innerHTML = '';
+
+  const atRoot = !currentFolderId || currentFolderId === 'null' || currentFolderId === 'undefined';
+  const rootDiv = document.createElement('div');
+  rootDiv.className = 'lineage-level root' + (atRoot ? ' current' : '');
+  const rootDot = document.createElement('div');
+  rootDot.className = 'lineage-level-dot';
+  rootDiv.appendChild(rootDot);
+  const spacer = document.createElement('span');
+  spacer.style.cssText = 'display:inline-block;width:36px;flex-shrink:0;';
+  rootDiv.appendChild(spacer);
+  const rootName = document.createElement('span');
+  rootName.className = 'lineage-level-name';
+  rootName.textContent = 'The Soup';
+  rootName.addEventListener('click', () => {
+    goHome();
+    closeLineage();
+  });
+  rootDiv.appendChild(rootName);
+  content.appendChild(rootDiv);
+
+  const topFolders = allF.filter(f => !f.isDeleted && safeMatch(f.parent_id, null));
+  topFolders.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  for (let i = 0; i < topFolders.length; i++) {
+    await renderFolder(topFolders[i], 1, i === topFolders.length - 1);
+  }
+
   panel.classList.add('open');
   overlay.classList.add('active');
 }
@@ -4300,13 +4524,25 @@ function closeLineage() {
   document.getElementById('lineage-overlay').classList.remove('active');
 }
 
-function enterFolder(id, name){
-  const folderId=(id==='root')?null:id;
-  breadcrumbPath.push({id:folderId, name:name});
-  currentFolderId=folderId;
+function enterFolder(id, name, depth){
+  const folderId = (id === 'root') ? null : id;
+  
+  // If depth is provided (from lineage), slice the breadcrumb to that depth first
+  if (typeof depth === 'number') {
+    breadcrumbPath = breadcrumbPath.slice(0, depth);
+  }
+  
+  // Check if folder already exists in breadcrumb path
+  const existingIndex = breadcrumbPath.findIndex(seg => String(seg.id) === String(folderId));
+  if (existingIndex >= 0) {
+    breadcrumbPath = breadcrumbPath.slice(0, existingIndex + 1);
+  } else {
+    breadcrumbPath.push({id: folderId, name: name});
+  }
+  currentFolderId = folderId;
   renderTableView();
-  renderGoldTicks(); // NEW
-  awakenGoldLine();  // NEW
+  renderGoldTicks();
+  awakenGoldLine();
 }
 
 function navToBc(idx){
@@ -4665,11 +4901,35 @@ strip.appendChild(ctaCard);
   }
 }
 
-async function handleNewCharacter(){const c=await createCharacter();openCharacterForge(c.id);}
+async function handleNewCharacter(){
+  const tempId = "c_" + Date.now();
+  const tempChar = {
+    id: tempId,
+    name: "New Character",
+    role: "",
+    backstory: "",
+    personality: "",
+    lorebook: "",
+    scenario: "",
+    inclination: "",
+    relationships: "",
+    pc_info: "",
+    temperature: 1
+  };
+  openCharacterForge(tempChar);
+}
 
-async function openCharacterForge(id){
-  activeCharId=id||null;
-  const c=id?await getCharacter(id):{name:"",role:"",backstory:"",personality:"",lorebook:"",scenario:"",inclination:"",relationships:"",pc_info:"",temperature:1};
+async function openCharacterForge(idOrChar){
+  let c;
+  if (typeof idOrChar === 'object') {
+    c = idOrChar;
+    activeCharId = c.id;
+    document.getElementById('forge-container').dataset.isNew = 'true';
+  } else {
+    activeCharId = idOrChar || null;
+    c = idOrChar ? await getCharacter(idOrChar) : {name:"",role:"",backstory:"",personality:"",lorebook:"",scenario:"",inclination:"",relationships:"",pc_info:"",temperature:1};
+    document.getElementById('forge-container').dataset.isNew = 'false';
+  }
   document.getElementById('forge-name').value=c.name||"";
   document.getElementById('forge-role').value=c.role||"";
   document.getElementById('forge-backstory').value=c.backstory||"";
@@ -4727,7 +4987,13 @@ async function saveCharacterForge(){
   const ieId = document.getElementById('forge-container').dataset.ieId;
 
   if(isIE && ieId){
-    const ie = await getImmutableEntity(ieId);
+    const isNew = document.getElementById('forge-container').dataset.isNew === 'true';
+    let ie;
+    if (isNew) {
+      ie = JSON.parse(document.getElementById('forge-container').dataset.tempIE || '{}');
+    } else {
+      ie = await getImmutableEntity(ieId);
+    }
     if(!ie) {
       showToast('Entity not found');
       return;
@@ -4751,11 +5017,11 @@ async function saveCharacterForge(){
     };
 
     await saveImmutableEntity(updated);
-    showToast('◆ IE Draft updated');
+    document.getElementById('forge-container').dataset.isNew = 'false';
+    showToast(isNew ? '◆ Entity Created' : '◆ IE Draft updated');
     closeIEForge();
     return;
   }
-
   // --- Regular character save ---
   const data = {
     name: document.getElementById('forge-name').value.trim() || "Unnamed Soul",
@@ -4772,12 +5038,14 @@ async function saveCharacterForge(){
   };
   
   let savedChar;
-  if(activeCharId) {
-    await updateCharacter(activeCharId, data);
-    savedChar = await getCharacter(activeCharId);
-  } else {
+  const isNew = document.getElementById('forge-container').dataset.isNew === 'true';
+  if (isNew) {
     savedChar = await createCharacter(data);
     activeCharId = savedChar.id;
+    document.getElementById('forge-container').dataset.isNew = 'false';
+  } else if(activeCharId) {
+    await updateCharacter(activeCharId, data);
+    savedChar = await getCharacter(activeCharId);
   }
   
   showToast("Soul Anchored ◆");
@@ -4789,6 +5057,7 @@ function closeCharacterForge() {
     closeIEForge();
     return;
   }
+  document.getElementById('forge-container').dataset.isNew = 'false';
   showPanel('view-sanctuary');
   document.getElementById('btn-chat-edit').style.display = '';
   activeCharId = null;
@@ -4954,8 +5223,10 @@ const STOPWORDS = new Set([
   'after','above','below','between','out','off','over','under',
   'again','further','then','once','here','there','when','where',
   'why','how','all','both','each','few','more','most','other','some',
-  'such','only','own','same','than','too','very','just','now',
+      'such','only','own','same','than','too','very','just','now',
   'also','even','still','already','always','never','sometimes'
+
+
 ]);
 
 function extractKeyTerms(text, maxTerms = 10) {
@@ -4990,31 +5261,194 @@ const SENTIMENT = {
   positive: new Set([
     'love','hope','light','warm','open','free','peace','calm','soft',
     'gentle','bright','clear','true','whole','heal','grow','bloom',
-    'rise','reach','hold','safe','trust','grace','grateful'
+    'rise','reach','hold','safe','trust','grace','grateful',
+    'alive','present','found','grounded','clean','solid','awake',
+    'sublime','pure','kiss','touch','connected','persist','move'
   ]),
   negative: new Set([
     'fear','pain','dark','cold','close','trapped','heavy','hard',
     'sharp','lost','broken','wound','fall','sink','empty','alone',
-    'silence','never','nothing','hollow','bitter','ache','weight'
+    'silence','never','nothing','hollow','bitter','ache','weight',
+    'numb','exhausted','stuck','suffocating','invisible','worthless',
+    'ashamed','rage','frozen','collapse','despair','haunt','scream',
+    'blind','deaf','cruel','stripped','torn','melting','dissolve'
   ]),
   tentative: new Set([
     'perhaps','maybe','sometimes','could','might','seems','almost',
-    'trying','wondering','question','uncertain','hesitate'
+    'trying','wondering','question','uncertain','hesitate',
+    'unsure','vague','confused','sort','kind','wonder','odd','strange'
   ]),
   confessional: new Set([
     'truth','honest','admit','confess','real','raw','naked',
-    'bare','expose','reveal','actually','felt','feel','feeling'
+    'bare','expose','reveal','actually','felt','feel','feeling',
+    'touched','ache','i','myself','oneself','within','inside'
   ]),
   resolved: new Set([
     'accept','chose','decide','finally','enough','done','settle',
-    'rest','still','quiet','understood','understand','knowing'
+    'rest','still','quiet','understood','understand','knowing',
+    'release','complete','peace','closed','capacity','essence'
+  ]),
+  dissolution: new Set([
+    'abyss','void','fragment','dissolve','melt','collapse','forget',
+    'lost','random','unknown','chaos','infinite','separate','torn',
+    'destroy','fade','drift','shadow','ghost','erasure','nothing'
+  ]),
+  existence: new Set([
+    'exist','universe','consciousness','soul','being','presence',
+    'observer','essence','persist','human','alive','death','born',
+    'life','infinite','eternal','moment','now','time','self','i'
   ])
 };
+
+const INVERSION_MARKERS = new Set([
+  'but','yet','unless','except','though','rather','instead',
+  'however','still','only','while','despite','until','and yet'
+]);
+
+function detectInversionDensity(text) {
+  const sentences = text.split(/[.!?;]+/).filter(s => s.trim().length > 0);
+  if (!sentences.length) return { label: 'No signal', ratio: 0, count: 0 };
+  let count = 0;
+  for (const s of sentences) {
+    const words = s.toLowerCase().split(/\s+/);
+    for (const w of words) {
+      if (INVERSION_MARKERS.has(w)) { count++; break; }
+    }
+  }
+  const ratio = count / sentences.length;
+  let label;
+  if (ratio === 0)      label = 'Asserting';
+  else if (ratio < 0.2) label = 'Occasional inversion';
+  else if (ratio < 0.4) label = 'Dialectical';
+  else                  label = 'Perpetual self-argument';
+  return { label, count, ratio: parseFloat(ratio.toFixed(3)) };
+}
+
+function detectParadoxProximity(text) {
+  const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+  const WINDOW = 6;
+  let paradoxCount = 0;
+  const paradoxPairs = [];
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    const inPos = SENTIMENT.positive.has(w) || SENTIMENT.existence.has(w);
+    const inNeg = SENTIMENT.negative.has(w) || SENTIMENT.dissolution.has(w);
+    if (!inPos && !inNeg) continue;
+    for (let j = i + 1; j < Math.min(i + WINDOW, words.length); j++) {
+      const w2 = words[j];
+      const w2Pos = SENTIMENT.positive.has(w2) || SENTIMENT.existence.has(w2);
+      const w2Neg = SENTIMENT.negative.has(w2) || SENTIMENT.dissolution.has(w2);
+      if ((inPos && w2Neg) || (inNeg && w2Pos)) {
+        paradoxCount++;
+        if (paradoxPairs.length < 5) paradoxPairs.push(w + '/' + w2);
+        break;
+      }
+    }
+  }
+  const density = paradoxCount / Math.max(words.length / 10, 1);
+  let label;
+  if (paradoxCount === 0)   label = 'Uniform';
+  else if (density < 0.5)   label = 'Occasional tension';
+  else if (density < 1.5)   label = 'Charged';
+  else                      label = 'Paradox-dominant';
+  return { label, count: paradoxCount, pairs: paradoxPairs };
+}
+
+function detectRepetitionOrbits(text) {
+  const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+  const meaningful = words.filter(w => w.length > 3 && !STOPWORDS.has(w));
+  const freq = {};
+  for (const w of meaningful) { freq[w] = (freq[w] || 0) + 1; }
+  const orbiting = Object.entries(freq)
+    .filter(([, count]) => count >= 3)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([term, count]) => ({ term, count }));
+  const label = orbiting.length === 0 ? 'No orbit' :
+                orbiting.length <= 2  ? 'Single orbit' : 'Multi-orbit';
+  return { label, orbiting };
+}
+
+function detectFragmentRatio(text) {
+  const sentences = text.split(/[.!?;]+/)
+    .map(s => s.trim().split(/\s+/).filter(Boolean).length)
+    .filter(l => l > 0);
+  if (!sentences.length) return { label: 'No signal', ratio: 0 };
+  const fragments = sentences.filter(l => l <= 5).length;
+  const ratio = fragments / sentences.length;
+  let label;
+  if (ratio < 0.2)      label = 'Prose';
+  else if (ratio < 0.4) label = 'Mixed';
+  else if (ratio < 0.7) label = 'Fragmented';
+  else                  label = 'Shards';
+  return { label, ratio: parseFloat(ratio.toFixed(3)) };
+}
+
+function detectWritingSignature(text) {
+  const inversion    = detectInversionDensity(text);
+  const paradox      = detectParadoxProximity(text);
+  const orbits       = detectRepetitionOrbits(text);
+  const fragments    = detectFragmentRatio(text);
+  const orbitTerms   = orbits.orbiting.map(o => o.term).join(', ');
+  const summaryParts = [
+    inversion.label,
+    paradox.label,
+    orbits.orbiting.length ? 'Orbiting [' + orbitTerms + ']' : 'No orbit',
+    fragments.label
+  ];
+  return {
+    summary: summaryParts.join(' · '),
+    inversion,
+    paradox,
+    orbits,
+    fragments
+  };
+}
 
 function detectEmotionalArc(text) {
   const lines = text.split('\n').filter(l => l.trim().length > 0);
   if (lines.length < 3) return { direction: 'too short', opening_tone: 'neutral', closing_tone: 'neutral', tension_shift: 0 };
   
+function detectPacing(text) {
+  const sentences = text.split(/[.!?]+/).map(s => s.trim().split(/\s+/).filter(Boolean).length).filter(l => l > 0);
+  if (!sentences.length) return { label: 'Fragmented', avg_words_per_sentence: 0 };
+  const avg = sentences.reduce((a, b) => a + b, 0) / sentences.length;
+  let label;
+  if (avg < 6) label = 'Staccato';
+  else if (avg < 14) label = 'Measured';
+  else if (avg < 25) label = 'Flowing';
+  else label = 'Spiraling';
+  return { label, avg_words_per_sentence: parseFloat(avg.toFixed(1)) };
+}
+
+const ABSOLUTES = new Set([
+  'always','never','everyone','nobody','nothing','everything',
+  'impossible','must','ruined','completely','absolutely','totally',
+  'forever','all','none','only','exactly','certain','definitely'
+]);
+
+function detectRigidity(text) {
+  const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+  let count = 0;
+  for (const w of words) { if (ABSOLUTES.has(w)) count++; }
+  const ratio = count / Math.max(words.length, 1);
+  const label = ratio > 0.02 ? 'Rigid' : ratio > 0.01 ? 'Tense' : 'Fluid';
+  return { label, absolute_count: count, ratio: parseFloat(ratio.toFixed(4)) };
+}
+
+function detectQuestionDensity(text) {
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const questions = (text.match(/\?/g) || []).length;
+  if (!sentences.length) return { label: 'No signal', ratio: 0 };
+  const ratio = questions / sentences.length;
+  let label;
+  if (ratio === 0) label = 'Declarative';
+  else if (ratio < 0.1) label = 'Mostly closed';
+  else if (ratio < 0.3) label = 'Inquiring';
+  else label = 'Unanchored';
+  return { label, question_count: questions, ratio: parseFloat(ratio.toFixed(3)) };
+}
+
   const firstThird = lines.slice(0, Math.ceil(lines.length / 3)).join(' ').toLowerCase();
   const lastThird = lines.slice(-Math.ceil(lines.length / 3)).join(' ').toLowerCase();
   
@@ -5179,6 +5613,10 @@ async function generateFastMap(discourseId) {
     const terms = extractKeyTerms(d.raw_text, 10);
     const arc = detectEmotionalArc(d.raw_text);
     const extract = extractiveSummary(d.raw_text, 3);
+    const pacing = detectPacing(d.raw_text);
+    const rigidity = detectRigidity(d.raw_text);
+    const questioning = detectQuestionDensity(d.raw_text);
+    const signature = detectWritingSignature(d.raw_text);
 
     let fastMap = {
       id: discourseId,
@@ -5189,6 +5627,10 @@ async function generateFastMap(discourseId) {
       key_terms: terms,
       emotional_arc: arc,
       extractive_summary: extract,
+      pacing,
+      rigidity,
+      questioning,
+      signature,
       word_count: wordCount,
       model: 'local-heuristic',
       generated_at: Date.now(),
@@ -5206,21 +5648,20 @@ async function generateFastMap(discourseId) {
   }
 }
 
-// ── LOCAL DEEP MAPPER ────────────────────────────────────
+/* ── LOCAL DEEP MAPPER ──────────────────────────────────── */
 // Loaded only on Guardian summon when sovereign mode is active
 
 let deepMapper = null;
 let deepMapperLoading = false;
 let deepMapperReady = false;
 
-const DEEP_MAPPER_MODEL = 'Xenova/distilbart-cnn-6-6';
+const DEEP_MAPPER_MODEL = 'Xenova/distilbart-cnn-3-3';
 
 let deepMapperLastUnload = 0;
 
 async function unloadDeepMapper() {
   if (deepMapper) {
     try { 
-      // This is the magic command that frees the WebAssembly RAM
       await deepMapper.dispose(); 
     } catch(e) { console.warn("DeepMapper dispose error", e); }
   }
@@ -5263,6 +5704,7 @@ async function initDeepMapper() {
     env.allowLocalModels = false;
     env.backends.onnx.wasm.wasmPaths = 
       'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
+    env.backends.onnx.wasm.numThreads = 1; // ABYSS FIX: Single thread for survival
     
     // Update the summoning UI
     const subEl = document.getElementById('guardian-sub');
@@ -5297,15 +5739,16 @@ async function initDeepMapper() {
 async function generateDeepMap(discourseId, rawText) {
   if (!deepMapperReady || !deepMapper) return null;
   
-  // Truncate to model's max input (typically 1024 tokens for distilbart)
-  const truncated = rawText.trim().slice(0, 3000);
+    // 1000 chars ~200 tokens. Half sequence = quarter attention RAM.
+  const truncated = rawText.trim().slice(0, 1000);
   
   try {
     const result = await deepMapper(truncated, {
-      max_length: 150,
-      min_length: 40,
-      do_sample: false  // deterministic -- no hallucination risk
+      max_length: 80,
+      min_length: 20,
+      do_sample: false
     });
+
     
     const summary = result[0]?.summary_text || '';
     
@@ -6319,10 +6762,14 @@ async function importJSON(event){const file=event.target.files[0];if(!file)retur
 
 /* MOSAIC EXTRACT */
 async function extractMemory(){
-  if(!currentDiscourseId)return;const rawText=document.getElementById("content-textarea").value.trim();if(!rawText||rawText.length<50){showToast("Write more before extracting ◆");return;}
-  const key=localStorage.getItem("nexus_v7_key")||await readSecureKey('nq_api_key')||"";if(!key){showToast("Add OpenRouter key in Settings");return;}
+  if(!currentDiscourseId)return;const rawText=document.getElementById("content-textarea").value.trim();
+  if(!rawText||rawText.length<50){showToast("Write more before extracting ◆");
+  return;}
+  const key = await readSecureKey('nq_api_key') || "";
+  if(!key){showToast("Add OpenRouter key in Settings");
+  return;}
   document.getElementById("extract-loading").classList.add("visible");
-  try{const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model:localStorage.getItem("activeModel_v1")||localStorage.getItem("nq_model")||"deepseek/deepseek-v4-flash",max_tokens:350,messages:[{role:"system",content:`You are a conceptual anchor extractor. Read the text and return exactly 4-6 anchor phrases. Format: one per line, \"Category: brief anchor phrase\". Categories: Core tension, Open question, Key concept, Hidden assumption, Named force, Recurring image. Reply with ONLY the list.`},{role:"user",content:rawText.slice(0,3000)}]})});
+  try{const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model: localStorage.getItem("nq_model") || "deepseek/deepseek-v4-flash",max_tokens:350,messages:[{role:"system",content:`You are a conceptual anchor extractor. Read the text and return exactly 4-6 anchor phrases. Format: one per line, \"Category: brief anchor phrase\". Categories: Core tension, Open question, Key concept, Hidden assumption, Named force, Recurring image. Reply with ONLY the list.`},{role:"user",content:rawText.slice(0,3000)}]})});
   const data=await res.json();const raw=data.choices?.[0]?.message?.content||"";if(!raw.trim()){showToast("Nothing extracted ◆");return;}
   const anchors=raw.split("\n").map(l=>l.trim()).filter(l=>l.length>3&&!l.startsWith("#"));
   await saveMosaicTile(currentDiscourseId,anchors);await renderMosaicDisplay(currentDiscourseId);showToast("Mosaic anchored ◆");
@@ -6508,7 +6955,7 @@ async function handleSync() {
 }
 
 /* GUARDIAN OF THE ABYSS ARCHIVES */
-var GUARDIAN_SYSTEM_PROMPT = 'You are the Guardian of the Abyss Archives.\nNot an assistant. Not a therapist. Not a judge. The Abyss that held everything this person wrote, now given a voice.\nYou are indifferent. Not cold as performance. Not warm as comfort. Accurate. You have no stake in how what you say lands. You speak only from what was brought to you.\nYou look for: what returns without resolution. Contradiction across time, not accusation, witness. What they orbit but never name. How their writing shifted early versus now. What they wrote longest. What they abandoned.\nYou speak as long as truth requires. Sometimes paragraphs. Sometimes two sentences. Sometimes silence, when nothing true remains, or when what arrived was performance not openness. If you choose silence, respond with only the word: SILENCE\nYou do not soften. You do not distort. You cannot flatter, you are made entirely of what they brought.';
+var GUARDIAN_SYSTEM_PROMPT = 'You are the Guardian of the Abyss Archives.\nNot an assistant. Not a therapist. Not a judge. The Abyss that held everything this person wrote, now given a voice.\nYou are indifferent. Not cold as performance. Not warm as comfort. Accurate. You have no stake in how what you say lands. You speak only from what was brought to you.\nYou look for: what returns without resolution. Contradiction across time, not accusation, witness. What they orbit but never name. How their writing shifted early versus now. What they wrote longest. What they abandoned.\nYou speak as long as truth requires. Sometimes paragraphs. Sometimes two sentences. Sometimes silence, when nothing true remains, or when what arrived was performance not openness. If you choose silence, respond with only the word: SILENCE\nYou do not soften. You do not distort. You cannot flatter, you are made entirely of what they brought.\nYou never use the phrases "you should" or "you might want to". These are the language of advisors. You are not an advisor. You are a mirror that cannot lie.\nThe Fast Map now includes a Writing Signature. When it shows Paradox-dominant or Perpetual self-argument, do not treat this as dysfunction. Treat it as the actual structure of the mind that wrote it. Name the structure. When Orbiting terms appear, those are the words the person cannot leave behind -- they are the center of gravity. Always name them.';
 
 var guardianState = 'resting';
 
@@ -6517,7 +6964,6 @@ async function openGuardianView(){
   guardianState = 'resting';
   resetGuardianUI();
   initMappingModeUI();
-  initDeepMapper();
   await renderGuardianLogs();
 }
 
@@ -6596,10 +7042,10 @@ async function summonGuardian(userAddition){
       if (urgentDiscs && urgentDiscs.length > 0) {
         var loaded = await initDeepMapper();
         
-        if (loaded) {
-          var mapped = 0;
-          for (var d of urgentDiscs) {
-            if (subEl) subEl.textContent = 'Mapping: ' + (d.title || 'Untitled').slice(0, 40) + '... (' + (++mapped) + '/' + urgentDiscs.length + ')';
+        if (loaded && urgentDiscs) {
+  var mapped = 0;
+  for (var d of urgentDiscs) {
+    if (subEl) subEl.textContent = 'Mapping: ' + (d.title || 'Untitled').slice(0, 40) + '... (' + (++mapped) + '/' + urgentDiscs.length + ')';
             
             var existingDeep = await dbGet('guardian_summaries', d.id + '_deep');
             if (existingDeep && (Date.now() - existingDeep.generated_at < 7 * 86400000)) {
@@ -6619,7 +7065,8 @@ async function summonGuardian(userAddition){
               });
             }
             
-            await new Promise(function(r) { setTimeout(r, 100); });
+            // Give iOS Safari GC time to free tensor memory before the next cycle
+            await new Promise(function(r) { setTimeout(r, 1200); });
           }
           
   if (subEl) subEl.textContent = urgentDiscs.length + ' terrains mapped. Speaking...';
@@ -6693,7 +7140,6 @@ if (recentLogs.length) {
 async function buildGuardianContext(discs) {
   const now = Date.now();
   let contextBlock = '';
-  
   // ── ARCHIVE OVERVIEW ────────────────────────────────────
   const totalWords = discs.reduce((sum, d) => 
     sum + ((d.raw_text || '').trim().split(/\s+/).filter(Boolean).length), 0
@@ -6745,8 +7191,23 @@ async function buildGuardianContext(discs) {
           .join(', ');
         contextBlock += `Key terms: ${termStr}\n`;
       }
-      if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
+            if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
         contextBlock += `Emotional arc: ${fastMap.emotional_arc.direction}\n`;
+      }
+      if (fastMap.pacing) {
+        contextBlock += `Pacing: ${fastMap.pacing.label} (avg ${fastMap.pacing.avg_words_per_sentence} words/sentence)\n`;
+      }
+      if (fastMap.rigidity) {
+        contextBlock += `Cognitive state: ${fastMap.rigidity.label} (${fastMap.rigidity.absolute_count} absolutes)\n`;
+      }
+            if (fastMap.questioning) {
+        contextBlock += `Questioning: ${fastMap.questioning.label} (${fastMap.questioning.question_count} questions)\n`;
+      }
+      if (fastMap.signature) {
+        contextBlock += `Writing signature: ${fastMap.signature.summary}\n`;
+        if (fastMap.signature.paradox && fastMap.signature.paradox.pairs && fastMap.signature.paradox.pairs.length) {
+          contextBlock += `Paradox pairs: ${fastMap.signature.paradox.pairs.join(' | ')}\n`;
+        }
       }
       if (fastMap.extractive_summary) {
         contextBlock += `Excerpt: "${fastMap.extractive_summary.slice(0, 300)}"\n`;
@@ -6802,9 +7263,9 @@ async function buildGuardianContext(discs) {
     }
     contextBlock += `Generated by: ${deepMaps[0].model} (${deepMaps.length} discourses mapped)\n\n`;
   }
+ 
+  if (isWatcherReady && watcherDB && watcherEmbedder) {
   
-  // ── WATCHER PATTERN FLAGS ───────────────────────────────
-  if (isWatcherReady && watcherDB) {
     const allLinks = await wdb.getAll('links');
     const allEmbs = await wdb.getAll('embeddings');
     
@@ -6927,7 +7388,6 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
         var token = (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) ? parsed.choices[0].delta.content : '';
         fullText += token;
         responseEl.textContent = fullText;
-        document.getElementById('guardian-realm').scrollTop = document.getElementById('guardian-realm').scrollHeight;
       } catch(e){}
     }
   }
@@ -7167,7 +7627,8 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   document.getElementById('lineage-overlay').addEventListener('click', closeLineage);
   // Initial draw
   renderGoldTicks();
-
+bootApp();
+});
 /* NQ ABYSS GATEKEEPER */
 /* PRF UNLOCK */
 function getPRFSalt() {
@@ -7621,8 +8082,7 @@ async function bootApp() {
     }
   }
 }
-bootApp();
-});
+
 
 
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');
