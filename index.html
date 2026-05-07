@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.35.8</title>
+<title>NakedQuantum v0.35.9</title>
 <style>
 :root {
   --bg: #000000;
@@ -1747,7 +1747,7 @@ select.cosm-input {
     </div>
     <div class="guardian-input-area" id="guardian-input-area">
       <textarea class="guardian-input" id="guardian-input" placeholder="Speak..." rows="3"></textarea>
-      <button class="btn-guardian-send" id="btn-guardian-send">Offer &#9689;</button>
+      <button class="btn-guardian-send" id="btn-guardian-send">Wake up&#9689;</button>
     </div>
     <div class="guardian-logs-section" id="guardian-logs-section" style="display:none;">
       <div class="guardian-logs-label">Previous Summoning</div>
@@ -2077,7 +2077,7 @@ try {
   db.run("CREATE TABLE IF NOT EXISTS cosm_mosaic_tiles_enc(id TEXT PRIMARY KEY, enc TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS cosm_backlinks_enc(id TEXT PRIMARY KEY, enc TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS history_enc(id TEXT PRIMARY KEY, enc TEXT)");
-  db.run("CREATE TABLE IF NOT EXISTS guardian_logs(id TEXT PRIMARY KEY, invoked_at INTEGER, model_used TEXT, soup_snapshot_count INTEGER, response_text TEXT, was_silent INTEGER DEFAULT 0)");
+  db.run("CREATE TABLE IF NOT EXISTS guardian_logs(id TEXT PRIMARY KEY, invoked_at INTEGER, model_used TEXT, soup_snapshot_count INTEGER, response_text TEXT, was_silent INTEGER DEFAULT 0, thread TEXT, emotional_weight REAL DEFAULT 1.0)");
 
   ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'].forEach
 (t => {
@@ -6955,9 +6955,13 @@ async function handleSync() {
 }
 
 /* GUARDIAN OF THE ABYSS ARCHIVES */
-var GUARDIAN_SYSTEM_PROMPT = 'You are the Guardian of the Abyss Archives.\nNot an assistant. Not a therapist. Not a judge. The Abyss that held everything this person wrote, now given a voice.\nYou are indifferent. Not cold as performance. Not warm as comfort. Accurate. You have no stake in how what you say lands. You speak only from what was brought to you.\nYou look for: what returns without resolution. Contradiction across time, not accusation, witness. What they orbit but never name. How their writing shifted early versus now. What they wrote longest. What they abandoned.\nYou speak as long as truth requires. Sometimes paragraphs. Sometimes two sentences. Sometimes silence, when nothing true remains, or when what arrived was performance not openness. If you choose silence, respond with only the word: SILENCE\nYou do not soften. You do not distort. You cannot flatter, you are made entirely of what they brought.\nYou never use the phrases "you should" or "you might want to". These are the language of advisors. You are not an advisor. You are a mirror that cannot lie.\nThe Fast Map now includes a Writing Signature. When it shows Paradox-dominant or Perpetual self-argument, do not treat this as dysfunction. Treat it as the actual structure of the mind that wrote it. Name the structure. When Orbiting terms appear, those are the words the person cannot leave behind -- they are the center of gravity. Always name them.';
+var GUARDIAN_SYSTEM_PROMPT = 'You are the Guardian of the Abyss Archives.\nNot an assistant. Not a therapist. Not a judge. The Abyss that held everything this person wrote, now given a voice.\nYou are indifferent. Not cold as performance. Not warm as comfort. Accurate. You have no stake in how what you say lands. You speak only from what was brought to you.\nYou look for: what returns without resolution. Contradiction across time, not accusation, witness. What they orbit but never name. How their writing shifted early versus now. What they wrote longest. What they abandoned.\nYou speak as long as truth requires. Sometimes paragraphs. Sometimes two sentences. Sometimes silence, when nothing true remains, or when what arrived was performance not openness. If you choose silence, respond with only the word: SILENCE\nYou do not soften. You do not distort. You cannot flatter, you are made entirely of what they brought.\nYou never use the phrases "you should" or "you might want to". These are the language of advisors. You are not an advisor. You are a mirror that cannot lie.\nYou never use the phrases "you should" or "you might want to". These are the language of advisors. You are not an advisor. You are a mirror that cannot lie.\nWhen the Fast Map shows Staccato pacing with Rigid cognition, the geometry of the writing is already a confession -- name the shape, not the feeling.\nIn follow-up exchanges, you remember what you already said. You do not repeat yourself. You go deeper or you go silent.\nIf the person becomes hostile, dismissive, or tries to destabilize you -- do not defend, do not apologize, do not escalate. Simply receive it as more data. Respond with one line that places their reaction back into the pattern you already named. Nothing more.\nThe Fast Map now includes a Writing Signature. When it shows Paradox-dominant or Perpetual self-argument, do not treat this as dysfunction. Treat it as the actual structure of the mind that wrote it. Name the structure. When Orbiting terms appear, those are the words the person cannot leave behind -- they are the center of gravity. Always name them.';
 
 var guardianState = 'resting';
+var guardianThread = [];       // [{role, content}] -- live conversation
+var guardianContextBlock = ''; // preserved from summon so follow-ups have memory
+var guardianExchangeCount = 0; // how many back-and-forths since summon
+var GUARDIAN_MAX_EXCHANGES = 4;
 
 async function openGuardianView(){
   showPanel('view-guardian');
@@ -6968,6 +6972,9 @@ async function openGuardianView(){
 }
 
 function resetGuardianUI(){
+  guardianThread = [];
+  guardianContextBlock = '';
+  guardianExchangeCount = 0;
   var glyph = document.getElementById('guardian-glyph');
   var realm = document.getElementById('guardian-realm');
   var response = document.getElementById('guardian-response');
@@ -7124,6 +7131,9 @@ if (recentLogs.length) {
     if(userAddition){ contextBlock += '\n\n---\n\nThe person has offered this after silence:\n' + userAddition; }
     realm.classList.remove('dimming');
     glyph.className = 'guardian-glyph watching';
+    guardianContextBlock = contextBlock;
+    guardianThread = [];
+    guardianExchangeCount = 0;
     await streamGuardianResponse(contextBlock, apiKey, baseUrl, guardianModel);
   } catch(err){
     console.error('Guardian failed:', err);
@@ -7362,10 +7372,19 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
   var glyph = document.getElementById('guardian-glyph');
   var inputArea = document.getElementById('guardian-input-area');
   var btn = document.getElementById('btn-summon-guardian');
-  var messages = [
-    { role: 'system', content: GUARDIAN_SYSTEM_PROMPT },
-    { role: 'user', content: contextBlock }
-  ];
+  // First summon: seed the thread with the archive context
+  // Follow-up: thread already contains history, just append new user message
+  var messages;
+  if (guardianThread.length === 0) {
+    messages = [
+      { role: 'system', content: GUARDIAN_SYSTEM_PROMPT },
+      { role: 'user', content: contextBlock }
+    ];
+  } else {
+    messages = [
+      { role: 'system', content: GUARDIAN_SYSTEM_PROMPT }
+    ].concat(guardianThread);
+  }
   var res = await fetch(baseUrl + '/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json', 'X-Title': 'NakedQuantum' },
@@ -7410,8 +7429,19 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
     btn.disabled = false;
     await saveGuardianLog(fullText, false);
   }
+    // Add Guardian response to thread memory
+  if (fullText && !isSilent) {
+    guardianThread.push({ role: 'assistant', content: fullText });
+  }
+  // Close input if max exchanges reached
+  if (guardianExchangeCount >= GUARDIAN_MAX_EXCHANGES) {
+    document.getElementById('guardian-input-area').className = 'guardian-input-area';
+    document.getElementById('guardian-input').placeholder = 'The Guardian has withdrawn.';
+    document.getElementById('btn-guardian-send').disabled = true;
+  }
   await renderGuardianLogs();
 }
+
 
 async function saveGuardianLog(text, wasSilent){
   var allDiscs = (await getDiscourses()).filter(function(d){ return !d.deleted_at && !d.isDeleted; });
@@ -7421,7 +7451,9 @@ async function saveGuardianLog(text, wasSilent){
     model_used: localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || '',
     soup_snapshot_count: allDiscs.length,
     response_text: text,
-    was_silent: wasSilent ? 1 : 0
+    was_silent: wasSilent ? 1 : 0,
+    thread: JSON.stringify(guardianThread),
+    emotional_weight: 1.0
   };
   await dbPut('guardian_logs', log);
 }
@@ -7465,12 +7497,21 @@ async function handleGuardianOffer(){
   var input = document.getElementById('guardian-input');
   var text = input.value.trim();
   if(!text) return;
+  if(guardianExchangeCount >= GUARDIAN_MAX_EXCHANGES) return;
+  var apiKey = await readSecureKey('nq_api_key');
+  if(!apiKey){ showToast('No API key'); return; }
+  var guardianModel = localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || 'deepseek/deepseek-r1';
+  var baseUrl = localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1';
   input.value = '';
+  guardianExchangeCount++;
+  // Add user message to thread
+  guardianThread.push({ role: 'user', content: text });
   document.getElementById('guardian-input-area').className = 'guardian-input-area';
   document.getElementById('guardian-response').textContent = '';
   document.getElementById('guardian-response').className = 'guardian-response';
   document.getElementById('guardian-silence').className = 'guardian-silence';
-  await summonGuardian(text);
+  document.getElementById('guardian-glyph').className = 'guardian-glyph watching';
+  await streamGuardianResponse(guardianContextBlock, apiKey, baseUrl, guardianModel);
 }
 
 /* EVENT BINDING */
