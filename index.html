@@ -2351,14 +2351,11 @@ async function updateWatcherStatusUI() {
   const detail = document.getElementById('watcher-detail');
   
   if (!text) return;
-  const offlineSince = localStorage.getItem('nq_watcher_offline_since');
-  if (offlineSince) {
-    if (dot) dot.style.opacity = '0.2';
-    if (text) text.textContent = 'Blind';
-    const daysOffline = Math.floor((Date.now() - parseInt(offlineSince)) / 86400000);
-    if (detail) detail.textContent = `Offline since ${new Date(parseInt(offlineSince)).toLocaleDateString('en-US', {month:'short', day:'numeric'})} · ${daysOffline}d`;
-  }
   if (embs.length === 0) {
+    if (dot) dot.style.opacity = '0.3';
+    text.textContent = 'Slumbering';
+    if (detail) detail.textContent = 'Waiting for enough material to observe';
+  } else if (rich.length < 5) {
     if (dot) dot.style.opacity = '0.3';
     text.textContent = 'Slumbering';
     if (detail) detail.textContent = 'Waiting for enough material to observe';
@@ -2401,7 +2398,6 @@ async function initWatcher() {
 localStorage.removeItem('nq_watcher_offline_since');
 const firstAwakening = !localStorage.getItem('nq_watcher_awakened');
 if (firstAwakening) {
-  localStorage.setItem('nq_watcher_awakened', '1');
   showToast('◈ The Watcher has awakened');
   // One-time reindex of all existing content
   setTimeout(async () => {
@@ -2422,7 +2418,6 @@ scheduleWatcherPass();
   } catch (err) {
     console.warn('[Watcher] Init Failed:', err);
     hideWatcherLoading();
-    localStorage.setItem('nq_watcher_offline_since', Date.now().toString());
   }
 }
 
@@ -5473,7 +5468,7 @@ async function generateFastMap(discourseId) {
   }
 }
 
-// ── LOCAL DEEP MAPPER ────────────────────────────────────
+/* ── LOCAL DEEP MAPPER ──────────────────────────────────── */
 // Loaded only on Guardian summon when sovereign mode is active
 
 let deepMapper = null;
@@ -5487,7 +5482,6 @@ let deepMapperLastUnload = 0;
 async function unloadDeepMapper() {
   if (deepMapper) {
     try { 
-      // This is the magic command that frees the WebAssembly RAM
       await deepMapper.dispose(); 
     } catch(e) { console.warn("DeepMapper dispose error", e); }
   }
@@ -5496,28 +5490,21 @@ async function unloadDeepMapper() {
   deepMapperLastUnload = Date.now();
 }
 
-const DEEP_MAPPER_TIMEOUT_MS = 30000; // 30 seconds
-
 async function initDeepMapper() {
-  // GUARD: Suppression check (same as before)
+  // GUARD: Cartographer suppressed (Watcher still vacating memory)
   if (deepMapperLoadSuppressed) {
     console.log('[DeepMapper] Suppressed -- waiting for Watcher memory to free');
-    await new Promise(resolve => {
-      const check = setInterval(() => {
-        if (!deepMapperLoadSuppressed) {
-          clearInterval(check);
-          resolve();
-        }
-      }, 200);
-      setTimeout(() => { clearInterval(check); resolve(); }, 12000);
-    });
-    if (deepMapperLoadSuppressed) {
-      console.log('[DeepMapper] Suppression timeout -- proceeding anyway');
-    }
+    return false;
   }
   
+  // Don't reload if unloaded less than 2 seconds ago
+  if (Date.now() - deepMapperLastUnload < 2000) {
+    console.log('[DeepMapper] Cooling down, waiting...');
+    await new Promise(r => setTimeout(r, 2000));
+  }
   if (deepMapperReady) return true;
   if (deepMapperLoading) {
+    // Wait for existing load to complete
     return new Promise((resolve) => {
       const check = setInterval(() => {
         if (deepMapperReady) { clearInterval(check); resolve(true); }
@@ -5529,40 +5516,32 @@ async function initDeepMapper() {
   deepMapperLoading = true;
   
   try {
+    const { pipeline, env } = await import(
+      'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js'
+    );
+    
+    env.useBrowserCache = true;
+    env.allowLocalModels = false;
+    env.backends.onnx.wasm.wasmPaths = 
+      'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
+    
+    // Update the summoning UI
     const subEl = document.getElementById('guardian-sub');
     if (subEl) subEl.textContent = 'Loading the Cartographer...';
     
-    // Race the pipeline load against a timeout
-    const loadPromise = (async () => {
-      const { pipeline, env } = await import(
-        'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js'
-      );
-      
-      env.useBrowserCache = true;
-      env.allowLocalModels = false;
-      env.backends.onnx.wasm.wasmPaths = 
-        'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
-      
-      deepMapper = await pipeline('summarization', DEEP_MAPPER_MODEL, {
-        quantized: true,
-        progress_callback: (progress) => {
-          if (progress.status === 'downloading' && subEl) {
-            const loaded = Math.round((progress.loaded || 0) / 1024 / 1024);
-            const total = Math.round((progress.total || 306) / 1024 / 1024);
-            subEl.textContent = `Cartographer: ${loaded}MB / ${total}MB`;
-          }
-          if (progress.status === 'ready' && subEl) {
-            subEl.textContent = 'Cartographer ready. Mapping...';
-          }
+    deepMapper = await pipeline('summarization', DEEP_MAPPER_MODEL, {
+      quantized: true,
+      progress_callback: (progress) => {
+        if (progress.status === 'downloading' && subEl) {
+          const loaded = Math.round((progress.loaded || 0) / 1024 / 1024);
+          const total = Math.round((progress.total || 306) / 1024 / 1024);
+          subEl.textContent = `Cartographer: ${loaded}MB / ${total}MB`;
         }
-      });
-    })();
-    
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('DeepMapper loading timed out')), DEEP_MAPPER_TIMEOUT_MS)
-    );
-    
-    await Promise.race([loadPromise, timeoutPromise]);
+        if (progress.status === 'ready' && subEl) {
+          subEl.textContent = 'Cartographer ready. Mapping...';
+        }
+      }
+    });
     
     deepMapperReady = true;
     deepMapperLoading = false;
@@ -5572,8 +5551,6 @@ async function initDeepMapper() {
     console.error('[DeepMapper] Failed to load:', err);
     deepMapperLoading = false;
     deepMapper = null;
-    const subEl = document.getElementById('guardian-sub');
-    if (subEl) subEl.textContent = 'Cartographer resting. Using Fast Maps.';
     return false;
   }
 }
@@ -7090,13 +7067,8 @@ async function buildGuardianContext(discs) {
     }
     contextBlock += `Generated by: ${deepMaps[0].model} (${deepMaps.length} discourses mapped)\n\n`;
   }
-  const watcherOfflineSince = localStorage.getItem('nq_watcher_offline_since');
-  if (watcherOfflineSince) {
-    const days = Math.floor((Date.now() - parseInt(watcherOfflineSince)) / 86400000);
-    contextBlock += '── WATCHER PATTERN FLAGS ──\n\n';
-    contextBlock += `The Watcher has been blind for ${days} days. No resonance data available.\n\n`;
-  } else if (isWatcherReady && watcherDB) {
-  // ── WATCHER PATTERN FLAGS ───────────────────────────────
+ 
+  if (isWatcherReady && watcherDB) {
   
     const allLinks = await wdb.getAll('links');
     const allEmbs = await wdb.getAll('embeddings');
