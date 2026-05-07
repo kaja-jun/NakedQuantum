@@ -5500,7 +5500,21 @@ async function initDeepMapper() {
   // GUARD: Cartographer suppressed (Watcher still vacating memory)
   if (deepMapperLoadSuppressed) {
     console.log('[DeepMapper] Suppressed -- waiting for Watcher memory to free');
-    return false;
+    // Wait for the suppression to lift, but don't hang forever
+    await new Promise(resolve => {
+      const check = setInterval(() => {
+        if (!deepMapperLoadSuppressed) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 200);
+      // Safety timeout: 8 seconds max
+      setTimeout(() => { clearInterval(check); resolve(); }, 8000);
+    });
+    // After waiting, check again if we're still suppressed
+    if (deepMapperLoadSuppressed) {
+      console.log('[DeepMapper] Suppression timeout -- proceeding anyway');
+    }
   }
   
   // Don't reload if unloaded less than 2 seconds ago
