@@ -528,7 +528,7 @@ button {
 /* THE FORMATTING PILL */
 .format-toolbar {
   margin-top: auto; /* Pushes it to the bottom of the writing space */
-  margin-bottom: 20px; /* The safety buffer to dodge the iOS Home Indicator */
+  margin-bottom: max(20px, env(safe-area-inset-bottom, 20px) + 8px); /* The safety buffer to dodge the iOS Home Indicator */
   background: rgba(10,10,10,0.85);
   border: 1px solid var(--border);
   backdrop-filter: blur(12px);
@@ -3563,6 +3563,7 @@ if (isWatcherReady && engramDisc) queueWatcherEmbed(engramDisc.id, title, raw_te
   
   // 3. Close the modal
   closeOverlay();
+renderDefaultBar(currentMode); // Force pill return
   
   // 4. THE FIX: Force the active view to re-render immediately
   if (currentMode === 'soup') {
@@ -7200,7 +7201,6 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
         var token = (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) ? parsed.choices[0].delta.content : '';
         fullText += token;
         responseEl.textContent = fullText;
-        document.getElementById('guardian-realm').scrollTop = document.getElementById('guardian-realm').scrollHeight;
       } catch(e){}
     }
   }
