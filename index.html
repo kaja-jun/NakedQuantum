@@ -5405,10 +5405,6 @@ function detectWritingSignature(text) {
   };
 }
 
-function detectEmotionalArc(text) {
-  const lines = text.split('\n').filter(l => l.trim().length > 0);
-  if (lines.length < 3) return { direction: 'too short', opening_tone: 'neutral', closing_tone: 'neutral', tension_shift: 0 };
-  
 function detectPacing(text) {
   const sentences = text.split(/[.!?]+/).map(s => s.trim().split(/\s+/).filter(Boolean).length).filter(l => l > 0);
   if (!sentences.length) return { label: 'Fragmented', avg_words_per_sentence: 0 };
@@ -5449,10 +5445,14 @@ function detectQuestionDensity(text) {
   return { label, question_count: questions, ratio: parseFloat(ratio.toFixed(3)) };
 }
 
+function detectEmotionalArc(text) {
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
+  if (lines.length < 3) return { direction: 'too short', opening_tone: 'neutral', closing_tone: 'neutral', tension_shift: 0 };
+  
   const firstThird = lines.slice(0, Math.ceil(lines.length / 3)).join(' ').toLowerCase();
   const lastThird = lines.slice(-Math.ceil(lines.length / 3)).join(' ').toLowerCase();
   
-  function score(text, lexicon) {
+function score(text, lexicon) {
     const words = text.split(/\s+/);
     let hits = 0;
     for (const w of words) {
