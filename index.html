@@ -7432,7 +7432,8 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   document.getElementById('lineage-overlay').addEventListener('click', closeLineage);
   // Initial draw
   renderGoldTicks();
-
+bootApp();
+});
 /* NQ ABYSS GATEKEEPER */
 /* PRF UNLOCK */
 function getPRFSalt() {
@@ -7886,8 +7887,7 @@ async function bootApp() {
     }
   }
 }
-bootApp();
-});
+
 
 
 if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');
