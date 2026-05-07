@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.35.4</title>
+<title>NakedQuantum v0.35.6</title>
 <style>
 :root {
   --bg: #000000;
@@ -2386,6 +2386,7 @@ async function initWatcher() {
     env.useBrowserCache = true;
     env.allowLocalModels = false;
     env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
+    env.backends.onnx.wasm.numThreads = 1; // ABYSS FIX: Stop iOS Safari from RAM-crashing
     watcherEmbedder = await pipeline('feature-extraction', W_MODEL_ID, {
       quantized: true,
       progress_callback: (progress) => {
@@ -3951,11 +3952,16 @@ function showPanel(id){
   }
   
   // ── GUARDIAN ENTRY: immediately exile Watcher, suppress Cartographer lazy load ──
+  // ── GUARDIAN ENTRY: immediately exile Watcher, suppress Cartographer lazy load ──
   if (id === 'view-guardian') {
     if (watcherEmbedder) {
-      try { watcherEmbedder.dispose(); } catch(e){} // Free Watcher WASM memory
-      watcherEmbedder = null;
-      isWatcherReady = false;
+      try { 
+        let oldWatcher = watcherEmbedder;
+        watcherEmbedder = null;
+        isWatcherReady = false;
+        // Asynchronous disposal prevents UI thread stutter and allows clean memory unmapping
+        Promise.resolve().then(() => oldWatcher.dispose()).catch(()=>{}); 
+      } catch(e){}
     }
     // Prevent Cartographer from loading for 1.5 seconds so Safari GC can breathe
     deepMapperLoadSuppressed = true;
@@ -5524,6 +5530,7 @@ async function initDeepMapper() {
     env.allowLocalModels = false;
     env.backends.onnx.wasm.wasmPaths = 
       'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
+    env.backends.onnx.wasm.numThreads = 1; // ABYSS FIX: Single thread for survival
     
     // Update the summoning UI
     const subEl = document.getElementById('guardian-sub');
@@ -5559,7 +5566,8 @@ async function generateDeepMap(discourseId, rawText) {
   if (!deepMapperReady || !deepMapper) return null;
   
   // Truncate to model's max input (typically 1024 tokens for distilbart)
-  const truncated = rawText.trim().slice(0, 3000);
+  // Truncate to model's max input (typically 1024 tokens for distilbart)
+  const truncated = rawText.trim().slice(0, 2000); // Tighter slice for iOS memory stability
   
   try {
     const result = await deepMapper(truncated, {
@@ -6884,7 +6892,8 @@ async function summonGuardian(userAddition){
               });
             }
             
-            await new Promise(function(r) { setTimeout(r, 100); });
+            // Give iOS Safari GC time to free tensor memory before the next cycle
+            await new Promise(function(r) { setTimeout(r, 600); });
           }
           
   if (subEl) subEl.textContent = urgentDiscs.length + ' terrains mapped. Speaking...';
