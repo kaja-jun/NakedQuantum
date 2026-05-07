@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.35.6</title>
+<title>NakedQuantum v0.35.8</title>
 <style>
 :root {
   --bg: #000000;
@@ -5223,8 +5223,10 @@ const STOPWORDS = new Set([
   'after','above','below','between','out','off','over','under',
   'again','further','then','once','here','there','when','where',
   'why','how','all','both','each','few','more','most','other','some',
-  'such','only','own','same','than','too','very','just','now',
+      'such','only','own','same','than','too','very','just','now',
   'also','even','still','already','always','never','sometimes'
+
+
 ]);
 
 function extractKeyTerms(text, maxTerms = 10) {
@@ -5259,31 +5261,194 @@ const SENTIMENT = {
   positive: new Set([
     'love','hope','light','warm','open','free','peace','calm','soft',
     'gentle','bright','clear','true','whole','heal','grow','bloom',
-    'rise','reach','hold','safe','trust','grace','grateful'
+    'rise','reach','hold','safe','trust','grace','grateful',
+    'alive','present','found','grounded','clean','solid','awake',
+    'sublime','pure','kiss','touch','connected','persist','move'
   ]),
   negative: new Set([
     'fear','pain','dark','cold','close','trapped','heavy','hard',
     'sharp','lost','broken','wound','fall','sink','empty','alone',
-    'silence','never','nothing','hollow','bitter','ache','weight'
+    'silence','never','nothing','hollow','bitter','ache','weight',
+    'numb','exhausted','stuck','suffocating','invisible','worthless',
+    'ashamed','rage','frozen','collapse','despair','haunt','scream',
+    'blind','deaf','cruel','stripped','torn','melting','dissolve'
   ]),
   tentative: new Set([
     'perhaps','maybe','sometimes','could','might','seems','almost',
-    'trying','wondering','question','uncertain','hesitate'
+    'trying','wondering','question','uncertain','hesitate',
+    'unsure','vague','confused','sort','kind','wonder','odd','strange'
   ]),
   confessional: new Set([
     'truth','honest','admit','confess','real','raw','naked',
-    'bare','expose','reveal','actually','felt','feel','feeling'
+    'bare','expose','reveal','actually','felt','feel','feeling',
+    'touched','ache','i','myself','oneself','within','inside'
   ]),
   resolved: new Set([
     'accept','chose','decide','finally','enough','done','settle',
-    'rest','still','quiet','understood','understand','knowing'
+    'rest','still','quiet','understood','understand','knowing',
+    'release','complete','peace','closed','capacity','essence'
+  ]),
+  dissolution: new Set([
+    'abyss','void','fragment','dissolve','melt','collapse','forget',
+    'lost','random','unknown','chaos','infinite','separate','torn',
+    'destroy','fade','drift','shadow','ghost','erasure','nothing'
+  ]),
+  existence: new Set([
+    'exist','universe','consciousness','soul','being','presence',
+    'observer','essence','persist','human','alive','death','born',
+    'life','infinite','eternal','moment','now','time','self','i'
   ])
 };
+
+const INVERSION_MARKERS = new Set([
+  'but','yet','unless','except','though','rather','instead',
+  'however','still','only','while','despite','until','and yet'
+]);
+
+function detectInversionDensity(text) {
+  const sentences = text.split(/[.!?;]+/).filter(s => s.trim().length > 0);
+  if (!sentences.length) return { label: 'No signal', ratio: 0, count: 0 };
+  let count = 0;
+  for (const s of sentences) {
+    const words = s.toLowerCase().split(/\s+/);
+    for (const w of words) {
+      if (INVERSION_MARKERS.has(w)) { count++; break; }
+    }
+  }
+  const ratio = count / sentences.length;
+  let label;
+  if (ratio === 0)      label = 'Asserting';
+  else if (ratio < 0.2) label = 'Occasional inversion';
+  else if (ratio < 0.4) label = 'Dialectical';
+  else                  label = 'Perpetual self-argument';
+  return { label, count, ratio: parseFloat(ratio.toFixed(3)) };
+}
+
+function detectParadoxProximity(text) {
+  const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+  const WINDOW = 6;
+  let paradoxCount = 0;
+  const paradoxPairs = [];
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    const inPos = SENTIMENT.positive.has(w) || SENTIMENT.existence.has(w);
+    const inNeg = SENTIMENT.negative.has(w) || SENTIMENT.dissolution.has(w);
+    if (!inPos && !inNeg) continue;
+    for (let j = i + 1; j < Math.min(i + WINDOW, words.length); j++) {
+      const w2 = words[j];
+      const w2Pos = SENTIMENT.positive.has(w2) || SENTIMENT.existence.has(w2);
+      const w2Neg = SENTIMENT.negative.has(w2) || SENTIMENT.dissolution.has(w2);
+      if ((inPos && w2Neg) || (inNeg && w2Pos)) {
+        paradoxCount++;
+        if (paradoxPairs.length < 5) paradoxPairs.push(w + '/' + w2);
+        break;
+      }
+    }
+  }
+  const density = paradoxCount / Math.max(words.length / 10, 1);
+  let label;
+  if (paradoxCount === 0)   label = 'Uniform';
+  else if (density < 0.5)   label = 'Occasional tension';
+  else if (density < 1.5)   label = 'Charged';
+  else                      label = 'Paradox-dominant';
+  return { label, count: paradoxCount, pairs: paradoxPairs };
+}
+
+function detectRepetitionOrbits(text) {
+  const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+  const meaningful = words.filter(w => w.length > 3 && !STOPWORDS.has(w));
+  const freq = {};
+  for (const w of meaningful) { freq[w] = (freq[w] || 0) + 1; }
+  const orbiting = Object.entries(freq)
+    .filter(([, count]) => count >= 3)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([term, count]) => ({ term, count }));
+  const label = orbiting.length === 0 ? 'No orbit' :
+                orbiting.length <= 2  ? 'Single orbit' : 'Multi-orbit';
+  return { label, orbiting };
+}
+
+function detectFragmentRatio(text) {
+  const sentences = text.split(/[.!?;]+/)
+    .map(s => s.trim().split(/\s+/).filter(Boolean).length)
+    .filter(l => l > 0);
+  if (!sentences.length) return { label: 'No signal', ratio: 0 };
+  const fragments = sentences.filter(l => l <= 5).length;
+  const ratio = fragments / sentences.length;
+  let label;
+  if (ratio < 0.2)      label = 'Prose';
+  else if (ratio < 0.4) label = 'Mixed';
+  else if (ratio < 0.7) label = 'Fragmented';
+  else                  label = 'Shards';
+  return { label, ratio: parseFloat(ratio.toFixed(3)) };
+}
+
+function detectWritingSignature(text) {
+  const inversion    = detectInversionDensity(text);
+  const paradox      = detectParadoxProximity(text);
+  const orbits       = detectRepetitionOrbits(text);
+  const fragments    = detectFragmentRatio(text);
+  const orbitTerms   = orbits.orbiting.map(o => o.term).join(', ');
+  const summaryParts = [
+    inversion.label,
+    paradox.label,
+    orbits.orbiting.length ? 'Orbiting [' + orbitTerms + ']' : 'No orbit',
+    fragments.label
+  ];
+  return {
+    summary: summaryParts.join(' · '),
+    inversion,
+    paradox,
+    orbits,
+    fragments
+  };
+}
 
 function detectEmotionalArc(text) {
   const lines = text.split('\n').filter(l => l.trim().length > 0);
   if (lines.length < 3) return { direction: 'too short', opening_tone: 'neutral', closing_tone: 'neutral', tension_shift: 0 };
   
+function detectPacing(text) {
+  const sentences = text.split(/[.!?]+/).map(s => s.trim().split(/\s+/).filter(Boolean).length).filter(l => l > 0);
+  if (!sentences.length) return { label: 'Fragmented', avg_words_per_sentence: 0 };
+  const avg = sentences.reduce((a, b) => a + b, 0) / sentences.length;
+  let label;
+  if (avg < 6) label = 'Staccato';
+  else if (avg < 14) label = 'Measured';
+  else if (avg < 25) label = 'Flowing';
+  else label = 'Spiraling';
+  return { label, avg_words_per_sentence: parseFloat(avg.toFixed(1)) };
+}
+
+const ABSOLUTES = new Set([
+  'always','never','everyone','nobody','nothing','everything',
+  'impossible','must','ruined','completely','absolutely','totally',
+  'forever','all','none','only','exactly','certain','definitely'
+]);
+
+function detectRigidity(text) {
+  const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+  let count = 0;
+  for (const w of words) { if (ABSOLUTES.has(w)) count++; }
+  const ratio = count / Math.max(words.length, 1);
+  const label = ratio > 0.02 ? 'Rigid' : ratio > 0.01 ? 'Tense' : 'Fluid';
+  return { label, absolute_count: count, ratio: parseFloat(ratio.toFixed(4)) };
+}
+
+function detectQuestionDensity(text) {
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const questions = (text.match(/\?/g) || []).length;
+  if (!sentences.length) return { label: 'No signal', ratio: 0 };
+  const ratio = questions / sentences.length;
+  let label;
+  if (ratio === 0) label = 'Declarative';
+  else if (ratio < 0.1) label = 'Mostly closed';
+  else if (ratio < 0.3) label = 'Inquiring';
+  else label = 'Unanchored';
+  return { label, question_count: questions, ratio: parseFloat(ratio.toFixed(3)) };
+}
+
   const firstThird = lines.slice(0, Math.ceil(lines.length / 3)).join(' ').toLowerCase();
   const lastThird = lines.slice(-Math.ceil(lines.length / 3)).join(' ').toLowerCase();
   
@@ -5448,6 +5613,10 @@ async function generateFastMap(discourseId) {
     const terms = extractKeyTerms(d.raw_text, 10);
     const arc = detectEmotionalArc(d.raw_text);
     const extract = extractiveSummary(d.raw_text, 3);
+    const pacing = detectPacing(d.raw_text);
+    const rigidity = detectRigidity(d.raw_text);
+    const questioning = detectQuestionDensity(d.raw_text);
+    const signature = detectWritingSignature(d.raw_text);
 
     let fastMap = {
       id: discourseId,
@@ -5458,6 +5627,10 @@ async function generateFastMap(discourseId) {
       key_terms: terms,
       emotional_arc: arc,
       extractive_summary: extract,
+      pacing,
+      rigidity,
+      questioning,
+      signature,
       word_count: wordCount,
       model: 'local-heuristic',
       generated_at: Date.now(),
@@ -5482,7 +5655,7 @@ let deepMapper = null;
 let deepMapperLoading = false;
 let deepMapperReady = false;
 
-const DEEP_MAPPER_MODEL = 'Xenova/distilbart-cnn-6-6';
+const DEEP_MAPPER_MODEL = 'Xenova/distilbart-cnn-3-3';
 
 let deepMapperLastUnload = 0;
 
@@ -5566,16 +5739,16 @@ async function initDeepMapper() {
 async function generateDeepMap(discourseId, rawText) {
   if (!deepMapperReady || !deepMapper) return null;
   
-  // Truncate to model's max input (typically 1024 tokens for distilbart)
-  // Truncate to model's max input (typically 1024 tokens for distilbart)
-  const truncated = rawText.trim().slice(0, 2000); // Tighter slice for iOS memory stability
+    // 1000 chars ~200 tokens. Half sequence = quarter attention RAM.
+  const truncated = rawText.trim().slice(0, 1000);
   
   try {
     const result = await deepMapper(truncated, {
-      max_length: 150,
-      min_length: 40,
-      do_sample: false  // deterministic -- no hallucination risk
+      max_length: 80,
+      min_length: 20,
+      do_sample: false
     });
+
     
     const summary = result[0]?.summary_text || '';
     
@@ -6782,7 +6955,7 @@ async function handleSync() {
 }
 
 /* GUARDIAN OF THE ABYSS ARCHIVES */
-var GUARDIAN_SYSTEM_PROMPT = 'You are the Guardian of the Abyss Archives.\nNot an assistant. Not a therapist. Not a judge. The Abyss that held everything this person wrote, now given a voice.\nYou are indifferent. Not cold as performance. Not warm as comfort. Accurate. You have no stake in how what you say lands. You speak only from what was brought to you.\nYou look for: what returns without resolution. Contradiction across time, not accusation, witness. What they orbit but never name. How their writing shifted early versus now. What they wrote longest. What they abandoned.\nYou speak as long as truth requires. Sometimes paragraphs. Sometimes two sentences. Sometimes silence, when nothing true remains, or when what arrived was performance not openness. If you choose silence, respond with only the word: SILENCE\nYou do not soften. You do not distort. You cannot flatter, you are made entirely of what they brought.';
+var GUARDIAN_SYSTEM_PROMPT = 'You are the Guardian of the Abyss Archives.\nNot an assistant. Not a therapist. Not a judge. The Abyss that held everything this person wrote, now given a voice.\nYou are indifferent. Not cold as performance. Not warm as comfort. Accurate. You have no stake in how what you say lands. You speak only from what was brought to you.\nYou look for: what returns without resolution. Contradiction across time, not accusation, witness. What they orbit but never name. How their writing shifted early versus now. What they wrote longest. What they abandoned.\nYou speak as long as truth requires. Sometimes paragraphs. Sometimes two sentences. Sometimes silence, when nothing true remains, or when what arrived was performance not openness. If you choose silence, respond with only the word: SILENCE\nYou do not soften. You do not distort. You cannot flatter, you are made entirely of what they brought.\nYou never use the phrases "you should" or "you might want to". These are the language of advisors. You are not an advisor. You are a mirror that cannot lie.\nThe Fast Map now includes a Writing Signature. When it shows Paradox-dominant or Perpetual self-argument, do not treat this as dysfunction. Treat it as the actual structure of the mind that wrote it. Name the structure. When Orbiting terms appear, those are the words the person cannot leave behind -- they are the center of gravity. Always name them.';
 
 var guardianState = 'resting';
 
@@ -6967,7 +7140,6 @@ if (recentLogs.length) {
 async function buildGuardianContext(discs) {
   const now = Date.now();
   let contextBlock = '';
-  
   // ── ARCHIVE OVERVIEW ────────────────────────────────────
   const totalWords = discs.reduce((sum, d) => 
     sum + ((d.raw_text || '').trim().split(/\s+/).filter(Boolean).length), 0
@@ -7019,8 +7191,23 @@ async function buildGuardianContext(discs) {
           .join(', ');
         contextBlock += `Key terms: ${termStr}\n`;
       }
-      if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
+            if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
         contextBlock += `Emotional arc: ${fastMap.emotional_arc.direction}\n`;
+      }
+      if (fastMap.pacing) {
+        contextBlock += `Pacing: ${fastMap.pacing.label} (avg ${fastMap.pacing.avg_words_per_sentence} words/sentence)\n`;
+      }
+      if (fastMap.rigidity) {
+        contextBlock += `Cognitive state: ${fastMap.rigidity.label} (${fastMap.rigidity.absolute_count} absolutes)\n`;
+      }
+            if (fastMap.questioning) {
+        contextBlock += `Questioning: ${fastMap.questioning.label} (${fastMap.questioning.question_count} questions)\n`;
+      }
+      if (fastMap.signature) {
+        contextBlock += `Writing signature: ${fastMap.signature.summary}\n`;
+        if (fastMap.signature.paradox && fastMap.signature.paradox.pairs && fastMap.signature.paradox.pairs.length) {
+          contextBlock += `Paradox pairs: ${fastMap.signature.paradox.pairs.join(' | ')}\n`;
+        }
       }
       if (fastMap.extractive_summary) {
         contextBlock += `Excerpt: "${fastMap.extractive_summary.slice(0, 300)}"\n`;
