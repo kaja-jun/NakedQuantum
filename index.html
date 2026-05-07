@@ -5496,11 +5496,12 @@ async function unloadDeepMapper() {
   deepMapperLastUnload = Date.now();
 }
 
+const DEEP_MAPPER_TIMEOUT_MS = 30000; // 30 seconds
+
 async function initDeepMapper() {
-  // GUARD: Cartographer suppressed (Watcher still vacating memory)
+  // GUARD: Suppression check (same as before)
   if (deepMapperLoadSuppressed) {
     console.log('[DeepMapper] Suppressed -- waiting for Watcher memory to free');
-    // Wait for the suppression to lift, but don't hang forever
     await new Promise(resolve => {
       const check = setInterval(() => {
         if (!deepMapperLoadSuppressed) {
@@ -5508,23 +5509,15 @@ async function initDeepMapper() {
           resolve();
         }
       }, 200);
-      // Safety timeout: 8 seconds max
-      setTimeout(() => { clearInterval(check); resolve(); }, 8000);
+      setTimeout(() => { clearInterval(check); resolve(); }, 12000);
     });
-    // After waiting, check again if we're still suppressed
     if (deepMapperLoadSuppressed) {
       console.log('[DeepMapper] Suppression timeout -- proceeding anyway');
     }
   }
   
-  // Don't reload if unloaded less than 2 seconds ago
-  if (Date.now() - deepMapperLastUnload < 2000) {
-    console.log('[DeepMapper] Cooling down, waiting...');
-    await new Promise(r => setTimeout(r, 2000));
-  }
   if (deepMapperReady) return true;
   if (deepMapperLoading) {
-    // Wait for existing load to complete
     return new Promise((resolve) => {
       const check = setInterval(() => {
         if (deepMapperReady) { clearInterval(check); resolve(true); }
@@ -5536,32 +5529,40 @@ async function initDeepMapper() {
   deepMapperLoading = true;
   
   try {
-    const { pipeline, env } = await import(
-      'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js'
-    );
-    
-    env.useBrowserCache = true;
-    env.allowLocalModels = false;
-    env.backends.onnx.wasm.wasmPaths = 
-      'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
-    
-    // Update the summoning UI
     const subEl = document.getElementById('guardian-sub');
     if (subEl) subEl.textContent = 'Loading the Cartographer...';
     
-    deepMapper = await pipeline('summarization', DEEP_MAPPER_MODEL, {
-      quantized: true,
-      progress_callback: (progress) => {
-        if (progress.status === 'downloading' && subEl) {
-          const loaded = Math.round((progress.loaded || 0) / 1024 / 1024);
-          const total = Math.round((progress.total || 306) / 1024 / 1024);
-          subEl.textContent = `Cartographer: ${loaded}MB / ${total}MB`;
+    // Race the pipeline load against a timeout
+    const loadPromise = (async () => {
+      const { pipeline, env } = await import(
+        'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js'
+      );
+      
+      env.useBrowserCache = true;
+      env.allowLocalModels = false;
+      env.backends.onnx.wasm.wasmPaths = 
+        'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
+      
+      deepMapper = await pipeline('summarization', DEEP_MAPPER_MODEL, {
+        quantized: true,
+        progress_callback: (progress) => {
+          if (progress.status === 'downloading' && subEl) {
+            const loaded = Math.round((progress.loaded || 0) / 1024 / 1024);
+            const total = Math.round((progress.total || 306) / 1024 / 1024);
+            subEl.textContent = `Cartographer: ${loaded}MB / ${total}MB`;
+          }
+          if (progress.status === 'ready' && subEl) {
+            subEl.textContent = 'Cartographer ready. Mapping...';
+          }
         }
-        if (progress.status === 'ready' && subEl) {
-          subEl.textContent = 'Cartographer ready. Mapping...';
-        }
-      }
-    });
+      });
+    })();
+    
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('DeepMapper loading timed out')), DEEP_MAPPER_TIMEOUT_MS)
+    );
+    
+    await Promise.race([loadPromise, timeoutPromise]);
     
     deepMapperReady = true;
     deepMapperLoading = false;
@@ -5571,6 +5572,8 @@ async function initDeepMapper() {
     console.error('[DeepMapper] Failed to load:', err);
     deepMapperLoading = false;
     deepMapper = null;
+    const subEl = document.getElementById('guardian-sub');
+    if (subEl) subEl.textContent = 'Cartographer resting. Using Fast Maps.';
     return false;
   }
 }
@@ -6881,10 +6884,10 @@ async function summonGuardian(userAddition){
       if (urgentDiscs && urgentDiscs.length > 0) {
         var loaded = await initDeepMapper();
         
-        if (loaded) {
-          var mapped = 0;
-          for (var d of urgentDiscs) {
-            if (subEl) subEl.textContent = 'Mapping: ' + (d.title || 'Untitled').slice(0, 40) + '... (' + (++mapped) + '/' + urgentDiscs.length + ')';
+        if (loaded && urgentDiscs) {
+  var mapped = 0;
+  for (var d of urgentDiscs) {
+    if (subEl) subEl.textContent = 'Mapping: ' + (d.title || 'Untitled').slice(0, 40) + '... (' + (++mapped) + '/' + urgentDiscs.length + ')';
             
             var existingDeep = await dbGet('guardian_summaries', d.id + '_deep');
             if (existingDeep && (Date.now() - existingDeep.generated_at < 7 * 86400000)) {
