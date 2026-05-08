@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.36.3</title>
+<title>NakedQuantum v0.36.4</title>
 <style>
 :root {
   --bg: #000000;
@@ -6359,8 +6359,8 @@ var abyssSparks = [];          // background noise particles
 var abyssPulses = [];          // traveling dots on threads
 var abyssFiringDot = null;     // currently firing disc-dot
 var abyssFiringTimer = 0;      // countdown to next spontaneous fire
-var abyssTouchRipple = null;   // { x, y, life } -- brief expanding ring on touch
-
+var abyssTouchRipples = [];   // multiple expanding rings per touch
+   
 var ABYSS_EMERGE = {
   anchors:    1500,   // ms -- oldest ring + newest dot
   dots:       4000,   // discourse presence dots
@@ -6741,10 +6741,10 @@ function abyssUpdate(elapsed) {
     abyssFiringDot.life -= 16.67;
     if (abyssFiringDot.life <= 0) abyssFiringDot = null;
   }
-  // ── Touch ripple decay ──
-  if (abyssTouchRipple) {
-    abyssTouchRipple.life -= 16.67;
-    if (abyssTouchRipple.life <= 0) abyssTouchRipple = null;
+    // ── Touch ripple decay ──
+  for (var ri = abyssTouchRipples.length - 1; ri >= 0; ri--) {
+    abyssTouchRipples[ri].life -= 16.67;
+    if (abyssTouchRipples[ri].life <= 0) abyssTouchRipples.splice(ri, 1);
   }
 }
 
@@ -6864,16 +6864,39 @@ function abyssDraw(elapsed) {
     abyssCtx.fillStyle = 'rgba(220,210,190,' + sparkAlpha + ')';
     abyssCtx.fill();
   }
-  // ── Touch ripple ──
-  if (abyssTouchRipple && abyssTouchRipple.life > 0) {
-    var rLife = abyssTouchRipple.life / 600;
-    var rAlpha = rLife * 0.35;
-    var rRadius = 8 + (1 - rLife) * 40;
+    // ── Touch ripples -- cosmic membrane ──
+  for (var ri = 0; ri < abyssTouchRipples.length; ri++) {
+    var rp = abyssTouchRipples[ri];
+    if (rp.life <= 0) continue;
+    var rProgress = 1 - (rp.life / rp.maxLife);   // 0 = just born, 1 = dying
+    var rRadius = rp.startRadius + rProgress * rp.expandTo;
+    var rAlpha = (1 - rProgress) * rp.peakAlpha;
+    if (rAlpha < 0.004) continue;
+
     abyssCtx.beginPath();
-    abyssCtx.arc(abyssTouchRipple.x, abyssTouchRipple.y, rRadius, 0, Math.PI * 2);
-    abyssCtx.strokeStyle = 'rgba(200,160,100,' + rAlpha + ')';
-    abyssCtx.lineWidth = 1.0;
+    abyssCtx.arc(rp.x, rp.y, rRadius, 0, Math.PI * 2);
+
+    // Each ring has a slightly different hue shift -- cold outer, warm inner
+    var rr = rp.cold ? 140 : 210;
+    var rg = rp.cold ? 180 : 155;
+    var rb = rp.cold ? 220 : 100;
+    abyssCtx.strokeStyle = 'rgba(' + rr + ',' + rg + ',' + rb + ',' + rAlpha + ')';
+    abyssCtx.lineWidth = rp.lineWidth * (1 - rProgress * 0.6);
     abyssCtx.stroke();
+  }
+
+  // ── Center flash on fresh touch ──
+  for (var ri = 0; ri < abyssTouchRipples.length; ri++) {
+    var rp = abyssTouchRipples[ri];
+    if (!rp.isFirst) continue;
+    var flashLife = rp.life / rp.maxLife;
+    if (flashLife < 0.7) continue;
+    var flashAlpha = (flashLife - 0.7) / 0.3 * 0.5;
+    var flashRadius = (1 - flashLife) * 12;
+    abyssCtx.beginPath();
+    abyssCtx.arc(rp.x, rp.y, flashRadius, 0, Math.PI * 2);
+    abyssCtx.fillStyle = 'rgba(220,200,160,' + flashAlpha + ')';
+    abyssCtx.fill();
   }
 
   // ── Traveling pulses on threads ──
@@ -7212,12 +7235,18 @@ async function abyssOpenThreadSheet(obj) {
   document.getElementById('abyss-sheet').classList.add('open');
 }
 
+var abyssOffsetX = 0;
+var abyssOffsetY = 0;
+
 function abyssResize() {
   if (!abyssCanvas) return;
   abyssW = abyssCanvas.offsetWidth;
   abyssH = abyssCanvas.offsetHeight;
   abyssCanvas.width = abyssW;
   abyssCanvas.height = abyssH;
+  var rect = abyssCanvas.getBoundingClientRect();
+  abyssOffsetX = rect.left;
+  abyssOffsetY = rect.top;
 }
 
 function abyssStop() {
@@ -7231,17 +7260,41 @@ var abyssTouchStartY = -9999;
 function abyssTouchStart(e) {
   e.preventDefault();
   var t = e.touches[0];
-  abyssTouchX = t.clientX;
-  abyssTouchY = t.clientY;
-  abyssTouchStartX = t.clientX;
-  abyssTouchStartY = t.clientY;
-  abyssTouchRipple = { x: abyssTouchX, y: abyssTouchY, life: 600 };
+  abyssTouchX = t.clientX - abyssOffsetX;
+  abyssTouchY = t.clientY - abyssOffsetY;
+  abyssTouchStartX = abyssTouchX;
+  abyssTouchStartY = abyssTouchY;
+    // Spawn a cluster of rings -- cosmic membrane effect
+  var rx = abyssTouchX;
+  var ry = abyssTouchY;
+  var ringDefs = [
+    { delay: 0,   maxLife: 700,  expandTo: 55,  startRadius: 2,  peakAlpha: 0.45, lineWidth: 1.2, cold: false, isFirst: true  },
+    { delay: 60,  maxLife: 900,  expandTo: 90,  startRadius: 1,  peakAlpha: 0.18, lineWidth: 0.7, cold: false, isFirst: false },
+    { delay: 120, maxLife: 1200, expandTo: 140, startRadius: 0,  peakAlpha: 0.10, lineWidth: 0.5, cold: true,  isFirst: false },
+    { delay: 200, maxLife: 1600, expandTo: 200, startRadius: 0,  peakAlpha: 0.06, lineWidth: 0.4, cold: true,  isFirst: false },
+  ];
+  ringDefs.forEach(function(def) {
+    setTimeout(function() {
+      if (!abyssRunning) return;
+      abyssTouchRipples.push({
+        x: rx, y: ry,
+        life: def.maxLife,
+        maxLife: def.maxLife,
+        expandTo: def.expandTo,
+        startRadius: def.startRadius,
+        peakAlpha: def.peakAlpha,
+        lineWidth: def.lineWidth,
+        cold: def.cold,
+        isFirst: def.isFirst
+      });
+    }, def.delay);
+  });
 }
 function abyssTouchMove(e) {
   e.preventDefault();
   var t = e.touches[0];
-  abyssTouchX = t.clientX;
-  abyssTouchY = t.clientY;
+  abyssTouchX = t.clientX - abyssOffsetX;
+  abyssTouchY = t.clientY - abyssOffsetY;
 }
 function abyssTouchEnd(e) {
   e.preventDefault();
