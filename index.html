@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.36.4</title>
+<title>NakedQuantum v0.36.5</title>
 <style>
 :root {
   --bg: #000000;
@@ -7235,18 +7235,16 @@ async function abyssOpenThreadSheet(obj) {
   document.getElementById('abyss-sheet').classList.add('open');
 }
 
-var abyssOffsetX = 0;
-var abyssOffsetY = 0;
-
 function abyssResize() {
   if (!abyssCanvas) return;
   abyssW = abyssCanvas.offsetWidth;
   abyssH = abyssCanvas.offsetHeight;
   abyssCanvas.width = abyssW;
   abyssCanvas.height = abyssH;
-  var rect = abyssCanvas.getBoundingClientRect();
-  abyssOffsetX = rect.left;
-  abyssOffsetY = rect.top;
+}
+
+function abyssGetRect() {
+  return abyssCanvas ? abyssCanvas.getBoundingClientRect() : { left: 0, top: 0 };
 }
 
 function abyssStop() {
@@ -7260,8 +7258,9 @@ var abyssTouchStartY = -9999;
 function abyssTouchStart(e) {
   e.preventDefault();
   var t = e.touches[0];
-  abyssTouchX = t.clientX - abyssOffsetX;
-  abyssTouchY = t.clientY - abyssOffsetY;
+    var rect = abyssGetRect();
+  abyssTouchX = t.clientX - rect.left;
+  abyssTouchY = t.clientY - rect.top;
   abyssTouchStartX = abyssTouchX;
   abyssTouchStartY = abyssTouchY;
     // Spawn a cluster of rings -- cosmic membrane effect
@@ -7293,8 +7292,9 @@ function abyssTouchStart(e) {
 function abyssTouchMove(e) {
   e.preventDefault();
   var t = e.touches[0];
-  abyssTouchX = t.clientX - abyssOffsetX;
-  abyssTouchY = t.clientY - abyssOffsetY;
+  var rect = abyssGetRect();
+  abyssTouchX = t.clientX - rect.left;
+  abyssTouchY = t.clientY - rect.top;
 }
 function abyssTouchEnd(e) {
   e.preventDefault();
