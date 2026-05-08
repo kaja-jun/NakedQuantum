@@ -104,35 +104,224 @@ button {
 .table-empty-glyph { font-size: 40px; }
 .table-empty-text { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; }
 
-.lighthouse-view { background: var(--bg); overflow: hidden; }
-.lighthouse-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; gap: 8px; }
-.btn-back-table { display: flex; align-items: center; gap: 7px; background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; letter-spacing: 1px; font-weight: 700; padding: 7px 12px; border-radius: 8px; white-space: nowrap; }
-.btn-back-table:active { color: var(--text); border-color: var(--accent-dim); }
-.btn-back-arrow { font-size: 14px; opacity: 0.7; }
-.lighthouse-tools { display: flex; align-items: center; gap: 6px; }
-.view-toggle { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1px; overflow: hidden; }
-.view-toggle-btn { background: none; border: none; color: var(--muted); font-size: 11px; padding: 6px 12px; font-weight: 700; letter-spacing: 0.5px; }
-.view-toggle-btn.active { background: var(--surface2); color: var(--text); }
-.tbtn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 11px; padding: 7px 11px; border-radius: 8px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
-.tbtn.danger { color: #ff6060; border-color: var(--danger); }
-.tbtn.gold { color: var(--accent); border-color: var(--accent-dim); }
-.lighthouse-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 20px 60px; display: flex; flex-direction: column; gap: 16px; }
-/* LIGHTHOUSE VIEW FIXES (Expanded Textarea & Overlap) */
-.lighthouse-inner {display: flex;flex-direction: column;height: calc(100vh - 120px); /* Adjust based on your nav height */padding-bottom: 20px;}
-/* LIGHTHOUSE REFINED */
+/* ── LIGHTHOUSE FULL SCREEN ─────────────────────────────── */
+.lighthouse-view {
+  background: var(--bg);
+  overflow: hidden;
+  position: absolute;
+  inset: 0;
+}
+
+/* Ghost back button */
+#lh-back-btn {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top, 16px));
+  left: 16px;
+  z-index: 1200;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 18px;
+  opacity: 0.18;
+  padding: 10px;
+  line-height: 1;
+  transition: opacity 0.2s;
+}
+#lh-back-btn:active { opacity: 0.7; }
+
+/* Ghost dots button */
+#lh-dots-btn {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top, 14px));
+  right: 14px;
+  z-index: 1200;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  opacity: 0.18;
+  padding: 10px;
+  transition: opacity 0.2s;
+}
+#lh-dots-btn:active { opacity: 0.7; }
+
+#lh-dots-wrap {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top, 14px));
+  right: 14px;
+  z-index: 1200;
+}
+
+#lh-dots-wrap .lh-overflow-menu {
+  top: 44px;
+  right: 0;
+}
+
+/* Save indicator -- centered ghost */
 .lh-save-indicator {
-  flex: 1;
+  position: fixed;
+  top: max(18px, env(safe-area-inset-top, 18px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
   font-size: 9px;
   color: var(--accent-dim);
   letter-spacing: 2px;
   opacity: 0;
   transition: opacity 0.4s ease;
-  text-align: center;
   pointer-events: none;
+  white-space: nowrap;
 }
-.lh-save-indicator.visible { opacity: 0.5; }
+.lh-save-indicator.visible { opacity: 0.45; }
 .lh-save-indicator.saving { opacity: 1; color: var(--accent); animation: lhSavePulse 1s ease-in-out infinite; }
 @keyframes lhSavePulse { 0%,100%{opacity:0.5;} 50%{opacity:1;} }
+
+/* Scroll area -- full screen */
+.lighthouse-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 24px 180px;
+}
+
+.lighthouse-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Textarea -- borderless void */
+.content-textarea {
+  flex: 1;
+  width: 100%;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  resize: none;
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.85;
+  letter-spacing: 0.1px;
+  caret-color: var(--accent);
+  -webkit-overflow-scrolling: touch;
+  min-height: 60vh;
+  padding: 0;
+  margin: 0;
+}
+.content-textarea::placeholder { color: var(--muted); opacity: 0.3; }
+.content-textarea:focus { outline: none !important; border: none !important; box-shadow: none !important; }
+
+/* ── KEYBOARD TOOLBAR ───────────────────────────────────── */
+.lh-kbd-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  background: rgba(14, 14, 16, 0.98);
+  border-top: 1px solid #2a2a2a;
+  transform: translateY(100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.lh-kbd-bar.visible { transform: translateY(0); }
+.lh-kbd-bar.collapsed { transform: translateY(100%); }
+
+.lh-kbd-scroll {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  padding: 8px 12px;
+  min-height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.lh-kbd-scroll::-webkit-scrollbar {
+  display: block;
+  height: 2px;
+  background: transparent;
+}
+.lh-kbd-scroll::-webkit-scrollbar-thumb {
+  background: rgba(140, 140, 140, 0.3);
+  border-radius: 2px;
+}
+.lh-kbd-btn {
+  background: none;
+  border: none;
+  color: #ccc5b9;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  opacity: 0.75;
+  font-family: var(--font-serif);
+  min-width: 38px;
+  text-align: center;
+}
+.lh-kbd-btn:active { background: rgba(255,255,255,0.08); opacity: 1; }
+.lh-kbd-pin { opacity: 0.35; font-size: 16px; }
+.lh-kbd-pin:active { opacity: 0.8; }
+
+.lh-kbd-divider {
+  width: 1px;
+  height: 18px;
+  background: #222;
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+/* Heading drawer */
+.lh-kbd-h-wrap { position: relative; flex-shrink: 0; }
+.lh-kbd-h-drawer {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background: rgba(12,12,14,0.98);
+  border: 1px solid #222;
+  border-radius: 12px;
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 100px;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.8);
+  z-index: 1200;
+}
+.lh-kbd-h-drawer.open { display: flex; }
+.lh-kbd-drawer-item {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  text-align: left;
+  font-family: var(--font-serif);
+  opacity: 0.8;
+}
+.lh-kbd-drawer-item:active { background: rgba(255,255,255,0.06); opacity: 1; }
+.lh-kbd-drawer-item[data-fmt="normal"] { font-size: 13px; }
+.lh-kbd-drawer-item[data-fmt="h1"] { font-size: 18px; font-weight: 700; }
+.lh-kbd-drawer-item[data-fmt="h2"] { font-size: 16px; font-weight: 700; }
+.lh-kbd-drawer-item[data-fmt="h3"] { font-size: 14px; font-weight: 600; color: var(--accent); }
+.lh-kbd-drawer-item[data-fmt="h4"] { font-size: 13px; font-weight: 600; }
+.lh-kbd-drawer-item[data-fmt="h5"] { font-size: 12px; opacity: 0.6; }
+.lh-kbd-drawer-item[data-fmt="h6"] { font-size: 11px; opacity: 0.5; }
+
+/* tbtn still used elsewhere -- keep it */
+.tbtn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 11px; padding: 7px 11px; border-radius: 8px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
+.tbtn.danger { color: #ff6060; border-color: var(--danger); }
+.tbtn.gold { color: var(--accent); border-color: var(--accent-dim); }
 
 .lh-overflow-wrap { position: relative; }
 .lh-overflow-menu {
@@ -241,7 +430,7 @@ button {
 
 .discourse-title-input { width: 100%; background: none; border: none; border-bottom: 1px solid var(--border); color: var(--text); font-size: 22px; font-weight: 700; padding: 6px 0 12px; outline: none; font-family: var(--font-serif); caret-color: var(--accent); }
 .discourse-title-input::placeholder { color: var(--muted); opacity: 0.6; }
-.discourse-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+.discourse-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 10px; color: var(--muted); letter-spacing: 1px; padding-left: 36px; padding-right: 36px; min-height: 36px; }
 .meta-separator { opacity: 0.3; }
 .source-link { display: inline-flex; align-items: center; gap: 5px; color: var(--accent); font-size: 10px; padding: 3px 8px; border: 1px solid var(--accent-dim); border-radius: 6px; background: rgba(200,160,80,0.06); text-decoration: none; }
 
@@ -1623,67 +1812,72 @@ select.cosm-input {
 
   </div>
 </div>
-  <div class="view-panel lighthouse-view hidden" id="view-lighthouse">
-    <div class="lighthouse-nav">
-      <button class="btn-back-table" id="btn-back-table" style="padding:7px 10px;"><span class="btn-back-arrow">←</span></button>
-      <div class="lh-save-indicator" id="lh-save-indicator">◆</div>
-      <div class="lighthouse-tools">
-        <div class="view-toggle">
-          <button class="view-toggle-btn active" id="btn-write">✎</button>
-          <button class="view-toggle-btn" id="btn-view">ʘ</button>
-        </div>
-               <button class="tbtn gold" id="btn-extract" title="Extract Mosaic">◈</button>
-        <div class="lh-fmt-wrap">
-          <button class="tbtn" id="btn-lh-format">✎≡</button>
-          <div class="lh-fmt-sheet" id="lh-fmt-sheet">
-            <div class="lh-fmt-grid">
-              <div class="lh-fmt-col">
-                <div class="lh-fmt-col-label">Text</div>
-                <button class="lh-fmt-item" id="fmt-bold"><b>Bold</b></button>
-                <button class="lh-fmt-item" id="fmt-italic"><i>Italic</i></button>
-                <button class="lh-fmt-item" id="fmt-underline"><u>Underline</u></button>
-                <button class="lh-fmt-item" id="fmt-h1">Heading 1</button>
-                <button class="lh-fmt-item" id="fmt-h2">Heading 2</button>
-                <button class="lh-fmt-item" id="fmt-h3">Heading 3</button>
-              </div>
-              <div class="lh-fmt-col">
-                <div class="lh-fmt-col-label">Insert</div>
-                <button class="lh-fmt-item" id="fmt-bullet">• Bullet</button>
-                <button class="lh-fmt-item" id="fmt-numbered">1. Numbered</button>
-                <button class="lh-fmt-item" id="fmt-quote">" Quote</button>
-                <button class="lh-fmt-item" id="fmt-code">` Inline Code</button>
-                <button class="lh-fmt-item" id="fmt-codeblock">``` Code Block</button>
-                <button class="lh-fmt-item" id="fmt-divider-line">-- Divider</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="lh-overflow-wrap">
-          <button class="tbtn" id="btn-lh-overflow">···</button>
-          <div class="lh-overflow-menu" id="lh-overflow-menu">
-            <button class="lh-overflow-item" id="btn-export-html">H ↓ Export HTML</button>
-            <button class="lh-overflow-item" id="btn-export-md">M ↓ Export Markdown</button>
-            <button class="lh-overflow-item" id="btn-export-pdf">P ↓ Export PDF</button>
-            <div class="lh-overflow-divider"></div>
-            <button class="lh-overflow-item danger" id="btn-delete-discourse">✕ Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
-      <div class="lighthouse-scroll">
-      <div class="lighthouse-inner">
-        <div class="discourse-meta" id="discourse-meta"></div>
-        <input class="discourse-title-input" id="discourse-title" placeholder="Untitled..." spellcheck="false" style="display:none;">
-        <div class="extract-loading" id="extract-loading">
-          <div class="extract-dot"></div><div class="extract-dot"></div><div class="extract-dot"></div>
-          <span>Extracting anchors...</span>
-        </div>
-        <div id="mosaic-display"></div>
-              <textarea class="content-textarea" id="content-textarea" placeholder="Title&#10;&#10;Begin writing..."></textarea>
-        <div class="content-view" id="content-view"></div>
-      </div>
+<div class="view-panel lighthouse-view hidden" id="view-lighthouse">
+
+  <!-- Ghost floating controls -->
+  <button id="lh-back-btn" onclick="goBack()">←</button>
+  <div id="lh-save-indicator" class="lh-save-indicator">◆ saved</div>
+  <div class="lh-overflow-wrap" id="lh-dots-wrap">
+    <button id="lh-dots-btn" onclick="toggleLHOverflow()">···</button>
+    <div class="lh-overflow-menu" id="lh-overflow-menu">
+      <button class="lh-overflow-item" id="btn-extract" onclick="extractMemory()">◈ Extract Mosaic</button>
+      <div class="lh-overflow-divider"></div>
+      <button class="lh-overflow-item" id="btn-export-html">H ↓ Export HTML</button>
+      <button class="lh-overflow-item" id="btn-export-md">M ↓ Export Markdown</button>
+      <button class="lh-overflow-item" id="btn-export-pdf">P ↓ Export PDF</button>
+      <div class="lh-overflow-divider"></div>
+      <button class="lh-overflow-item danger" id="btn-delete-discourse">✕ Delete</button>
     </div>
   </div>
+
+  <!-- Writing surface -->
+  <div class="lighthouse-scroll" id="lh-scroll">
+    <div class="lighthouse-inner">
+      <div class="discourse-meta" id="discourse-meta"></div>
+      <input class="discourse-title-input" id="discourse-title" placeholder="Untitled..." spellcheck="false" style="display:none;">
+      <div class="extract-loading" id="extract-loading">
+        <div class="extract-dot"></div><div class="extract-dot"></div><div class="extract-dot"></div>
+        <span>Extracting anchors...</span>
+      </div>
+      <div id="mosaic-display"></div>
+      <textarea class="content-textarea" id="content-textarea" placeholder="Begin writing..."></textarea>
+      <div class="content-view" id="content-view" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Keyboard toolbar -->
+  <div id="lh-kbd-bar" class="lh-kbd-bar">
+    <div class="lh-kbd-scroll">
+      <button class="lh-kbd-btn" id="kbd-undo" title="Undo">↩</button>
+      <button class="lh-kbd-btn" id="kbd-redo" title="Redo">↪</button>
+      <div class="lh-kbd-divider"></div>
+      <div class="lh-kbd-h-wrap">
+        <button class="lh-kbd-btn" id="kbd-heading">H</button>
+        <div class="lh-kbd-h-drawer" id="lh-h-drawer">
+          <button class="lh-kbd-drawer-item" data-fmt="normal">Normal</button>
+          <button class="lh-kbd-drawer-item" data-fmt="h1">H1</button>
+          <button class="lh-kbd-drawer-item" data-fmt="h2">H2</button>
+          <button class="lh-kbd-drawer-item" data-fmt="h3">H3</button>
+          <button class="lh-kbd-drawer-item" data-fmt="h4">H4</button>
+          <button class="lh-kbd-drawer-item" data-fmt="h5">H5</button>
+          <button class="lh-kbd-drawer-item" data-fmt="h6">H6</button>
+        </div>
+      </div>
+      <button class="lh-kbd-btn" id="kbd-bold"><b>B</b></button>
+      <button class="lh-kbd-btn" id="kbd-italic"><i>I</i></button>
+      <button class="lh-kbd-btn" id="kbd-underline"><u>U</u></button>
+      <button class="lh-kbd-btn" id="kbd-code">&lt;&gt;</button>
+      <div class="lh-kbd-divider"></div>
+      <button class="lh-kbd-btn" id="kbd-bullet">•</button>
+      <button class="lh-kbd-btn" id="kbd-numbered">1.</button>
+      <div class="lh-kbd-divider"></div>
+      <button class="lh-kbd-btn" id="kbd-align-left">⇤</button>
+      <button class="lh-kbd-btn" id="kbd-align-right">⇥</button>
+      <div class="lh-kbd-divider"></div>
+      <button class="lh-kbd-btn lh-kbd-pin" id="kbd-pin">⊟</button>
+    </div>
+  </div>
+</div>
 
   <div class="view-panel sanctuary-view hidden" id="view-sanctuary">
 <div class="breadcrumb-bar" id="sanctuary-breadcrumb-bar">
@@ -4107,15 +4301,14 @@ function showPanel(id){
   // Guardian gets its own realm -- header hidden, edge glow active
   const header = document.getElementById('nq-header') || document.querySelector('.nq-header');
   const edgeGlow = document.getElementById('guardian-edge-glow');
-  if(id === 'view-guardian'){
+  if(id === 'view-guardian' || id === 'view-lighthouse'){
     if(header) header.style.display = 'none';
-    if(edgeGlow) edgeGlow.classList.add('active');
+    if(id === 'view-guardian' && edgeGlow) edgeGlow.classList.add('active');
   } else {
     if(header) header.style.display = '';
     if(edgeGlow) edgeGlow.classList.remove('active');
   }
-
-  firefly.sd(id==='view-lighthouse'||id==='view-chat'?80:20);
+    firefly.sd(id==='view-lighthouse'||id==='view-chat'?80:20);
 }
 
 /* HEADER BUTTONS */
@@ -4153,6 +4346,9 @@ async function goBack() {
     await saveCurrentDiscourse(true);
     mosaicCache = {};
   }
+  NQEditor.destroy();
+  lhKbdHide();
+  lhKbdBarCollapsed = false;
   if (!currentFolderId) currentFolderId = null; 
   if (currentMode === 'soup') { 
     showPanel('view-soup'); 
@@ -4681,34 +4877,28 @@ async function openDiscourse(id){
       }
   }
   
-  const ta = document.getElementById("content-textarea");
-  ta.value = contentText;
-  
-  // Trigger auto-height after content loads
-  setTimeout(() => {
-    ta.style.height = 'auto';
-    ta.style.height = Math.max(ta.scrollHeight, window.innerHeight * 0.6) + 'px';
-  }, 50);
-  
+  NQEditor.setContent(contentText);
+
   await renderMeta(disc); 
   await renderMosaicDisplay(id);
 
-  // Chronicle vs Discourse feel
+    // Chronicle vs Discourse feel
+  const ta = document.getElementById('content-textarea');
   const lhInner = document.querySelector('.lighthouse-inner');
   if(disc.item_type === 'chronicle'){
-    ta.placeholder = 'What was brought in from outside...\n\nPaste, transcribe, or write what arrived from elsewhere.';
+    if(ta) ta.placeholder = 'What was brought in from outside...\n\nPaste, transcribe, or write what arrived from elsewhere.';
     if(lhInner) lhInner.style.borderLeft = '2px solid var(--accent-dim)';
     if(lhInner) lhInner.style.paddingLeft = '18px';
   } else if(disc.item_type === 'note'){
-    ta.placeholder = 'A spark...\n\nWrite fast. Don\'t construct.';
+    if(ta) ta.placeholder = 'A spark...\n\nWrite fast. Don\'t construct.';
     if(lhInner) lhInner.style.borderLeft = 'none';
     if(lhInner) lhInner.style.paddingLeft = '0';
   } else {
-    ta.placeholder = 'Title\n\nBegin writing...';
+    if(ta) ta.placeholder = 'Begin writing...';
     if(lhInner) lhInner.style.borderLeft = 'none';
     if(lhInner) lhInner.style.paddingLeft = '0';
   }
-  
+
   setEditorMode('write'); 
   showPanel('view-lighthouse');
   
@@ -4766,9 +4956,8 @@ async function handleNewChronicle() {
 async function saveCurrentDiscourse(silent=false){
   if(!currentDiscourseId)return;
   
-  const ta = document.getElementById("content-textarea");
-  const fullText = ta.value;
-  
+    const fullText = NQEditor.getContent();
+
   // Extract the first non-empty line as the title for the database index
   const lines = fullText.split('\n');
   const title = lines.find(l => l.trim().length > 0)?.trim().slice(0, 120) || "Untitled";
@@ -7774,25 +7963,187 @@ function closeOverlay(){
 }
 
 /* EDITOR */
-function setEditorMode(mode){
-  editorMode=mode;
-  const ta=document.getElementById("content-textarea"),view=document.getElementById("content-view"),bw=document.getElementById("btn-write"),bv=document.getElementById("btn-view"),tb=document.getElementById("format-toolbar");
-  if(mode==='write'){ta.style.display="block";view.style.display="none";if(tb)tb.style.display="flex";bw.classList.add("active");bv.classList.remove("active");}
-  else{view.innerHTML=renderContent(ta.value);view.style.display="block";ta.style.display="none";if(tb)tb.style.display="none";bw.classList.remove("active");bv.classList.add("active");}
+// ── NQEditor abstraction layer -- CM6-ready drop-in ──────────────────────
+// To port to CM6: implement NQEditor.cm6 with the same interface,
+// then set NQEditor.impl = NQEditor.cm6 and delete NQEditor.textarea
+const NQEditor = {
+  // Current implementation -- swap this object for CM6
+  impl: null,
+
+  textarea: {
+    _el() { return document.getElementById('content-textarea'); },
+    getContent()  { return this._el()?.value || ''; },
+    setContent(t) { const el = this._el(); if(el) { el.value = t; el.style.height = 'auto'; el.style.height = Math.max(el.scrollHeight, window.innerHeight * 0.7) + 'px'; } },
+    focus()       { this._el()?.focus(); },
+    destroy()     { /* nothing to destroy for textarea */ },
+    applyFormat(cfg) {
+      const ta = this._el(); if(!ta) return;
+      const start=ta.selectionStart, end=ta.selectionEnd;
+      const sel=ta.value.slice(start,end);
+      const before=ta.value.slice(0,start), after=ta.value.slice(end);
+      let nt='', cp=0;
+      if(cfg.insert){ nt=before+cfg.insert+after; cp=start+cfg.insert.length; }
+      else if(cfg.wrap){ if(sel){nt=before+cfg.wrap[0]+sel+cfg.wrap[1]+after;cp=start+cfg.wrap[0].length+sel.length+cfg.wrap[1].length;}else{nt=before+cfg.wrap[0]+cfg.wrap[1]+after;cp=start+cfg.wrap[0].length;} }
+      else if(cfg.block){ if(sel){nt=before+cfg.block+sel+cfg.end+after;cp=start+cfg.block.length+sel.length+cfg.end.length;}else{nt=before+cfg.block+cfg.end+after;cp=start+cfg.block.length;} }
+      else if(cfg.line){ const ls=before.lastIndexOf('\n')+1; const lp=ta.value.slice(ls,start); if(lp.startsWith(cfg.line)){nt=ta.value.slice(0,ls)+lp.slice(cfg.line.length)+ta.value.slice(start);cp=start-cfg.line.length;}else{nt=ta.value.slice(0,ls)+cfg.line+ta.value.slice(ls);cp=start+cfg.line.length;} }
+      ta.value=nt; ta.setSelectionRange(cp,cp); ta.focus();
+    },
+    undo() { document.execCommand('undo'); },
+    redo() { document.execCommand('redo'); },
+  },
+
+  getContent()     { return (this.impl || this.textarea).getContent(); },
+  setContent(t)    { (this.impl || this.textarea).setContent(t); },
+  focus()          { (this.impl || this.textarea).focus(); },
+  destroy()        { (this.impl || this.textarea).destroy(); },
+  applyFormat(cfg) { (this.impl || this.textarea).applyFormat(cfg); document.getElementById('lh-h-drawer')?.classList.remove('open'); },
+  undo()           { (this.impl || this.textarea).undo(); },
+  redo()           { (this.impl || this.textarea).redo(); },
+};
+
+// setEditorMode is now a no-op kept for safety -- single surface only
+function setEditorMode(mode) { /* single surface, no toggle */ }
+
+// ── Keyboard toolbar logic ────────────────────────────────────────────────
+var lhKbdBarCollapsed = false;
+
+function lhKbdShow() {
+  if(lhKbdBarCollapsed) return;
+  document.getElementById('lh-kbd-bar')?.classList.add('visible');
+}
+function lhKbdHide() {
+  document.getElementById('lh-kbd-bar')?.classList.remove('visible');
 }
 
-function applyFormat(cfg){
-  const ta=document.getElementById('content-textarea');if(!ta)return;
-  const start=ta.selectionStart,end=ta.selectionEnd,sel=ta.value.slice(start,end),before=ta.value.slice(0,start),after=ta.value.slice(end);
-  let nt='',cp=0;
-  if(cfg.insert){nt=before+cfg.insert+after;cp=start+cfg.insert.length;}
-  else if(cfg.wrap){if(sel){nt=before+cfg.wrap[0]+sel+cfg.wrap[1]+after;cp=start+cfg.wrap[0].length+sel.length+cfg.wrap[1].length;}else{nt=before+cfg.wrap[0]+cfg.wrap[1]+after;cp=start+cfg.wrap[0].length;}}
-  else if(cfg.block){if(sel){nt=before+cfg.block+sel+cfg.end+after;cp=start+cfg.block.length+sel.length+cfg.end.length;}else{nt=before+cfg.block+cfg.end+after;cp=start+cfg.block.length;}}
-  else if(cfg.line){const ls=before.lastIndexOf('\n')+1;const lp=ta.value.slice(ls,start);if(lp.startsWith(cfg.line)){nt=ta.value.slice(0,ls)+lp.slice(cfg.line.length)+ta.value.slice(start);cp=start-cfg.line.length;}else{nt=ta.value.slice(0,ls)+cfg.line+ta.value.slice(ls);cp=start+cfg.line.length;}}
-  ta.value=nt;ta.setSelectionRange(cp,cp);ta.focus();
-    document.getElementById('lh-fmt-sheet')?.classList.remove('open');
-  ta.focus();
+// ── THE ABYSS KEYBOARD ANCHOR (Definitive iOS Fix) ──
+(function initKeyboardAnchor() {
+  const bar = document.getElementById('lh-kbd-bar');
+  const ta = document.getElementById('content-textarea');
+  if (!bar || !ta) return;
+
+  // 1. ESCAPE THE TRANSFORM JAIL
+  // .view-panel has `will-change: transform`, which completely breaks `position: fixed`.
+  // We physically yank the toolbar out of the panel and attach it to the raw body.
+  document.body.appendChild(bar);
+
+  if (window.visualViewport) {
+    const anchorToolbar = function() {
+      if (window.currentView !== 'lighthouse') return;
+      
+      // 2. PRECISE MATHEMATICAL DOCKING
+      // window.innerHeight is the raw device screen.
+      // visualViewport.offsetTop + height is the exact bottom edge of the membrane.
+      const offsetBottom = window.innerHeight - (window.visualViewport.offsetTop + window.visualViewport.height);
+      
+      // Push the bar up exactly over the iOS accessory bar.
+      bar.style.bottom = Math.max(0, offsetBottom) + 'px';
+      bar.style.top = 'auto'; // Erase any old top values from previous fixes
+    };
+
+    // Bind to both scroll and resize for 1:1 rubber-band tracking
+    window.visualViewport.addEventListener('resize', anchorToolbar);
+    window.visualViewport.addEventListener('scroll', anchorToolbar);
+
+    // 3. WAKE ON TOUCH
+    ta.addEventListener('focus', () => {
+      lhKbdBarCollapsed = false;
+      bar.classList.add('visible');
+      // Force layout updates as the keyboard physically animates up
+      setTimeout(anchorToolbar, 10);
+      setTimeout(anchorToolbar, 300);
+    });
+  }
+})();
+
+// Tap on writing surface restores collapsed bar
+document.addEventListener('touchstart', function(e) {
+  if(window.currentView !== 'lighthouse') return;
+  if(!lhKbdBarCollapsed) return;
+  const bar = document.getElementById('lh-kbd-bar');
+  if(bar && !bar.contains(e.target)) {
+    lhKbdBarCollapsed = false;
+    const kbdH = window.visualViewport ? window.innerHeight - window.visualViewport.height : 0;
+    if(kbdH > 80) bar.classList.add('visible');
+  }
+}, { passive: true });
+
+function lhInitToolbar() {
+  // Undo / Redo
+  document.getElementById('kbd-undo')?.addEventListener('click', () => NQEditor.undo());
+  document.getElementById('kbd-redo')?.addEventListener('click', () => NQEditor.redo());
+
+  // Heading drawer toggle
+  document.getElementById('kbd-heading')?.addEventListener('click', () => {
+    document.getElementById('lh-h-drawer')?.classList.toggle('open');
+  });
+
+  // Heading drawer items
+  document.querySelectorAll('.lh-kbd-drawer-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fmt = btn.dataset.fmt;
+      const prefixMap = { normal:'', h1:'# ', h2:'## ', h3:'### ', h4:'#### ', h5:'##### ', h6:'###### ' };
+      const prefix = prefixMap[fmt] ?? '';
+      // Remove any existing heading prefix first
+      const ta = document.getElementById('content-textarea');
+      if(ta) {
+        const start = ta.selectionStart;
+        const before = ta.value.slice(0, start);
+        const ls = before.lastIndexOf('\n') + 1;
+        const lp = ta.value.slice(ls);
+        const cleaned = lp.replace(/^#{1,6} /, '');
+        ta.value = ta.value.slice(0, ls) + (prefix ? prefix + cleaned : cleaned);
+        ta.setSelectionRange(ls + prefix.length, ls + prefix.length);
+        ta.focus();
+      }
+      document.getElementById('lh-h-drawer')?.classList.remove('open');
+    });
+  });
+
+  // Format buttons
+  const fmtMap = {
+    'kbd-bold':      { wrap: ['**','**'] },
+    'kbd-italic':    { wrap: ['*','*'] },
+    'kbd-underline': { wrap: ['<u>','</u>'] },
+    'kbd-code':      { block: '```\n', end: '\n```' },
+    'kbd-bullet':    { line: '- ' },
+    'kbd-numbered':  { line: '1. ' },
+    'kbd-align-left':  { line: '' },
+    'kbd-align-right': { wrap: ['<div style="text-align:right">', '</div>'] },
+  };
+  Object.entries(fmtMap).forEach(([id, cfg]) => {
+    document.getElementById(id)?.addEventListener('click', () => NQEditor.applyFormat(cfg));
+  });
+
+  // Pin / collapse
+  document.getElementById('kbd-pin')?.addEventListener('click', () => {
+    lhKbdBarCollapsed = true;
+    document.getElementById('lh-kbd-bar')?.classList.remove('visible');
+  });
+
+  // Close heading drawer on outside tap
+  document.addEventListener('touchstart', function(e) {
+    const drawer = document.getElementById('lh-h-drawer');
+    const hWrap = document.querySelector('.lh-kbd-h-wrap');
+    if(drawer && hWrap && !hWrap.contains(e.target)) {
+      drawer.classList.remove('open');
+    }
+  }, { passive: true });
+  // Ensure focusing the abyss awakens the toolbar instantly
+  const taForKbd = document.getElementById('content-textarea');
+  if (taForKbd) {
+    taForKbd.addEventListener('focus', () => {
+      lhKbdBarCollapsed = false;
+      document.getElementById('lh-kbd-bar')?.classList.add('visible');
+      // Force alignment evaluation immediately
+      if (window.visualViewport) {
+         window.visualViewport.dispatchEvent(new Event('resize'));
+      }
+    });
+  }
 }
+
+function applyFormat(cfg) { NQEditor.applyFormat(cfg); }
+
 
 function renderContent(raw){
   if(!raw)return'<span style="opacity:0.3;font-style:italic;">Nothing written yet.</span>';
@@ -7805,7 +8156,19 @@ function renderContent(raw){
   t=t.replace(/^---$/gm,()=>sb('<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">'));
   t=escHtml(t);t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');t=t.replace(/\*(.+?)\*/g,'<em>$1</em>');t=t.replace(/&lt;u&gt;(.+?)&lt;\/u&gt;/g,'<u>$1</u>');
   const lines=t.split('\n'),out=[];let il=false,io=false;
-  for(const line of lines){const tr=line.trim();if(/^%%BL\d+%%$/.test(tr)){if(il){out.push('</ul>');il=false;}if(io){out.push('</ol>');io=false;}out.push(line);continue;}if(/^- .+/.test(tr)){if(io){out.push('</ol>');io=false;}if(!il){out.push('<ul>');il=true;}out.push('<li>'+tr.slice(2)+'</li>');continue;}if(/^\d+\. .+/.test(tr)){if(il){out.push('</ul>');il=false;}if(!io){out.push('<ol>');io=true;}out.push('<li>'+tr.replace(/^\d+\. /,'')+'</li>');continue;}if(il){out.push('</ul>');il=false;}if(io){out.push('</ol>');io=false;}if(tr==='')out.push('');else out.push('<p>'+line+'</p>');}
+    for(const line of lines){
+    const tr=line.trim();
+    if(/^%%BL\d+%%$/.test(tr)){if(il){out.push('</ul>');il=false;}if(io){out.push('</ol>');io=false;}out.push(line);continue;}
+    if(/^- .+/.test(tr)){if(io){out.push('</ol>');io=false;}if(!il){out.push('<ul>');il=true;}out.push('<li>'+tr.slice(2)+'</li>');continue;}
+    if(/^\d+\. .+/.test(tr)){if(il){out.push('</ul>');il=false;}if(!io){out.push('<ol>');io=true;}out.push('<li>'+tr.replace(/^\d+\. /,'')+'</li>');continue;}
+    // Blank line inside a list keeps the list open
+    if(tr===''&&(il||io)){out.push('');continue;}
+    if(il){out.push('</ul>');il=false;}
+    if(io){out.push('</ol>');io=false;}
+    if(tr==='')out.push('');
+    else out.push('<p>'+line+'</p>');
+  }
+
   if(il)out.push('</ul>');if(io)out.push('</ol>');
   t=out.join('\n');bm.forEach((h,i)=>{t=t.replace('%%BL'+i+'%%',h);});cb.forEach((h,i)=>{t=t.replace('%%CB'+i+'%%',h);});ic.forEach((h,i)=>{t=t.replace('%%IC'+i+'%%',h);});
   t=t.replace(/<p><\/p>/g,'');t=t.replace(/<p>%%[A-Z0-9]+%%<\/p>/g,m=>m.slice(3,-4));return t;
@@ -7932,7 +8295,7 @@ async function importJSON(event){const file=event.target.files[0];if(!file)retur
 
 /* MOSAIC EXTRACT */
 async function extractMemory(){
-  if(!currentDiscourseId)return;const rawText=document.getElementById("content-textarea").value.trim();
+    if(!currentDiscourseId)return; const rawText = NQEditor.getContent().trim();
   if(!rawText||rawText.length<50){showToast("Write more before extracting ◆");
   return;}
   const key = await readSecureKey('nq_api_key') || "";
@@ -8686,14 +9049,12 @@ async function handleGuardianOffer(){
 
 /* EVENT BINDING */
 document.addEventListener('DOMContentLoaded',()=> {
-initWorker();
-  document.getElementById('btn-back-table').addEventListener('click',()=>goBack());
-  document.getElementById('btn-write').addEventListener('click',()=>setEditorMode('write'));
-  document.getElementById('btn-view').addEventListener('click',()=>setEditorMode('view'));
+  initWorker();
+  lhInitToolbar();
+
   document.getElementById('btn-export-html').addEventListener('click',exportHTML);
   document.getElementById('btn-export-md').addEventListener('click',exportMarkdown);
   document.getElementById('btn-export-pdf').addEventListener('click',exportPDF);
-  document.getElementById('btn-extract').addEventListener('click',extractMemory);
   document.getElementById('btn-delete-discourse').addEventListener('click',deleteCurrentDiscourse);
   document.getElementById('cosm-overlay').addEventListener('click',closeOverlay);
   document.getElementById('btn-folder-cancel').addEventListener('click',closeFolderModal);
@@ -8711,18 +9072,10 @@ document.getElementById('btn-data-back').addEventListener('click', ()=>{
   saveSupaFromDataPage(); // auto-save on leave
   goBack();
 });
-document.getElementById('btn-lh-overflow').addEventListener('click', (e) => {
-  e.stopPropagation();
-  toggleLHOverflow();
-});
 const ta = document.getElementById('content-textarea');
 ta.addEventListener('input', function(){
   this.style.height = 'auto';
   this.style.height = Math.max(this.scrollHeight, window.innerHeight * 0.6) + 'px';
-});
-document.getElementById('btn-lh-format').addEventListener('click', (e) => {
-  e.stopPropagation();
-  toggleLHFormat();
 });
 document.getElementById('btn-data-export-page').addEventListener('click', ()=>exportJSON());
 document.getElementById('import-json-input-page').onchange = e => importJSON(e);
