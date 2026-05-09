@@ -8348,6 +8348,35 @@ ta.addEventListener('input', function(){
   this.style.height = 'auto';
   this.style.height = Math.max(this.scrollHeight, window.innerHeight * 0.6) + 'px';
 });
+document.getElementById('content-textarea').addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  const pos = this.selectionStart;
+  const text = this.value;
+  const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+  const currentLine = text.slice(lineStart, pos);
+
+  // Numbered list
+  const numbered = currentLine.match(/^(\d+)\.\s/);
+  if (numbered) {
+    e.preventDefault();
+    const next = '\n' + (parseInt(numbered[1]) + 1) + '. ';
+    this.value = text.slice(0, pos) + next + text.slice(pos);
+    this.selectionStart = this.selectionEnd = pos + next.length;
+    this.dispatchEvent(new Event('input'));
+    return;
+  }
+
+  // Bullet list
+  const bullet = currentLine.match(/^- /);
+  if (bullet) {
+    e.preventDefault();
+    const next = '\n- ';
+    this.value = text.slice(0, pos) + next + text.slice(pos);
+    this.selectionStart = this.selectionEnd = pos + next.length;
+    this.dispatchEvent(new Event('input'));
+    return;
+  }
+});
 document.getElementById('btn-lh-format').addEventListener('click', (e) => {
   e.stopPropagation();
   toggleLHFormat();
