@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.36.5</title>
+<title>NakedQuantum v0.36.6</title>
 <style>
 :root {
   --bg: #000000;
@@ -105,7 +105,7 @@ button {
 .table-empty-text { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; }
 
 .lighthouse-view { background: var(--bg); overflow: hidden; }
-.lighthouse-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; gap: 8px; }
+.lighthouse-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #000; flex-shrink: 0; gap: 8px; }
 .btn-back-table { display: flex; align-items: center; gap: 7px; background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; letter-spacing: 1px; font-weight: 700; padding: 7px 12px; border-radius: 8px; white-space: nowrap; }
 .btn-back-table:active { color: var(--text); border-color: var(--accent-dim); }
 .btn-back-arrow { font-size: 14px; opacity: 0.7; }
@@ -116,9 +116,23 @@ button {
 .tbtn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 11px; padding: 7px 11px; border-radius: 8px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
 .tbtn.danger { color: #ff6060; border-color: var(--danger); }
 .tbtn.gold { color: var(--accent); border-color: var(--accent-dim); }
+
 .lighthouse-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 20px 60px; display: flex; flex-direction: column; gap: 16px; }
 /* LIGHTHOUSE VIEW FIXES (Expanded Textarea & Overlap) */
 .lighthouse-inner {display: flex;flex-direction: column;height: calc(100vh - 120px); /* Adjust based on your nav height */padding-bottom: 20px;}
+.lh-title-display {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 4px 0 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.92;
+}
 /* LIGHTHOUSE REFINED */
 .lh-save-indicator {
   flex: 1;
@@ -528,8 +542,8 @@ button {
 .fmt-btn.code-btn { font-family: 'Menlo', monospace; font-size: 11px; }
 .fmt-divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; margin: 0 2px; }
 
-.content-textarea { flex: 1; width: 100%; min-height: unset; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 12px; font-size: 15px; line-height: 1.8; outline: none; resize: none; font-family: var(--font-serif); caret-color: var(--accent); -webkit-overflow-scrolling: touch; }
-.content-textarea:focus { border-color: var(--accent-dim); }
+.content-textarea { flex: 1; width: 100%; min-height: unset; background: transparent; color: var(--text); border: none; border-radius: 0; padding: 18px 20px; margin-bottom: 12px; font-size: 15px; line-height: 1.8; outline: none; resize: none; font-family: var(--font-serif); caret-color: var(--accent); -webkit-overflow-scrolling: touch; }
+.content-textarea:focus { border: none; }
 .content-view {display: none;background: var(--surface);border: 1px solid var(--border);border-radius: 12px;padding: 20px;font-size: 15px;line-height: 1.8;font-family: var(--font-serif);color: var(--text);overflow-wrap: break-word;word-break: break-word;}
 .content-view h1 { font-size: 22px; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin: 0 0 16px; }
 .content-view h2 { font-size: 18px; margin: 20px 0 10px; }
@@ -1672,8 +1686,9 @@ select.cosm-input {
     </div>
       <div class="lighthouse-scroll">
       <div class="lighthouse-inner">
-        <div class="discourse-meta" id="discourse-meta"></div>
-        <input class="discourse-title-input" id="discourse-title" placeholder="Untitled..." spellcheck="false" style="display:none;">
+      <div class="discourse-meta" id="discourse-meta"></div>
+<div class="lh-title-display" id="lh-title-display" style="display:none;"></div>
+<input class="discourse-title-input" id="discourse-title" placeholder="Untitled..." spellcheck="false" style="display:none;">
         <div class="extract-loading" id="extract-loading">
           <div class="extract-dot"></div><div class="extract-dot"></div><div class="extract-dot"></div>
           <span>Extracting anchors...</span>
@@ -4149,6 +4164,7 @@ function updateHeaderButtons(){
   }
 
 async function goBack() {
+document.querySelector('.nq-header').style.transform = 'translateY(0)';
   if (currentView === 'lighthouse' && currentDiscourseId) {
     await saveCurrentDiscourse(true);
     mosaicCache = {};
@@ -4704,13 +4720,23 @@ async function openDiscourse(id){
     if(lhInner) lhInner.style.borderLeft = 'none';
     if(lhInner) lhInner.style.paddingLeft = '0';
   } else {
-    ta.placeholder = 'Title\n\nBegin writing...';
-    if(lhInner) lhInner.style.borderLeft = 'none';
-    if(lhInner) lhInner.style.paddingLeft = '0';
+  ta.placeholder = 'Title\n\nBegin writing...';
+  if(lhInner) lhInner.style.borderLeft = 'none';
+  if(lhInner) lhInner.style.paddingLeft = '0';
+  // Show title heading for discourse
+  const titleDisplay = document.getElementById('lh-title-display');
+  if(titleDisplay && disc.title && disc.title !== 'Untitled' && disc.title !== 'Untitled Discourse') {
+    titleDisplay.textContent = disc.title.slice(0, 60);
+    titleDisplay.style.display = 'block';
+  } else if(titleDisplay) {
+    titleDisplay.style.display = 'none';
   }
+}
   
-  setEditorMode('write'); 
-  showPanel('view-lighthouse');
+  setEditorMode('write');
+document.querySelector('.nq-header').style.transform = 'translateY(-100%)';
+document.querySelector('.nq-header').style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+showPanel('view-lighthouse');
   
   if(disc.folder_id && currentFolderId !== disc.folder_id){
     const f = await dbGet("cosm_folders", disc.folder_id);
