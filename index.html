@@ -34,7 +34,8 @@ button {
 
 #firefly-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
-.nq-header { height: 56px; background: #000; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; }
+.nq-header { height: 56px; background: #000; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);}
+
 .nq-wordmark { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; opacity: 0.8; cursor: pointer; user-select: none; -webkit-user-select: none; padding: 8px 0; transition: opacity 0.15s; }
 .nq-wordmark.pressing { opacity: 0.3; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
@@ -4164,7 +4165,9 @@ function updateHeaderButtons(){
   }
 
 async function goBack() {
-document.querySelector('.nq-header').style.transform = 'translateY(0)';
+const hdr = document.querySelector('.nq-header');
+hdr.style.transform = 'translateY(0)';
+hdr.style.marginBottom = '0';
   if (currentView === 'lighthouse' && currentDiscourseId) {
     await saveCurrentDiscourse(true);
     mosaicCache = {};
@@ -4688,7 +4691,6 @@ async function openDiscourse(id){
   let contentText = disc.raw_text || "";
   const savedTitle = disc.title ? disc.title.trim() : "";
   
-  // Legacy Migration: If an old discourse had its title saved separately, 
   // prepend it to the text area so it isn't lost in the void.
   if (savedTitle && savedTitle !== "Untitled" && savedTitle !== "Untitled Discourse") {
       const firstLine = (contentText.split('\n').find(l => l.trim().length > 0) || "").trim();
@@ -4734,8 +4736,10 @@ async function openDiscourse(id){
 }
   
   setEditorMode('write');
-document.querySelector('.nq-header').style.transform = 'translateY(-100%)';
-document.querySelector('.nq-header').style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+const hdr = document.querySelector('.nq-header');
+hdr.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+hdr.style.transform = 'translateY(-100%)';
+hdr.style.marginBottom = '-56px';
 showPanel('view-lighthouse');
   
   if(disc.folder_id && currentFolderId !== disc.folder_id){
@@ -9328,13 +9332,13 @@ window.cosmOSPinDisc=async function({title,raw_text,source_link,backlink}){const
 </script>
 
 <div class="bottom-bar" id="bottom-bar">
-  <div class="bottom-bar-scroll" id="bottom-bar-scroll"></div>
+<div class="bottom-bar-scroll" id="bottom-bar-scroll"></div>
 </div>
 <div class="watcher-loading-dot" id="watcher-loading-dot"></div>
 <div class="watcher-dot" id="watcher-dot"></div>
 <div class="watcher-panel" id="watcher-panel">
-  <div class="watcher-panel-title">◈ Resonance</div>
-  <div id="watcher-links-list"></div>
+<div class="watcher-panel-title">◈ Resonance</div>
+<div id="watcher-links-list"></div>
 </div>
 
 </body>
