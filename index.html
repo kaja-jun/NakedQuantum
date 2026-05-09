@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.36.6</title>
+<title>NakedQuantum v0.36.7</title>
 <style>
 :root {
   --bg: #000000;
@@ -1889,7 +1889,7 @@ select.cosm-input {
 
 <div class="view-panel guardian-view hidden" id="view-guardian">
   <div id="guardian-back-row" style="position:absolute;top:16px;left:16px;z-index:10;">
-    <button onclick="goBack()" style="background:none;border:none;color:var(--g-muted);font-size:11px;letter-spacing:2px;font-weight:700;opacity:0.4;padding:8px 4px;">← exit</button>
+    <button id="btn-guardian-back" style="background:none;border:none;color:var(--g-muted);font-size:11px;letter-spacing:2px;font-weight:700;opacity:0.4;padding:8px 4px;">← exit</button>
   </div>
   <div class="guardian-realm" id="guardian-realm">
     <div class="guardian-glyph-wrap">
@@ -2126,29 +2126,22 @@ select.cosm-input {
 
 <div id="cosm-toast"></div>
 
-<script>
-document.addEventListener('touchstart',()=>{},{passive:true});
+<script type="module">
+import { generateFastMapData } from './nlp.js';
 
 /* STATE */
 
 let db=null,currentMode='soup',currentDiscourseId=null,currentFolderId=null,
-    breadcrumbPath=[{id:null,name:'◈  The soup'}],editorMode='write',currentView='table',
-    mosaicCache={},searchQuery='',activeCharId=null,sanctuarySearchQuery='';
+breadcrumbPath=[{id:null,name:'◈  The soup'}],editorMode='write',currentView='table',mosaicCache={},searchQuery='',activeCharId=null,sanctuarySearchQuery='';
 const AKASHIC_URL='https://wandering-violet-964a.gazajar.workers.dev';
-
 let cosmUserId=localStorage.getItem('cosm_user_id')||crypto.randomUUID();
 localStorage.setItem('cosm_user_id',cosmUserId);
-
 let activeIE = null;
-
 let longPressTimer=null,isLongPress=false,longPressConsumed=false,touchStartPos={x:0,y:0};
 const LONG_PRESS_DURATION=1000,MOVE_THRESHOLD=10;
-
 let selectMode=false, selectedItems=new Set();
-
 let deepSoupFolderId = null;
 let deepSoupPath = [{id: null, name: '꩜ Deep Soup'}];
-
 let deepMapperLoadSuppressed = false;
 let deepMapperSuppressTimer = null;
 
@@ -5335,342 +5328,6 @@ async function handleChatSend(isRetry = false) {
   }
 }
 
-function extractEdges(text) {
-  const lines = text.split('\n').filter(l => l.trim().length > 0);
-  if (lines.length === 0) return { first_line: '', last_line: '' };
-  return {
-    first_line: lines[0].trim().slice(0, 200),
-    last_line: lines[lines.length - 1].trim().slice(0, 200)
-  };
-}
-
-const STOPWORDS = new Set([
-  'the','a','an','is','was','were','be','been','being','have','has','had',
-  'do','does','did','will','would','shall','should','may','might','must',
-  'can','could','i','me','my','mine','myself','you','your','yours',
-  'he','him','his','she','her','hers','it','its','itself',
-  'we','us','our','ours','they','them','their','theirs',
-  'this','that','these','those','what','which','who','whom',
-  'and','but','or','nor','not','so','yet','for','if','to','of','in',
-  'on','at','by','from','with','about','into','through','during',
-  'after','above','below','between','out','off','over','under',
-  'again','further','then','once','here','there','when','where',
-  'why','how','all','both','each','few','more','most','other','some',
-      'such','only','own','same','than','too','very','just','now',
-  'also','even','still','already','always','never','sometimes'
-
-
-]);
-
-function extractKeyTerms(text, maxTerms = 10) {
-  const words = text.toLowerCase()
-    .replace(/[^\w\s']/g, '')
-    .split(/\s+/)
-    .filter(w => w.length > 2 && !STOPWORDS.has(w));
-  
-  // Count frequencies
-  const freq = {};
-  for (const w of words) {
-    freq[w] = (freq[w] || 0) + 1;
-  }
-  
-  // Simple TF-IDF approximation: TF * log(totalWords / (1 + docCount))
-  // For a single document, IDF is approximated by uniqueness
-  const totalWords = words.length;
-  const terms = Object.entries(freq)
-    .map(([term, count]) => ({
-      term,
-      count,
-      tfidf: (count / totalWords) * Math.log(totalWords / (1 + count)) 
-      // Rarer words get higher weight
-    }))
-    .sort((a, b) => b.tfidf - a.tfidf)
-    .slice(0, maxTerms);
-  
-  return terms;
-}
-
-const SENTIMENT = {
-  positive: new Set([
-    'love','hope','light','warm','open','free','peace','calm','soft',
-    'gentle','bright','clear','true','whole','heal','grow','bloom',
-    'rise','reach','hold','safe','trust','grace','grateful',
-    'alive','present','found','grounded','clean','solid','awake',
-    'sublime','pure','kiss','touch','connected','persist','move'
-  ]),
-  negative: new Set([
-    'fear','pain','dark','cold','close','trapped','heavy','hard',
-    'sharp','lost','broken','wound','fall','sink','empty','alone',
-    'silence','never','nothing','hollow','bitter','ache','weight',
-    'numb','exhausted','stuck','suffocating','invisible','worthless',
-    'ashamed','rage','frozen','collapse','despair','haunt','scream',
-    'blind','deaf','cruel','stripped','torn','melting','dissolve'
-  ]),
-  tentative: new Set([
-    'perhaps','maybe','sometimes','could','might','seems','almost',
-    'trying','wondering','question','uncertain','hesitate',
-    'unsure','vague','confused','sort','kind','wonder','odd','strange'
-  ]),
-  confessional: new Set([
-    'truth','honest','admit','confess','real','raw','naked',
-    'bare','expose','reveal','actually','felt','feel','feeling',
-    'touched','ache','i','myself','oneself','within','inside'
-  ]),
-  resolved: new Set([
-    'accept','chose','decide','finally','enough','done','settle',
-    'rest','still','quiet','understood','understand','knowing',
-    'release','complete','peace','closed','capacity','essence'
-  ]),
-  dissolution: new Set([
-    'abyss','void','fragment','dissolve','melt','collapse','forget',
-    'lost','random','unknown','chaos','infinite','separate','torn',
-    'destroy','fade','drift','shadow','ghost','erasure','nothing'
-  ]),
-  existence: new Set([
-    'exist','universe','consciousness','soul','being','presence',
-    'observer','essence','persist','human','alive','death','born',
-    'life','infinite','eternal','moment','now','time','self','i'
-  ])
-};
-
-const INVERSION_MARKERS = new Set([
-  'but','yet','unless','except','though','rather','instead',
-  'however','still','only','while','despite','until','and yet'
-]);
-
-function detectInversionDensity(text) {
-  const sentences = text.split(/[.!?;]+/).filter(s => s.trim().length > 0);
-  if (!sentences.length) return { label: 'No signal', ratio: 0, count: 0 };
-  let count = 0;
-  for (const s of sentences) {
-    const words = s.toLowerCase().split(/\s+/);
-    for (const w of words) {
-      if (INVERSION_MARKERS.has(w)) { count++; break; }
-    }
-  }
-  const ratio = count / sentences.length;
-  let label;
-  if (ratio === 0)      label = 'Asserting';
-  else if (ratio < 0.2) label = 'Occasional inversion';
-  else if (ratio < 0.4) label = 'Dialectical';
-  else                  label = 'Perpetual self-argument';
-  return { label, count, ratio: parseFloat(ratio.toFixed(3)) };
-}
-
-function detectParadoxProximity(text) {
-  const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
-  const WINDOW = 6;
-  let paradoxCount = 0;
-  const paradoxPairs = [];
-  for (let i = 0; i < words.length; i++) {
-    const w = words[i];
-    const inPos = SENTIMENT.positive.has(w) || SENTIMENT.existence.has(w);
-    const inNeg = SENTIMENT.negative.has(w) || SENTIMENT.dissolution.has(w);
-    if (!inPos && !inNeg) continue;
-    for (let j = i + 1; j < Math.min(i + WINDOW, words.length); j++) {
-      const w2 = words[j];
-      const w2Pos = SENTIMENT.positive.has(w2) || SENTIMENT.existence.has(w2);
-      const w2Neg = SENTIMENT.negative.has(w2) || SENTIMENT.dissolution.has(w2);
-      if ((inPos && w2Neg) || (inNeg && w2Pos)) {
-        paradoxCount++;
-        if (paradoxPairs.length < 5) paradoxPairs.push(w + '/' + w2);
-        break;
-      }
-    }
-  }
-  const density = paradoxCount / Math.max(words.length / 10, 1);
-  let label;
-  if (paradoxCount === 0)   label = 'Uniform';
-  else if (density < 0.5)   label = 'Occasional tension';
-  else if (density < 1.5)   label = 'Charged';
-  else                      label = 'Paradox-dominant';
-  return { label, count: paradoxCount, pairs: paradoxPairs };
-}
-
-function detectRepetitionOrbits(text) {
-  const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
-  const meaningful = words.filter(w => w.length > 3 && !STOPWORDS.has(w));
-  const freq = {};
-  for (const w of meaningful) { freq[w] = (freq[w] || 0) + 1; }
-  const orbiting = Object.entries(freq)
-    .filter(([, count]) => count >= 3)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([term, count]) => ({ term, count }));
-  const label = orbiting.length === 0 ? 'No orbit' :
-                orbiting.length <= 2  ? 'Single orbit' : 'Multi-orbit';
-  return { label, orbiting };
-}
-
-function detectFragmentRatio(text) {
-  const sentences = text.split(/[.!?;]+/)
-    .map(s => s.trim().split(/\s+/).filter(Boolean).length)
-    .filter(l => l > 0);
-  if (!sentences.length) return { label: 'No signal', ratio: 0 };
-  const fragments = sentences.filter(l => l <= 5).length;
-  const ratio = fragments / sentences.length;
-  let label;
-  if (ratio < 0.2)      label = 'Prose';
-  else if (ratio < 0.4) label = 'Mixed';
-  else if (ratio < 0.7) label = 'Fragmented';
-  else                  label = 'Shards';
-  return { label, ratio: parseFloat(ratio.toFixed(3)) };
-}
-
-function detectWritingSignature(text) {
-  const inversion    = detectInversionDensity(text);
-  const paradox      = detectParadoxProximity(text);
-  const orbits       = detectRepetitionOrbits(text);
-  const fragments    = detectFragmentRatio(text);
-  const orbitTerms   = orbits.orbiting.map(o => o.term).join(', ');
-  const summaryParts = [
-    inversion.label,
-    paradox.label,
-    orbits.orbiting.length ? 'Orbiting [' + orbitTerms + ']' : 'No orbit',
-    fragments.label
-  ];
-  return {
-    summary: summaryParts.join(' · '),
-    inversion,
-    paradox,
-    orbits,
-    fragments
-  };
-}
-
-function detectPacing(text) {
-  const sentences = text.split(/[.!?]+/).map(s => s.trim().split(/\s+/).filter(Boolean).length).filter(l => l > 0);
-  if (!sentences.length) return { label: 'Fragmented', avg_words_per_sentence: 0 };
-  const avg = sentences.reduce((a, b) => a + b, 0) / sentences.length;
-  let label;
-  if (avg < 6) label = 'Staccato';
-  else if (avg < 14) label = 'Measured';
-  else if (avg < 25) label = 'Flowing';
-  else label = 'Spiraling';
-  return { label, avg_words_per_sentence: parseFloat(avg.toFixed(1)) };
-}
-
-const ABSOLUTES = new Set([
-  'always','never','everyone','nobody','nothing','everything',
-  'impossible','must','ruined','completely','absolutely','totally',
-  'forever','all','none','only','exactly','certain','definitely'
-]);
-
-function detectRigidity(text) {
-  const words = text.toLowerCase().match(/\b\w+\b/g) || [];
-  let count = 0;
-  for (const w of words) { if (ABSOLUTES.has(w)) count++; }
-  const ratio = count / Math.max(words.length, 1);
-  const label = ratio > 0.02 ? 'Rigid' : ratio > 0.01 ? 'Tense' : 'Fluid';
-  return { label, absolute_count: count, ratio: parseFloat(ratio.toFixed(4)) };
-}
-
-function detectQuestionDensity(text) {
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-  const questions = (text.match(/\?/g) || []).length;
-  if (!sentences.length) return { label: 'No signal', ratio: 0 };
-  const ratio = questions / sentences.length;
-  let label;
-  if (ratio === 0) label = 'Declarative';
-  else if (ratio < 0.1) label = 'Mostly closed';
-  else if (ratio < 0.3) label = 'Inquiring';
-  else label = 'Unanchored';
-  return { label, question_count: questions, ratio: parseFloat(ratio.toFixed(3)) };
-}
-
-function detectEmotionalArc(text) {
-  const lines = text.split('\n').filter(l => l.trim().length > 0);
-  if (lines.length < 3) return { direction: 'too short', opening_tone: 'neutral', closing_tone: 'neutral', tension_shift: 0 };
-  
-  const firstThird = lines.slice(0, Math.ceil(lines.length / 3)).join(' ').toLowerCase();
-  const lastThird = lines.slice(-Math.ceil(lines.length / 3)).join(' ').toLowerCase();
-  
-function score(text, lexicon) {
-    const words = text.split(/\s+/);
-    let hits = 0;
-    for (const w of words) {
-      if (lexicon.has(w)) hits++;
-    }
-    return hits / Math.max(words.length, 1);
-  }
-  
-  // Classify opening tone
-  const openingTones = [
-    { name: 'tentative', score: score(firstThird, SENTIMENT.tentative) },
-    { name: 'confessional', score: score(firstThird, SENTIMENT.confessional) },
-    { name: 'negative', score: score(firstThird, SENTIMENT.negative) },
-    { name: 'positive', score: score(firstThird, SENTIMENT.positive) }
-  ].sort((a, b) => b.score - a.score);
-  
-  // Classify closing tone
-  const closingTones = [
-    { name: 'resolved', score: score(lastThird, SENTIMENT.resolved) + score(lastThird, SENTIMENT.positive) },
-    { name: 'confessional', score: score(lastThird, SENTIMENT.confessional) },
-    { name: 'negative', score: score(lastThird, SENTIMENT.negative) },
-    { name: 'tentative', score: score(lastThird, SENTIMENT.tentative) }
-  ].sort((a, b) => b.score - a.score);
-  
-  const openingTone = openingTones[0].name;
-  const closingTone = closingTones[0].name;
-  
-  // Tension shift: positive = more tense, negative = resolved
-  const openNeg = score(firstThird, SENTIMENT.negative);
-  const closeNeg = score(lastThird, SENTIMENT.negative);
-  const tensionShift = openNeg - closeNeg;
-  
-  // Direction string
-  let direction;
-  if (tensionShift > 0.02) direction = `${openingTone} → resolving`;
-  else if (tensionShift < -0.02) direction = `${openingTone} → escalating`;
-  else direction = `${openingTone} → ${closingTone}`;
-  
-  return {
-    direction,
-    opening_tone: openingTone,
-    closing_tone: closingTone,
-    tension_shift: parseFloat(tensionShift.toFixed(3))
-  };
-}
-
-function extractiveSummary(text, maxSentences = 5) {
-  const sentences = text
-    .replace(/([.!?])\s+/g, '$1|')
-    .split('|')
-    .filter(s => s.trim().length > 20);
-  
-  if (sentences.length <= maxSentences) return sentences.join(' ').trim();
-  
-  const keyTerms = extractKeyTerms(text, 15);
-  const keyTermSet = new Set(keyTerms.map(t => t.term));
-  
-  // Score each sentence
-  const scored = sentences.map((s, i) => {
-    const words = s.toLowerCase().split(/\s+/);
-    let termScore = 0;
-    for (const w of words) {
-      if (keyTermSet.has(w)) termScore++;
-    }
-    
-    // Position bonus: first and last sentences matter more
-    const positionBonus = (i === 0 || i === sentences.length - 1) ? 0.5 : 
-                          (i < 3 || i > sentences.length - 3) ? 0.2 : 0;
-    
-    return {
-      sentence: s.trim(),
-      score: (termScore / words.length) + positionBonus,
-      index: i
-    };
-  });
-  
-  // Pick top N, then sort by original position to preserve flow
-  const top = scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, maxSentences)
-    .sort((a, b) => a.index - b.index);
-  
-  return top.map(t => t.sentence).join(' ').trim();
-}
-
 async function injectWatcherFlags(fastMap, discourseId) {
   if (!isWatcherReady || !watcherDB) return fastMap;
   
@@ -5729,7 +5386,7 @@ for(const s of similarities.filter(s => s.score > 0.65)){
 }
 
 async function generateFastMap(discourseId) {
-  try {
+    try {
     const d = await getDiscourse(discourseId);
     if (!d || !d.raw_text) return;
 
@@ -5741,37 +5398,21 @@ async function generateFastMap(discourseId) {
     // Skip if already mapped and word count is unchanged
     if (existing && existing.map_type === 'fast' && existing.word_count === wordCount) return;
 
-    // Run your sovereign local heuristics
-    const edges = extractEdges(d.raw_text);
-    const terms = extractKeyTerms(d.raw_text, 10);
-    const arc = detectEmotionalArc(d.raw_text);
-    const extract = extractiveSummary(d.raw_text, 3);
-    const pacing = detectPacing(d.raw_text);
-    const rigidity = detectRigidity(d.raw_text);
-    const questioning = detectQuestionDensity(d.raw_text);
-    const signature = detectWritingSignature(d.raw_text);
+// Run your sovereign local heuristics
+const mapData = generateFastMapData(d.raw_text);
 
-    let fastMap = {
-      id: discourseId,
-      discourse_id: discourseId,
-      map_type: 'fast',
-      first_line: edges.first_line,
-      last_line: edges.last_line,
-      key_terms: terms,
-      emotional_arc: arc,
-      extractive_summary: extract,
-      pacing,
-      rigidity,
-      questioning,
-      signature,
-      word_count: wordCount,
-      model: 'local-heuristic',
-      generated_at: Date.now(),
-      created_at: existing ? existing.created_at : Date.now(),
-      updated_at: Date.now()
-    };
+let fastMap = {
+  id: discourseId,
+  discourse_id: discourseId,
+  map_type: 'fast',
+  ...mapData,
+  model: 'local-heuristic',
+  generated_at: Date.now(),
+  created_at: existing ? existing.created_at : Date.now(),
+  updated_at: Date.now()
+};
 
-    // Inject the Watcher's vector echoes
+// Inject the Watcher's vector echoes
     fastMap = await injectWatcherFlags(fastMap, discourseId);
 
     await dbPut('guardian_summaries', fastMap);
@@ -8419,31 +8060,31 @@ async function buildGuardianContext(discs) {
           contextBlock += `Paradox pairs: ${fastMap.signature.paradox.pairs.join(' | ')}\n`;
         }
       }
-      if (fastMap.extractive_summary) {
+        if (fastMap.extractive_summary) {
         contextBlock += `Excerpt: "${fastMap.extractive_summary.slice(0, 300)}"\n`;
       }
-      if (fastMap.watcher) {
-        if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
+       if (fastMap.watcher) {
+       if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
           const echoes = fastMap.watcher.top_similar
             .map(s => `d_${s.id.slice(-4)} (${s.score})`)
             .join(', ');
           contextBlock += `Watcher: echoes ${echoes}\n`;
         }
-        if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
+    if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
           const contradicts = fastMap.watcher.top_contradictory
             .map(s => `d_${s.id.slice(-4)} (${s.score})`)
             .join(', ');
           contextBlock += `Watcher: contradicts ${contradicts}\n`;
         }
       }
-    } else {
+    }   else {
       // Fallback: no Fast Map yet -- use raw text snippet
-      const rawText = (d.raw_text || '').trim();
-      if (rawText.length > 0) {
+ const rawText = (d.raw_text || '').trim();
+        if (rawText.length > 0) {
         contextBlock += `First: "${rawText.split('\n').find(l => l.trim().length > 0)?.trim().slice(0, 150) || '...'}"\n`;
         if (wordCount <= 300) {
-          contextBlock += `Full text: "${rawText.slice(0, 400)}"\n`;
-        } else {
+        contextBlock += `Full text: "${rawText.slice(0, 400)}"\n`;
+      } else {
           contextBlock += `Excerpt: "${rawText.slice(0, 300)}..."\n`;
         }
         contextBlock += `[Note: Unmapped terrain -- Fast Map will be generated on next save]\n`;
@@ -8452,7 +8093,19 @@ async function buildGuardianContext(discs) {
     
     contextBlock += '\n';
   }
-  
+if (fastMap.pronoun_trajectory) {
+  contextBlock += `Pronoun trajectory: ${fastMap.pronoun_trajectory.label} (dominant: ${fastMap.pronoun_trajectory.dominant})\n`;
+}
+if (fastMap.silence_weight) {
+  contextBlock += `Silence weight: ${fastMap.silence_weight.label} (${fastMap.silence_weight.count} silence markers)\n`;
+}
+if (fastMap.entry_exit_delta) {
+  contextBlock += `Entry/exit register: ${fastMap.entry_exit_delta.delta}\n`;
+}
+if (fastMap.incompleteness) {
+  contextBlock += `Ending: ${fastMap.incompleteness.label}\n`;
+}
+
   // ── DEEP MAPS (local or API) ──────────────────────────────
   const deepMaps = [];
   for (const d of sorted) {
@@ -8718,6 +8371,7 @@ async function handleGuardianOffer(){
 document.addEventListener('DOMContentLoaded',()=> {
 initWorker();
   document.getElementById('btn-back-table').addEventListener('click',()=>goBack());
+  document.getElementById('btn-guardian-back').addEventListener('click', goBack);
   document.getElementById('btn-write').addEventListener('click',()=>setEditorMode('write'));
   document.getElementById('btn-view').addEventListener('click',()=>setEditorMode('view'));
   document.getElementById('btn-export-html').addEventListener('click',exportHTML);
