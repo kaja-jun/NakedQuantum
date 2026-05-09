@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.36.7</title>
+<title>NakedQuantum v0.36.8</title>
 <style>
 :root {
   --bg: #000000;
@@ -41,7 +41,6 @@ button {
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 .hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
-.hdr-import-label { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 
 #mode-toast { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent-dim); color: var(--accent); padding: 5px 14px; border-radius: 20px; font-size: 9px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
 
@@ -59,10 +58,6 @@ button {
 .breadcrumb-btn:active { color: var(--accent); background: rgba(200,160,80,0.08); }
 .breadcrumb-btn.current { color: var(--accent); opacity: 0.9; }
 .breadcrumb-arrow { color: var(--muted); font-size: 10px; opacity: 0.5; padding: 0 2px; user-select: none; }
-
-.table-action-bar { display: flex; gap: 10px; padding: 10px 16px 14px; flex-shrink: 0; }
-.btn-table-action { display: flex; align-items: center; justify-content: center; gap: 7px; background: var(--accent); border: 1px solid var(--border); color: #000; font-size: 12px; letter-spacing: 1px; font-weight: 700; padding: 10px 16px; border-radius: 10px; white-space: nowrap; flex: 1; }
-.btn-table-action:active { background: var(--accent-dim); color: #000; border-color: var(--accent); }
 
 .cards-section-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.45; font-weight: 900; text-transform: uppercase; padding: 14px 0 8px; }
 .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -401,8 +396,6 @@ button {
 
 /* DEEP SOUP VIEW */
 .deep-soup-view { background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.deep-soup-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; flex-shrink: 0; }
-.deep-soup-title { font-size: 9px; letter-spacing: 3px; color: var(--accent-dim); opacity: 0.7; font-weight: 900; text-transform: uppercase; }
 
 /* THE LINEAGE NAVIGATOR */
 #lineage-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1500; display: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
@@ -492,10 +485,6 @@ button {
   display: none;
 }
 .lineage-children.open { display: block; }
-
-/* Remove old horizontal siblings */
-.lineage-siblings { display: none; }
-.lineage-sibling-btn { display: none; }
 .lineage-siblings::-webkit-scrollbar { display: none; }
 
 .mosaic-block { border-left: 2px solid var(--accent-dim); padding: 10px 14px; background: rgba(200,160,80,0.04); border-radius: 0 8px 8px 0; }
@@ -561,9 +550,6 @@ button {
 /* ABYSS PAGE */
 .abyss-view { background: #000000; padding: 0; margin: 0; }
 .abyss-view canvas { display: block; }
-.void-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; flex-shrink: 0; }
-.void-title { font-size: 9px; letter-spacing: 3px; color: #ff6060; opacity: 0.6; font-weight: 900; text-transform: uppercase; }
-/* ABYSS TOOLTIP */
 /* ABYSS TOOLTIP -- lightweight label for guardian-node, cluster-dot */
 #abyss-tooltip {
   position: absolute;
@@ -820,7 +806,7 @@ button {
   display: flex; align-items: center; gap: 6px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ie-name .diamond {
+.diamond {
   font-size: 8px; color: var(--accent); flex-shrink: 0;
 }
 .ie-archetype {
@@ -1315,30 +1301,10 @@ select.cosm-input {
 .global-search-result-type.discourse { background: var(--surface); color: var(--text); }
 .global-search-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 24px; }
 
-.chat-input-wrapper {
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  padding: 10px 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .model-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.naked-model-input {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  outline: none;
-  width: 100%;
 }
 
 .model-scroller {
@@ -1348,15 +1314,6 @@ select.cosm-input {
   padding: 10px 0;
   scrollbar-width: none; /* Firefox */
   -webkit-overflow-scrolling: touch;
-}
-
-.model-grid {
-  display: flex;
-  flex-wrap: wrap; /* Stacks them as they fill the width */
-  gap: 6px;
-  padding: 8px 0;
-  max-height: 120px; /* Limits growth, allows vertical scroll if you have 50+ models */
-  overflow-y: auto;
 }
 
 .model-chip {
@@ -1392,20 +1349,8 @@ select.cosm-input {
   max-height: 200px;
 }
 
-
 #userInput:focus {
   border-top: 1px solid var(--accent-dim); /* The glow when you type */
-}
-
-.send-icon-btn {
-  align-self: flex-end;
-  background: transparent;
-  border: 1px solid var(--accent-dim);
-  color: var(--accent);
-  font-size: 0.7rem;
-  padding: 4px 12px;
-  text-transform: uppercase;
-  cursor: pointer;
 }
 
 #cosm-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 9px 20px; border-radius: 20px; font-size: 12px; font-weight: 900; letter-spacing: 1px; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s; white-space: nowrap; }
@@ -4171,7 +4116,6 @@ hdr.style.marginBottom = '0';
     await renderTableView(); 
   } else { 
     showPanel('view-sanctuary'); 
-    // In goBack(), after showPanel:
 document.getElementById('btn-chat-edit').style.display = '';
 activeIE = null;
     renderSanctuaryView(); 
@@ -8474,7 +8418,6 @@ localStorage.setItem('nq_api_key', document.getElementById('input-api-key').valu
   document.getElementById('btn-chat-edit').addEventListener('click',()=>openCharacterForge(activeCharId));
   document.getElementById('btn-chat-clear').addEventListener('click',clearChatHistory);
   document.getElementById('btn-send').addEventListener('click',handleChatSend);
-  document.getElementById('btn-send').addEventListener('click', handleChatSend); // Already exists
   document.getElementById('btn-chat-retry').addEventListener('click', () => handleChatSend(true)); // ADD THIS
   document.getElementById('chat-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) {
