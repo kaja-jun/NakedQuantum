@@ -8021,14 +8021,28 @@ async function buildGuardianContext(discs) {
           contextBlock += `Watcher: contradicts ${contradicts}\n`;
         }
       }
-    }   else {
+
+      // ── NEW SHAPE DIMENSIONS (GUARDED) ──
+      if (fastMap.pronoun_trajectory) {
+        contextBlock += `Pronoun trajectory: ${fastMap.pronoun_trajectory.label} (dominant: ${fastMap.pronoun_trajectory.dominant})\n`;
+      }
+      if (fastMap.silence_weight) {
+        contextBlock += `Silence weight: ${fastMap.silence_weight.label} (${fastMap.silence_weight.count} silence markers)\n`;
+      }
+      if (fastMap.entry_exit_delta) {
+        contextBlock += `Entry/exit register: ${fastMap.entry_exit_delta.delta}\n`;
+      }
+      if (fastMap.incompleteness) {
+        contextBlock += `Ending: ${fastMap.incompleteness.label}\n`;
+      }
+    } else {
       // Fallback: no Fast Map yet -- use raw text snippet
- const rawText = (d.raw_text || '').trim();
-        if (rawText.length > 0) {
+      const rawText = (d.raw_text || '').trim();
+      if (rawText.length > 0) {
         contextBlock += `First: "${rawText.split('\n').find(l => l.trim().length > 0)?.trim().slice(0, 150) || '...'}"\n`;
         if (wordCount <= 300) {
-        contextBlock += `Full text: "${rawText.slice(0, 400)}"\n`;
-      } else {
+          contextBlock += `Full text: "${rawText.slice(0, 400)}"\n`;
+        } else {
           contextBlock += `Excerpt: "${rawText.slice(0, 300)}..."\n`;
         }
         contextBlock += `[Note: Unmapped terrain -- Fast Map will be generated on next save]\n`;
@@ -8036,18 +8050,6 @@ async function buildGuardianContext(discs) {
     }
     
     contextBlock += '\n';
-    if (fastMap.pronoun_trajectory) {
-  contextBlock += `Pronoun trajectory: ${fastMap.pronoun_trajectory.label} (dominant: ${fastMap.pronoun_trajectory.dominant})\n`;
-}
-if (fastMap.silence_weight) {
-  contextBlock += `Silence weight: ${fastMap.silence_weight.label} (${fastMap.silence_weight.count} silence markers)\n`;
-}
-if (fastMap.entry_exit_delta) {
-  contextBlock += `Entry/exit register: ${fastMap.entry_exit_delta.delta}\n`;
-}
-if (fastMap.incompleteness) {
-  contextBlock += `Ending: ${fastMap.incompleteness.label}\n`;
-}
   }
 
   // ── DEEP MAPS (local or API) ──────────────────────────────
