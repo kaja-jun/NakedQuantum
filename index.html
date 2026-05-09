@@ -8036,8 +8036,7 @@ async function buildGuardianContext(discs) {
     }
     
     contextBlock += '\n';
-  }
-if (fastMap.pronoun_trajectory) {
+    if (fastMap.pronoun_trajectory) {
   contextBlock += `Pronoun trajectory: ${fastMap.pronoun_trajectory.label} (dominant: ${fastMap.pronoun_trajectory.dominant})\n`;
 }
 if (fastMap.silence_weight) {
@@ -8049,6 +8048,7 @@ if (fastMap.entry_exit_delta) {
 if (fastMap.incompleteness) {
   contextBlock += `Ending: ${fastMap.incompleteness.label}\n`;
 }
+  }
 
   // ── DEEP MAPS (local or API) ──────────────────────────────
   const deepMaps = [];
