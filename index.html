@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.36.8</title>
+<title>NakedQuantum v0.36.9</title>
 <style>
 :root {
   --bg: #000000;
@@ -1881,26 +1881,23 @@ select.cosm-input {
 
   <!-- FOOTER -->
   <div class="guardian-footer" id="guardian-footer">
-    <!-- LEFT: Model selector -->
-    <button class="g-footer-btn" id="guardian-model-pill">
-      <span style="font-size:9px;letter-spacing:1px;">◈</span>
-      <span class="g-footer-btn-label" id="guardian-model-label">deepseek-v3</span>
-    </button>
-    <!-- CENTRE: Cartographer -->
-    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-      <div class="g-carto-status" id="g-carto-status"><span class="g-carto-dot" id="g-carto-dot"></span><span id="g-carto-status-text">idle</span></div>
-      <button class="g-footer-btn" id="btn-run-cartographer">
-        <span style="font-size:14px;">◈</span>
-        <span class="g-footer-btn-label">Cartographer</span>
-      </button>
-    </div>
-    <!-- RIGHT: Mapping mode -->
-    <button class="g-footer-btn" id="btn-mapping-toggle">
-      <span style="font-size:9px;letter-spacing:1px;">⊙</span>
-      <span class="g-footer-btn-label" id="mapping-toggle-label">Sovereign</span>
+  <!-- LEFT: Model selector -->
+  <button class="g-footer-btn" id="guardian-model-pill">
+    <span style="font-size:9px;letter-spacing:1px;">◈</span>
+    <span class="g-footer-btn-label">Models</span>
+  </button>
+  <!-- CENTRE: Cartographer -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+    <button class="g-footer-btn" id="btn-run-cartographer">
+      <span style="font-size:14px;">◈</span>
+      <span class="g-footer-btn-label">Cartographer</span>
     </button>
   </div>
-
+  <!-- RIGHT: Mapping mode -->
+  <button class="g-footer-btn" id="btn-mapping-toggle">
+    <span style="font-size:9px;letter-spacing:1px;">⊙</span>
+    <span class="g-footer-btn-label">Mapping</span>
+  </button>
 </div>
 
 <!-- LOGS OVERLAY -->
@@ -2090,7 +2087,6 @@ select.cosm-input {
   </div>
 </div>
 
-
 <div class="cosm-modal" id="role-modal">
   <div class="modal-title">⁂ New Role</div>
   <input class="cosm-input" id="role-name-input" placeholder="Role name (e.g. Philosopher, Young Kaja)..." maxlength="60">
@@ -2098,6 +2094,29 @@ select.cosm-input {
   <div class="modal-buttons">
     <button class="modal-btn-cancel" id="btn-role-cancel">Cancel</button>
     <button class="modal-btn-confirm" id="btn-role-confirm">Anchor ✦</button>
+  </div>
+</div>
+
+<div class="cosm-modal" id="guardian-model-modal">
+  <div class="modal-title">◈ Guardian Engine</div>
+  <div class="management-actions" id="guardian-model-list"></div>
+  <div class="modal-buttons">
+    <button class="modal-btn-cancel" onclick="closeOverlay()">Cancel</button>
+  </div>
+</div>
+
+<div class="cosm-modal" id="cartographer-path-modal">
+  <div class="modal-title">⊙ Cartographer Path</div>
+  <div class="management-actions">
+    <button class="management-btn" onclick="selectMappingMode('sovereign')">
+      <span>◈</span> Sovereign (Local / Private)
+    </button>
+    <button class="management-btn" onclick="selectMappingMode('deep')">
+      <span>∞</span> Deep (API / Cloud)
+    </button>
+  </div>
+  <div class="modal-buttons">
+    <button class="modal-btn-cancel" onclick="closeOverlay()">Cancel</button>
   </div>
 </div>
 
@@ -5616,9 +5635,9 @@ async function runCartographer() {
   const statusText = document.getElementById('g-carto-status-text');
 
   function setStatus(state, text) {
-    dot.className = 'g-carto-dot' + (state ? ' ' + state : '');
-    statusText.textContent = text;
-  }
+  if(dot) dot.className = 'g-carto-dot' + (state ? ' ' + state : '');
+  if(statusText) statusText.textContent = text;
+}
 
   if (btn) { btn.disabled = true; }
   setStatus('loading', 'loading model...');
@@ -7523,7 +7542,8 @@ function closeOverlay(){
   document.getElementById("cosm-overlay").classList.remove("active");
   ['folder-modal','rename-modal','move-modal',
  'global-search-modal','capture-modal','discourse-modal','settings-modal',
- 'burn-disc-modal','ie-manifest-modal','role-modal','persona-select-modal','create-modal'
+ 'burn-disc-modal','ie-manifest-modal','role-modal','persona-select-modal','create-modal',
+ 'guardian-model-modal','cartographer-path-modal'
 ].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove("visible");});
 }
 
@@ -7930,11 +7950,34 @@ let guardianModelIdx = 0;
 function cycleGuardianModel() {
   guardianModelIdx = (guardianModelIdx + 1) % GUARDIAN_MODELS.length;
   const m = GUARDIAN_MODELS[guardianModelIdx];
-  const pill = document.getElementById('guardian-model-pill');
-  if(pill) pill.textContent = '◈ ' + m.split('/').pop();
   localStorage.setItem('nq_guardian_model', m);
   showToast('◈ ' + m.split('/').pop());
 }
+
+function populateGuardianModelList(){
+  const list = document.getElementById('guardian-model-list');
+  if(!list) return;
+  list.innerHTML = '';
+  GUARDIAN_MODELS.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'management-btn';
+    btn.innerHTML = `<span>◈</span> ${m.split('/').pop()}`;
+    btn.onclick = () => {
+      localStorage.setItem('nq_guardian_model', m);
+      guardianModelIdx = GUARDIAN_MODELS.indexOf(m);
+      showToast('◈ ' + m.split('/').pop());
+      closeOverlay();
+    };
+    list.appendChild(btn);
+  });
+}
+
+function selectMappingMode(mode){
+  setMappingMode(mode);
+  showToast(mode === 'sovereign'? '◈ Sovereign' : '∞ Deep');
+  closeOverlay();
+}
+window.selectMappingMode = selectMappingMode;
 
 function initGuardianModel() {
   const stored = localStorage.getItem('nq_guardian_model');
@@ -7942,8 +7985,6 @@ function initGuardianModel() {
     const idx = GUARDIAN_MODELS.indexOf(stored);
     if(idx >= 0) guardianModelIdx = idx;
   }
-  const pill = document.getElementById('guardian-model-pill');
-  if(pill) pill.textContent = '◈ ' + GUARDIAN_MODELS[guardianModelIdx].split('/').pop();
 }
 
 async function summonGuardian(userAddition){
@@ -8572,14 +8613,16 @@ document.addEventListener('click', (e) => {
 });
 document.getElementById('btn-summon-guardian').addEventListener('click', function(){ summonGuardian(); });
 document.getElementById('btn-run-cartographer').addEventListener('click', runCartographer);
-document.getElementById('guardian-model-pill').addEventListener('click', cycleGuardianModel);
 
-// Mapping toggle
+document.getElementById('guardian-model-pill').addEventListener('click', function(){
+  document.getElementById('cosm-overlay').classList.add('active');
+  document.getElementById('guardian-model-modal').classList.add('visible');
+  populateGuardianModelList();
+});
+
 document.getElementById('btn-mapping-toggle').addEventListener('click', function() {
-  const current = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
-  const next = current === 'sovereign' ? 'deep' : 'sovereign';
-  setMappingMode(next);
-  document.getElementById('mapping-toggle-label').textContent = next === 'sovereign' ? 'Sovereign' : 'Deep';
+  document.getElementById('cosm-overlay').classList.add('active');
+  document.getElementById('cartographer-path-modal').classList.add('visible');
 });
 
 // Logs overlay
