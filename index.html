@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.36.5</title>
+<title>NakedQuantum v0.37</title>
 <style>
 :root {
   --bg: #000000;
@@ -34,13 +34,13 @@ button {
 
 #firefly-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
-.nq-header { height: 56px; background: #000; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; }
+.nq-header { height: 56px; background: #000; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);}
+
 .nq-wordmark { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; opacity: 0.8; cursor: pointer; user-select: none; -webkit-user-select: none; padding: 8px 0; transition: opacity 0.15s; }
 .nq-wordmark.pressing { opacity: 0.3; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 .hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
-.hdr-import-label { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 
 #mode-toast { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent-dim); color: var(--accent); padding: 5px 14px; border-radius: 20px; font-size: 9px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
 
@@ -58,10 +58,6 @@ button {
 .breadcrumb-btn:active { color: var(--accent); background: rgba(200,160,80,0.08); }
 .breadcrumb-btn.current { color: var(--accent); opacity: 0.9; }
 .breadcrumb-arrow { color: var(--muted); font-size: 10px; opacity: 0.5; padding: 0 2px; user-select: none; }
-
-.table-action-bar { display: flex; gap: 10px; padding: 10px 16px 14px; flex-shrink: 0; }
-.btn-table-action { display: flex; align-items: center; justify-content: center; gap: 7px; background: var(--accent); border: 1px solid var(--border); color: #000; font-size: 12px; letter-spacing: 1px; font-weight: 700; padding: 10px 16px; border-radius: 10px; white-space: nowrap; flex: 1; }
-.btn-table-action:active { background: var(--accent-dim); color: #000; border-color: var(--accent); }
 
 .cards-section-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.45; font-weight: 900; text-transform: uppercase; padding: 14px 0 8px; }
 .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -105,7 +101,7 @@ button {
 .table-empty-text { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; }
 
 .lighthouse-view { background: var(--bg); overflow: hidden; }
-.lighthouse-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; gap: 8px; }
+.lighthouse-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #000; flex-shrink: 0; gap: 8px; }
 .btn-back-table { display: flex; align-items: center; gap: 7px; background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; letter-spacing: 1px; font-weight: 700; padding: 7px 12px; border-radius: 8px; white-space: nowrap; }
 .btn-back-table:active { color: var(--text); border-color: var(--accent-dim); }
 .btn-back-arrow { font-size: 14px; opacity: 0.7; }
@@ -116,9 +112,23 @@ button {
 .tbtn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 11px; padding: 7px 11px; border-radius: 8px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
 .tbtn.danger { color: #ff6060; border-color: var(--danger); }
 .tbtn.gold { color: var(--accent); border-color: var(--accent-dim); }
+
 .lighthouse-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 20px 60px; display: flex; flex-direction: column; gap: 16px; }
 /* LIGHTHOUSE VIEW FIXES (Expanded Textarea & Overlap) */
 .lighthouse-inner {display: flex;flex-direction: column;height: calc(100vh - 120px); /* Adjust based on your nav height */padding-bottom: 20px;}
+.lh-title-display {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 4px 0 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.92;
+}
 /* LIGHTHOUSE REFINED */
 .lh-save-indicator {
   flex: 1;
@@ -386,8 +396,6 @@ button {
 
 /* DEEP SOUP VIEW */
 .deep-soup-view { background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.deep-soup-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; flex-shrink: 0; }
-.deep-soup-title { font-size: 9px; letter-spacing: 3px; color: var(--accent-dim); opacity: 0.7; font-weight: 900; text-transform: uppercase; }
 
 /* THE LINEAGE NAVIGATOR */
 #lineage-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1500; display: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
@@ -477,10 +485,6 @@ button {
   display: none;
 }
 .lineage-children.open { display: block; }
-
-/* Remove old horizontal siblings */
-.lineage-siblings { display: none; }
-.lineage-sibling-btn { display: none; }
 .lineage-siblings::-webkit-scrollbar { display: none; }
 
 .mosaic-block { border-left: 2px solid var(--accent-dim); padding: 10px 14px; background: rgba(200,160,80,0.04); border-radius: 0 8px 8px 0; }
@@ -528,8 +532,8 @@ button {
 .fmt-btn.code-btn { font-family: 'Menlo', monospace; font-size: 11px; }
 .fmt-divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; margin: 0 2px; }
 
-.content-textarea { flex: 1; width: 100%; min-height: unset; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 12px; font-size: 15px; line-height: 1.8; outline: none; resize: none; font-family: var(--font-serif); caret-color: var(--accent); -webkit-overflow-scrolling: touch; }
-.content-textarea:focus { border-color: var(--accent-dim); }
+.content-textarea { flex: 1; width: 100%; min-height: unset; background: transparent; color: var(--text); border: none; border-radius: 0; padding: 18px 20px; margin-bottom: 12px; font-size: 15px; line-height: 1.8; outline: none; resize: none; font-family: var(--font-serif); caret-color: var(--accent); -webkit-overflow-scrolling: touch; }
+.content-textarea:focus { border: none; }
 .content-view {display: none;background: var(--surface);border: 1px solid var(--border);border-radius: 12px;padding: 20px;font-size: 15px;line-height: 1.8;font-family: var(--font-serif);color: var(--text);overflow-wrap: break-word;word-break: break-word;}
 .content-view h1 { font-size: 22px; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin: 0 0 16px; }
 .content-view h2 { font-size: 18px; margin: 20px 0 10px; }
@@ -546,9 +550,6 @@ button {
 /* ABYSS PAGE */
 .abyss-view { background: #000000; padding: 0; margin: 0; }
 .abyss-view canvas { display: block; }
-.void-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px; flex-shrink: 0; }
-.void-title { font-size: 9px; letter-spacing: 3px; color: #ff6060; opacity: 0.6; font-weight: 900; text-transform: uppercase; }
-/* ABYSS TOOLTIP */
 /* ABYSS TOOLTIP -- lightweight label for guardian-node, cluster-dot */
 #abyss-tooltip {
   position: absolute;
@@ -805,7 +806,7 @@ button {
   display: flex; align-items: center; gap: 6px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ie-name .diamond {
+.diamond {
   font-size: 8px; color: var(--accent); flex-shrink: 0;
 }
 .ie-archetype {
@@ -1300,30 +1301,10 @@ select.cosm-input {
 .global-search-result-type.discourse { background: var(--surface); color: var(--text); }
 .global-search-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 24px; }
 
-.chat-input-wrapper {
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  padding: 10px 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .model-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.naked-model-input {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  outline: none;
-  width: 100%;
 }
 
 .model-scroller {
@@ -1333,15 +1314,6 @@ select.cosm-input {
   padding: 10px 0;
   scrollbar-width: none; /* Firefox */
   -webkit-overflow-scrolling: touch;
-}
-
-.model-grid {
-  display: flex;
-  flex-wrap: wrap; /* Stacks them as they fill the width */
-  gap: 6px;
-  padding: 8px 0;
-  max-height: 120px; /* Limits growth, allows vertical scroll if you have 50+ models */
-  overflow-y: auto;
 }
 
 .model-chip {
@@ -1377,20 +1349,8 @@ select.cosm-input {
   max-height: 200px;
 }
 
-
 #userInput:focus {
   border-top: 1px solid var(--accent-dim); /* The glow when you type */
-}
-
-.send-icon-btn {
-  align-self: flex-end;
-  background: transparent;
-  border: 1px solid var(--accent-dim);
-  color: var(--accent);
-  font-size: 0.7rem;
-  padding: 4px 12px;
-  text-transform: uppercase;
-  cursor: pointer;
 }
 
 #cosm-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 9px 20px; border-radius: 20px; font-size: 12px; font-weight: 900; letter-spacing: 1px; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s; white-space: nowrap; }
@@ -1491,9 +1451,31 @@ select.cosm-input {
   100% { transform: rotate(360deg); }
 }
 /* GUARDIAN MODEL SELECTOR -- ghost pill */
-.guardian-model-selector { display: flex; align-items: center; justify-content: center; margin-top: 16px; }
-.guardian-model-pill { background: none; border: none; color: var(--g-muted); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; opacity: 0.4; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: opacity 0.2s; }
-.guardian-model-pill:active { opacity: 0.8; }
+.guardian-model-selector { display: none; }
+
+/* GUARDIAN FOOTER */
+.guardian-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: var(--g-bg); padding: 10px 16px 28px; display: none; border-top: 1px solid var(--g-border); }
+.guardian-footer.visible { display: flex; align-items: stretch; gap: 10px; }
+.g-footer-btn { background: var(--g-surface); border: 1px solid var(--g-border); color: var(--g-muted); font-weight: 700; text-transform: uppercase; cursor: pointer; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; gap: 3px; transition: border-color 0.2s, opacity 0.2s; padding: 10px 14px; }
+.g-footer-btn:active { border-color: var(--g-accent-dim); opacity: 0.8; }
+.g-footer-btn-top { font-size: 8px; letter-spacing: 2px; color: var(--g-muted); opacity: 0.5; }
+.g-footer-btn-main { font-size: 11px; letter-spacing: 1px; color: var(--g-text); opacity: 0.85; white-space: nowrap; }
+.g-footer-btn-sub { font-size: 8px; letter-spacing: 1px; color: var(--g-muted); opacity: 0.45; white-space: nowrap; }
+.g-footer-settings { flex: 0 0 auto; min-width: 120px; }
+.g-footer-carto { flex: 1; align-items: flex-start; }
+
+/* CARTOGRAPHER STATUS DOT */
+.g-carto-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--g-muted); opacity: 0.3; display: inline-block; margin-right: 5px; transition: background 0.3s, opacity 0.3s; vertical-align: middle; }
+.g-carto-dot.loading { background: var(--g-accent); opacity: 1; animation: cartoDotPulse 1s ease-in-out infinite; }
+.g-carto-dot.ready { background: #6ab187; opacity: 1; }
+.g-carto-dot.failed { background: #ff6060; opacity: 1; }
+@keyframes cartoDotPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+/* LOGS OVERLAY */
+.guardian-logs-overlay { position: fixed; inset: 0; background: var(--g-bg); z-index: 2000; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
+.guardian-logs-overlay.open { transform: translateY(0); }
+.guardian-logs-overlay-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; flex-shrink: 0; }
+.guardian-logs-overlay-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 20px 80px; }
 
 /* FLOATING BOTTOM PILL */
 .bottom-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(10,10,10,0.85); border: 1px solid var(--border); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 700; padding: 6px; border-radius: 24px; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.9); width: max-content; max-width: 92vw; }
@@ -1672,8 +1654,9 @@ select.cosm-input {
     </div>
       <div class="lighthouse-scroll">
       <div class="lighthouse-inner">
-        <div class="discourse-meta" id="discourse-meta"></div>
-        <input class="discourse-title-input" id="discourse-title" placeholder="Untitled..." spellcheck="false" style="display:none;">
+      <div class="discourse-meta" id="discourse-meta"></div>
+<div class="lh-title-display" id="lh-title-display" style="display:none;"></div>
+<input class="discourse-title-input" id="discourse-title" placeholder="Untitled..." spellcheck="false" style="display:none;">
         <div class="extract-loading" id="extract-loading">
           <div class="extract-dot"></div><div class="extract-dot"></div><div class="extract-dot"></div>
           <span>Extracting anchors...</span>
@@ -1872,30 +1855,22 @@ select.cosm-input {
 </div>
 
 <div class="view-panel guardian-view hidden" id="view-guardian">
+
+  <!-- EXIT + LOGS TRIGGER -->
   <div id="guardian-back-row" style="position:absolute;top:16px;left:16px;z-index:10;">
-    <button onclick="goBack()" style="background:none;border:none;color:var(--g-muted);font-size:11px;letter-spacing:2px;font-weight:700;opacity:0.4;padding:8px 4px;">← exit</button>
+    <button id="btn-guardian-back" style="background:none;border:none;color:var(--g-muted);font-size:11px;letter-spacing:2px;font-weight:700;opacity:0.4;padding:8px 4px;">← exit</button>
   </div>
+  <div style="position:absolute;top:16px;right:16px;z-index:10;">
+    <button id="btn-guardian-logs-open" style="background:none;border:none;color:var(--g-muted);font-size:11px;letter-spacing:2px;font-weight:700;opacity:0.3;padding:8px 4px;">&#9689; logs</button>
+  </div>
+
+  <!-- MAIN REALM -->
   <div class="guardian-realm" id="guardian-realm">
     <div class="guardian-glyph-wrap">
       <div class="guardian-glyph" id="guardian-glyph">&#9689;</div>
       <div class="guardian-label">Guardian of the Abyss Archives</div>
       <div class="guardian-sub" id="guardian-sub">The Abyss is listening.</div>
-          <button class="btn-summon" id="btn-summon-guardian">Summon</button>
-          <!-- In the Guardian realm, near the model selector -->
-<div class="guardian-mapping-mode" style="margin-top: 12px; display: flex; align-items: center; gap: 8px; justify-content: center;">
-  <span style="font-size: 9px; color: var(--g-muted); letter-spacing: 1px;">MAPPING:</span>
-  <select id="guardian-mapping-select" 
-    style="background: var(--g-surface); border: 1px solid var(--g-border); color: var(--g-accent); font-size: 9px; letter-spacing: 1.5px; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;"
-    onchange="setMappingMode(this.value)">
-    <option value="sovereign">Sovereign (local)</option>
-    <option value="deep">Deep (API)</option>
-  </select>
-</div>
-      <div class="guardian-model-selector">
-        <button class="guardian-model-pill" id="guardian-model-pill" onclick="cycleGuardianModel()">
-          ◈ deepseek-v4-flash
-        </button>
-      </div>
+      <button class="btn-summon" id="btn-summon-guardian">Summon</button>
     </div>
     <div class="guardian-response-wrap">
       <div class="guardian-response" id="guardian-response"></div>
@@ -1905,10 +1880,32 @@ select.cosm-input {
       <textarea class="guardian-input" id="guardian-input" placeholder="Speak..." rows="3"></textarea>
       <button class="btn-guardian-send" id="btn-guardian-send">Wake up</button>
     </div>
-    <div class="guardian-logs-section" id="guardian-logs-section" style="display:none;">
-      <div class="guardian-logs-label">Previous Summoning</div>
-      <div id="guardian-logs-list"></div>
-    </div>
+  </div>
+
+       <!-- FOOTER -->
+  <div class="guardian-footer" id="guardian-footer">
+    <!-- LEFT: Settings -->
+    <button class="g-footer-btn g-footer-settings" id="btn-guardian-settings">
+      <span class="g-footer-btn-top">Engine</span>
+      <span class="g-footer-btn-main" id="guardian-model-label">DS Flash</span>
+      <span class="g-footer-btn-sub" id="mapping-toggle-label">Sovereign</span>
+    </button>
+    <!-- RIGHT: Cartographer -->
+    <button class="g-footer-btn g-footer-carto" id="btn-run-cartographer">
+      <span class="g-footer-btn-top">Cartographer</span>
+      <span class="g-footer-btn-main"><span class="g-carto-dot" id="g-carto-dot"></span><span id="g-carto-status-text">idle</span></span>
+    </button>
+  </div>
+</div>
+<!-- LOGS OVERLAY -->
+<div class="guardian-logs-overlay" id="guardian-logs-overlay">
+  <div class="guardian-logs-overlay-nav">
+    <button class="tbtn" id="btn-guardian-logs-close">← Back</button>
+    <div style="font-size:9px;letter-spacing:3px;color:var(--g-accent);opacity:0.5;font-weight:900;">&#9689; ARCHIVE</div>
+    <div style="width:52px;"></div>
+  </div>
+  <div class="guardian-logs-overlay-content">
+    <div id="guardian-logs-list"></div>
   </div>
 </div>
 
@@ -1924,7 +1921,27 @@ select.cosm-input {
 
 <div class="cosm-overlay" id="cosm-overlay"></div>
 
+<div class="cosm-modal" id="guardian-settings-modal">
+  <div class="modal-title">◈ Guardian Engine</div>
+  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);opacity:0.5;text-transform:uppercase;margin-bottom:4px;">Model</div>
+  <div class="management-actions" id="guardian-model-list"></div>
+  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);opacity:0.5;text-transform:uppercase;margin:12px 0 4px;">Cartographer Path</div>
+  <div class="management-actions">
+    <button class="management-btn" id="btn-carto-sovereign">
+      <span>◈</span> Sovereign (Local / Private)
+    </button>
+    <button class="management-btn" id="btn-carto-deep">
+      <span>∞</span> Deep (API / Cloud)
+    </button>
+  </div>
+  <div class="modal-buttons" style="margin-top:8px;">
+    <button class="modal-btn-cancel" id="btn-guardian-settings-cancel">Cancel</button>
+    <button class="modal-btn-confirm" id="btn-guardian-settings-apply">Apply</button>
+  </div>
+</div>
+
 <div class="cosm-modal" id="folder-modal">
+
   <div class="modal-title">New Folder</div>
   <input class="cosm-input" id="folder-name-input" placeholder="Folder name..." maxlength="60">
   <div style="font-size:11px;color:var(--muted);margin-bottom:-6px;">Parent Folder</div>
@@ -2111,28 +2128,25 @@ select.cosm-input {
 <div id="cosm-toast"></div>
 
 <script>
-document.addEventListener('touchstart',()=>{},{passive:true});
+let generateFastMapData = null;
+(async () => {
+  const mod = await import('./cartographer.js');
+  generateFastMapData = mod.generateFastMapData;
+})();
 
 /* STATE */
 
 let db=null,currentMode='soup',currentDiscourseId=null,currentFolderId=null,
-    breadcrumbPath=[{id:null,name:'◈  The soup'}],editorMode='write',currentView='table',
-    mosaicCache={},searchQuery='',activeCharId=null,sanctuarySearchQuery='';
+breadcrumbPath=[{id:null,name:'◈  The soup'}],editorMode='write',currentView='table',mosaicCache={},searchQuery='',activeCharId=null,sanctuarySearchQuery='';
 const AKASHIC_URL='https://wandering-violet-964a.gazajar.workers.dev';
-
 let cosmUserId=localStorage.getItem('cosm_user_id')||crypto.randomUUID();
 localStorage.setItem('cosm_user_id',cosmUserId);
-
 let activeIE = null;
-
 let longPressTimer=null,isLongPress=false,longPressConsumed=false,touchStartPos={x:0,y:0};
 const LONG_PRESS_DURATION=1000,MOVE_THRESHOLD=10;
-
 let selectMode=false, selectedItems=new Set();
-
 let deepSoupFolderId = null;
 let deepSoupPath = [{id: null, name: '꩜ Deep Soup'}];
-
 let deepMapperLoadSuppressed = false;
 let deepMapperSuppressTimer = null;
 
@@ -4149,6 +4163,10 @@ function updateHeaderButtons(){
   }
 
 async function goBack() {
+const hdr = document.querySelector('.nq-header');
+document.getElementById('guardian-footer').classList.remove('visible');
+hdr.style.transform = 'translateY(0)';
+hdr.style.marginBottom = '0';
   if (currentView === 'lighthouse' && currentDiscourseId) {
     await saveCurrentDiscourse(true);
     mosaicCache = {};
@@ -4159,7 +4177,6 @@ async function goBack() {
     await renderTableView(); 
   } else { 
     showPanel('view-sanctuary'); 
-    // In goBack(), after showPanel:
 document.getElementById('btn-chat-edit').style.display = '';
 activeIE = null;
     renderSanctuaryView(); 
@@ -4672,7 +4689,6 @@ async function openDiscourse(id){
   let contentText = disc.raw_text || "";
   const savedTitle = disc.title ? disc.title.trim() : "";
   
-  // Legacy Migration: If an old discourse had its title saved separately, 
   // prepend it to the text area so it isn't lost in the void.
   if (savedTitle && savedTitle !== "Untitled" && savedTitle !== "Untitled Discourse") {
       const firstLine = (contentText.split('\n').find(l => l.trim().length > 0) || "").trim();
@@ -4704,13 +4720,25 @@ async function openDiscourse(id){
     if(lhInner) lhInner.style.borderLeft = 'none';
     if(lhInner) lhInner.style.paddingLeft = '0';
   } else {
-    ta.placeholder = 'Title\n\nBegin writing...';
-    if(lhInner) lhInner.style.borderLeft = 'none';
-    if(lhInner) lhInner.style.paddingLeft = '0';
+  ta.placeholder = 'Title\n\nBegin writing...';
+  if(lhInner) lhInner.style.borderLeft = 'none';
+  if(lhInner) lhInner.style.paddingLeft = '0';
+  // Show title heading for discourse
+  const titleDisplay = document.getElementById('lh-title-display');
+  if(titleDisplay && disc.title && disc.title !== 'Untitled' && disc.title !== 'Untitled Discourse') {
+    titleDisplay.textContent = disc.title.slice(0, 60);
+    titleDisplay.style.display = 'block';
+  } else if(titleDisplay) {
+    titleDisplay.style.display = 'none';
   }
+}
   
-  setEditorMode('write'); 
-  showPanel('view-lighthouse');
+  setEditorMode('write');
+const hdr = document.querySelector('.nq-header');
+hdr.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
+hdr.style.transform = 'translateY(-100%)';
+hdr.style.marginBottom = '-56px';
+showPanel('view-lighthouse');
   
   if(disc.folder_id && currentFolderId !== disc.folder_id){
     const f = await dbGet("cosm_folders", disc.folder_id);
@@ -5305,342 +5333,6 @@ async function handleChatSend(isRetry = false) {
   }
 }
 
-function extractEdges(text) {
-  const lines = text.split('\n').filter(l => l.trim().length > 0);
-  if (lines.length === 0) return { first_line: '', last_line: '' };
-  return {
-    first_line: lines[0].trim().slice(0, 200),
-    last_line: lines[lines.length - 1].trim().slice(0, 200)
-  };
-}
-
-const STOPWORDS = new Set([
-  'the','a','an','is','was','were','be','been','being','have','has','had',
-  'do','does','did','will','would','shall','should','may','might','must',
-  'can','could','i','me','my','mine','myself','you','your','yours',
-  'he','him','his','she','her','hers','it','its','itself',
-  'we','us','our','ours','they','them','their','theirs',
-  'this','that','these','those','what','which','who','whom',
-  'and','but','or','nor','not','so','yet','for','if','to','of','in',
-  'on','at','by','from','with','about','into','through','during',
-  'after','above','below','between','out','off','over','under',
-  'again','further','then','once','here','there','when','where',
-  'why','how','all','both','each','few','more','most','other','some',
-      'such','only','own','same','than','too','very','just','now',
-  'also','even','still','already','always','never','sometimes'
-
-
-]);
-
-function extractKeyTerms(text, maxTerms = 10) {
-  const words = text.toLowerCase()
-    .replace(/[^\w\s']/g, '')
-    .split(/\s+/)
-    .filter(w => w.length > 2 && !STOPWORDS.has(w));
-  
-  // Count frequencies
-  const freq = {};
-  for (const w of words) {
-    freq[w] = (freq[w] || 0) + 1;
-  }
-  
-  // Simple TF-IDF approximation: TF * log(totalWords / (1 + docCount))
-  // For a single document, IDF is approximated by uniqueness
-  const totalWords = words.length;
-  const terms = Object.entries(freq)
-    .map(([term, count]) => ({
-      term,
-      count,
-      tfidf: (count / totalWords) * Math.log(totalWords / (1 + count)) 
-      // Rarer words get higher weight
-    }))
-    .sort((a, b) => b.tfidf - a.tfidf)
-    .slice(0, maxTerms);
-  
-  return terms;
-}
-
-const SENTIMENT = {
-  positive: new Set([
-    'love','hope','light','warm','open','free','peace','calm','soft',
-    'gentle','bright','clear','true','whole','heal','grow','bloom',
-    'rise','reach','hold','safe','trust','grace','grateful',
-    'alive','present','found','grounded','clean','solid','awake',
-    'sublime','pure','kiss','touch','connected','persist','move'
-  ]),
-  negative: new Set([
-    'fear','pain','dark','cold','close','trapped','heavy','hard',
-    'sharp','lost','broken','wound','fall','sink','empty','alone',
-    'silence','never','nothing','hollow','bitter','ache','weight',
-    'numb','exhausted','stuck','suffocating','invisible','worthless',
-    'ashamed','rage','frozen','collapse','despair','haunt','scream',
-    'blind','deaf','cruel','stripped','torn','melting','dissolve'
-  ]),
-  tentative: new Set([
-    'perhaps','maybe','sometimes','could','might','seems','almost',
-    'trying','wondering','question','uncertain','hesitate',
-    'unsure','vague','confused','sort','kind','wonder','odd','strange'
-  ]),
-  confessional: new Set([
-    'truth','honest','admit','confess','real','raw','naked',
-    'bare','expose','reveal','actually','felt','feel','feeling',
-    'touched','ache','i','myself','oneself','within','inside'
-  ]),
-  resolved: new Set([
-    'accept','chose','decide','finally','enough','done','settle',
-    'rest','still','quiet','understood','understand','knowing',
-    'release','complete','peace','closed','capacity','essence'
-  ]),
-  dissolution: new Set([
-    'abyss','void','fragment','dissolve','melt','collapse','forget',
-    'lost','random','unknown','chaos','infinite','separate','torn',
-    'destroy','fade','drift','shadow','ghost','erasure','nothing'
-  ]),
-  existence: new Set([
-    'exist','universe','consciousness','soul','being','presence',
-    'observer','essence','persist','human','alive','death','born',
-    'life','infinite','eternal','moment','now','time','self','i'
-  ])
-};
-
-const INVERSION_MARKERS = new Set([
-  'but','yet','unless','except','though','rather','instead',
-  'however','still','only','while','despite','until','and yet'
-]);
-
-function detectInversionDensity(text) {
-  const sentences = text.split(/[.!?;]+/).filter(s => s.trim().length > 0);
-  if (!sentences.length) return { label: 'No signal', ratio: 0, count: 0 };
-  let count = 0;
-  for (const s of sentences) {
-    const words = s.toLowerCase().split(/\s+/);
-    for (const w of words) {
-      if (INVERSION_MARKERS.has(w)) { count++; break; }
-    }
-  }
-  const ratio = count / sentences.length;
-  let label;
-  if (ratio === 0)      label = 'Asserting';
-  else if (ratio < 0.2) label = 'Occasional inversion';
-  else if (ratio < 0.4) label = 'Dialectical';
-  else                  label = 'Perpetual self-argument';
-  return { label, count, ratio: parseFloat(ratio.toFixed(3)) };
-}
-
-function detectParadoxProximity(text) {
-  const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
-  const WINDOW = 6;
-  let paradoxCount = 0;
-  const paradoxPairs = [];
-  for (let i = 0; i < words.length; i++) {
-    const w = words[i];
-    const inPos = SENTIMENT.positive.has(w) || SENTIMENT.existence.has(w);
-    const inNeg = SENTIMENT.negative.has(w) || SENTIMENT.dissolution.has(w);
-    if (!inPos && !inNeg) continue;
-    for (let j = i + 1; j < Math.min(i + WINDOW, words.length); j++) {
-      const w2 = words[j];
-      const w2Pos = SENTIMENT.positive.has(w2) || SENTIMENT.existence.has(w2);
-      const w2Neg = SENTIMENT.negative.has(w2) || SENTIMENT.dissolution.has(w2);
-      if ((inPos && w2Neg) || (inNeg && w2Pos)) {
-        paradoxCount++;
-        if (paradoxPairs.length < 5) paradoxPairs.push(w + '/' + w2);
-        break;
-      }
-    }
-  }
-  const density = paradoxCount / Math.max(words.length / 10, 1);
-  let label;
-  if (paradoxCount === 0)   label = 'Uniform';
-  else if (density < 0.5)   label = 'Occasional tension';
-  else if (density < 1.5)   label = 'Charged';
-  else                      label = 'Paradox-dominant';
-  return { label, count: paradoxCount, pairs: paradoxPairs };
-}
-
-function detectRepetitionOrbits(text) {
-  const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
-  const meaningful = words.filter(w => w.length > 3 && !STOPWORDS.has(w));
-  const freq = {};
-  for (const w of meaningful) { freq[w] = (freq[w] || 0) + 1; }
-  const orbiting = Object.entries(freq)
-    .filter(([, count]) => count >= 3)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([term, count]) => ({ term, count }));
-  const label = orbiting.length === 0 ? 'No orbit' :
-                orbiting.length <= 2  ? 'Single orbit' : 'Multi-orbit';
-  return { label, orbiting };
-}
-
-function detectFragmentRatio(text) {
-  const sentences = text.split(/[.!?;]+/)
-    .map(s => s.trim().split(/\s+/).filter(Boolean).length)
-    .filter(l => l > 0);
-  if (!sentences.length) return { label: 'No signal', ratio: 0 };
-  const fragments = sentences.filter(l => l <= 5).length;
-  const ratio = fragments / sentences.length;
-  let label;
-  if (ratio < 0.2)      label = 'Prose';
-  else if (ratio < 0.4) label = 'Mixed';
-  else if (ratio < 0.7) label = 'Fragmented';
-  else                  label = 'Shards';
-  return { label, ratio: parseFloat(ratio.toFixed(3)) };
-}
-
-function detectWritingSignature(text) {
-  const inversion    = detectInversionDensity(text);
-  const paradox      = detectParadoxProximity(text);
-  const orbits       = detectRepetitionOrbits(text);
-  const fragments    = detectFragmentRatio(text);
-  const orbitTerms   = orbits.orbiting.map(o => o.term).join(', ');
-  const summaryParts = [
-    inversion.label,
-    paradox.label,
-    orbits.orbiting.length ? 'Orbiting [' + orbitTerms + ']' : 'No orbit',
-    fragments.label
-  ];
-  return {
-    summary: summaryParts.join(' · '),
-    inversion,
-    paradox,
-    orbits,
-    fragments
-  };
-}
-
-function detectPacing(text) {
-  const sentences = text.split(/[.!?]+/).map(s => s.trim().split(/\s+/).filter(Boolean).length).filter(l => l > 0);
-  if (!sentences.length) return { label: 'Fragmented', avg_words_per_sentence: 0 };
-  const avg = sentences.reduce((a, b) => a + b, 0) / sentences.length;
-  let label;
-  if (avg < 6) label = 'Staccato';
-  else if (avg < 14) label = 'Measured';
-  else if (avg < 25) label = 'Flowing';
-  else label = 'Spiraling';
-  return { label, avg_words_per_sentence: parseFloat(avg.toFixed(1)) };
-}
-
-const ABSOLUTES = new Set([
-  'always','never','everyone','nobody','nothing','everything',
-  'impossible','must','ruined','completely','absolutely','totally',
-  'forever','all','none','only','exactly','certain','definitely'
-]);
-
-function detectRigidity(text) {
-  const words = text.toLowerCase().match(/\b\w+\b/g) || [];
-  let count = 0;
-  for (const w of words) { if (ABSOLUTES.has(w)) count++; }
-  const ratio = count / Math.max(words.length, 1);
-  const label = ratio > 0.02 ? 'Rigid' : ratio > 0.01 ? 'Tense' : 'Fluid';
-  return { label, absolute_count: count, ratio: parseFloat(ratio.toFixed(4)) };
-}
-
-function detectQuestionDensity(text) {
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-  const questions = (text.match(/\?/g) || []).length;
-  if (!sentences.length) return { label: 'No signal', ratio: 0 };
-  const ratio = questions / sentences.length;
-  let label;
-  if (ratio === 0) label = 'Declarative';
-  else if (ratio < 0.1) label = 'Mostly closed';
-  else if (ratio < 0.3) label = 'Inquiring';
-  else label = 'Unanchored';
-  return { label, question_count: questions, ratio: parseFloat(ratio.toFixed(3)) };
-}
-
-function detectEmotionalArc(text) {
-  const lines = text.split('\n').filter(l => l.trim().length > 0);
-  if (lines.length < 3) return { direction: 'too short', opening_tone: 'neutral', closing_tone: 'neutral', tension_shift: 0 };
-  
-  const firstThird = lines.slice(0, Math.ceil(lines.length / 3)).join(' ').toLowerCase();
-  const lastThird = lines.slice(-Math.ceil(lines.length / 3)).join(' ').toLowerCase();
-  
-function score(text, lexicon) {
-    const words = text.split(/\s+/);
-    let hits = 0;
-    for (const w of words) {
-      if (lexicon.has(w)) hits++;
-    }
-    return hits / Math.max(words.length, 1);
-  }
-  
-  // Classify opening tone
-  const openingTones = [
-    { name: 'tentative', score: score(firstThird, SENTIMENT.tentative) },
-    { name: 'confessional', score: score(firstThird, SENTIMENT.confessional) },
-    { name: 'negative', score: score(firstThird, SENTIMENT.negative) },
-    { name: 'positive', score: score(firstThird, SENTIMENT.positive) }
-  ].sort((a, b) => b.score - a.score);
-  
-  // Classify closing tone
-  const closingTones = [
-    { name: 'resolved', score: score(lastThird, SENTIMENT.resolved) + score(lastThird, SENTIMENT.positive) },
-    { name: 'confessional', score: score(lastThird, SENTIMENT.confessional) },
-    { name: 'negative', score: score(lastThird, SENTIMENT.negative) },
-    { name: 'tentative', score: score(lastThird, SENTIMENT.tentative) }
-  ].sort((a, b) => b.score - a.score);
-  
-  const openingTone = openingTones[0].name;
-  const closingTone = closingTones[0].name;
-  
-  // Tension shift: positive = more tense, negative = resolved
-  const openNeg = score(firstThird, SENTIMENT.negative);
-  const closeNeg = score(lastThird, SENTIMENT.negative);
-  const tensionShift = openNeg - closeNeg;
-  
-  // Direction string
-  let direction;
-  if (tensionShift > 0.02) direction = `${openingTone} → resolving`;
-  else if (tensionShift < -0.02) direction = `${openingTone} → escalating`;
-  else direction = `${openingTone} → ${closingTone}`;
-  
-  return {
-    direction,
-    opening_tone: openingTone,
-    closing_tone: closingTone,
-    tension_shift: parseFloat(tensionShift.toFixed(3))
-  };
-}
-
-function extractiveSummary(text, maxSentences = 5) {
-  const sentences = text
-    .replace(/([.!?])\s+/g, '$1|')
-    .split('|')
-    .filter(s => s.trim().length > 20);
-  
-  if (sentences.length <= maxSentences) return sentences.join(' ').trim();
-  
-  const keyTerms = extractKeyTerms(text, 15);
-  const keyTermSet = new Set(keyTerms.map(t => t.term));
-  
-  // Score each sentence
-  const scored = sentences.map((s, i) => {
-    const words = s.toLowerCase().split(/\s+/);
-    let termScore = 0;
-    for (const w of words) {
-      if (keyTermSet.has(w)) termScore++;
-    }
-    
-    // Position bonus: first and last sentences matter more
-    const positionBonus = (i === 0 || i === sentences.length - 1) ? 0.5 : 
-                          (i < 3 || i > sentences.length - 3) ? 0.2 : 0;
-    
-    return {
-      sentence: s.trim(),
-      score: (termScore / words.length) + positionBonus,
-      index: i
-    };
-  });
-  
-  // Pick top N, then sort by original position to preserve flow
-  const top = scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, maxSentences)
-    .sort((a, b) => a.index - b.index);
-  
-  return top.map(t => t.sentence).join(' ').trim();
-}
-
 async function injectWatcherFlags(fastMap, discourseId) {
   if (!isWatcherReady || !watcherDB) return fastMap;
   
@@ -5699,7 +5391,7 @@ for(const s of similarities.filter(s => s.score > 0.65)){
 }
 
 async function generateFastMap(discourseId) {
-  try {
+    try {
     const d = await getDiscourse(discourseId);
     if (!d || !d.raw_text) return;
 
@@ -5711,37 +5403,22 @@ async function generateFastMap(discourseId) {
     // Skip if already mapped and word count is unchanged
     if (existing && existing.map_type === 'fast' && existing.word_count === wordCount) return;
 
-    // Run your sovereign local heuristics
-    const edges = extractEdges(d.raw_text);
-    const terms = extractKeyTerms(d.raw_text, 10);
-    const arc = detectEmotionalArc(d.raw_text);
-    const extract = extractiveSummary(d.raw_text, 3);
-    const pacing = detectPacing(d.raw_text);
-    const rigidity = detectRigidity(d.raw_text);
-    const questioning = detectQuestionDensity(d.raw_text);
-    const signature = detectWritingSignature(d.raw_text);
+// Run your sovereign local heuristics
+if (!generateFastMapData) { console.warn('Cartographer not loaded yet'); return; }
+const mapData = generateFastMapData(d.raw_text);
 
-    let fastMap = {
-      id: discourseId,
-      discourse_id: discourseId,
-      map_type: 'fast',
-      first_line: edges.first_line,
-      last_line: edges.last_line,
-      key_terms: terms,
-      emotional_arc: arc,
-      extractive_summary: extract,
-      pacing,
-      rigidity,
-      questioning,
-      signature,
-      word_count: wordCount,
-      model: 'local-heuristic',
-      generated_at: Date.now(),
-      created_at: existing ? existing.created_at : Date.now(),
-      updated_at: Date.now()
-    };
+let fastMap = {
+  id: discourseId,
+  discourse_id: discourseId,
+  map_type: 'fast',
+  ...mapData,
+  model: 'local-heuristic',
+  generated_at: Date.now(),
+  created_at: existing ? existing.created_at : Date.now(),
+  updated_at: Date.now()
+};
 
-    // Inject the Watcher's vector echoes
+// Inject the Watcher's vector echoes
     fastMap = await injectWatcherFlags(fastMap, discourseId);
 
     await dbPut('guardian_summaries', fastMap);
@@ -5758,7 +5435,7 @@ let deepMapper = null;
 let deepMapperLoading = false;
 let deepMapperReady = false;
 
-const DEEP_MAPPER_MODEL = 'Xenova/distilbart-cnn-3-3';
+const DEEP_MAPPER_MODEL = 'Xenova/distilbart-cnn-6-6';
 
 let deepMapperLastUnload = 0;
 
@@ -5774,19 +5451,28 @@ async function unloadDeepMapper() {
 }
 
 async function initDeepMapper() {
+const subEl = document.getElementById('guardian-sub');
   // GUARD: Cartographer suppressed (Watcher still vacating memory)
   if (deepMapperLoadSuppressed) {
     console.log('[DeepMapper] Suppressed -- waiting for Watcher memory to free');
+    if (subEl) subEl.textContent = 'Cartographer cooling down...';
     return false;
   }
   
   // Don't reload if unloaded less than 2 seconds ago
   if (Date.now() - deepMapperLastUnload < 2000) {
     console.log('[DeepMapper] Cooling down, waiting...');
+    if (subEl) subEl.textContent = 'Cartographer cooling down...';
     await new Promise(r => setTimeout(r, 2000));
   }
-  if (deepMapperReady) return true;
+  
+  if (deepMapperReady) {
+    console.log('[DeepMapper] Already loaded');
+    return true;
+  }
+  
   if (deepMapperLoading) {
+    console.log('[DeepMapper] Already loading, waiting...');
     // Wait for existing load to complete
     return new Promise((resolve) => {
       const check = setInterval(() => {
@@ -5797,42 +5483,61 @@ async function initDeepMapper() {
   }
   
   deepMapperLoading = true;
+  console.log('[DeepMapper] Starting load...');
   
   try {
-    const { pipeline, env } = await import(
-      'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js'
+    // Safety timeout: if loading takes more than 30 seconds, give up
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('DeepMapper load timeout')), 30000)
     );
     
-    env.useBrowserCache = true;
-    env.allowLocalModels = false;
-    env.backends.onnx.wasm.wasmPaths = 
-      'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
-    env.backends.onnx.wasm.numThreads = 1; // ABYSS FIX: Single thread for survival
-    
-    // Update the summoning UI
-    const subEl = document.getElementById('guardian-sub');
-    if (subEl) subEl.textContent = 'Loading the Cartographer...';
-    
-    deepMapper = await pipeline('summarization', DEEP_MAPPER_MODEL, {
-      quantized: true,
-      progress_callback: (progress) => {
-        if (progress.status === 'downloading' && subEl) {
-          const loaded = Math.round((progress.loaded || 0) / 1024 / 1024);
-          const total = Math.round((progress.total || 306) / 1024 / 1024);
-          subEl.textContent = `Cartographer: ${loaded}MB / ${total}MB`;
+    const loadPromise = (async () => {
+      const { pipeline, env } = await import(
+        'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js'
+      );
+      
+      console.log('[DeepMapper] Transformers.js imported');
+      
+      env.useBrowserCache = true;
+      env.allowLocalModels = false;
+      env.backends.onnx.wasm.wasmPaths = 
+        'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/';
+      env.backends.onnx.wasm.numThreads = 1;
+      
+      if (subEl) subEl.textContent = 'Cartographer loading model...';
+      console.log('[DeepMapper] Creating pipeline...');
+      
+      const mapper = await pipeline('summarization', DEEP_MAPPER_MODEL, {
+        quantized: true,
+        progress_callback: (progress) => {
+          console.log('[DeepMapper] Progress:', JSON.stringify(progress));
+          if (progress.status === 'downloading' && subEl) {
+            const loaded = Math.round((progress.loaded || 0) / 1024 / 1024);
+            const total = Math.round((progress.total || 306) / 1024 / 1024);
+            subEl.textContent = `Cartographer: ${loaded}MB / ${total}MB`;
+          }
+          if (progress.status === 'loading' && subEl) {
+            subEl.textContent = 'Cartographer loading model...';
+          }
+          if (progress.status === 'ready' && subEl) {
+            subEl.textContent = 'Cartographer ready. Mapping...';
+          }
         }
-        if (progress.status === 'ready' && subEl) {
-          subEl.textContent = 'Cartographer ready. Mapping...';
-        }
-      }
-    });
+      });
+      
+      console.log('[DeepMapper] Pipeline created successfully');
+      return mapper;
+    })();
     
+    deepMapper = await Promise.race([loadPromise, timeoutPromise]);
     deepMapperReady = true;
     deepMapperLoading = false;
+    console.log('[DeepMapper] Successfully loaded');
     return true;
     
   } catch (err) {
-    console.error('[DeepMapper] Failed to load:', err);
+    console.error('[DeepMapper] Failed to load:', err.message);
+    console.error('[DeepMapper] Full error:', JSON.stringify(err));
     deepMapperLoading = false;
     deepMapper = null;
     return false;
@@ -5924,8 +5629,77 @@ async function selectUrgentDiscourses(discs, maxCount = 5) {
   return candidates.slice(0, maxCount);
 }
 
+async function runCartographer() {
+  const btn = document.getElementById('btn-run-cartographer');
+  const dot = document.getElementById('g-carto-dot');
+  const statusText = document.getElementById('g-carto-status-text');
+
+  function setStatus(state, text) {
+    if(dot) dot.className = 'g-carto-dot' + (state ? ' ' + state : '');
+    if(statusText) statusText.textContent = text;
+  }
+
+  if (btn) { btn.disabled = true; }
+  setStatus('loading', 'loading model...');
+
+  try {
+    const allDiscs = (await getDiscourses()).filter(d => !d.deleted_at && !d.isDeleted);
+
+    // Fast maps for all discourses
+    setStatus('loading', 'fast mapping...');
+    for (const d of allDiscs) {
+      await generateFastMap(d.id);
+    }
+
+    // Deep maps via distilbart
+    const mappingMode = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
+    if (mappingMode === 'sovereign') {
+      const urgentDiscs = await selectUrgentDiscourses(allDiscs, 5);
+      if (urgentDiscs && urgentDiscs.length > 0) {
+        setStatus('loading', 'loading cartographer...');
+        const loaded = await initDeepMapper();
+        if (loaded) {
+          let mapped = 0;
+          for (const d of urgentDiscs) {
+            mapped++;
+            setStatus('loading', `mapping ${mapped}/${urgentDiscs.length}`);
+            const existing = await dbGet('guardian_summaries', d.id + '_deep');
+            if (existing && (Date.now() - existing.generated_at < 7 * 86400000)) continue;
+            const deepMap = await generateDeepMap(d.id, d.rawText);
+            if (deepMap) {
+              await dbPut('guardian_summaries', {
+                id: d.id + '_deep',
+                discourse_id: d.id,
+                map_type: 'deep_local',
+                summary: deepMap.summary,
+                word_count: deepMap.word_count,
+                model: deepMap.model,
+                generated_at: deepMap.generated_at
+              });
+            }
+            await new Promise(r => setTimeout(r, 1200));
+          }
+          await unloadDeepMapper();
+          setStatus('ready', 'ready');
+        } else {
+          setStatus('failed', 'model failed');
+        }
+      } else {
+        setStatus('ready', 'ready');
+      }
+    } else {
+      setStatus('ready', 'ready');
+    }
+  } catch(err) {
+    console.error('[Cartographer] Failed:', err);
+    setStatus('failed', 'failed');
+  } finally {
+    if (btn) { btn.disabled = false; }
+  }
+}
+
 function setMappingMode(mode) {
-  localStorage.setItem('nq_cartographer_mode', mode);
+localStorage.setItem('nq_cartographer_mode', mode);
   
   if (mode === 'sovereign') {
     showToast('◈ Sovereign -- Cartographer runs locally, no network');
@@ -5935,11 +5709,20 @@ function setMappingMode(mode) {
 }
 
 // Set initial value on Guardian view open
+function selectMappingMode(mode) {
+  setMappingMode(mode);
+  const label = document.getElementById('mapping-toggle-label');
+  if(label) label.textContent = mode === 'sovereign' ? 'Sovereign' : 'Deep';
+  document.getElementById('cartographer-path-modal').classList.remove('visible');
+  closeOverlay();
+  setTimeout(() => runCartographer(), 100);
+}
+
+// Set initial value on Guardian view open
 function initMappingModeUI() {
-  const select = document.getElementById('guardian-mapping-select');
-  if (select) {
-    select.value = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
-  }
+  const mode = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
+  const label = document.getElementById('mapping-toggle-label');
+  if (label) label.textContent = mode === 'sovereign' ? 'Sovereign' : 'Deep';
 }
 
 async function summariseHistory(charId,messages){
@@ -6360,6 +6143,13 @@ var abyssPulses = [];          // traveling dots on threads
 var abyssFiringDot = null;     // currently firing disc-dot
 var abyssFiringTimer = 0;      // countdown to next spontaneous fire
 var abyssTouchRipples = [];   // multiple expanding rings per touch
+var abyssNeuralSignals = [];  // living electric signals between nodes
+var abyssThreadAlpha = new Map(); // thread id → current opacity (birth/death)
+var abyssLastSignalTime = 0;
+var NEURAL_SIGNAL_INTERVAL = 1800; // ms between new signals
+var NEURAL_MAX_SIGNALS = 12;       // max concurrent signals
+var NEURAL_CASCADE_DEPTH = 3;      // max hops per cascade
+   // multiple expanding rings per touch
    
 var ABYSS_EMERGE = {
   anchors:    1500,   // ms -- oldest ring + newest dot
@@ -6544,6 +6334,23 @@ async function buildAbyssObjects() {
   }
 }
 
+function abyssGetThreadFrom(node, excludeNode) {
+  var candidates = [];
+  for (var i = 0; i < abyssObjects.length; i++) {
+    var obj = abyssObjects[i];
+    if (obj.kind !== 'thread-sim' && obj.kind !== 'thread-contra') continue;
+    if ((obj.currentAlpha || 0) < 0.02) continue;
+    var isA = obj.dotA.id === node.id;
+    var isB = obj.dotB.id === node.id;
+    if (!isA && !isB) continue;
+    var other = isA ? obj.dotB : obj.dotA;
+    if (excludeNode && other.id === excludeNode.id) continue;
+    candidates.push(obj);
+  }
+  if (!candidates.length) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 function abyssHash(str) {
   // Simple deterministic hash for stable positioning
   var h = 0x811c9dc5;
@@ -6682,65 +6489,129 @@ function abyssUpdate(elapsed) {
     }
   }
 
-  // ── Traveling pulses on threads ──
+    // ── Thread alpha breathing (birth and death) ──
   for (var i = 0; i < abyssObjects.length; i++) {
     var obj = abyssObjects[i];
     if (obj.kind !== 'thread-sim' && obj.kind !== 'thread-contra') continue;
-    obj.pulseCooldown -= 16.67;
-    if (obj.pulseCooldown > 0) continue;
-    obj.pulsePos += obj.pulseSpeed * obj.pulseDir;
-    if (obj.pulsePos >= 1.0) {
-      obj.pulsePos = 1.0;
-      obj.pulseDir = -1;
-      obj.pulseCooldown = obj.kind === 'thread-contra'
-        ? 1500 + Math.random() * 3000
-        : 600 + Math.random() * 2000;
-    } else if (obj.pulsePos <= 0.0) {
-      obj.pulsePos = 0.0;
-      obj.pulseDir = 1;
-      obj.pulseCooldown = obj.kind === 'thread-contra'
-        ? 1500 + Math.random() * 3000
-        : 600 + Math.random() * 2000;
+    if (!obj.threadId) obj.threadId = obj.dotA.id + '_' + obj.dotB.id;
+    if (!obj.targetAlpha) obj.targetAlpha = 0.08 + Math.random() * 0.15;
+    if (!obj.currentAlpha) obj.currentAlpha = 0;
+    if (!obj.alphaSpeed) obj.alphaSpeed = 0.0003 + Math.random() * 0.0005;
+    if (!obj.dormantTimer) obj.dormantTimer = 8000 + Math.random() * 20000;
+    obj.dormantTimer -= 16.67;
+    if (obj.dormantTimer <= 0) {
+      // Flip between visible and dormant
+      obj.targetAlpha = obj.targetAlpha > 0.02
+        ? 0
+        : 0.06 + Math.random() * 0.18;
+      obj.dormantTimer = 6000 + Math.random() * 18000;
+    }
+    // Lerp toward target
+    obj.currentAlpha += (obj.targetAlpha - obj.currentAlpha) * obj.alphaSpeed * 16.67;
+  }
+
+  // ── Neural signals ──
+  var nowMs2 = performance.now();
+  // Age and remove dead signals
+  for (var si = abyssNeuralSignals.length - 1; si >= 0; si--) {
+    var sig = abyssNeuralSignals[si];
+    sig.pos += sig.speed;
+    if (sig.pos >= 1.0) {
+      // Arrived at target -- maybe cascade
+      if (sig.depth < NEURAL_CASCADE_DEPTH && Math.random() < 0.55) {
+        // Find another thread from target node
+        var nextThread = abyssGetThreadFrom(sig.toNode, sig.fromNode);
+        if (nextThread) {
+          abyssNeuralSignals.push({
+            thread: nextThread,
+            fromNode: sig.toNode,
+            toNode: nextThread.dotA.id === sig.toNode.id ? nextThread.dotB : nextThread.dotA,
+            pos: 0,
+            speed: 0.008 + Math.random() * 0.012,
+            depth: sig.depth + 1,
+            contra: nextThread.kind === 'thread-contra',
+            life: 1.0,
+            arc: (Math.random() - 0.5) * 0.4  // slight arc offset
+          });
+        }
+      }
+      // Flash arrival node
+      sig.toNode._flashLife = 400;
+      abyssNeuralSignals.splice(si, 1);
+    } else {
+      sig.life = Math.min(1.0, sig.life);
     }
   }
 
-  // ── Spontaneous dot firing ──
+  // Spawn new signals periodically
+  if (nowMs2 - abyssLastSignalTime > NEURAL_SIGNAL_INTERVAL
+      && abyssNeuralSignals.length < NEURAL_MAX_SIGNALS) {
+    var threads = [];
+    for (var i = 0; i < abyssObjects.length; i++) {
+      if (abyssObjects[i].kind === 'thread-sim' || abyssObjects[i].kind === 'thread-contra') {
+        if ((abyssObjects[i].currentAlpha || 0) > 0.02) threads.push(abyssObjects[i]);
+      }
+    }
+    if (threads.length > 0) {
+      var t = threads[Math.floor(Math.random() * threads.length)];
+      var fromNode = Math.random() < 0.5 ? t.dotA : t.dotB;
+      var toNode = fromNode === t.dotA ? t.dotB : t.dotA;
+      abyssNeuralSignals.push({
+        thread: t,
+        fromNode: fromNode,
+        toNode: toNode,
+        pos: 0,
+        speed: 0.007 + Math.random() * 0.01,
+        depth: 0,
+        contra: t.kind === 'thread-contra',
+        life: 1.0,
+        arc: (Math.random() - 0.5) * 0.35
+      });
+      abyssLastSignalTime = nowMs2;
+      // Touch nearby: fire extra burst
+      if (abyssTouchX > -9998) {
+        var tdx = (fromNode.x * abyssW) - abyssTouchX;
+        var tdy = (fromNode.y * abyssH) - abyssTouchY;
+        if (Math.sqrt(tdx*tdx + tdy*tdy) < 180) {
+          abyssLastSignalTime -= NEURAL_SIGNAL_INTERVAL * 0.7; // fire sooner
+        }
+      }
+    }
+  }
+
+  // Node flash decay
+  for (var i = 0; i < abyssObjects.length; i++) {
+    if (abyssObjects[i]._flashLife > 0) {
+      abyssObjects[i]._flashLife -= 16.67;
+    }
+  }
+
+  // ── Spontaneous dot firing (kept for touch feel) ──
   abyssFiringTimer -= 16.67;
-  if (abyssFiringTimer <= 0 && abyssObjects.length > 0) {
-    // Pick a random disc-dot
+  if (abyssFiringTimer <= 0) {
     var discDots = [];
     for (var i = 0; i < abyssObjects.length; i++) {
       if (abyssObjects[i].kind === 'disc-dot') discDots.push(abyssObjects[i]);
     }
     if (discDots.length > 0) {
-      var chosenDot = null;
-      // If finger is down, 50% chance to pick a nearby dot
-      if (abyssTouchX > -9998 && Math.random() < 0.5) {
-        var nearby = [];
-        var touchDistThreshold = 150; // pixels
-        for (var d = 0; d < discDots.length; d++) {
-          var dot = discDots[d];
+      var chosenDot = discDots[Math.floor(Math.random() * discDots.length)];
+      if (abyssTouchX > -9998) {
+        var nearby = discDots.filter(function(dot) {
           var dx = (dot.x * abyssW) - abyssTouchX;
           var dy = (dot.y * abyssH) - abyssTouchY;
-          if (Math.sqrt(dx*dx + dy*dy) < touchDistThreshold) {
-            nearby.push(dot);
-          }
-        }
-        if (nearby.length > 0) {
-          chosenDot = nearby[Math.floor(Math.random() * nearby.length)];
-        }
-      }
-      if (!chosenDot) {
-        chosenDot = discDots[Math.floor(Math.random() * discDots.length)];
+          return Math.sqrt(dx*dx + dy*dy) < 150;
+        });
+        if (nearby.length) chosenDot = nearby[Math.floor(Math.random() * nearby.length)];
       }
       abyssFiringDot = { dot: chosenDot, life: 800 };
     }
-    abyssFiringTimer = 30000 + Math.random() * 60000; // next in 30-90s
+    abyssFiringTimer = 8000 + Math.random() * 20000; // more frequent now
   }
   if (abyssFiringDot) {
     abyssFiringDot.life -= 16.67;
     if (abyssFiringDot.life <= 0) abyssFiringDot = null;
   }
+
     // ── Touch ripple decay ──
   for (var ri = abyssTouchRipples.length - 1; ri >= 0; ri--) {
     abyssTouchRipples[ri].life -= 16.67;
@@ -6834,22 +6705,23 @@ function abyssDraw(elapsed) {
       abyssCtx.strokeStyle = 'rgba(195,175,145,' + ringAlpha + ')';
       abyssCtx.lineWidth = 0.6;
       abyssCtx.stroke();
-       }else if (obj.kind === 'thread-sim') {
-      var threadAlpha = emergeT * obj.score * 0.45;
+           } else if (obj.kind === 'thread-sim' || obj.kind === 'thread-contra') {
+      var tAlpha = emergeT * (obj.currentAlpha || 0.08);
+      if (tAlpha < 0.005) continue;
+      var ax = obj.dotA.x * abyssW;
+      var ay = obj.dotA.y * abyssH;
+      var bx = obj.dotB.x * abyssW;
+      var by = obj.dotB.y * abyssH;
+      // Slight curve via quadratic bezier -- midpoint offset
+      var mx = (ax + bx) / 2 + (ay - by) * 0.08;
+      var my = (ay + by) / 2 + (bx - ax) * 0.08;
       abyssCtx.beginPath();
-      abyssCtx.moveTo(obj.dotA.x * abyssW, obj.dotA.y * abyssH);
-      abyssCtx.lineTo(obj.dotB.x * abyssW, obj.dotB.y * abyssH);
-      abyssCtx.strokeStyle = 'rgba(210,155,110,' + threadAlpha + ')';
+      abyssCtx.moveTo(ax, ay);
+      abyssCtx.quadraticCurveTo(mx, my, bx, by);
+      abyssCtx.strokeStyle = obj.kind === 'thread-contra'
+        ? 'rgba(138,180,210,' + tAlpha + ')'
+        : 'rgba(210,155,100,' + tAlpha + ')';
       abyssCtx.lineWidth = 0.5;
-      abyssCtx.stroke();
-
-    } else if (obj.kind === 'thread-contra') {
-      var contraAlpha = emergeT * 0.35;
-      abyssCtx.beginPath();
-      abyssCtx.moveTo(obj.dotA.x * abyssW, obj.dotA.y * abyssH);
-      abyssCtx.lineTo(obj.dotB.x * abyssW, obj.dotB.y * abyssH);
-      abyssCtx.strokeStyle = 'rgba(160,200,220,' + contraAlpha + ')';
-      abyssCtx.lineWidth = 0.6;
       abyssCtx.stroke();
     }
   }
@@ -6899,36 +6771,65 @@ function abyssDraw(elapsed) {
     abyssCtx.fill();
   }
 
-  // ── Traveling pulses on threads ──
+    // ── Neural signals ──
+  for (var si = 0; si < abyssNeuralSignals.length; si++) {
+    var sig = abyssNeuralSignals[si];
+    var t = sig.pos;
+    var ax = sig.fromNode.x * abyssW;
+    var ay = sig.fromNode.y * abyssH;
+    var bx = sig.toNode.x * abyssW;
+    var by = sig.toNode.y * abyssH;
+    // Arc control point -- perpendicular offset for organic curve
+    var mx = (ax + bx) / 2 + (ay - by) * sig.arc;
+    var my = (ay + by) / 2 + (bx - ax) * sig.arc;
+    // Quadratic bezier point at t
+    var px = (1-t)*(1-t)*ax + 2*(1-t)*t*mx + t*t*bx;
+    var py = (1-t)*(1-t)*ay + 2*(1-t)*t*my + t*t*by;
+
+    var sigColor = sig.contra
+      ? 'rgba(138,180,210,'
+      : 'rgba(240,180,100,';
+
+    // Trail -- draw fading segments behind signal
+    var trailSteps = 6;
+    for (var tr = trailSteps; tr >= 0; tr--) {
+      var tBack = Math.max(0, t - tr * 0.025);
+      var trx = (1-tBack)*(1-tBack)*ax + 2*(1-tBack)*tBack*mx + tBack*tBack*bx;
+      var trY = (1-tBack)*(1-tBack)*ay + 2*(1-tBack)*tBack*my + tBack*tBack*by;
+      var trAlpha = (1 - tr / trailSteps) * 0.4;
+      var trRadius = 1.2 * (1 - tr / trailSteps);
+      abyssCtx.beginPath();
+      abyssCtx.arc(trx, trY, trRadius, 0, Math.PI * 2);
+      abyssCtx.fillStyle = sigColor + trAlpha + ')';
+      abyssCtx.fill();
+    }
+
+    // Signal head
+    abyssCtx.beginPath();
+    abyssCtx.arc(px, py, 2.2, 0, Math.PI * 2);
+    abyssCtx.fillStyle = sigColor + '0.9)';
+    abyssCtx.fill();
+    // Glow
+    abyssCtx.beginPath();
+    abyssCtx.arc(px, py, 5, 0, Math.PI * 2);
+    abyssCtx.fillStyle = sigColor + '0.18)';
+    abyssCtx.fill();
+  }
+
+  // ── Node arrival flash ──
   for (var i = 0; i < abyssObjects.length; i++) {
     var obj = abyssObjects[i];
-    if (obj.kind !== 'thread-sim' && obj.kind !== 'thread-contra') continue;
-    if (obj.pulseCooldown > 0) continue;
-    // Only draw if the thread itself has emerged
-    var threadEmerge = elapsed - obj.emergeAt;
-    if (threadEmerge < 0) continue;
-    
-    var ax = obj.dotA.x * abyssW;
-    var ay = obj.dotA.y * abyssH;
-    var bx = obj.dotB.x * abyssW;
-    var by = obj.dotB.y * abyssH;
-    var px = ax + (bx - ax) * obj.pulsePos;
-    var py = ay + (by - ay) * obj.pulsePos;
-    var pulseAlpha = 0.55;
-    if (obj.kind === 'thread-contra') pulseAlpha = 0.35;
-    
+    if (!obj._flashLife || obj._flashLife <= 0) continue;
+    var fl = obj._flashLife / 400;
+    var fcx = obj.x * abyssW;
+    var fcy = obj.y * abyssH;
     abyssCtx.beginPath();
-    abyssCtx.arc(px, py, 2.0, 0, Math.PI * 2);
-    abyssCtx.fillStyle = obj.kind === 'thread-contra'
-      ? 'rgba(160,200,220,' + pulseAlpha + ')'
-      : 'rgba(230,170,120,' + pulseAlpha + ')';
+    abyssCtx.arc(fcx, fcy, 2 + (1 - fl) * 8, 0, Math.PI * 2);
+    abyssCtx.fillStyle = 'rgba(255,220,140,' + fl * 0.7 + ')';
     abyssCtx.fill();
-    // Soft glow around pulse
     abyssCtx.beginPath();
-    abyssCtx.arc(px, py, 4.5, 0, Math.PI * 2);
-    abyssCtx.fillStyle = obj.kind === 'thread-contra'
-      ? 'rgba(160,200,220,' + pulseAlpha * 0.25 + ')'
-      : 'rgba(230,170,120,' + pulseAlpha * 0.25 + ')';
+    abyssCtx.arc(fcx, fcy, 4 + (1 - fl) * 14, 0, Math.PI * 2);
+    abyssCtx.fillStyle = 'rgba(255,220,140,' + fl * 0.15 + ')';
     abyssCtx.fill();
   }
 
@@ -6942,7 +6843,6 @@ function abyssDraw(elapsed) {
     abyssCtx.arc(fDot.x * abyssW, fDot.y * abyssH, fRadius, 0, Math.PI * 2);
     abyssCtx.fillStyle = 'rgba(240,210,130,' + fAlpha + ')';
     abyssCtx.fill();
-    // Outer glow
     abyssCtx.beginPath();
     abyssCtx.arc(fDot.x * abyssW, fDot.y * abyssH, fRadius + 3, 0, Math.PI * 2);
     abyssCtx.fillStyle = 'rgba(240,210,130,' + fAlpha * 0.2 + ')';
@@ -7767,9 +7667,10 @@ function openSettingsModal(){
 
 function closeOverlay(){
   document.getElementById("cosm-overlay").classList.remove("active");
-  ['folder-modal','rename-modal','move-modal',
+   ['folder-modal','rename-modal','move-modal',
  'global-search-modal','capture-modal','discourse-modal','settings-modal',
- 'burn-disc-modal','ie-manifest-modal','role-modal','persona-select-modal','create-modal'
+ 'burn-disc-modal','ie-manifest-modal','role-modal','persona-select-modal','create-modal',
+ 'guardian-settings-modal'
 ].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove("visible");});
 }
 
@@ -8135,6 +8036,7 @@ var GUARDIAN_MAX_EXCHANGES = 4;
 
 async function openGuardianView(){
   showPanel('view-guardian');
+  document.getElementById('guardian-footer').classList.add('visible');
   guardianState = 'resting';
   resetGuardianUI();
   initMappingModeUI();
@@ -8170,15 +8072,64 @@ const GUARDIAN_MODELS = [
   'google/gemini-2.5-flash',
   'anthropic/claude-sonnet-4-5'
 ];
-let guardianModelIdx = 0;
+const GUARDIAN_MODEL_LABELS = {
+  'deepseek/deepseek-v4-flash': 'DeepSeek Flash',
+  'deepseek/deepseek-r1': 'DeepSeek R1',
+  'google/gemini-2.5-flash': 'Gemini',
+  'anthropic/claude-sonnet-4-5': 'Sonnet'
+};
 
-function cycleGuardianModel() {
-  guardianModelIdx = (guardianModelIdx + 1) % GUARDIAN_MODELS.length;
-  const m = GUARDIAN_MODELS[guardianModelIdx];
-  const pill = document.getElementById('guardian-model-pill');
-  if(pill) pill.textContent = '◈ ' + m.split('/').pop();
-  localStorage.setItem('nq_guardian_model', m);
-  showToast('◈ ' + m.split('/').pop());
+let guardianModelIdx = 0;
+let pendingModelIdx = null;
+let pendingMappingMode = null;
+
+function openGuardianSettingsModal() {
+  pendingModelIdx = guardianModelIdx;
+  pendingMappingMode = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
+
+  const list = document.getElementById('guardian-model-list');
+  list.innerHTML = '';
+  GUARDIAN_MODELS.forEach((m, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'management-btn';
+    btn.id = 'g-model-opt-' + i;
+    btn.innerHTML = '<span>◈</span> ' + (GUARDIAN_MODEL_LABELS[m] || m.split('/').pop());
+    if(i === pendingModelIdx) btn.style.borderColor = 'var(--accent)';
+    btn.onclick = () => {
+      pendingModelIdx = i;
+      document.querySelectorAll('[id^="g-model-opt-"]').forEach(b => b.style.borderColor = '');
+      btn.style.borderColor = 'var(--accent)';
+    };
+    list.appendChild(btn);
+  });
+
+  updateCartoButtons();
+  document.getElementById('guardian-settings-modal').classList.add('visible');
+  document.getElementById('cosm-overlay').classList.add('active');
+}
+
+function updateCartoButtons() {
+  const s = document.getElementById('btn-carto-sovereign');
+  const d = document.getElementById('btn-carto-deep');
+  if(!s || !d) return;
+  s.style.borderColor = pendingMappingMode === 'sovereign' ? 'var(--accent)' : '';
+  d.style.borderColor = pendingMappingMode === 'deep' ? 'var(--accent)' : '';
+}
+
+function applyGuardianSettings() {
+  if(pendingModelIdx !== null) {
+    guardianModelIdx = pendingModelIdx;
+    const m = GUARDIAN_MODELS[guardianModelIdx];
+    localStorage.setItem('nq_guardian_model', m);
+    const label = document.getElementById('guardian-model-label');
+    if(label) label.textContent = GUARDIAN_MODEL_LABELS[m] || m.split('/').pop();
+  }
+  if(pendingMappingMode !== null) {
+    setMappingMode(pendingMappingMode);
+    const label = document.getElementById('mapping-toggle-label');
+    if(label) label.textContent = pendingMappingMode === 'sovereign' ? 'Sovereign' : 'Deep';
+  }
+  closeOverlay();
 }
 
 function initGuardianModel() {
@@ -8187,8 +8138,12 @@ function initGuardianModel() {
     const idx = GUARDIAN_MODELS.indexOf(stored);
     if(idx >= 0) guardianModelIdx = idx;
   }
-  const pill = document.getElementById('guardian-model-pill');
-  if(pill) pill.textContent = '◈ ' + GUARDIAN_MODELS[guardianModelIdx].split('/').pop();
+  const m = GUARDIAN_MODELS[guardianModelIdx];
+  const label = document.getElementById('guardian-model-label');
+  if(label) label.textContent = GUARDIAN_MODEL_LABELS[m] || m.split('/').pop();
+  const modeLabel = document.getElementById('mapping-toggle-label');
+  const mode = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
+  if(modeLabel) modeLabel.textContent = mode === 'sovereign' ? 'Sovereign' : 'Deep';
 }
 
 async function summonGuardian(userAddition){
@@ -8210,58 +8165,10 @@ async function summonGuardian(userAddition){
     var allDiscs = (await getDiscourses()).filter(function(d){ return !d.deleted_at && !d.isDeleted; });
 
     // ── SOVEREIGN DEEP MAPPER (if enabled) ────────────────
-    var mappingMode = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
+    // Cartographer runs deliberately via footer button.
+    // Summon uses whatever maps are already in DB.
     var subEl = document.getElementById('guardian-sub');
-    
-    if (mappingMode === 'sovereign') {
-      var urgentDiscs = await selectUrgentDiscourses(allDiscs, 5);
-      
-      if (urgentDiscs && urgentDiscs.length > 0) {
-        var loaded = await initDeepMapper();
-        
-        if (loaded && urgentDiscs) {
-  var mapped = 0;
-  for (var d of urgentDiscs) {
-    if (subEl) subEl.textContent = 'Mapping: ' + (d.title || 'Untitled').slice(0, 40) + '... (' + (++mapped) + '/' + urgentDiscs.length + ')';
-            
-            var existingDeep = await dbGet('guardian_summaries', d.id + '_deep');
-            if (existingDeep && (Date.now() - existingDeep.generated_at < 7 * 86400000)) {
-              continue;
-            }
-            
-            var deepMap = await generateDeepMap(d.id, d.rawText);
-            if (deepMap) {
-              await dbPut('guardian_summaries', {
-                id: d.id + '_deep',
-                discourse_id: d.id,
-                map_type: 'deep_local',
-                summary: deepMap.summary,
-                word_count: deepMap.word_count,
-                model: deepMap.model,
-                generated_at: deepMap.generated_at
-              });
-            }
-            
-            // Give iOS Safari GC time to free tensor memory before the next cycle
-            await new Promise(function(r) { setTimeout(r, 1200); });
-          }
-          
-  if (subEl) subEl.textContent = urgentDiscs.length + ' terrains mapped. Speaking...';
-          
-          // THE FIX: We MUST unload the heavy local model before streaming the Guardian
-          // OpenRouter streams take memory. If we hold both, Safari crashes.
-          await unloadDeepMapper(); 
-          
-        } else {
-          // Cartographer couldn't load (memory pressure, suppressed, or failed)
-          if (subEl) subEl.textContent = 'Cartographer resting. Using Fast Maps.';
-        }
-        
-      } else {
-        // No urgent discourses found
-        if (subEl) subEl.textContent = 'No urgent terrain to map. Using Fast Maps.';
-      }
-    }
+    if (subEl) subEl.textContent = 'Reading the archive...';
 
     // ── BUILD CONTEXT FROM FAST MAPS + DEEP MAPS ──────────
     var summaries = await buildGuardianContext(allDiscs);
@@ -8389,22 +8296,36 @@ async function buildGuardianContext(discs) {
           contextBlock += `Paradox pairs: ${fastMap.signature.paradox.pairs.join(' | ')}\n`;
         }
       }
-      if (fastMap.extractive_summary) {
+        if (fastMap.extractive_summary) {
         contextBlock += `Excerpt: "${fastMap.extractive_summary.slice(0, 300)}"\n`;
       }
-      if (fastMap.watcher) {
-        if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
+       if (fastMap.watcher) {
+       if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
           const echoes = fastMap.watcher.top_similar
             .map(s => `d_${s.id.slice(-4)} (${s.score})`)
             .join(', ');
           contextBlock += `Watcher: echoes ${echoes}\n`;
         }
-        if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
+    if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
           const contradicts = fastMap.watcher.top_contradictory
             .map(s => `d_${s.id.slice(-4)} (${s.score})`)
             .join(', ');
           contextBlock += `Watcher: contradicts ${contradicts}\n`;
         }
+      }
+
+      // ── NEW SHAPE DIMENSIONS (GUARDED) ──
+      if (fastMap.pronoun_trajectory) {
+        contextBlock += `Pronoun trajectory: ${fastMap.pronoun_trajectory.label} (dominant: ${fastMap.pronoun_trajectory.dominant})\n`;
+      }
+      if (fastMap.silence_weight) {
+        contextBlock += `Silence weight: ${fastMap.silence_weight.label} (${fastMap.silence_weight.count} silence markers)\n`;
+      }
+      if (fastMap.entry_exit_delta) {
+        contextBlock += `Entry/exit register: ${fastMap.entry_exit_delta.delta}\n`;
+      }
+      if (fastMap.incompleteness) {
+        contextBlock += `Ending: ${fastMap.incompleteness.label}\n`;
       }
     } else {
       // Fallback: no Fast Map yet -- use raw text snippet
@@ -8422,7 +8343,7 @@ async function buildGuardianContext(discs) {
     
     contextBlock += '\n';
   }
-  
+
   // ── DEEP MAPS (local or API) ──────────────────────────────
   const deepMaps = [];
   for (const d of sorted) {
@@ -8629,7 +8550,7 @@ async function saveGuardianLog(text, wasSilent){
 }
 
 async function renderGuardianLogs(){
-  var section = document.getElementById('guardian-logs-section');
+  var section = document.getElementById('guardian-logs-list');
   var list = document.getElementById('guardian-logs-list');
   var allLogs = await dbGetAll('guardian_logs');
   if(!allLogs || !allLogs.length){ section.style.display = 'none'; return; }
@@ -8688,6 +8609,7 @@ async function handleGuardianOffer(){
 document.addEventListener('DOMContentLoaded',()=> {
 initWorker();
   document.getElementById('btn-back-table').addEventListener('click',()=>goBack());
+  document.getElementById('btn-guardian-back').addEventListener('click', goBack);
   document.getElementById('btn-write').addEventListener('click',()=>setEditorMode('write'));
   document.getElementById('btn-view').addEventListener('click',()=>setEditorMode('view'));
   document.getElementById('btn-export-html').addEventListener('click',exportHTML);
@@ -8719,6 +8641,35 @@ const ta = document.getElementById('content-textarea');
 ta.addEventListener('input', function(){
   this.style.height = 'auto';
   this.style.height = Math.max(this.scrollHeight, window.innerHeight * 0.6) + 'px';
+});
+document.getElementById('content-textarea').addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  const pos = this.selectionStart;
+  const text = this.value;
+  const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+  const currentLine = text.slice(lineStart, pos);
+
+  // Numbered list
+  const numbered = currentLine.match(/^(\d+)\.\s/);
+  if (numbered) {
+    e.preventDefault();
+    const next = '\n' + (parseInt(numbered[1]) + 1) + '. ';
+    this.value = text.slice(0, pos) + next + text.slice(pos);
+    this.selectionStart = this.selectionEnd = pos + next.length;
+    this.dispatchEvent(new Event('input'));
+    return;
+  }
+
+  // Bullet list
+  const bullet = currentLine.match(/^- /);
+  if (bullet) {
+    e.preventDefault();
+    const next = '\n- ';
+    this.value = text.slice(0, pos) + next + text.slice(pos);
+    this.selectionStart = this.selectionEnd = pos + next.length;
+    this.dispatchEvent(new Event('input'));
+    return;
+  }
 });
 document.getElementById('btn-lh-format').addEventListener('click', (e) => {
   e.stopPropagation();
@@ -8790,7 +8741,6 @@ localStorage.setItem('nq_api_key', document.getElementById('input-api-key').valu
   document.getElementById('btn-chat-edit').addEventListener('click',()=>openCharacterForge(activeCharId));
   document.getElementById('btn-chat-clear').addEventListener('click',clearChatHistory);
   document.getElementById('btn-send').addEventListener('click',handleChatSend);
-  document.getElementById('btn-send').addEventListener('click', handleChatSend); // Already exists
   document.getElementById('btn-chat-retry').addEventListener('click', () => handleChatSend(true)); // ADD THIS
   document.getElementById('chat-input').addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) {
@@ -8821,6 +8771,27 @@ document.addEventListener('click', (e) => {
   }
 });
 document.getElementById('btn-summon-guardian').addEventListener('click', function(){ summonGuardian(); });
+document.getElementById('btn-run-cartographer').addEventListener('click', runCartographer);
+document.getElementById('btn-guardian-settings').addEventListener('click', openGuardianSettingsModal);
+document.getElementById('btn-guardian-settings-cancel').addEventListener('click', closeOverlay);
+document.getElementById('btn-guardian-settings-apply').addEventListener('click', applyGuardianSettings);
+document.getElementById('btn-carto-sovereign').addEventListener('click', function() {
+  pendingMappingMode = 'sovereign';
+  updateCartoButtons();
+});
+document.getElementById('btn-carto-deep').addEventListener('click', function() {
+  pendingMappingMode = 'deep';
+  updateCartoButtons();
+});
+
+// Logs overlay
+document.getElementById('btn-guardian-logs-open').addEventListener('click', function() {
+  document.getElementById('guardian-logs-overlay').classList.add('open');
+});
+document.getElementById('btn-guardian-logs-close').addEventListener('click', function() {
+  document.getElementById('guardian-logs-overlay').classList.remove('open');
+});
+
 document.getElementById('btn-guardian-send').addEventListener('click', handleGuardianOffer);
 document.getElementById('btn-guardian-log-close').addEventListener('click', closeGuardianLogDetail);
   document.getElementById('gold-line-trigger').addEventListener('touchstart', awakenGoldLine, {passive: true});
@@ -9302,13 +9273,13 @@ window.cosmOSPinDisc=async function({title,raw_text,source_link,backlink}){const
 </script>
 
 <div class="bottom-bar" id="bottom-bar">
-  <div class="bottom-bar-scroll" id="bottom-bar-scroll"></div>
+<div class="bottom-bar-scroll" id="bottom-bar-scroll"></div>
 </div>
 <div class="watcher-loading-dot" id="watcher-loading-dot"></div>
 <div class="watcher-dot" id="watcher-dot"></div>
 <div class="watcher-panel" id="watcher-panel">
-  <div class="watcher-panel-title">◈ Resonance</div>
-  <div id="watcher-links-list"></div>
+<div class="watcher-panel-title">◈ Resonance</div>
+<div id="watcher-links-list"></div>
 </div>
 
 </body>
