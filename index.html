@@ -1454,15 +1454,18 @@ select.cosm-input {
 .guardian-model-selector { display: none; }
 
 /* GUARDIAN FOOTER */
-.guardian-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: var(--g-bg); padding: 12px 20px 28px; display: none; }
-.guardian-footer.visible { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.g-footer-btn { background: none; border: none; color: var(--g-muted); font-size: 9px; letter-spacing: 1.5px; font-weight: 700; text-transform: uppercase; opacity: 0.45; cursor: pointer; padding: 6px 4px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: opacity 0.2s; }
-.g-footer-btn:active { opacity: 0.9; }
-.g-footer-btn-label { font-size: 8px; letter-spacing: 1px; color: var(--g-muted); opacity: 0.6; white-space: nowrap; }
+.guardian-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: var(--g-bg); padding: 10px 16px 28px; display: none; border-top: 1px solid var(--g-border); }
+.guardian-footer.visible { display: flex; align-items: stretch; gap: 10px; }
+.g-footer-btn { background: var(--g-surface); border: 1px solid var(--g-border); color: var(--g-muted); font-weight: 700; text-transform: uppercase; cursor: pointer; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; gap: 3px; transition: border-color 0.2s, opacity 0.2s; padding: 10px 14px; }
+.g-footer-btn:active { border-color: var(--g-accent-dim); opacity: 0.8; }
+.g-footer-btn-top { font-size: 8px; letter-spacing: 2px; color: var(--g-muted); opacity: 0.5; }
+.g-footer-btn-main { font-size: 11px; letter-spacing: 1px; color: var(--g-text); opacity: 0.85; white-space: nowrap; }
+.g-footer-btn-sub { font-size: 8px; letter-spacing: 1px; color: var(--g-muted); opacity: 0.45; white-space: nowrap; }
+.g-footer-settings { flex: 0 0 auto; min-width: 120px; }
+.g-footer-carto { flex: 1; align-items: flex-start; }
 
-/* CARTOGRAPHER STATUS */
-.g-carto-status { font-size: 8px; letter-spacing: 1px; color: var(--g-muted); opacity: 0.5; text-transform: uppercase; margin-bottom: 4px; text-align: center; white-space: nowrap; }
-.g-carto-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--g-muted); opacity: 0.3; display: inline-block; margin-right: 4px; transition: background 0.3s, opacity 0.3s; }
+/* CARTOGRAPHER STATUS DOT */
+.g-carto-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--g-muted); opacity: 0.3; display: inline-block; margin-right: 5px; transition: background 0.3s, opacity 0.3s; vertical-align: middle; }
 .g-carto-dot.loading { background: var(--g-accent); opacity: 1; animation: cartoDotPulse 1s ease-in-out infinite; }
 .g-carto-dot.ready { background: #6ab187; opacity: 1; }
 .g-carto-dot.failed { background: #ff6060; opacity: 1; }
@@ -1879,24 +1882,18 @@ select.cosm-input {
     </div>
   </div>
 
-    <!-- FOOTER -->
+       <!-- FOOTER -->
   <div class="guardian-footer" id="guardian-footer">
-    <!-- LEFT: Models -->
-    <button class="g-footer-btn" id="guardian-model-pill">
-      <span style="font-size:9px;letter-spacing:1px;">◈</span>
-      <span class="g-footer-btn-label" id="guardian-model-label">deepseek-v3</span>
-      <span style="font-size:7px;letter-spacing:1.5px;color:var(--g-muted);opacity:0.5;text-transform:uppercase;">Models</span>
+    <!-- LEFT: Settings -->
+    <button class="g-footer-btn g-footer-settings" id="btn-guardian-settings">
+      <span class="g-footer-btn-top">Engine</span>
+      <span class="g-footer-btn-main" id="guardian-model-label">DS Flash</span>
+      <span class="g-footer-btn-sub" id="mapping-toggle-label">Sovereign</span>
     </button>
-    <!-- CENTRE: Cartographer -->
-    <button class="g-footer-btn" id="btn-run-cartographer">
-      <span style="font-size:14px;">◈</span>
-      <span class="g-footer-btn-label">Cartographer</span>
-    </button>
-    <!-- RIGHT: Mapping -->
-    <button class="g-footer-btn" id="btn-mapping-toggle">
-      <span style="font-size:9px;letter-spacing:1px;">⊙</span>
-      <span class="g-footer-btn-label" id="mapping-toggle-label">Sovereign</span>
-      <span style="font-size:7px;letter-spacing:1.5px;color:var(--g-muted);opacity:0.5;text-transform:uppercase;">Mapping</span>
+    <!-- RIGHT: Cartographer -->
+    <button class="g-footer-btn g-footer-carto" id="btn-run-cartographer">
+      <span class="g-footer-btn-top">Cartographer</span>
+      <span class="g-footer-btn-main"><span class="g-carto-dot" id="g-carto-dot"></span><span id="g-carto-status-text">idle</span></span>
     </button>
   </div>
 </div>
@@ -1924,26 +1921,22 @@ select.cosm-input {
 
 <div class="cosm-overlay" id="cosm-overlay"></div>
 
-<div class="cosm-modal" id="guardian-model-modal">
+<div class="cosm-modal" id="guardian-settings-modal">
   <div class="modal-title">◈ Guardian Engine</div>
+  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);opacity:0.5;text-transform:uppercase;margin-bottom:4px;">Model</div>
   <div class="management-actions" id="guardian-model-list"></div>
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" onclick="closeOverlay()">Cancel</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="cartographer-path-modal">
-  <div class="modal-title">⊙ Cartographer Path</div>
+  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);opacity:0.5;text-transform:uppercase;margin:12px 0 4px;">Cartographer Path</div>
   <div class="management-actions">
-    <button class="management-btn" onclick="selectMappingMode('sovereign')">
+    <button class="management-btn" id="btn-carto-sovereign">
       <span>◈</span> Sovereign (Local / Private)
     </button>
-    <button class="management-btn" onclick="selectMappingMode('deep')">
+    <button class="management-btn" id="btn-carto-deep">
       <span>∞</span> Deep (API / Cloud)
     </button>
   </div>
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" onclick="closeOverlay()">Cancel</button>
+  <div class="modal-buttons" style="margin-top:8px;">
+    <button class="modal-btn-cancel" id="btn-guardian-settings-cancel">Cancel</button>
+    <button class="modal-btn-confirm" id="btn-guardian-settings-apply">Apply</button>
   </div>
 </div>
 
@@ -5642,8 +5635,8 @@ async function runCartographer() {
   const statusText = document.getElementById('g-carto-status-text');
 
   function setStatus(state, text) {
-    dot.className = 'g-carto-dot' + (state ? ' ' + state : '');
-    statusText.textContent = text;
+    if(dot) dot.className = 'g-carto-dot' + (state ? ' ' + state : '');
+    if(statusText) statusText.textContent = text;
   }
 
   if (btn) { btn.disabled = true; }
@@ -5716,14 +5709,13 @@ localStorage.setItem('nq_cartographer_mode', mode);
 }
 
 // Set initial value on Guardian view open
-
 function selectMappingMode(mode) {
   setMappingMode(mode);
   const label = document.getElementById('mapping-toggle-label');
   if(label) label.textContent = mode === 'sovereign' ? 'Sovereign' : 'Deep';
   document.getElementById('cartographer-path-modal').classList.remove('visible');
   closeOverlay();
-  runCartographer();
+  setTimeout(() => runCartographer(), 100);
 }
 
 // Set initial value on Guardian view open
@@ -7561,7 +7553,7 @@ function closeOverlay(){
    ['folder-modal','rename-modal','move-modal',
  'global-search-modal','capture-modal','discourse-modal','settings-modal',
  'burn-disc-modal','ie-manifest-modal','role-modal','persona-select-modal','create-modal',
- 'guardian-model-modal','cartographer-path-modal'
+ 'guardian-settings-modal'
 ].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove("visible");});
 }
 
@@ -7963,27 +7955,64 @@ const GUARDIAN_MODELS = [
   'google/gemini-2.5-flash',
   'anthropic/claude-sonnet-4-5'
 ];
-let guardianModelIdx = 0;
+const GUARDIAN_MODEL_LABELS = {
+  'deepseek/deepseek-v4-flash': 'DeepSeek Flash',
+  'deepseek/deepseek-r1': 'DeepSeek R1',
+  'google/gemini-2.5-flash': 'Gemini',
+  'anthropic/claude-sonnet-4-5': 'Sonnet'
+};
 
-function openGuardianModelModal() {
+let guardianModelIdx = 0;
+let pendingModelIdx = null;
+let pendingMappingMode = null;
+
+function openGuardianSettingsModal() {
+  pendingModelIdx = guardianModelIdx;
+  pendingMappingMode = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
+
   const list = document.getElementById('guardian-model-list');
   list.innerHTML = '';
   GUARDIAN_MODELS.forEach((m, i) => {
     const btn = document.createElement('button');
-    btn.className = 'management-btn' + (i === guardianModelIdx ? ' active' : '');
-    btn.innerHTML = '<span>◈</span> ' + m.split('/').pop();
+    btn.className = 'management-btn';
+    btn.id = 'g-model-opt-' + i;
+    btn.innerHTML = '<span>◈</span> ' + (GUARDIAN_MODEL_LABELS[m] || m.split('/').pop());
+    if(i === pendingModelIdx) btn.style.borderColor = 'var(--accent)';
     btn.onclick = () => {
-      guardianModelIdx = i;
-      localStorage.setItem('nq_guardian_model', m);
-      const label = document.getElementById('guardian-model-label');
-      if(label) label.textContent = m.split('/').pop();
-      closeOverlay();
-      showToast('◈ ' + m.split('/').pop());
+      pendingModelIdx = i;
+      document.querySelectorAll('[id^="g-model-opt-"]').forEach(b => b.style.borderColor = '');
+      btn.style.borderColor = 'var(--accent)';
     };
     list.appendChild(btn);
   });
-  document.getElementById('guardian-model-modal').classList.add('visible');
+
+  updateCartoButtons();
+  document.getElementById('guardian-settings-modal').classList.add('visible');
   document.getElementById('cosm-overlay').classList.add('active');
+}
+
+function updateCartoButtons() {
+  const s = document.getElementById('btn-carto-sovereign');
+  const d = document.getElementById('btn-carto-deep');
+  if(!s || !d) return;
+  s.style.borderColor = pendingMappingMode === 'sovereign' ? 'var(--accent)' : '';
+  d.style.borderColor = pendingMappingMode === 'deep' ? 'var(--accent)' : '';
+}
+
+function applyGuardianSettings() {
+  if(pendingModelIdx !== null) {
+    guardianModelIdx = pendingModelIdx;
+    const m = GUARDIAN_MODELS[guardianModelIdx];
+    localStorage.setItem('nq_guardian_model', m);
+    const label = document.getElementById('guardian-model-label');
+    if(label) label.textContent = GUARDIAN_MODEL_LABELS[m] || m.split('/').pop();
+  }
+  if(pendingMappingMode !== null) {
+    setMappingMode(pendingMappingMode);
+    const label = document.getElementById('mapping-toggle-label');
+    if(label) label.textContent = pendingMappingMode === 'sovereign' ? 'Sovereign' : 'Deep';
+  }
+  closeOverlay();
 }
 
 function initGuardianModel() {
@@ -7992,8 +8021,12 @@ function initGuardianModel() {
     const idx = GUARDIAN_MODELS.indexOf(stored);
     if(idx >= 0) guardianModelIdx = idx;
   }
+  const m = GUARDIAN_MODELS[guardianModelIdx];
   const label = document.getElementById('guardian-model-label');
-  if(label) label.textContent = GUARDIAN_MODELS[guardianModelIdx].split('/').pop();
+  if(label) label.textContent = GUARDIAN_MODEL_LABELS[m] || m.split('/').pop();
+  const modeLabel = document.getElementById('mapping-toggle-label');
+  const mode = localStorage.getItem('nq_cartographer_mode') || 'sovereign';
+  if(modeLabel) modeLabel.textContent = mode === 'sovereign' ? 'Sovereign' : 'Deep';
 }
 
 async function summonGuardian(userAddition){
@@ -8622,12 +8655,16 @@ document.addEventListener('click', (e) => {
 });
 document.getElementById('btn-summon-guardian').addEventListener('click', function(){ summonGuardian(); });
 document.getElementById('btn-run-cartographer').addEventListener('click', runCartographer);
-document.getElementById('guardian-model-pill').addEventListener('click', openGuardianModelModal);
-
-// Mapping toggle → open modal
-document.getElementById('btn-mapping-toggle').addEventListener('click', function() {
-  document.getElementById('cartographer-path-modal').classList.add('visible');
-  document.getElementById('cosm-overlay').classList.add('active');
+document.getElementById('btn-guardian-settings').addEventListener('click', openGuardianSettingsModal);
+document.getElementById('btn-guardian-settings-cancel').addEventListener('click', closeOverlay);
+document.getElementById('btn-guardian-settings-apply').addEventListener('click', applyGuardianSettings);
+document.getElementById('btn-carto-sovereign').addEventListener('click', function() {
+  pendingMappingMode = 'sovereign';
+  updateCartoButtons();
+});
+document.getElementById('btn-carto-deep').addEventListener('click', function() {
+  pendingMappingMode = 'deep';
+  updateCartoButtons();
 });
 
 // Logs overlay
