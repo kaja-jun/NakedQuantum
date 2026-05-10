@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.36.9</title>
+<title>NakedQuantum v0.37</title>
 <style>
 :root {
   --bg: #000000;
@@ -6143,6 +6143,13 @@ var abyssPulses = [];          // traveling dots on threads
 var abyssFiringDot = null;     // currently firing disc-dot
 var abyssFiringTimer = 0;      // countdown to next spontaneous fire
 var abyssTouchRipples = [];   // multiple expanding rings per touch
+var abyssNeuralSignals = [];  // living electric signals between nodes
+var abyssThreadAlpha = new Map(); // thread id → current opacity (birth/death)
+var abyssLastSignalTime = 0;
+var NEURAL_SIGNAL_INTERVAL = 1800; // ms between new signals
+var NEURAL_MAX_SIGNALS = 12;       // max concurrent signals
+var NEURAL_CASCADE_DEPTH = 3;      // max hops per cascade
+   // multiple expanding rings per touch
    
 var ABYSS_EMERGE = {
   anchors:    1500,   // ms -- oldest ring + newest dot
@@ -6327,6 +6334,23 @@ async function buildAbyssObjects() {
   }
 }
 
+function abyssGetThreadFrom(node, excludeNode) {
+  var candidates = [];
+  for (var i = 0; i < abyssObjects.length; i++) {
+    var obj = abyssObjects[i];
+    if (obj.kind !== 'thread-sim' && obj.kind !== 'thread-contra') continue;
+    if ((obj.currentAlpha || 0) < 0.02) continue;
+    var isA = obj.dotA.id === node.id;
+    var isB = obj.dotB.id === node.id;
+    if (!isA && !isB) continue;
+    var other = isA ? obj.dotB : obj.dotA;
+    if (excludeNode && other.id === excludeNode.id) continue;
+    candidates.push(obj);
+  }
+  if (!candidates.length) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 function abyssHash(str) {
   // Simple deterministic hash for stable positioning
   var h = 0x811c9dc5;
@@ -6465,65 +6489,129 @@ function abyssUpdate(elapsed) {
     }
   }
 
-  // ── Traveling pulses on threads ──
+    // ── Thread alpha breathing (birth and death) ──
   for (var i = 0; i < abyssObjects.length; i++) {
     var obj = abyssObjects[i];
     if (obj.kind !== 'thread-sim' && obj.kind !== 'thread-contra') continue;
-    obj.pulseCooldown -= 16.67;
-    if (obj.pulseCooldown > 0) continue;
-    obj.pulsePos += obj.pulseSpeed * obj.pulseDir;
-    if (obj.pulsePos >= 1.0) {
-      obj.pulsePos = 1.0;
-      obj.pulseDir = -1;
-      obj.pulseCooldown = obj.kind === 'thread-contra'
-        ? 1500 + Math.random() * 3000
-        : 600 + Math.random() * 2000;
-    } else if (obj.pulsePos <= 0.0) {
-      obj.pulsePos = 0.0;
-      obj.pulseDir = 1;
-      obj.pulseCooldown = obj.kind === 'thread-contra'
-        ? 1500 + Math.random() * 3000
-        : 600 + Math.random() * 2000;
+    if (!obj.threadId) obj.threadId = obj.dotA.id + '_' + obj.dotB.id;
+    if (!obj.targetAlpha) obj.targetAlpha = 0.08 + Math.random() * 0.15;
+    if (!obj.currentAlpha) obj.currentAlpha = 0;
+    if (!obj.alphaSpeed) obj.alphaSpeed = 0.0003 + Math.random() * 0.0005;
+    if (!obj.dormantTimer) obj.dormantTimer = 8000 + Math.random() * 20000;
+    obj.dormantTimer -= 16.67;
+    if (obj.dormantTimer <= 0) {
+      // Flip between visible and dormant
+      obj.targetAlpha = obj.targetAlpha > 0.02
+        ? 0
+        : 0.06 + Math.random() * 0.18;
+      obj.dormantTimer = 6000 + Math.random() * 18000;
+    }
+    // Lerp toward target
+    obj.currentAlpha += (obj.targetAlpha - obj.currentAlpha) * obj.alphaSpeed * 16.67;
+  }
+
+  // ── Neural signals ──
+  var nowMs2 = performance.now();
+  // Age and remove dead signals
+  for (var si = abyssNeuralSignals.length - 1; si >= 0; si--) {
+    var sig = abyssNeuralSignals[si];
+    sig.pos += sig.speed;
+    if (sig.pos >= 1.0) {
+      // Arrived at target -- maybe cascade
+      if (sig.depth < NEURAL_CASCADE_DEPTH && Math.random() < 0.55) {
+        // Find another thread from target node
+        var nextThread = abyssGetThreadFrom(sig.toNode, sig.fromNode);
+        if (nextThread) {
+          abyssNeuralSignals.push({
+            thread: nextThread,
+            fromNode: sig.toNode,
+            toNode: nextThread.dotA.id === sig.toNode.id ? nextThread.dotB : nextThread.dotA,
+            pos: 0,
+            speed: 0.008 + Math.random() * 0.012,
+            depth: sig.depth + 1,
+            contra: nextThread.kind === 'thread-contra',
+            life: 1.0,
+            arc: (Math.random() - 0.5) * 0.4  // slight arc offset
+          });
+        }
+      }
+      // Flash arrival node
+      sig.toNode._flashLife = 400;
+      abyssNeuralSignals.splice(si, 1);
+    } else {
+      sig.life = Math.min(1.0, sig.life);
     }
   }
 
-  // ── Spontaneous dot firing ──
+  // Spawn new signals periodically
+  if (nowMs2 - abyssLastSignalTime > NEURAL_SIGNAL_INTERVAL
+      && abyssNeuralSignals.length < NEURAL_MAX_SIGNALS) {
+    var threads = [];
+    for (var i = 0; i < abyssObjects.length; i++) {
+      if (abyssObjects[i].kind === 'thread-sim' || abyssObjects[i].kind === 'thread-contra') {
+        if ((abyssObjects[i].currentAlpha || 0) > 0.02) threads.push(abyssObjects[i]);
+      }
+    }
+    if (threads.length > 0) {
+      var t = threads[Math.floor(Math.random() * threads.length)];
+      var fromNode = Math.random() < 0.5 ? t.dotA : t.dotB;
+      var toNode = fromNode === t.dotA ? t.dotB : t.dotA;
+      abyssNeuralSignals.push({
+        thread: t,
+        fromNode: fromNode,
+        toNode: toNode,
+        pos: 0,
+        speed: 0.007 + Math.random() * 0.01,
+        depth: 0,
+        contra: t.kind === 'thread-contra',
+        life: 1.0,
+        arc: (Math.random() - 0.5) * 0.35
+      });
+      abyssLastSignalTime = nowMs2;
+      // Touch nearby: fire extra burst
+      if (abyssTouchX > -9998) {
+        var tdx = (fromNode.x * abyssW) - abyssTouchX;
+        var tdy = (fromNode.y * abyssH) - abyssTouchY;
+        if (Math.sqrt(tdx*tdx + tdy*tdy) < 180) {
+          abyssLastSignalTime -= NEURAL_SIGNAL_INTERVAL * 0.7; // fire sooner
+        }
+      }
+    }
+  }
+
+  // Node flash decay
+  for (var i = 0; i < abyssObjects.length; i++) {
+    if (abyssObjects[i]._flashLife > 0) {
+      abyssObjects[i]._flashLife -= 16.67;
+    }
+  }
+
+  // ── Spontaneous dot firing (kept for touch feel) ──
   abyssFiringTimer -= 16.67;
-  if (abyssFiringTimer <= 0 && abyssObjects.length > 0) {
-    // Pick a random disc-dot
+  if (abyssFiringTimer <= 0) {
     var discDots = [];
     for (var i = 0; i < abyssObjects.length; i++) {
       if (abyssObjects[i].kind === 'disc-dot') discDots.push(abyssObjects[i]);
     }
     if (discDots.length > 0) {
-      var chosenDot = null;
-      // If finger is down, 50% chance to pick a nearby dot
-      if (abyssTouchX > -9998 && Math.random() < 0.5) {
-        var nearby = [];
-        var touchDistThreshold = 150; // pixels
-        for (var d = 0; d < discDots.length; d++) {
-          var dot = discDots[d];
+      var chosenDot = discDots[Math.floor(Math.random() * discDots.length)];
+      if (abyssTouchX > -9998) {
+        var nearby = discDots.filter(function(dot) {
           var dx = (dot.x * abyssW) - abyssTouchX;
           var dy = (dot.y * abyssH) - abyssTouchY;
-          if (Math.sqrt(dx*dx + dy*dy) < touchDistThreshold) {
-            nearby.push(dot);
-          }
-        }
-        if (nearby.length > 0) {
-          chosenDot = nearby[Math.floor(Math.random() * nearby.length)];
-        }
-      }
-      if (!chosenDot) {
-        chosenDot = discDots[Math.floor(Math.random() * discDots.length)];
+          return Math.sqrt(dx*dx + dy*dy) < 150;
+        });
+        if (nearby.length) chosenDot = nearby[Math.floor(Math.random() * nearby.length)];
       }
       abyssFiringDot = { dot: chosenDot, life: 800 };
     }
-    abyssFiringTimer = 30000 + Math.random() * 60000; // next in 30-90s
+    abyssFiringTimer = 8000 + Math.random() * 20000; // more frequent now
   }
   if (abyssFiringDot) {
     abyssFiringDot.life -= 16.67;
     if (abyssFiringDot.life <= 0) abyssFiringDot = null;
   }
+
     // ── Touch ripple decay ──
   for (var ri = abyssTouchRipples.length - 1; ri >= 0; ri--) {
     abyssTouchRipples[ri].life -= 16.67;
@@ -6617,22 +6705,23 @@ function abyssDraw(elapsed) {
       abyssCtx.strokeStyle = 'rgba(195,175,145,' + ringAlpha + ')';
       abyssCtx.lineWidth = 0.6;
       abyssCtx.stroke();
-       }else if (obj.kind === 'thread-sim') {
-      var threadAlpha = emergeT * obj.score * 0.45;
+           } else if (obj.kind === 'thread-sim' || obj.kind === 'thread-contra') {
+      var tAlpha = emergeT * (obj.currentAlpha || 0.08);
+      if (tAlpha < 0.005) continue;
+      var ax = obj.dotA.x * abyssW;
+      var ay = obj.dotA.y * abyssH;
+      var bx = obj.dotB.x * abyssW;
+      var by = obj.dotB.y * abyssH;
+      // Slight curve via quadratic bezier -- midpoint offset
+      var mx = (ax + bx) / 2 + (ay - by) * 0.08;
+      var my = (ay + by) / 2 + (bx - ax) * 0.08;
       abyssCtx.beginPath();
-      abyssCtx.moveTo(obj.dotA.x * abyssW, obj.dotA.y * abyssH);
-      abyssCtx.lineTo(obj.dotB.x * abyssW, obj.dotB.y * abyssH);
-      abyssCtx.strokeStyle = 'rgba(210,155,110,' + threadAlpha + ')';
+      abyssCtx.moveTo(ax, ay);
+      abyssCtx.quadraticCurveTo(mx, my, bx, by);
+      abyssCtx.strokeStyle = obj.kind === 'thread-contra'
+        ? 'rgba(138,180,210,' + tAlpha + ')'
+        : 'rgba(210,155,100,' + tAlpha + ')';
       abyssCtx.lineWidth = 0.5;
-      abyssCtx.stroke();
-
-    } else if (obj.kind === 'thread-contra') {
-      var contraAlpha = emergeT * 0.35;
-      abyssCtx.beginPath();
-      abyssCtx.moveTo(obj.dotA.x * abyssW, obj.dotA.y * abyssH);
-      abyssCtx.lineTo(obj.dotB.x * abyssW, obj.dotB.y * abyssH);
-      abyssCtx.strokeStyle = 'rgba(160,200,220,' + contraAlpha + ')';
-      abyssCtx.lineWidth = 0.6;
       abyssCtx.stroke();
     }
   }
@@ -6682,36 +6771,65 @@ function abyssDraw(elapsed) {
     abyssCtx.fill();
   }
 
-  // ── Traveling pulses on threads ──
+    // ── Neural signals ──
+  for (var si = 0; si < abyssNeuralSignals.length; si++) {
+    var sig = abyssNeuralSignals[si];
+    var t = sig.pos;
+    var ax = sig.fromNode.x * abyssW;
+    var ay = sig.fromNode.y * abyssH;
+    var bx = sig.toNode.x * abyssW;
+    var by = sig.toNode.y * abyssH;
+    // Arc control point -- perpendicular offset for organic curve
+    var mx = (ax + bx) / 2 + (ay - by) * sig.arc;
+    var my = (ay + by) / 2 + (bx - ax) * sig.arc;
+    // Quadratic bezier point at t
+    var px = (1-t)*(1-t)*ax + 2*(1-t)*t*mx + t*t*bx;
+    var py = (1-t)*(1-t)*ay + 2*(1-t)*t*my + t*t*by;
+
+    var sigColor = sig.contra
+      ? 'rgba(138,180,210,'
+      : 'rgba(240,180,100,';
+
+    // Trail -- draw fading segments behind signal
+    var trailSteps = 6;
+    for (var tr = trailSteps; tr >= 0; tr--) {
+      var tBack = Math.max(0, t - tr * 0.025);
+      var trx = (1-tBack)*(1-tBack)*ax + 2*(1-tBack)*tBack*mx + tBack*tBack*bx;
+      var trY = (1-tBack)*(1-tBack)*ay + 2*(1-tBack)*tBack*my + tBack*tBack*by;
+      var trAlpha = (1 - tr / trailSteps) * 0.4;
+      var trRadius = 1.2 * (1 - tr / trailSteps);
+      abyssCtx.beginPath();
+      abyssCtx.arc(trx, trY, trRadius, 0, Math.PI * 2);
+      abyssCtx.fillStyle = sigColor + trAlpha + ')';
+      abyssCtx.fill();
+    }
+
+    // Signal head
+    abyssCtx.beginPath();
+    abyssCtx.arc(px, py, 2.2, 0, Math.PI * 2);
+    abyssCtx.fillStyle = sigColor + '0.9)';
+    abyssCtx.fill();
+    // Glow
+    abyssCtx.beginPath();
+    abyssCtx.arc(px, py, 5, 0, Math.PI * 2);
+    abyssCtx.fillStyle = sigColor + '0.18)';
+    abyssCtx.fill();
+  }
+
+  // ── Node arrival flash ──
   for (var i = 0; i < abyssObjects.length; i++) {
     var obj = abyssObjects[i];
-    if (obj.kind !== 'thread-sim' && obj.kind !== 'thread-contra') continue;
-    if (obj.pulseCooldown > 0) continue;
-    // Only draw if the thread itself has emerged
-    var threadEmerge = elapsed - obj.emergeAt;
-    if (threadEmerge < 0) continue;
-    
-    var ax = obj.dotA.x * abyssW;
-    var ay = obj.dotA.y * abyssH;
-    var bx = obj.dotB.x * abyssW;
-    var by = obj.dotB.y * abyssH;
-    var px = ax + (bx - ax) * obj.pulsePos;
-    var py = ay + (by - ay) * obj.pulsePos;
-    var pulseAlpha = 0.55;
-    if (obj.kind === 'thread-contra') pulseAlpha = 0.35;
-    
+    if (!obj._flashLife || obj._flashLife <= 0) continue;
+    var fl = obj._flashLife / 400;
+    var fcx = obj.x * abyssW;
+    var fcy = obj.y * abyssH;
     abyssCtx.beginPath();
-    abyssCtx.arc(px, py, 2.0, 0, Math.PI * 2);
-    abyssCtx.fillStyle = obj.kind === 'thread-contra'
-      ? 'rgba(160,200,220,' + pulseAlpha + ')'
-      : 'rgba(230,170,120,' + pulseAlpha + ')';
+    abyssCtx.arc(fcx, fcy, 2 + (1 - fl) * 8, 0, Math.PI * 2);
+    abyssCtx.fillStyle = 'rgba(255,220,140,' + fl * 0.7 + ')';
     abyssCtx.fill();
-    // Soft glow around pulse
     abyssCtx.beginPath();
-    abyssCtx.arc(px, py, 4.5, 0, Math.PI * 2);
-    abyssCtx.fillStyle = obj.kind === 'thread-contra'
-      ? 'rgba(160,200,220,' + pulseAlpha * 0.25 + ')'
-      : 'rgba(230,170,120,' + pulseAlpha * 0.25 + ')';
+    abyssCtx.arc(fcx, fcy, 4 + (1 - fl) * 14, 0, Math.PI * 2);
+    abyssCtx.fillStyle = 'rgba(255,220,140,' + fl * 0.15 + ')';
     abyssCtx.fill();
   }
 
@@ -6725,7 +6843,6 @@ function abyssDraw(elapsed) {
     abyssCtx.arc(fDot.x * abyssW, fDot.y * abyssH, fRadius, 0, Math.PI * 2);
     abyssCtx.fillStyle = 'rgba(240,210,130,' + fAlpha + ')';
     abyssCtx.fill();
-    // Outer glow
     abyssCtx.beginPath();
     abyssCtx.arc(fDot.x * abyssW, fDot.y * abyssH, fRadius + 3, 0, Math.PI * 2);
     abyssCtx.fillStyle = 'rgba(240,210,130,' + fAlpha * 0.2 + ')';
