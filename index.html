@@ -7888,7 +7888,7 @@ function openDataPage(){
 }
 
 // Save Supabase config from Data page
-function saveSupaFromDataPage(){
+async function saveSupaFromDataPage(){
     const supaUrlVal = document.getElementById('data-supa-url').value.trim();
   const supaKeyVal = document.getElementById('data-supa-key').value.trim();
   if(supaUrlVal) await storeSecureKey('nq_supa_url', supaUrlVal);
