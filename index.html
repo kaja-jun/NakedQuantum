@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.37.1</title>
+<title>NakedQuantum v0.37.2</title>
 <style>
 :root {
   --bg: #000000;
@@ -4290,7 +4290,7 @@ async function renderTableView() {
     const allActive = allD.filter(d => !d.isDeleted && decayPhase(d.updated_at||d.created_at||0) !== 'gone');
     allActive.sort((a,b) => (b.updated_at||b.created_at||0) - (a.updated_at||a.created_at||0));
 
-    const recentDiscourses = allActive.filter(d => d.item_type === 'discourse' || (!d.item_type && d.item_type !== 'note' && d.item_type !== 'chronicle'));
+            const recentDiscourses = allActive.filter(d => d.item_type === 'discourse');
     const recentSparks = allActive.filter(d => d.item_type === 'note');
     const recentChronicles = allActive.filter(d => d.item_type === 'chronicle');
 
@@ -8656,23 +8656,25 @@ initWorker();
     if(!ta || !ta.value.trim()) { showToast('Nothing to copy'); return; }
     navigator.clipboard.writeText(ta.value).then(() => showToast('Copied ◆')).catch(() => showToast('Copy failed'));
   });
-  document.getElementById('input-import-md').addEventListener('change', async function() {
+    document.getElementById('input-import-md').addEventListener('change', async function() {
     const file = this.files[0];
     if(!file) return;
     const text = await file.text();
-    // Extract title from first # heading or filename
+    if(!text.trim()) { showToast('File is empty'); return; }
     const firstLine = text.split('\n')[0] || '';
     const title = firstLine.startsWith('#')
       ? firstLine.replace(/^#+\s*/, '').trim()
       : file.name.replace(/\.md$/i, '').replace(/[_-]/g, ' ');
-    // Strip the first heading line from body
     const body = firstLine.startsWith('#')
       ? text.split('\n').slice(1).join('\n').trim()
       : text.trim();
-    await createDiscourse(title.slice(0, 60), body, currentFolderId);
+    const imported = await createDiscourse({title: title.slice(0, 60), raw_text: body, folder_id: currentFolderId});
+    if(imported && isWatcherReady) queueWatcherEmbed(imported.id, imported.title, body, 'discourse');
+    await renderTableView();
     showToast('Imported: ' + title.slice(0, 30) + ' ◆');
-    this.value = ''; // reset so same file can be re-imported
+    this.value = '';
   });
+
   document.getElementById('btn-extract').addEventListener('click',extractMemory);
   document.getElementById('btn-delete-discourse').addEventListener('click',deleteCurrentDiscourse);
   document.getElementById('cosm-overlay').addEventListener('click',closeOverlay);
