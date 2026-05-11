@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.37.1</title>
+<title>NakedQuantum v0.37.2</title>
 <style>
 :root {
   --bg: #000000;
@@ -7889,8 +7889,10 @@ function openDataPage(){
 
 // Save Supabase config from Data page
 function saveSupaFromDataPage(){
-  localStorage.setItem('nq_supa_url', document.getElementById('data-supa-url').value.trim());
-  localStorage.setItem('nq_supa_key', document.getElementById('data-supa-key').value.trim());
+    const supaUrlVal = document.getElementById('data-supa-url').value.trim();
+  const supaKeyVal = document.getElementById('data-supa-key').value.trim();
+  if(supaUrlVal) await storeSecureKey('nq_supa_url', supaUrlVal);
+  if(supaKeyVal) await storeSecureKey('nq_supa_key', supaKeyVal);
   showToast('Supabase config saved ◆');
 }
 
