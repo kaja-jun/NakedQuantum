@@ -1639,9 +1639,11 @@ select.cosm-input {
         <div class="lh-overflow-wrap">
           <button class="tbtn" id="btn-lh-overflow">···</button>
           <div class="lh-overflow-menu" id="lh-overflow-menu">
-            <button class="lh-overflow-item" id="btn-export-html">H ↓ Export HTML</button>
-            <button class="lh-overflow-item" id="btn-export-md">M ↓ Export Markdown</button>
-            <button class="lh-overflow-item" id="btn-export-pdf">P ↓ Export PDF</button>
+                        <button class="lh-overflow-item" id="btn-export-html">Export HTML</button>
+            <button class="lh-overflow-item" id="btn-export-md">Export Markdown</button>
+            <button class="lh-overflow-item" id="btn-export-pdf">Export PDF</button>
+            <button class="lh-overflow-item" id="btn-copy-content">Copy Text</button>
+            <label class="lh-overflow-item" style="cursor:pointer;" id="btn-import-md-label">Import .md<input type="file" id="input-import-md" accept=".md,text/markdown" style="display:none;"></label>
             <div class="lh-overflow-divider"></div>
             <button class="lh-overflow-item danger" id="btn-delete-discourse">✕ Delete</button>
           </div>
@@ -2429,6 +2431,7 @@ function initWorker(){
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
 const NQ_DEV_MODE = true;
+//const NQ_DEV_MODE = false;
 
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
 const W_SIMILARITY_THRESHOLD = NQ_DEV_MODE ? 0.50 : 0.73;
@@ -8645,9 +8648,31 @@ initWorker();
   document.getElementById('btn-guardian-back').addEventListener('click', goBack);
   document.getElementById('btn-write').addEventListener('click',()=>setEditorMode('write'));
   document.getElementById('btn-view').addEventListener('click',()=>setEditorMode('view'));
-  document.getElementById('btn-export-html').addEventListener('click',exportHTML);
+    document.getElementById('btn-export-html').addEventListener('click',exportHTML);
   document.getElementById('btn-export-md').addEventListener('click',exportMarkdown);
   document.getElementById('btn-export-pdf').addEventListener('click',exportPDF);
+  document.getElementById('btn-copy-content').addEventListener('click', () => {
+    const ta = document.getElementById('content-textarea');
+    if(!ta || !ta.value.trim()) { showToast('Nothing to copy'); return; }
+    navigator.clipboard.writeText(ta.value).then(() => showToast('Copied ◆')).catch(() => showToast('Copy failed'));
+  });
+  document.getElementById('input-import-md').addEventListener('change', async function() {
+    const file = this.files[0];
+    if(!file) return;
+    const text = await file.text();
+    // Extract title from first # heading or filename
+    const firstLine = text.split('\n')[0] || '';
+    const title = firstLine.startsWith('#')
+      ? firstLine.replace(/^#+\s*/, '').trim()
+      : file.name.replace(/\.md$/i, '').replace(/[_-]/g, ' ');
+    // Strip the first heading line from body
+    const body = firstLine.startsWith('#')
+      ? text.split('\n').slice(1).join('\n').trim()
+      : text.trim();
+    await createDiscourse(title.slice(0, 60), body, currentFolderId);
+    showToast('Imported: ' + title.slice(0, 30) + ' ◆');
+    this.value = ''; // reset so same file can be re-imported
+  });
   document.getElementById('btn-extract').addEventListener('click',extractMemory);
   document.getElementById('btn-delete-discourse').addEventListener('click',deleteCurrentDiscourse);
   document.getElementById('cosm-overlay').addEventListener('click',closeOverlay);
