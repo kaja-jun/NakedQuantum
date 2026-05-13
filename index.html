@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.37.2</title>
+<title>NakedQuantum v0.37.5</title>
 <style>
 :root {
   --bg: #000000;
@@ -61,7 +61,6 @@ button {
 
 .cards-section-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.45; font-weight: 900; text-transform: uppercase; padding: 14px 0 8px; }
 .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(80px, 22vw, 160px), 1fr)); gap: 36px; }
-.cards-grid, .section-grid { gap: 16px; }
 
 .folder-card, .discourse-card, .character-card { user-select: none; -webkit-user-select: none; }
 .card-selected { border-color: var(--accent) !important; background: rgba(200,160,80,0.08) !important; }
@@ -4206,7 +4205,10 @@ async function renderTableView() {
   const surface = document.getElementById('table-surface');
   if (!surface) return;
   surface.onclick = (e) => { if(e.target===surface && selectMode) exitSelectMode(); };
-  surface.innerHTML = '';
+    surface.innerHTML = '';
+  surface.onclick = (e) => {
+    if(!e.target.closest('.nq-card')) unfocusMesh();
+  };
   renderBreadcrumb();
 
   const safeMatch = (a, b) => {
@@ -4264,7 +4266,11 @@ async function renderTableView() {
         <div class="nq-card-foot">
           <span class="nq-card-date">${meta.length?meta.join(' · '):'Empty'}</span>
         </div>`;
-      card.onclick = () => { if(window.longPressConsumed){window.longPressConsumed=false;return;} if(typeof selectMode!=='undefined'&&selectMode){toggleSelectItem(f.id);return;} enterFolder(f.id, f.name); };
+           card.onclick = () => {
+        if(window.longPressConsumed){window.longPressConsumed=false;return;}
+        if(typeof selectMode!=='undefined'&&selectMode){toggleSelectItem(f.id);return;}
+        focusMeshCard(f.id, f.parent_id || null);
+      };
       card.onmousedown = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f});
       card.ontouchstart = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f}, {passive:true});
       card.onmouseup = () => cancelLP(card);
@@ -4454,6 +4460,107 @@ async function getFolderVitality(folderId, allF, allD){
   return youngest || 0;
 }
 
+let currentFocusId = null;
+
+function focusMeshCard(id, folderId) {
+  const mesh = document.getElementById('soup-mesh');
+  if(!mesh) return;
+  const cards = mesh.querySelectorAll('.nq-card');
+  
+  // If tapping already focused card -- unfocus
+  if(currentFocusId === id) {
+    unfocusMesh();
+    return;
+  }
+  currentFocusId = id;
+
+  cards.forEach(card => {
+    const cardFolderId = card.dataset.folderId || '';
+    const cardId = card.dataset.id || card.dataset.folderId || '';
+    // In focus: the card itself + its children (same parent folder) + its parent folder
+    const isTarget = cardId === id;
+    const isChild = folderId && cardFolderId === folderId;
+    const isParent = card.dataset.folderId === folderId;
+    if(isTarget || isChild || isParent) {
+      card.classList.add('in-focus');
+      card.classList.remove('out-focus');
+    } else {
+      card.classList.add('out-focus');
+      card.classList.remove('in-focus');
+    }
+  });
+
+  // Haptic -- one tick per connected card, max 5, 40ms apart
+  const inFocusCount = Math.min(mesh.querySelectorAll('.in-focus').length, 5);
+  for(let i = 0; i < inFocusCount; i++) {
+    setTimeout(() => {
+      if(window.navigator && window.navigator.vibrate) navigator.vibrate(10);
+    }, i * 40);
+  }
+
+  drawLineageThread(id, folderId);
+}
+
+function unfocusMesh() {
+  currentFocusId = null;
+  const mesh = document.getElementById('soup-mesh');
+  if(!mesh) return;
+  mesh.querySelectorAll('.nq-card').forEach(card => {
+    card.classList.remove('in-focus', 'out-focus');
+  });
+  removeLineageThread();
+}
+
+function drawLineageThread(id, folderId) {
+  removeLineageThread();
+  const mesh = document.getElementById('soup-mesh');
+  if(!mesh) return;
+  const focusedCard = mesh.querySelector(`[data-id="${id}"], [data-folder-id="${id}"]`);
+  if(!focusedCard) return;
+
+  const surface = document.getElementById('table-surface');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.id = 'lineage-thread';
+  svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;';
+  surface.style.position = 'relative';
+  surface.appendChild(svg);
+
+  const surfaceRect = surface.getBoundingClientRect();
+  const cardRect = focusedCard.getBoundingClientRect();
+  const cardCX = cardRect.left - surfaceRect.left + cardRect.width / 2;
+  const cardTop = cardRect.top - surfaceRect.top;
+
+  // Line from top of surface down to focused card
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  const startX = cardCX;
+  const startY = 0;
+  const endY = cardTop + cardRect.height / 2;
+  line.setAttribute('d', `M ${startX} ${startY} Q ${startX} ${endY * 0.5} ${cardCX} ${endY}`);
+  line.setAttribute('stroke', 'rgba(200,160,80,0.35)');
+  line.setAttribute('stroke-width', '1');
+  line.setAttribute('fill', 'none');
+  svg.appendChild(line);
+
+  // Branch lines to children
+  const children = mesh.querySelectorAll('.in-focus:not([data-id="' + id + '"])');
+  children.forEach(child => {
+    const childRect = child.getBoundingClientRect();
+    const childCX = childRect.left - surfaceRect.left + childRect.width / 2;
+    const childTopY = childRect.top - surfaceRect.top;
+    const branch = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    branch.setAttribute('d', `M ${cardCX} ${endY} Q ${(cardCX+childCX)/2} ${endY} ${childCX} ${childTopY}`);
+    branch.setAttribute('stroke', 'rgba(200,160,80,0.2)');
+    branch.setAttribute('stroke-width', '0.8');
+    branch.setAttribute('fill', 'none');
+    svg.appendChild(branch);
+  });
+}
+
+function removeLineageThread() {
+  const existing = document.getElementById('lineage-thread');
+  if(existing) existing.remove();
+}
+
 async function buildDiscourseCard(d){
   const date = new Date(d.updated_at||d.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"});
   const preview = d.raw_text ? d.raw_text.replace(/\n+/g,' ').slice(0,120) : '';
@@ -4474,10 +4581,10 @@ async function buildDiscourseCard(d){
       <span class="nq-card-date">${date}</span>
     </div>`;
 
-  card.addEventListener('click', () => {
-    if (window.longPressConsumed) { window.longPressConsumed = false; return; }
-    if (typeof selectMode !== 'undefined' && selectMode) { toggleSelectItem(d.id); return; }
-    openDiscourse(d.id);
+    card.addEventListener('click', () => {
+    if(window.longPressConsumed){window.longPressConsumed=false;return;}
+    if(currentFocusId === d.id) { openDiscourse(d.id); return; }
+    focusMeshCard(d.id, d.folder_id || null);
   });
 
   card.addEventListener('mousedown', e => startLP(e, card, {type:'discourse', id:d.id, name:d.title, data:d}));
