@@ -4717,7 +4717,6 @@ function openQuickAction(card, item) {
   }});
   const div = document.createElement('div');
   div.className = 'nq-qa-divider';
-  menu.appendChild(div);
   actions.push({ glyph: '⊘', label: 'Burn', action: async () => {
     if(item.type === 'folder') {
       if(!confirm(`Burn "${item.name}" and all its contents?`)) return;
@@ -4733,6 +4732,7 @@ function openQuickAction(card, item) {
   }, destructive: true });
 
   actions.forEach(a => {
+      if(a.destructive) menu.appendChild(div);
     const row = document.createElement('div');
     row.className = 'nq-qa-item' + (a.destructive ? ' destructive' : '');
     row.innerHTML = `<span class="nq-qa-glyph">${a.glyph}</span><span>${a.label}</span>`;
