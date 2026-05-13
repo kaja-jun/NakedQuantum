@@ -3568,6 +3568,43 @@ async function deleteFolder(id){
 
 /* DISCOURSES */
 async function getDiscourses(){const a=await dbGetAll("cosm_discourses");return a.filter(d=>!d.isDeleted).sort((a,b)=>b.updated_at-a.updated_at);}
+
+async function updateGravity(id, delta) {
+  try {
+    const rows = db.exec(`SELECT gravity FROM cosm_discourses WHERE id='${id}'`);
+    if(!rows.length || !rows[0].values.length) return;
+    const current = rows[0].values[0][0] || 0;
+    const next = Math.max(0, current + delta);
+    db.run(`UPDATE cosm_discourses SET gravity=${next} WHERE id='${id}'`);
+    await persistDB();
+  } catch(e) { console.warn('gravity update failed', e); }
+}
+
+async function toggleFavourite(id) {
+  try {
+    const rows = db.exec(`SELECT is_favourite FROM cosm_discourses WHERE id='${id}'`);
+    if(!rows.length || !rows[0].values.length) return;
+    const current = rows[0].values[0][0] || 0;
+    const next = current ? 0 : 1;
+    db.run(`UPDATE cosm_discourses SET is_favourite=${next} WHERE id='${id}'`);
+    await persistDB();
+    return next;
+  } catch(e) { console.warn('favourite toggle failed', e); }
+}
+
+// Decay pass -- run once per day, -1 gravity per 7 days untouched
+async function runGravityDecay() {
+  const lastDecay = parseInt(localStorage.getItem('nq_last_decay') || '0');
+  const now = Date.now();
+  if(now - lastDecay < 86400000) return; // once per day
+  const sevenDaysAgo = now - (7 * 86400000);
+  try {
+    db.run(`UPDATE cosm_discourses SET gravity = MAX(0, gravity - 1) WHERE updated_at < ${sevenDaysAgo} AND is_favourite = 0`);
+    await persistDB();
+    localStorage.setItem('nq_last_decay', now.toString());
+  } catch(e) { console.warn('decay pass failed', e); }
+}
+
 async function getDeletedDiscourses(){const a=await dbGetAll("cosm_discourses");return a.filter(d=>d.isDeleted).sort((a,b)=>b.deleted_at-a.deleted_at);}
 const getDiscourse=id=>dbGet("cosm_discourses",id);
 
@@ -4209,8 +4246,8 @@ async function renderTableView() {
   surface.onclick = (e) => {
     if(!e.target.closest('.nq-card')) unfocusMesh();
   };
+  runGravityDecay();
   renderBreadcrumb();
-
   const safeMatch = (a, b) => {
     const isANull = (!a || String(a)==='null' || String(a)==='root' || String(a)==='undefined');
     const isBNull = (!b || String(b)==='null' || String(b)==='root' || String(b)==='undefined');
@@ -4313,7 +4350,14 @@ async function renderTableView() {
     }
 
     // Pull recent across ALL folders, sorted by updated_at desc
-    const allActive = allD.filter(d => !d.isDeleted && decayPhase(d.updated_at||d.created_at||0) !== 'gone');
+        const thirtyDaysAgo = Date.now() - (30 * 86400000);
+    const allActive = allD.filter(d => {
+      if(d.isDeleted) return false;
+      if(d.is_favourite) return true; // favourites never decay from soup
+      const lastTouch = d.updated_at || d.created_at || 0;
+      if(lastTouch < thirtyDaysAgo) return false; // 30 day rule -- gone to deep soup
+      return decayPhase(lastTouch) !== 'gone';
+    });
     allActive.sort((a,b) => (b.updated_at||b.created_at||0) - (a.updated_at||a.created_at||0));
 
     const recentDiscourses = allActive.filter(d => d.item_type === 'discourse' || (!d.item_type && d.item_type !== 'note' && d.item_type !== 'chronicle'));
@@ -4581,8 +4625,15 @@ async function buildDiscourseCard(d){
       <span class="nq-card-date">${date}</span>
     </div>`;
 
-    card.addEventListener('click', () => {
+      card.addEventListener('click', async (e) => {
     if(window.longPressConsumed){window.longPressConsumed=false;return;}
+    // Favourite dot tap
+    if(e.target.closest('.nq-card-fav')) {
+      const next = await toggleFavourite(d.id);
+      const dot = e.target.closest('.nq-card-fav');
+      dot.classList.toggle('active', !!next);
+      return;
+    }
     if(currentFocusId === d.id) { openDiscourse(d.id); return; }
     focusMeshCard(d.id, d.folder_id || null);
   });
@@ -4832,6 +4883,7 @@ async function openDiscourse(id){
   if(!disc){ showToast("Discourse not found ◆"); return; }
   
   currentDiscourseId = id;
+  updateGravity(id, 1);
   
   // Silent Attention Bump
   await dbPut("cosm_discourses", {...disc, updated_at: Date.now()}); 
@@ -4961,7 +5013,8 @@ async function saveCurrentDiscourse(silent=false){
   const ind = document.getElementById('lh-save-indicator');
   if(ind){ ind.textContent='◆ saving'; ind.className='lh-save-indicator saving'; }
   
-  await updateDiscourse(currentDiscourseId, {title, raw_text});
+    await updateDiscourse(currentDiscourseId, {title, raw_text});
+  if(currentDiscourseId) updateGravity(currentDiscourseId, 2); // +2 on edit
   
   if(ind){ ind.textContent='◆ saved'; ind.className='lh-save-indicator visible'; setTimeout(()=>{ ind.className='lh-save-indicator'; },2000); }
   if(!silent)showToast("Saved ◆");
