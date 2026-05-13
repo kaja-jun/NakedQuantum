@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.37.5</title>
+<title>NakedQuantum v0.38</title>
 <style>
 :root {
   --bg: #000000;
@@ -65,8 +65,10 @@ button {
 .folder-card, .discourse-card, .character-card { user-select: none; -webkit-user-select: none; }
 .card-selected { border-color: var(--accent) !important; background: rgba(200,160,80,0.08) !important; }
 /* ── RPG CARD -- unified for all types ── */
-.nq-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; height: 120px; display: flex; flex-direction: column; justify-content: space-between; user-select: none; -webkit-user-select: none; }
+.nq-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; height: 120px; display: flex; flex-direction: column; justify-content: space-between; user-select: none; -webkit-user-select: none; z-index: 1; }
 .nq-card:active { border-color: var(--accent); background: var(--surface2); }
+.nq-create-card { border-style: dashed; border-color: var(--border); }
+.nq-create-card:active { border-color: var(--accent); }
 .nq-card.long-pressing { border-color: var(--accent); background: var(--surface2); transform: scale(0.97); }
 .nq-card.in-focus { border-color: var(--accent-dim); opacity: 1; }
 .nq-card.out-focus { opacity: 0.25; }
@@ -86,6 +88,21 @@ button {
 .nq-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 6px; }
 .nq-card-date { font-size: 9px; color: var(--muted); opacity: 0.6; letter-spacing: 0.3px; }
 .nq-card-count { font-size: 9px; color: var(--accent-dim); opacity: 0.7; letter-spacing: 0.3px; }
+
+/* QUICK ACTION MENU */
+.nq-quick-action { position: fixed; z-index: 999; background: #0e0e0e; border: 1px solid var(--border); border-radius: 14px; padding: 4px 0; min-width: 180px; box-shadow: 0 8px 32px rgba(0,0,0,0.7); }
+.nq-qa-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 13px; color: var(--text); cursor: pointer; letter-spacing: 0.3px; }
+.nq-qa-item:active { background: var(--surface2); }
+.nq-qa-item.destructive { color: #e05555; }
+.nq-qa-glyph { font-size: 14px; opacity: 0.7; width: 18px; text-align: center; }
+.nq-qa-divider { height: 1px; background: var(--border); margin: 3px 0; opacity: 0.5; }
+
+/* PREVIEW OVERLAY */
+.nq-preview-overlay { position: fixed; inset: 0; z-index: 998; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
+.nq-preview-sheet { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; max-width: 480px; max-height: 70vh; overflow-y: auto; }
+.nq-preview-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.nq-preview-body { font-size: 13px; color: var(--muted); line-height: 1.7; font-style: italic; }
+.nq-preview-close { margin-top: 16px; text-align: center; font-size: 11px; color: var(--muted); opacity: 0.5; letter-spacing: 1px; }
 
 /* Legacy aliases -- keep old class names working during migration */
 .folder-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; height: 120px; display: flex; flex-direction: column; justify-content: space-between; }
@@ -1473,8 +1490,8 @@ select.cosm-input {
 .guardian-logs-overlay-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 20px 80px; }
 
 /* FLOATING BOTTOM PILL */
-.bottom-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(10,10,10,0.85); border: 1px solid var(--border); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 700; padding: 6px; border-radius: 24px; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.9); width: max-content; max-width: 92vw; }
-.bottom-bar.visible { display: block; }
+.bottom-bar { display: none !important; }
+.bottom-bar.visible { display: none !important; }
 .bottom-bar-scroll { display: flex; flex-direction: row; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 10px; gap: 6px; }
 .bottom-bar-scroll::-webkit-scrollbar { display: none; }
 .bar-pill { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 54px; padding: 8px 12px; border-radius: 18px; background: transparent; border: 1px solid transparent; cursor: pointer; flex-shrink: 0; transition: background 0.15s, border-color 0.15s; }
@@ -1523,7 +1540,7 @@ select.cosm-input {
   <div class="view-panel soup-view" id="view-soup">
     
     <!-- THE GOLD LINE -->
-    <div id="gold-line-zone">
+      <div id="gold-line-zone" style="display:none;">
       <div class="gold-thread" id="gold-thread"></div>
       <div id="gold-ticks-container"></div>
     </div>
@@ -1975,9 +1992,9 @@ select.cosm-input {
 </div>
 
 <div class="cosm-modal" id="capture-modal">
-  <div class="modal-title">Quick Spark</div>
+  <div class="modal-title">⟡ Spark</div>
   <input class="cosm-input" id="capture-title" placeholder="Title..." maxlength="120">
-  <textarea class="cosm-input" id="capture-body" placeholder="Thought, aphorism, idea..." style="min-height:120px;resize:none;font-family:Georgia,serif;line-height:1.7;font-size:15px;"></textarea>
+  <textarea class="cosm-input" id="capture-body" placeholder="Thought, aphorism, idea..." style="min-height:80px;max-height:320px;resize:none;font-family:Georgia,serif;line-height:1.7;font-size:15px;overflow-y:auto;"></textarea>
   <select class="cosm-select" id="capture-folder"></select>
   <input class="cosm-input" id="capture-new-folder-input" placeholder="New folder name..." maxlength="60" style="display:none;">
   <div class="modal-buttons">
@@ -3594,15 +3611,23 @@ async function toggleFavourite(id) {
 
 // Decay pass -- run once per day, -1 gravity per 7 days untouched
 async function runGravityDecay() {
+  if(!db) return; // db not ready yet
+  // Ensure columns exist -- safe migration
+  try {
+    db.run(`ALTER TABLE cosm_discourses ADD COLUMN is_favourite INTEGER DEFAULT 0`);
+  } catch(e) { /* already exists */ }
+  try {
+    db.run(`ALTER TABLE cosm_discourses ADD COLUMN gravity INTEGER DEFAULT 0`);
+  } catch(e) { /* already exists */ }
   const lastDecay = parseInt(localStorage.getItem('nq_last_decay') || '0');
   const now = Date.now();
   if(now - lastDecay < 86400000) return; // once per day
   const sevenDaysAgo = now - (7 * 86400000);
   try {
-    db.run(`UPDATE cosm_discourses SET gravity = MAX(0, gravity - 1) WHERE updated_at < ${sevenDaysAgo} AND is_favourite = 0`);
+        db.run(`UPDATE cosm_discourses SET gravity = MAX(0, gravity - 1) WHERE updated_at < ${sevenDaysAgo} AND (is_favourite = 0 OR is_favourite IS NULL)`);
     await persistDB();
     localStorage.setItem('nq_last_decay', now.toString());
-  } catch(e) { console.warn('decay pass failed', e); }
+  } catch(e) { console.warn('decay pass failed', e.message, e); }
 }
 
 async function getDeletedDiscourses(){const a=await dbGetAll("cosm_discourses");return a.filter(d=>d.isDeleted).sort((a,b)=>b.deleted_at-a.deleted_at);}
@@ -4213,6 +4238,8 @@ const hdr = document.querySelector('.nq-header');
 document.getElementById('guardian-footer').classList.remove('visible');
 hdr.style.transform = 'translateY(0)';
 hdr.style.marginBottom = '0';
+removeLineageThread();
+currentFocusId = null;
   if (currentView === 'lighthouse' && currentDiscourseId) {
     await saveCurrentDiscourse(true);
     mosaicCache = {};
@@ -4278,8 +4305,18 @@ async function renderTableView() {
 
         // Build unified mesh -- folders + all content together
     const meshGrid = document.createElement('div');
-    meshGrid.className = 'cards-grid';
+        meshGrid.className = 'cards-grid';
     meshGrid.id = 'soup-mesh';
+    // Creation card -- always first
+    const createCard = document.createElement('div');
+        createCard.className = 'nq-card nq-create-card';
+    createCard.id = 'nq-create-card';
+    createCard.dataset.fav = 999;
+    createCard.dataset.gravity = 999;
+    createCard.dataset.time = 999999999999999;
+    createCard.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:6px;opacity:0.25;"><span style="font-size:28px;color:var(--accent);line-height:1;">+</span><span style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Create</span></div>`;
+    createCard.addEventListener('click', () => openCreateMenu(createCard));
+    meshGrid.appendChild(createCard);
 
     // Folders first
     for(const f of activeFolders) {
@@ -4509,8 +4546,8 @@ let currentFocusId = null;
 function focusMeshCard(id, folderId) {
   const mesh = document.getElementById('soup-mesh');
   if(!mesh) return;
-  const cards = mesh.querySelectorAll('.nq-card');
-  
+  const cards = Array.from(mesh.querySelectorAll('.nq-card'));
+
   // If tapping already focused card -- unfocus
   if(currentFocusId === id) {
     unfocusMesh();
@@ -4518,27 +4555,43 @@ function focusMeshCard(id, folderId) {
   }
   currentFocusId = id;
 
+  // Classify cards
+  const focused = [];
+  const others = [];
   cards.forEach(card => {
     const cardFolderId = card.dataset.folderId || '';
-    const cardId = card.dataset.id || card.dataset.folderId || '';
-    // In focus: the card itself + its children (same parent folder) + its parent folder
-    const isTarget = cardId === id;
-    const isChild = folderId && cardFolderId === folderId;
-    const isParent = card.dataset.folderId === folderId;
-    if(isTarget || isChild || isParent) {
+    const cardId = card.dataset.id || '';
+    const isTarget = cardId === id || cardFolderId === id;
+    // Children: cards whose folder_id matches the focused folder card id
+    const isChild = id && cardFolderId === id;
+    // Siblings: cards in same parent folder as focused content card
+    const isSibling = folderId && cardFolderId === folderId && cardId !== id;
+    // Parent folder card
+    const isParent = folderId && cardFolderId === '' && card.dataset.id === folderId;
+
+    if(isTarget || isChild || isSibling || isParent) {
       card.classList.add('in-focus');
       card.classList.remove('out-focus');
+      focused.push(card);
     } else {
       card.classList.add('out-focus');
       card.classList.remove('in-focus');
+      others.push(card);
     }
   });
 
+  // Physical reorder -- move focused cards to top of mesh
+    // Physical reorder -- move focused cards to top but keep create card first
+  focused.forEach(card => mesh.prepend(card));
+  const createCard = document.getElementById('nq-create-card');
+  if(createCard) mesh.prepend(createCard);
+
   // Haptic -- one tick per connected card, max 5, 40ms apart
-  const inFocusCount = Math.min(mesh.querySelectorAll('.in-focus').length, 5);
-  for(let i = 0; i < inFocusCount; i++) {
+  const hapticCount = Math.min(focused.length, 5);
+  for(let i = 0; i < hapticCount; i++) {
     setTimeout(() => {
-      if(window.navigator && window.navigator.vibrate) navigator.vibrate(10);
+      try { window.webkit?.messageHandlers?.haptic?.postMessage('light'); } catch(e) {}
+      if(navigator.vibrate) navigator.vibrate(10);
     }, i * 40);
   }
 
@@ -4553,46 +4606,72 @@ function unfocusMesh() {
     card.classList.remove('in-focus', 'out-focus');
   });
   removeLineageThread();
+  // Re-sort cards back to gravity order -- exclude create card
+  const createCard = document.getElementById('nq-create-card');
+  const cards = Array.from(mesh.querySelectorAll('.nq-card:not(.nq-create-card)'));
+  cards.sort((a, b) => {
+    const aFav = parseInt(a.dataset.fav || 0);
+    const bFav = parseInt(b.dataset.fav || 0);
+    const aGrav = parseInt(a.dataset.gravity || 0);
+    const bGrav = parseInt(b.dataset.gravity || 0);
+    const aTime = parseInt(a.dataset.time || 0);
+    const bTime = parseInt(b.dataset.time || 0);
+    return (bFav - aFav) || (bGrav - aGrav) || (bTime - aTime);
+  });
+  // Create card always first
+  if(createCard) mesh.prepend(createCard);
+  cards.forEach(card => mesh.appendChild(card));
 }
 
 function drawLineageThread(id, folderId) {
   removeLineageThread();
   const mesh = document.getElementById('soup-mesh');
   if(!mesh) return;
-  const focusedCard = mesh.querySelector(`[data-id="${id}"], [data-folder-id="${id}"]`);
+      const focusedCard = mesh.querySelector(`[data-id="${id}"]`) || mesh.querySelector(`[data-folder-id="${id}"]`);
   if(!focusedCard) return;
 
-  const surface = document.getElementById('table-surface');
+  const soupView = document.getElementById('view-soup');
+  const breadcrumb = document.getElementById('breadcrumb-bar');
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.id = 'lineage-thread';
-  svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;';
-  surface.style.position = 'relative';
-  surface.appendChild(svg);
+  svg.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;';
+  document.body.appendChild(svg);
 
-  const surfaceRect = surface.getBoundingClientRect();
+  const bcRect = breadcrumb.getBoundingClientRect();
   const cardRect = focusedCard.getBoundingClientRect();
-  const cardCX = cardRect.left - surfaceRect.left + cardRect.width / 2;
-  const cardTop = cardRect.top - surfaceRect.top;
+  const cardCX = cardRect.left + cardRect.width / 2;
+  const cardTopY = cardRect.top;
+  const cardMidY = cardRect.top + cardRect.height / 2;
 
-  // Line from top of surface down to focused card
+  // Anchor point -- bottom centre of breadcrumb bar
+  const anchorX = bcRect.left + bcRect.width / 2;
+  const anchorY = bcRect.bottom;
+
+  // Main thread -- from breadcrumb anchor down to focused card
   const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  const startX = cardCX;
-  const startY = 0;
-  const endY = cardTop + cardRect.height / 2;
-  line.setAttribute('d', `M ${startX} ${startY} Q ${startX} ${endY * 0.5} ${cardCX} ${endY}`);
-  line.setAttribute('stroke', 'rgba(200,160,80,0.35)');
+  line.setAttribute('d', `M ${anchorX} ${anchorY} C ${anchorX} ${anchorY + (cardTopY - anchorY) * 0.6} ${cardCX} ${cardTopY - 20} ${cardCX} ${cardMidY}`);
+  line.setAttribute('stroke', 'rgba(200,160,80,0.4)');
   line.setAttribute('stroke-width', '1');
   line.setAttribute('fill', 'none');
   svg.appendChild(line);
 
-  // Branch lines to children
-  const children = mesh.querySelectorAll('.in-focus:not([data-id="' + id + '"])');
+  // Small anchor dot at breadcrumb
+  const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('cx', anchorX);
+  dot.setAttribute('cy', anchorY);
+  dot.setAttribute('r', '2.5');
+  dot.setAttribute('fill', 'rgba(200,160,80,0.5)');
+  svg.appendChild(dot);
+
+  // Branch lines -- from focused card to each connected child
+  const children = mesh.querySelectorAll('.in-focus:not(#nq-create-card)');
   children.forEach(child => {
+    if(child === focusedCard) return;
     const childRect = child.getBoundingClientRect();
-    const childCX = childRect.left - surfaceRect.left + childRect.width / 2;
-    const childTopY = childRect.top - surfaceRect.top;
+    const childCX = childRect.left + childRect.width / 2;
+    const childTopY = childRect.top;
     const branch = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    branch.setAttribute('d', `M ${cardCX} ${endY} Q ${(cardCX+childCX)/2} ${endY} ${childCX} ${childTopY}`);
+    branch.setAttribute('d', `M ${cardCX} ${cardMidY} C ${cardCX} ${cardMidY + 30} ${childCX} ${childTopY - 20} ${childCX} ${childTopY}`);
     branch.setAttribute('stroke', 'rgba(200,160,80,0.2)');
     branch.setAttribute('stroke-width', '0.8');
     branch.setAttribute('fill', 'none');
@@ -4603,6 +4682,140 @@ function drawLineageThread(id, folderId) {
 function removeLineageThread() {
   const existing = document.getElementById('lineage-thread');
   if(existing) existing.remove();
+  // Also clean up any body-appended SVG
+  document.querySelectorAll('#lineage-thread').forEach(el => el.remove());
+}
+
+function openQuickAction(card, item) {
+  // Remove any existing menu
+  const existing = document.getElementById('nq-quick-action');
+  if(existing) existing.remove();
+
+  const rect = card.getBoundingClientRect();
+  const menu = document.createElement('div');
+  menu.className = 'nq-quick-action';
+  menu.id = 'nq-quick-action';
+
+  const isContent = item.type === 'discourse';
+
+    const actions = [];
+  if(isContent) {
+    actions.push({ glyph: '◎', label: 'Preview', action: () => openPreview(item.data) });
+    if(item.data.item_type === 'note') {
+            actions.push({ glyph: '○', label: 'Convert to Chronicle', action: async () => {
+        db.run(`UPDATE cosm_discourses SET item_type='chronicle' WHERE id='${item.id}'`);
+        await persistDB();
+        await renderTableView();
+        showToast('Converted to Chronicle ◆');
+      }});
+    }
+  }
+    actions.push({ glyph: '◇', label: 'Rename', action: () => openRenameForItem(item.id) });
+  actions.push({ glyph: '⊙', label: 'Move', action: async () => {
+    selectedItems = new Set([item.id]);
+    await batchMove();
+  }});
+  const div = document.createElement('div');
+  div.className = 'nq-qa-divider';
+  menu.appendChild(div);
+  actions.push({ glyph: '⊘', label: 'Burn', action: async () => {
+    if(item.type === 'folder') {
+      if(!confirm(`Burn "${item.name}" and all its contents?`)) return;
+      await deleteFolderRecursive(item.id);
+      await renderTableView();
+      showToast('Folder burned ◆');
+    } else {
+      await deleteDiscourse(item.id);
+      await persistDB();
+      await renderTableView();
+      showToast('Burned to void ◌');
+    }
+  }, destructive: true });
+
+  actions.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'nq-qa-item' + (a.destructive ? ' destructive' : '');
+    row.innerHTML = `<span class="nq-qa-glyph">${a.glyph}</span><span>${a.label}</span>`;
+    row.addEventListener('click', () => { menu.remove(); overlay.remove(); a.action(); });
+    menu.appendChild(row);
+  });
+
+  // Position near card
+  const menuW = 180;
+  let left = rect.left;
+  let top = rect.bottom + 6;
+  if(left + menuW > window.innerWidth - 10) left = window.innerWidth - menuW - 10;
+  if(top + 200 > window.innerHeight) top = rect.top - 210;
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+
+  // Transparent overlay to dismiss
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:998;';
+  overlay.addEventListener('click', () => { menu.remove(); overlay.remove(); });
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(menu);
+}
+
+function openPreview(d) {
+  const existing = document.getElementById('nq-preview-overlay');
+  if(existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'nq-preview-overlay';
+  overlay.id = 'nq-preview-overlay';
+
+  const maxChars = d.item_type === 'note' ? 280 : 800;
+  const preview = d.raw_text ? d.raw_text.slice(0, maxChars) : 'No content.';
+  const isTruncated = d.raw_text && d.raw_text.length > maxChars;
+  overlay.innerHTML = `
+    <div class="nq-preview-sheet">
+      <div class="nq-preview-title">${escHtml(d.title || 'Untitled')}</div>
+         <div class="nq-preview-body">${escHtml(preview)}${isTruncated ? '…' : ''}</div>
+      <div class="nq-preview-close">TAP ANYWHERE TO CLOSE</div>
+    </div>`;
+
+  overlay.addEventListener('click', () => overlay.remove());
+  document.body.appendChild(overlay);
+}
+
+function openCreateMenu(card) {
+  const existing = document.getElementById('nq-quick-action');
+  if(existing) existing.remove();
+
+  const rect = card.getBoundingClientRect();
+  const menu = document.createElement('div');
+  menu.className = 'nq-quick-action';
+  menu.id = 'nq-quick-action';
+
+  const actions = [
+    { glyph: '▤', label: 'Folder', action: () => openFolderModal() },
+    { glyph: '◇', label: 'Spark', action: () => openQuickCapture() },
+    { glyph: '○', label: 'Chronicle', action: () => handleNewChronicle() },
+    { glyph: '◈', label: 'Discourse', action: () => handleNewDiscourse() },
+  ];
+
+  actions.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'nq-qa-item';
+    row.innerHTML = `<span class="nq-qa-glyph">${a.glyph}</span><span>${a.label}</span>`;
+    row.addEventListener('click', () => { menu.remove(); overlay.remove(); a.action(); });
+    menu.appendChild(row);
+  });
+
+  let left = rect.left;
+  let top = rect.bottom + 6;
+  if(left + 180 > window.innerWidth - 10) left = window.innerWidth - 190;
+  if(top + 200 > window.innerHeight) top = rect.top - 210;
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:998;';
+  overlay.addEventListener('click', () => { menu.remove(); overlay.remove(); });
+  document.body.appendChild(overlay);
+  document.body.appendChild(menu);
 }
 
 async function buildDiscourseCard(d){
@@ -4611,8 +4824,11 @@ async function buildDiscourseCard(d){
   const glyph = d.item_type === 'note' ? '◇' : d.item_type === 'chronicle' ? '○' : '◈';
   const card = document.createElement('div');
   card.className = 'nq-card card';
-  card.dataset.id = d.id;
+    card.dataset.id = d.id;
   card.dataset.folderId = d.folder_id || '';
+  card.dataset.fav = d.is_favourite || 0;
+  card.dataset.gravity = d.gravity || 0;
+  card.dataset.time = d.updated_at || d.created_at || 0;
   if (typeof selectedItems !== 'undefined' && selectedItems.has(d.id)) card.classList.add('card-selected');
   card.innerHTML = `
     <div class="nq-card-head">
@@ -4625,17 +4841,36 @@ async function buildDiscourseCard(d){
       <span class="nq-card-date">${date}</span>
     </div>`;
 
-      card.addEventListener('click', async (e) => {
+        card.addEventListener('click', async (e) => {
     if(window.longPressConsumed){window.longPressConsumed=false;return;}
     // Favourite dot tap
     if(e.target.closest('.nq-card-fav')) {
       const next = await toggleFavourite(d.id);
-      const dot = e.target.closest('.nq-card-fav');
-      dot.classList.toggle('active', !!next);
+      e.target.closest('.nq-card-fav').classList.toggle('active', !!next);
       return;
     }
-    if(currentFocusId === d.id) { openDiscourse(d.id); return; }
-    focusMeshCard(d.id, d.folder_id || null);
+    // Root card (no folder) -- single tap goes straight to editor
+        // Spark -- single tap shows preview, never enters editor directly
+        // Spark -- first tap focuses + thread, second tap shows preview
+    if(d.item_type === 'note') {
+      if(currentFocusId === d.id) {
+        openPreview(d);
+        return;
+      }
+      focusMeshCard(d.id, d.folder_id || null);
+      return;
+    }
+    // Root card (no folder) -- single tap goes straight to editor
+    if(!d.folder_id) {
+      openDiscourse(d.id);
+      return;
+    }
+    // Connected card -- first tap focuses, second tap enters editor
+    if(currentFocusId === d.id) {
+      openDiscourse(d.id);
+      return;
+    }
+    focusMeshCard(d.id, d.folder_id);
   });
 
   card.addEventListener('mousedown', e => startLP(e, card, {type:'discourse', id:d.id, name:d.title, data:d}));
@@ -4945,13 +5180,8 @@ hdr.style.transform = 'translateY(-100%)';
 hdr.style.marginBottom = '-56px';
 showPanel('view-lighthouse');
   
-  if(disc.folder_id && currentFolderId !== disc.folder_id){
-    const f = await dbGet("cosm_folders", disc.folder_id);
-    if(f){
-      breadcrumbPath =[{id: null, name: '◈ The Soup'}, {id: disc.folder_id, name: f.name}];
-      currentFolderId = disc.folder_id;
-    }
-  }
+    currentFolderId = null;
+  breadcrumbPath = [{id: null, name: '◈ The Soup'}];
 }
 
 async function renderMeta(disc){
@@ -5049,23 +5279,17 @@ async function confirmNewDiscourse(){
   const title=document.getElementById('discourse-modal-title').value.trim()||'Untitled Discourse';
   let fId=document.getElementById('discourse-modal-folder').value||null;
   
-  if(fId==='__new__'){
+    if(fId==='__new__'){
     const nfn=document.getElementById('discourse-modal-new-folder').value.trim();
     if(!nfn){showToast('Type a folder name ◆');return;}
     fId=await createFolder(nfn,currentFolderId||null);
-    breadcrumbPath=[{id:null,name:'◈ The Soup'},{id:fId,name:nfn}];
+    // Don't navigate -- stay in current view, just set folder silently
     currentFolderId=fId;
   } else if(!fId){
-    // auto-wrap in Unknown_N
-    const all=await getFolders();
-    const count=all.filter(f=>f.name&&f.name.startsWith('Unknown_')).length+1;
-    const fn=`Unknown_${count}`;
-    fId=await createFolder(fn,null);
-    breadcrumbPath=[{id:null,name:'◈ The Soup'},{id:fId,name:fn}];
-    currentFolderId=fId;
+    fId = currentFolderId || null;
   } else {
-    const f=await dbGet('cosm_folders',fId);
-    if(f){breadcrumbPath=[{id:null,name:'◈ The Soup'},{id:fId,name:f.name}];currentFolderId=fId;}
+    // Don't navigate into selected folder -- just use it
+    currentFolderId=fId;
   }
   closeOverlay();
   
@@ -7810,7 +8034,14 @@ async function openQuickCapture(){
   document.getElementById('capture-title').value='';document.getElementById('capture-title').dataset.userEdited='';
   document.getElementById('capture-body').value='';_cs=false;
   document.getElementById('capture-modal').classList.add('visible');document.getElementById('cosm-overlay').classList.add('active');
-  setTimeout(()=>document.getElementById('capture-body').focus(),100);
+    setTimeout(()=>{
+    const ta = document.getElementById('capture-body');
+    ta.focus();
+    ta.oninput = function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 320) + 'px';
+    };
+  },100);
 }
 
 function closeQuickCapture(){document.getElementById('capture-modal').classList.remove('visible');closeOverlay();}
@@ -7821,17 +8052,12 @@ async function confirmQuickCapture(){
     const title=document.getElementById('capture-title').value.trim()||'Untitled Capture';
     const raw_text=document.getElementById('capture-body').value.trim();if(!raw_text){showToast('Nothing to Spark ◆');return;}
     let fId=document.getElementById('capture-folder').value||null;let isNF=false;let nfn='';
-    if(fId==='__new__'){nfn=document.getElementById('capture-new-folder-input').value.trim();if(!nfn){showToast('Type a folder name first ◆');return;}fId=await createFolder(nfn,currentFolderId);isNF=true;}
-    if(!fId){
-  const all=await getFolders();
-  const count=all.filter(f=>f.name&&f.name.startsWith('Unknown_')).length+1;
-  const fn=`Unknown_${count}`;
-  fId=await createFolder(fn,currentFolderId||null);
-  isNF=true;nfn=fn;}
+        if(fId==='__new__'){nfn=document.getElementById('capture-new-folder-input').value.trim();if(!nfn){showToast('Type a folder name first ◆');return;}fId=await createFolder(nfn,currentFolderId);currentFolderId=fId;}
+    if(!fId){ fId = currentFolderId || null; }
     const now=Date.now();const sparkId='n_'+now;await dbPut('cosm_discourses',{id:sparkId,title,raw_text,folder_id:fId,source_link:null,item_type:'note',created_at:now,updated_at:now});
 if(isWatcherReady) queueWatcherEmbed(sparkId, title, raw_text, 'note');
-    closeQuickCapture();if(navigator.vibrate)navigator.vibrate(50);
-    if(isNF)enterFolder(fId,nfn);else await renderTableView();showToast('Sparked ◆');
+        closeQuickCapture();if(navigator.vibrate)navigator.vibrate(50);
+    await renderTableView();showToast('Sparked ◆');
   }catch(err){console.error(err);showToast('Spark failed ◆');}finally{_cs=false;}
 }
 
@@ -8113,7 +8339,7 @@ function startLP(e,card,item){
   longPressTimer=setTimeout(()=>{
     isLongPress=true;longPressConsumed=true;
     card.classList.remove('long-pressing');
-    enterSelectMode(item);
+    openQuickAction(card, item);
   },LONG_PRESS_DURATION);
 }
 
@@ -9060,7 +9286,7 @@ document.getElementById('btn-guardian-logs-close').addEventListener('click', fun
 
 document.getElementById('btn-guardian-send').addEventListener('click', handleGuardianOffer);
 document.getElementById('btn-guardian-log-close').addEventListener('click', closeGuardianLogDetail);
-  document.getElementById('gold-line-trigger').addEventListener('touchstart', awakenGoldLine, {passive: true});
+    // gold-line-trigger removed
   // Awaken the thread on movement
   const soupView = document.getElementById('view-soup');
   soupView.addEventListener('scroll', awakenGoldLine, {passive: true});
