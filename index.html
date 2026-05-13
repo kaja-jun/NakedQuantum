@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.37.1</title>
+<title>NakedQuantum v0.37.5</title>
 <style>
 :root {
   --bg: #000000;
@@ -60,36 +60,48 @@ button {
 .breadcrumb-arrow { color: var(--muted); font-size: 10px; opacity: 0.5; padding: 0 2px; user-select: none; }
 
 .cards-section-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.45; font-weight: 900; text-transform: uppercase; padding: 14px 0 8px; }
-.cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-@media (min-width: 540px) { .cards-grid { grid-template-columns: repeat(3, 1fr); } }
-.cards-grid .card:last-child:nth-child(odd) { grid-column: span 2; }
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(80px, 22vw, 160px), 1fr)); gap: 36px; }
 
 .folder-card, .discourse-card, .character-card { user-select: none; -webkit-user-select: none; }
 .card-selected { border-color: var(--accent) !important; background: rgba(200,160,80,0.08) !important; }
+/* ── RPG CARD -- unified for all types ── */
+.nq-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; height: 120px; display: flex; flex-direction: column; justify-content: space-between; user-select: none; -webkit-user-select: none; }
+.nq-card:active { border-color: var(--accent); background: var(--surface2); }
+.nq-card.long-pressing { border-color: var(--accent); background: var(--surface2); transform: scale(0.97); }
+.nq-card.in-focus { border-color: var(--accent-dim); opacity: 1; }
+.nq-card.out-focus { opacity: 0.25; }
 
-.folder-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 14px 12px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; }
-.folder-card.long-pressing { background: var(--surface2); border-color: var(--accent); transform: scale(0.98); }
-.folder-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent-dim), transparent); opacity: 0.4; }
+/* Card header row */
+.nq-card-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+.nq-card-glyph { font-size: 13px; line-height: 1; opacity: 0.7; flex-shrink: 0; }
+.nq-card-fav { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: 0; flex-shrink: 0; transition: opacity 0.2s; }
+.nq-card-fav.active { opacity: 1; animation: favPulse 7s ease-in-out infinite; }
+@keyframes favPulse { 0%,90%,100% { opacity:1; } 95% { opacity:0.2; } }
+
+/* Card body */
+.nq-card-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
+.nq-card-preview { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Card footer */
+.nq-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 6px; }
+.nq-card-date { font-size: 9px; color: var(--muted); opacity: 0.6; letter-spacing: 0.3px; }
+.nq-card-count { font-size: 9px; color: var(--accent-dim); opacity: 0.7; letter-spacing: 0.3px; }
+
+/* Legacy aliases -- keep old class names working during migration */
+.folder-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; height: 120px; display: flex; flex-direction: column; justify-content: space-between; }
 .folder-card:active { border-color: var(--accent); background: var(--surface2); }
-.folder-card-top { display: flex; align-items: flex-start; justify-content: space-between; }
-.folder-icon-glyph { font-size: 20px; line-height: 1; opacity: 0.6; }
-.folder-card-name { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.2px; }
-.folder-card-meta { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; margin-top: 3px; }
-
-.discourse-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 200px; display: flex; flex-direction: column; gap: 6px; }
-.discourse-card.long-pressing { background: var(--surface2); border-color: var(--accent); transform: scale(0.98); }
-.discourse-card::after { content: ''; position: absolute; bottom: -3px; left: 4px; right: 4px; height: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; z-index: -1; opacity: 0.7; }
-.discourse-card::before { content: ''; position: absolute; bottom: -6px; left: 8px; right: 8px; height: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; z-index: -2; opacity: 0.5; }
+.folder-card.long-pressing { border-color: var(--accent); background: var(--surface2); transform: scale(0.97); }
+.folder-card-name { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.folder-card-meta { font-size: 10px; color: var(--muted); opacity: 0.6; margin-top: 3px; }
+.discourse-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; min-height: 140px; display: flex; flex-direction: column; gap: 6px; user-select: none; -webkit-user-select: none; }
 .discourse-card:active { border-color: var(--accent); background: var(--surface2); }
+.discourse-card.long-pressing { border-color: var(--accent); background: var(--surface2); transform: scale(0.97); }
 .discourse-card-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.discourse-card-preview { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; flex: 1; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.discourse-card-preview { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .discourse-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
-.discourse-card-date { font-size: 9px; color: var(--muted); letter-spacing: 0.5px; opacity: 0.7; }
-.discourse-card-badges { display: flex; align-items: center; gap: 5px; }
-.badge-mosaic { font-size: 11px; color: var(--accent); opacity: 0.7; }
-.badge-pinned { font-size: 9px; color: var(--accent-dim); opacity: 0.6; letter-spacing: 0.5px; }
+.discourse-card-date { font-size: 9px; color: var(--muted); opacity: 0.6; }
 
-.table-surface { flex: 1; padding: 0 16px 140px; }
+.table-surface { flex: 1; padding: 0 12px 140px; }
 
 .search-bar-wrap { padding: 8px 16px 4px; flex-shrink: 0; }
 .search-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 9px 14px; border-radius: 10px; font-size: 14px; outline: none; caret-color: var(--accent); }
@@ -742,27 +754,14 @@ button {
 .abyss-thread-connector.contra { color: #8ab4cc; opacity: 0.6; }
 
 /* SECTION SCROLL -- capped 2 rows, horizontal overflow */
-.section-scroll-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  margin: 0 -16px;
-  padding: 0 16px 4px;
-  display: flex;
-}
-.section-scroll-wrap::-webkit-scrollbar { display: none; }
-
+.section-scroll-wrap { width: 100%; }
 .section-grid {
-  display: inline-grid;
-  grid-template-rows: repeat(2, 200px);
-  grid-auto-flow: column;
-  grid-auto-columns: 160px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(80px, 22vw, 160px), 1fr));
   gap: 10px;
-  flex-shrink: 0;
+  width: 100%;
 }
-.section-grid.single-row {
-  grid-template-rows: 200px;
-}
+.section-grid.single-row { /* same grid, no special treatment */ }
 
 /* SANCTUARY */
 .sanctuary-view { background: transparent; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -1354,7 +1353,7 @@ select.cosm-input {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-@media (max-width: 480px) { .lighthouse-tools { gap: 14px; } .tbtn { padding: 7px 8px; font-size: 12px; } .view-toggle-btn { padding: 6px 9px; } .cards-grid { gap: 8px; } .lighthouse-scroll { padding: 20px 14px 60px; } }
+@media (max-width: 480px) { .lighthouse-tools { gap: 14px; } .tbtn { padding: 7px 8px; font-size: 12px; } .view-toggle-btn { padding: 6px 9px; } .lighthouse-scroll { padding: 20px 14px 60px; } }
 
 /* GUARDIAN OF THE ABYSS ARCHIVES -- COLD REALM */
 :root {
@@ -2230,7 +2229,7 @@ try {
 } catch(e) {}
 
   db.run("CREATE TABLE IF NOT EXISTS cosm_folders(id TEXT PRIMARY KEY, name TEXT, parent_id TEXT, created_at INTEGER, updated_at INTEGER, is_deleted INTEGER DEFAULT 0)");
-  db.run("CREATE TABLE IF NOT EXISTS cosm_discourses(id TEXT PRIMARY KEY, title TEXT, raw_text TEXT, folder_id TEXT, source_link TEXT, item_type TEXT, tags TEXT, is_deleted INTEGER DEFAULT 0, deleted_at INTEGER, created_at INTEGER, updated_at INTEGER)");
+db.run("CREATE TABLE IF NOT EXISTS cosm_discourses(id TEXT PRIMARY KEY, title TEXT, raw_text TEXT, folder_id TEXT, created_at INTEGER, updated_at INTEGER, item_type TEXT, source_link TEXT, is_deleted INTEGER DEFAULT 0, deleted_at INTEGER, is_favourite INTEGER DEFAULT 0, gravity INTEGER DEFAULT 0)");
   db.run("CREATE TABLE IF NOT EXISTS guardian_summaries(id TEXT PRIMARY KEY, discourse_id TEXT, summary TEXT, map_type TEXT, first_line TEXT, last_line TEXT, key_terms TEXT, emotional_arc TEXT, extractive_summary TEXT, watcher TEXT, word_count INTEGER, model TEXT, generated_at INTEGER, created_at INTEGER, updated_at INTEGER)");
   db.run("CREATE TABLE IF NOT EXISTS immutable_entities(id TEXT PRIMARY KEY, display_name TEXT NOT NULL, archetype_tag TEXT, existential_function TEXT, system_prompt_core TEXT, constraints TEXT, voice_limits TEXT, memory_policy TEXT DEFAULT 'stateless', model_variants TEXT, example_turns TEXT, watcher_thresholds TEXT, guardian_audit_hash TEXT, sigil_svg TEXT, locked_at INTEGER, signature TEXT, is_hidden INTEGER DEFAULT 0, created_at INTEGER, updated_at INTEGER)");
   db.run("CREATE TABLE IF NOT EXISTS immutable_entities_enc(id TEXT PRIMARY KEY, enc TEXT)");
@@ -2248,6 +2247,8 @@ try {
   db.run("CREATE TABLE IF NOT EXISTS cosm_backlinks_enc(id TEXT PRIMARY KEY, enc TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS history_enc(id TEXT PRIMARY KEY, enc TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS guardian_logs(id TEXT PRIMARY KEY, invoked_at INTEGER, model_used TEXT, soup_snapshot_count INTEGER, response_text TEXT, was_silent INTEGER DEFAULT 0, thread TEXT, emotional_weight REAL DEFAULT 1.0)");
+db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoked_at INTEGER, model_used TEXT, soup_snapshot_count INTEGER, ciphertext TEXT, iv TEXT, was_silent INTEGER DEFAULT 0, thread TEXT, emotional_weight REAL DEFAULT 1.0)");
+  db.run("CREATE TABLE IF NOT EXISTS guardian_summaries_enc(id TEXT PRIMARY KEY, enc TEXT)");
 
   ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'].forEach
 (t => {
@@ -2430,8 +2431,8 @@ function initWorker(){
 
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
-//const NQ_DEV_MODE = true;
-const NQ_DEV_MODE = false;
+const NQ_DEV_MODE = true;
+//const NQ_DEV_MODE = false;
 
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
 const W_SIMILARITY_THRESHOLD = NQ_DEV_MODE ? 0.50 : 0.73;
@@ -2552,6 +2553,13 @@ async function shouldWatcherShow() {
 async function initWatcher() {
   try {
     watcherDB = await openWatcherDB();
+    // Fast path -- model already loaded, just reconnect
+    if (watcherEmbedder) {
+      isWatcherReady = true;
+      updateWatcherStatusUI();
+      scheduleWatcherPass();
+      return;
+    }
     showWatcherLoading();
     const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js');
     env.useBrowserCache = true;
@@ -4082,7 +4090,7 @@ function showPanel(id){
     unloadDeepMapper();
     // Revive Watcher after Safari has a moment to free Cartographer's WASM
     setTimeout(() => {
-      if (!isWatcherReady && watcherDB) {
+            if (!isWatcherReady && !watcherEmbedder && watcherDB) {
         initWatcher();
       }
     }, 800);
@@ -4197,7 +4205,10 @@ async function renderTableView() {
   const surface = document.getElementById('table-surface');
   if (!surface) return;
   surface.onclick = (e) => { if(e.target===surface && selectMode) exitSelectMode(); };
-  surface.innerHTML = '';
+    surface.innerHTML = '';
+  surface.onclick = (e) => {
+    if(!e.target.closest('.nq-card')) unfocusMesh();
+  };
   renderBreadcrumb();
 
   const safeMatch = (a, b) => {
@@ -4228,32 +4239,47 @@ async function renderTableView() {
       if(phase === 'active' || phase === 'fading') activeFolders.push({...f, _phase: phase});
     }
 
-    if(activeFolders.length) {
-      const l = document.createElement('div'); l.className = 'cards-section-label'; l.textContent = 'Folders'; surface.appendChild(l);
-      const wrap = document.createElement('div'); wrap.className = 'section-scroll-wrap';
-      const g = document.createElement('div'); g.className = 'section-grid' + (activeFolders.length <= 2 ? ' single-row' : '');
-      for(const f of activeFolders) {
-        const dc = allD.filter(d => safeMatch(d.folder_id, f.id) && d.item_type !== 'note' && !d.isDeleted).length;
-        const nc = allD.filter(d => safeMatch(d.folder_id, f.id) && d.item_type === 'note' && !d.isDeleted).length;
-        const sc = allF.filter(sf => safeMatch(sf.parent_id, f.id) && !sf.isDeleted).length;
-        const meta = [];
-        if(dc > 0) meta.push(dc + (dc===1?' discourse':' discourses'));
-        if(nc > 0) meta.push(nc + (nc===1?' spark':' sparks'));
-        if(sc > 0) meta.push(sc + (sc===1?' folder':' folders'));
-        const card = document.createElement('div');
-        card.className = 'folder-card card' + (f._phase==='fading'?' card-fading':'');
-        if(typeof selectedItems !== 'undefined' && selectedItems.has(f.id)) card.classList.add('card-selected');
-        card.innerHTML = `<div class="folder-card-top"><span class="folder-icon-glyph">▤</span></div><div class="folder-card-name">${escHtml(f.name)}</div><div class="folder-card-meta">${meta.length?meta.join(' · '):'Empty'}</div>`;
-        card.onclick = () => { if(window.longPressConsumed){window.longPressConsumed=false;return;} if(typeof selectMode!=='undefined'&&selectMode){toggleSelectItem(f.id);return;} enterFolder(f.id, f.name); };
-        card.onmousedown = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f});
-        card.ontouchstart = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f}, {passive:true});
-        card.onmouseup = () => cancelLP(card);
-        card.onmouseleave = () => cancelLP(card);
-        card.ontouchend = () => cancelLP(card);
-        g.appendChild(card);
-      }
-      wrap.appendChild(g); surface.appendChild(wrap);
+        // Build unified mesh -- folders + all content together
+    const meshGrid = document.createElement('div');
+    meshGrid.className = 'cards-grid';
+    meshGrid.id = 'soup-mesh';
+
+    // Folders first
+    for(const f of activeFolders) {
+      const dc = allD.filter(d => safeMatch(d.folder_id, f.id) && d.item_type !== 'note' && !d.isDeleted).length;
+      const nc = allD.filter(d => safeMatch(d.folder_id, f.id) && d.item_type === 'note' && !d.isDeleted).length;
+      const sc = allF.filter(sf => safeMatch(sf.parent_id, f.id) && !sf.isDeleted).length;
+      const meta = [];
+      if(dc > 0) meta.push(dc + (dc===1?' discourse':' discourses'));
+      if(nc > 0) meta.push(nc + (nc===1?' spark':' sparks'));
+      if(sc > 0) meta.push(sc + (sc===1?' folder':' folders'));
+      const card = document.createElement('div');
+      card.className = 'nq-card card' + (f._phase==='fading'?' card-fading':'');
+      card.dataset.folderId = f.id;
+      if(typeof selectedItems !== 'undefined' && selectedItems.has(f.id)) card.classList.add('card-selected');
+      card.innerHTML = `
+        <div class="nq-card-head">
+          <span class="nq-card-glyph">▤</span>
+          <span class="nq-card-fav"></span>
+        </div>
+        <div class="nq-card-title">${escHtml(f.name)}</div>
+        <div class="nq-card-foot">
+          <span class="nq-card-date">${meta.length?meta.join(' · '):'Empty'}</span>
+        </div>`;
+           card.onclick = () => {
+        if(window.longPressConsumed){window.longPressConsumed=false;return;}
+        if(typeof selectMode!=='undefined'&&selectMode){toggleSelectItem(f.id);return;}
+        focusMeshCard(f.id, f.parent_id || null);
+      };
+      card.onmousedown = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f});
+      card.ontouchstart = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f}, {passive:true});
+      card.onmouseup = () => cancelLP(card);
+      card.onmouseleave = () => cancelLP(card);
+      card.ontouchend = () => cancelLP(card);
+      meshGrid.appendChild(card);
     }
+
+    surface.appendChild(meshGrid);
 
     // Recent sections helper -- 6 cards + lineage portal
     const RECENT_MAX = 6;
@@ -4294,9 +4320,14 @@ async function renderTableView() {
     const recentSparks = allActive.filter(d => d.item_type === 'note');
     const recentChronicles = allActive.filter(d => d.item_type === 'chronicle');
 
-    await renderRecentSection('Recent Discourses', recentDiscourses);
-    await renderRecentSection('Recent Sparks', recentSparks);
-    await renderRecentSection('Recent Chronicles', recentChronicles);
+            const allMesh = [...recentDiscourses, ...recentSparks, ...recentChronicles];
+    allMesh.sort((a,b) => (b.is_favourite||0) - (a.is_favourite||0) || (b.gravity||0) - (a.gravity||0) || (b.updated_at||0) - (a.updated_at||0));
+    const mesh = document.getElementById('soup-mesh');
+    for(const d of allMesh) {
+      const card = await buildDiscourseCard(d);
+      if(d._phase==='fading') card.classList.add('card-fading');
+      mesh.appendChild(card);
+    }
 
     // Decay motes across all
     const forgottenCount = allD.filter(d => !d.isDeleted && (decayPhase(d.updated_at||d.created_at||0)==='forgotten'||decayPhase(d.updated_at||d.created_at||0)==='gone')).length;
@@ -4341,9 +4372,20 @@ async function renderTableView() {
       const meta = [];
       if(dc > 0) meta.push(dc + ' item' + (dc===1?'':'s'));
       if(sc > 0) meta.push(sc + ' folder' + (sc===1?'':'s'));
-      const card = document.createElement('div');
-      card.className = 'folder-card card' + (f._phase==='fading'?' card-fading':'');
-      card.innerHTML = `<div class="folder-card-top"><span class="folder-icon-glyph">▤</span></div><div class="folder-card-name">${escHtml(f.name)}</div><div class="folder-card-meta">${meta.length?meta.join(' · '):'Empty'}</div>`;
+              const card = document.createElement('div');
+        card.className = 'nq-card card' + (f._phase==='fading'?' card-fading':'');
+        card.dataset.folderId = f.id;
+        if(typeof selectedItems !== 'undefined' && selectedItems.has(f.id)) card.classList.add('card-selected');
+                card.innerHTML = `
+          <div class="nq-card-head">
+            <span class="nq-card-glyph">▤</span>
+            <span class="nq-card-fav"></span>
+          </div>
+          <div class="nq-card-title" style="margin-top:2px;">${escHtml(f.name)}</div>
+          <div class="nq-card-foot">
+            <span class="nq-card-date">${meta.length?meta.join(' · '):'Empty'}</span>
+          </div>`;
+
       card.onclick = () => { if(window.longPressConsumed){window.longPressConsumed=false;return;} enterFolder(f.id, f.name); };
       card.onmousedown = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f});
       card.ontouchstart = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f}, {passive:true});
@@ -4418,21 +4460,131 @@ async function getFolderVitality(folderId, allF, allD){
   return youngest || 0;
 }
 
-async function buildDiscourseCard(d){
-  const tile = await getMosaicTile(d.id), hasMosaic = tile && tile.anchors && tile.anchors.length > 0;
-  const date = new Date(d.updated_at||d.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"});
-  const preview = d.raw_text ? d.raw_text.replace(/\n+/g,' ').slice(0,220) : '';
-  const card = document.createElement('div');
-  card.className = 'discourse-card card';
+let currentFocusId = null;
+
+function focusMeshCard(id, folderId) {
+  const mesh = document.getElementById('soup-mesh');
+  if(!mesh) return;
+  const cards = mesh.querySelectorAll('.nq-card');
   
+  // If tapping already focused card -- unfocus
+  if(currentFocusId === id) {
+    unfocusMesh();
+    return;
+  }
+  currentFocusId = id;
+
+  cards.forEach(card => {
+    const cardFolderId = card.dataset.folderId || '';
+    const cardId = card.dataset.id || card.dataset.folderId || '';
+    // In focus: the card itself + its children (same parent folder) + its parent folder
+    const isTarget = cardId === id;
+    const isChild = folderId && cardFolderId === folderId;
+    const isParent = card.dataset.folderId === folderId;
+    if(isTarget || isChild || isParent) {
+      card.classList.add('in-focus');
+      card.classList.remove('out-focus');
+    } else {
+      card.classList.add('out-focus');
+      card.classList.remove('in-focus');
+    }
+  });
+
+  // Haptic -- one tick per connected card, max 5, 40ms apart
+  const inFocusCount = Math.min(mesh.querySelectorAll('.in-focus').length, 5);
+  for(let i = 0; i < inFocusCount; i++) {
+    setTimeout(() => {
+      if(window.navigator && window.navigator.vibrate) navigator.vibrate(10);
+    }, i * 40);
+  }
+
+  drawLineageThread(id, folderId);
+}
+
+function unfocusMesh() {
+  currentFocusId = null;
+  const mesh = document.getElementById('soup-mesh');
+  if(!mesh) return;
+  mesh.querySelectorAll('.nq-card').forEach(card => {
+    card.classList.remove('in-focus', 'out-focus');
+  });
+  removeLineageThread();
+}
+
+function drawLineageThread(id, folderId) {
+  removeLineageThread();
+  const mesh = document.getElementById('soup-mesh');
+  if(!mesh) return;
+  const focusedCard = mesh.querySelector(`[data-id="${id}"], [data-folder-id="${id}"]`);
+  if(!focusedCard) return;
+
+  const surface = document.getElementById('table-surface');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.id = 'lineage-thread';
+  svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;';
+  surface.style.position = 'relative';
+  surface.appendChild(svg);
+
+  const surfaceRect = surface.getBoundingClientRect();
+  const cardRect = focusedCard.getBoundingClientRect();
+  const cardCX = cardRect.left - surfaceRect.left + cardRect.width / 2;
+  const cardTop = cardRect.top - surfaceRect.top;
+
+  // Line from top of surface down to focused card
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  const startX = cardCX;
+  const startY = 0;
+  const endY = cardTop + cardRect.height / 2;
+  line.setAttribute('d', `M ${startX} ${startY} Q ${startX} ${endY * 0.5} ${cardCX} ${endY}`);
+  line.setAttribute('stroke', 'rgba(200,160,80,0.35)');
+  line.setAttribute('stroke-width', '1');
+  line.setAttribute('fill', 'none');
+  svg.appendChild(line);
+
+  // Branch lines to children
+  const children = mesh.querySelectorAll('.in-focus:not([data-id="' + id + '"])');
+  children.forEach(child => {
+    const childRect = child.getBoundingClientRect();
+    const childCX = childRect.left - surfaceRect.left + childRect.width / 2;
+    const childTopY = childRect.top - surfaceRect.top;
+    const branch = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    branch.setAttribute('d', `M ${cardCX} ${endY} Q ${(cardCX+childCX)/2} ${endY} ${childCX} ${childTopY}`);
+    branch.setAttribute('stroke', 'rgba(200,160,80,0.2)');
+    branch.setAttribute('stroke-width', '0.8');
+    branch.setAttribute('fill', 'none');
+    svg.appendChild(branch);
+  });
+}
+
+function removeLineageThread() {
+  const existing = document.getElementById('lineage-thread');
+  if(existing) existing.remove();
+}
+
+async function buildDiscourseCard(d){
+  const date = new Date(d.updated_at||d.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  const preview = d.raw_text ? d.raw_text.replace(/\n+/g,' ').slice(0,120) : '';
+  const glyph = d.item_type === 'note' ? '◇' : d.item_type === 'chronicle' ? '○' : '◈';
+  const card = document.createElement('div');
+  card.className = 'nq-card card';
+  card.dataset.id = d.id;
+  card.dataset.folderId = d.folder_id || '';
   if (typeof selectedItems !== 'undefined' && selectedItems.has(d.id)) card.classList.add('card-selected');
+  card.innerHTML = `
+    <div class="nq-card-head">
+      <span class="nq-card-glyph">${glyph}</span>
+      <span class="nq-card-fav${d.is_favourite?' active':''}" data-fav="${d.id}"></span>
+    </div>
+    <div class="nq-card-title">${escHtml(d.title||'Untitled')}</div>
+    ${preview?`<div class="nq-card-preview">${escHtml(preview)}</div>`:''}
+    <div class="nq-card-foot">
+      <span class="nq-card-date">${date}</span>
+    </div>`;
 
-  card.innerHTML = `<div class="discourse-card-title">${escHtml(d.title||'Untitled')}</div>${preview?`<div class="discourse-card-preview">${escHtml(preview)}</div>`:''}<div class="discourse-card-footer"><span class="discourse-card-date">${date}</span><div class="discourse-card-badges">${d.source_link?'<span class="badge-pinned">⟵ pinned</span>':''}${hasMosaic?'<span class="badge-mosaic">◈</span>':''}</div></div>`;
-
-  card.addEventListener('click', () => {
-    if (window.longPressConsumed) { window.longPressConsumed = false; return; }
-    if (typeof selectMode !== 'undefined' && selectMode) { toggleSelectItem(d.id); return; }
-    openDiscourse(d.id);
+    card.addEventListener('click', () => {
+    if(window.longPressConsumed){window.longPressConsumed=false;return;}
+    if(currentFocusId === d.id) { openDiscourse(d.id); return; }
+    focusMeshCard(d.id, d.folder_id || null);
   });
 
   card.addEventListener('mousedown', e => startLP(e, card, {type:'discourse', id:d.id, name:d.title, data:d}));
@@ -7309,7 +7461,7 @@ abyssCanvas.addEventListener('touchcancel', abyssTouchEnd);
   window.addEventListener('resize', abyssResize);
 
   abyssRunning = true;
-  await buildAbyssObjects();
+  try { await buildAbyssObjects(); } catch(e) { console.warn('Abyss build partial:', e.message); }
   // Seed background neural noise
   abyssSparks = [];
   for (var s = 0; s < 40; s++) {
@@ -7878,18 +8030,20 @@ finally{document.getElementById("extract-loading").classList.remove("visible");}
 
 async function confirmDeleteMosaic(){if(!currentDiscourseId)return;if(!confirm("Clear mosaic anchors?"))return;await deleteMosaicTile(currentDiscourseId);await renderMosaicDisplay(currentDiscourseId);showToast("Mosaic cleared ◆");}
 
-function openDataPage(){
-  // Pre-fill Supabase fields
-  document.getElementById('data-supa-url').value = localStorage.getItem('nq_supa_url') || '';
-  document.getElementById('data-supa-key').value = localStorage.getItem('nq_supa_key') || '';
+async function openDataPage(){
+  // Pre-fill Supabase fields from secure storage
+  document.getElementById('data-supa-url').value = (await readSecureKey('nq_supa_url')) || '';
+  document.getElementById('data-supa-key').value = (await readSecureKey('nq_supa_key')) || '';
   updateWatcherStatusUI();
   showPanel('view-data');
 }
 
 // Save Supabase config from Data page
-function saveSupaFromDataPage(){
-  localStorage.setItem('nq_supa_url', document.getElementById('data-supa-url').value.trim());
-  localStorage.setItem('nq_supa_key', document.getElementById('data-supa-key').value.trim());
+async function saveSupaFromDataPage(){
+    const supaUrlVal = document.getElementById('data-supa-url').value.trim();
+  const supaKeyVal = document.getElementById('data-supa-key').value.trim();
+  if(supaUrlVal) await storeSecureKey('nq_supa_url', supaUrlVal);
+  if(supaKeyVal) await storeSecureKey('nq_supa_key', supaKeyVal);
   showToast('Supabase config saved ◆');
 }
 
