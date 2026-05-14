@@ -2126,8 +2126,11 @@ select.cosm-input {
 <script>
 let generateFastMapData = null;
 (async () => {
+  const btn = document.getElementById('btn-run-cartographer');
+  if (btn) btn.disabled = true;
   const mod = await import('./cartographer.js');
   generateFastMapData = mod.generateFastMapData;
+  if (btn) btn.disabled = false;
 })();
 
 /* STATE */
@@ -2413,6 +2416,7 @@ function initWorker(){
   const workerBlob = new Blob([WORKER_CODE], { type: 'application/javascript' });
   const workerUrl = URL.createObjectURL(workerBlob);
   _worker = new Worker(workerUrl);
+  URL.revokeObjectURL(workerUrl);
 
   _worker.onmessage = e => {
     const { id, result, error } = e.data;
@@ -2452,6 +2456,7 @@ let watcherDB = null;
 let isWatcherReady = false;
 let watcherQueue = [];
 let isWatcherProcessing = false;
+let isRunningPass = false;
 
 function openWatcherDB() {
   return new Promise((resolve, reject) => {
@@ -2605,6 +2610,9 @@ async function processWatcherQueue() {
   if (isWatcherProcessing || watcherQueue.length === 0) return;
   isWatcherProcessing = true;
   while (watcherQueue.length > 0) {
+    // If Watcher was torn down mid-yield (e.g. Guardian view entry),
+    // leave remaining items in queue so they are processed after reinit.
+    if (!isWatcherReady || !watcherEmbedder) break;
     const item = watcherQueue.shift();
     try { await embedDiscourseMain(item.id, item.title, item.body, item.itemType, item.lastSeenActive); }
     catch (e) { console.warn('Watcher Embed Error', e); }
@@ -2619,7 +2627,7 @@ async function processWatcherQueue() {
     });
   }
   updateWatcherStatusUI();
-  refreshWatcherDot(); // NEW
+  refreshWatcherDot();
   isWatcherProcessing = false;
 }
 
@@ -2648,6 +2656,9 @@ async function embedDiscourseMain(id, title, body, itemType, lastSeenActive) {
 }
 
 async function runSimilarityPassMain() {
+  if (isRunningPass) return;
+  isRunningPass = true;
+  try {
   const now = Date.now();
   const activeCutoff = now - (W_DECAY_ACTIVE_DAYS * W_DAY_MS);
   const linkExpiryCutoff = now - (W_LINK_EXPIRY_DAYS * W_DAY_MS);
@@ -2693,6 +2704,9 @@ async function runSimilarityPassMain() {
   localStorage.setItem('nq_watcher_last_pass', now.toString());
   updateWatcherStatusUI();
   refreshWatcherDot();
+  } finally {
+    isRunningPass = false;
+  }
 }
 
 function scheduleWatcherPass() {
