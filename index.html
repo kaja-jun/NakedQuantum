@@ -65,6 +65,66 @@ button {
 .bc-knot-wrap:active .bc-knot { transform: scale(1.4); }
 .bc-drop-line { stroke: rgba(200,160,80,0.4); stroke-width: 1; fill: none; }
 
+/* Deep soup / sanctuary breadcrumb row (avoid default blue link styling on buttons) */
+.breadcrumb-seg { display: inline-flex; align-items: center; flex-shrink: 0; }
+.breadcrumb-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 2px;
+  max-width: min(200px, 42vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.breadcrumb-btn.current { color: var(--accent); }
+.breadcrumb-arrow { color: var(--muted); opacity: 0.35; font-size: 10px; padding: 0 4px; flex-shrink: 0; }
+
+#sanctuary-breadcrumb-bar.breadcrumb-bar,
+#deep-soup-breadcrumb.breadcrumb-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+/* Deep soup void -- narrow columns need compact action row */
+.void-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+.void-card-actions button {
+  flex: 1 1 calc(50% - 3px);
+  min-width: 0;
+  font-size: 8px !important;
+  padding: 5px 3px !important;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.void-card-actions .surface-btn {
+  background: none;
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+}
+.void-card-actions .purge-btn {
+  background: none;
+  border: 1px solid var(--danger);
+  color: #ff6060;
+}
+
+/* Sanctuary custom characters -- wider cells than soup mesh grid */
+.cards-grid.sanctuary-char-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 16px;
+}
+
 .cards-section-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.45; font-weight: 900; text-transform: uppercase; padding: 14px 0 8px; }
 .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(80px, 22vw, 160px), 1fr)); gap: 26px; }
 
@@ -1594,6 +1654,22 @@ select.cosm-input {
       <span>∞</span> Sync Now
     </button>
 
+    <div class="cards-section-label" style="margin-top:24px;" id="data-neural-block">Neural Gateway</div>
+    <p style="font-size:10px;color:var(--muted);line-height:1.4;margin:4px 0 8px;">OpenRouter credentials for Guardian, chat, and extraction. Keys are stored encrypted on device.</p>
+    <label style="font-size:11px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;">API credentials</label>
+    <input type="password" class="cosm-input" id="input-api-key" placeholder="Universal API Key">
+    <input type="text" class="cosm-input" id="input-base-url" placeholder="https://openrouter.ai/api/v1" style="margin-top:8px;">
+    <label style="font-size:11px;color:var(--muted);text-transform:uppercase;display:block;margin-top:16px;margin-bottom:4px;">Active model</label>
+    <select id="input-model" class="cosm-input" style="appearance:auto; -webkit-appearance:menulist; background:var(--surface2); color:var(--text);"></select>
+    <button type="button" onclick="removeActiveModel()" style="background:#1a0000; color:var(--danger); width:100%; height:34px; border-radius:8px; border:1px solid #330000; font-weight:900; font-size:9px; letter-spacing:1px; margin-top:8px; text-transform:uppercase;">Purge engine</button>
+    <div style="display:flex; gap:8px; align-items:center; margin-top:12px;">
+      <input type="text" id="summon-input" class="cosm-input" placeholder="Paste OpenRouter ID..." style="margin:0 !important; flex:1; min-width:0;">
+      <button type="button" onclick="summonNewModel()" style="background:var(--accent); color:#000; width:52px; height:40px; border-radius:8px; font-weight:900; font-size:10px; border:none; flex-shrink:0;">ADD</button>
+    </div>
+    <button class="management-btn export" id="btn-data-gateway-save" style="width:100%;margin-top:14px;border-color:var(--accent-dim);">
+      <span>◈</span> Save gateway
+    </button>
+
     <div class="cards-section-label" style="margin-top:24px;">Sovereign Key</div>
     <p style="font-size:10px;color:var(--muted);line-height:1.4;margin:4px 0 8px;">If you lose this key and your device, your words belong to the Abyss forever.</p>
     <button onclick="showSovereignKey()" style="background:var(--surface2);color:var(--accent);border:1px solid var(--accent-dim);width:100%;height:40px;border-radius:8px;font-weight:900;font-size:11px;">Reveal & Copy Key</button>
@@ -2016,35 +2092,6 @@ select.cosm-input {
   <div class="modal-buttons">
     <button class="modal-btn-cancel" id="btn-discourse-modal-cancel">Cancel</button>
     <button class="modal-btn-confirm" id="btn-discourse-modal-confirm">Enter Lighthouse</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="settings-modal">
-  <div class="modal-title">Neural Gateway</div>
-  
-  <div class="settings-group" style="margin-bottom: 20px;">
-    <label style="font-size:11px;color:var(--muted);text-transform:uppercase;">API Credentials</label>
-    <input type="password" class="cosm-input" id="input-api-key" placeholder="Universal API Key">
-    <input type="text" class="cosm-input" id="input-base-url" placeholder="https://openrouter.ai/api/v1">
-  </div>
-
-  <div class="settings-group" style="margin-bottom: 20px;">
-    <label style="font-size:11px;color:var(--muted);text-transform:uppercase;">Active Model Engine</label>
-    <select id="input-model" class="cosm-input" style="appearance:auto; -webkit-appearance:menulist; background:var(--surface2); color:var(--text);"></select>
-    
-    <button onclick="removeActiveModel()" style="background:#1a0000; color:var(--danger); width:100%; height:40px; border-radius:8px; border:1px solid #330000; font-weight:900; font-size:10px; letter-spacing:1.5px; margin-top:8px; text-transform:uppercase;">Purge to the Abyss</button>
-  </div>
-
-  <div style="display:flex; gap:8px; align-items:center;">
-    <input type="text" id="summon-input" class="cosm-input" placeholder="Paste OpenRouter ID..." style="margin:0 !important; flex:1;">
-    <button onclick="summonNewModel()" style="background:var(--accent); color:#000; width:60px; height:40px; border-radius:8px; font-weight:900; font-size:11px; border:none;">ADD</button>
-  </div>
-<div class="settings-group" style="margin-bottom: 20px; border-top: 1px solid var(--border); padding-top: 20px;">
-</div>
-
-  <div class="modal-buttons" style="margin-top:25px;">
-    <button class="modal-btn-cancel" onclick="closeOverlay()">Cancel</button>
-    <button class="modal-btn-confirm" id="btn-settings-confirm">Solidify</button>
   </div>
 </div>
 
@@ -4329,7 +4376,7 @@ async function renderTableView() {
     const meshGrid = document.createElement('div');
         meshGrid.className = 'cards-grid';
     meshGrid.id = 'soup-mesh';
-    // Creation card -- always first
+    // Creation card -- anchored last in mesh (see appendChild after content)
     const createCard = document.createElement('div');
         createCard.className = 'nq-card nq-create-card';
     createCard.id = 'nq-create-card';
@@ -4338,7 +4385,6 @@ async function renderTableView() {
     createCard.dataset.time = 999999999999999;
     createCard.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:6px;opacity:0.25;"><span style="font-size:28px;color:var(--accent);line-height:1;">+</span><span style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;">Create</span></div>`;
     createCard.addEventListener('click', () => openCreateMenu(createCard));
-    meshGrid.appendChild(createCard);
 
     // Folders first
     for(const f of activeFolders) {
@@ -4439,6 +4485,7 @@ async function renderTableView() {
       if(d._phase==='fading') card.classList.add('card-fading');
       mesh.appendChild(card);
     }
+    if(createCard) mesh.appendChild(createCard);
 
     // Decay motes across all
     const forgottenCount = allD.filter(d => !d.isDeleted && (decayPhase(d.updated_at||d.created_at||0)==='forgotten'||decayPhase(d.updated_at||d.created_at||0)==='gone')).length;
@@ -4585,9 +4632,11 @@ async function focusMeshCard(id, folderId, label) {
     unfocusMesh();
     return;
   }
+  const prevFocusId = currentFocusId;
   currentFocusId = id;
 
-  // Update focus chain
+  const allFolders = await getFolders();
+
   const existingIdx = focusChain.findIndex(k => k.id === id);
   if(existingIdx >= 0) {
     // Trim chain -- remove injected cards beyond this point
@@ -4598,11 +4647,18 @@ async function focusMeshCard(id, folderId, label) {
       if(!belongsToChain) c.remove();
     });
   } else {
+    let isDrillDown = false;
+    if (prevFocusId) {
+      const targetFolder = allFolders.find(f => f.id === id && !f.isDeleted);
+      if (targetFolder && String(targetFolder.parent_id) === String(prevFocusId)) {
+        isDrillDown = true;
+      }
+    }
+    if (!isDrillDown) focusChain = [];
     focusChain.push({ id, folderId, label: label || id });
   }
 
   // Inject nested folders that aren't in mesh yet
-  const allFolders = await getFolders();
   const nestedFolders = allFolders.filter(f =>
     !f.isDeleted &&
     String(f.parent_id) === String(id) &&
@@ -4684,10 +4740,10 @@ async function focusMeshCard(id, folderId, label) {
     }
   });
 
-  // Physical reorder
+  // Physical reorder -- create card last so lineage thread does not anchor to it first
   const createCard = document.getElementById('nq-create-card');
   tier1.forEach(card => mesh.prepend(card));
-  if(createCard) mesh.prepend(createCard);
+  if(createCard) mesh.appendChild(createCard);
 
   // Haptic
   const hapticCount = Math.min(tier1.length, 5);
@@ -4729,7 +4785,7 @@ function unfocusMesh() {
     const bTime = parseInt(b.dataset.time || 0);
     return (bFav - aFav) || (bGrav - aGrav) || (bTime - aTime);
   });
-  if(createCard) mesh.prepend(createCard);
+  if(createCard) mesh.appendChild(createCard);
   cards.forEach(card => mesh.appendChild(card));
   renderChainKnots(false);
 }
@@ -4754,11 +4810,10 @@ function drawLineageThread(id, folderId) {
   const cardTopY = cardRect.top;
   const cardMidY = cardRect.top + cardRect.height / 2;
 
-  // Anchor point -- bottom centre of breadcrumb bar
-    // Anchor from current knot X position
-  const KNOT_SPACING = 52;
-  const SIDE_PAD = 24;
-  const knotIdx = breadcrumbPath.length - 1;
+  // Anchor from current knot X position (must match renderChainKnots spacing + focusChain depth)
+  const KNOT_SPACING = 56;
+  const SIDE_PAD = 28;
+  const knotIdx = focusChain.length;
   const knotLocalX = SIDE_PAD + knotIdx * KNOT_SPACING;
   const anchorX = bcRect.left + knotLocalX - (document.getElementById('breadcrumb-bar').scrollLeft || 0);
   const anchorY = bcRect.bottom;
@@ -5621,13 +5676,16 @@ strip.appendChild(ctaCard);
 
   // --- CHARACTER GRID (below) ---
   if (hasChars) {
-    const l = document.createElement('div');
-    l.className = 'cards-section-label';
-    l.textContent = hasIEs ? '' : 'Characters & Entities';
-    surface.appendChild(l);
-    
+    const qtrim = sanctuarySearchQuery.trim();
+    if (!hasIEs || qtrim) {
+      const l = document.createElement('div');
+      l.className = 'cards-section-label';
+      l.textContent = qtrim ? 'Matching characters' : 'Characters & Entities';
+      surface.appendChild(l);
+    }
+
     const g = document.createElement('div');
-    g.className = 'cards-grid';
+    g.className = 'cards-grid sanctuary-char-grid';
     
     for (const c of filteredChars) {
       const card = document.createElement('div');
@@ -5720,13 +5778,15 @@ async function openCharacterForge(idOrChar){
   // Unmake button -- only for existing characters
   const unmakeZone = document.getElementById('forge-unmake-zone');
   const unmakeBtn = document.getElementById('btn-forge-unmake');
-  if (id) {
+  const isNewForge = document.getElementById('forge-container').dataset.isNew === 'true';
+  if (activeCharId && !isNewForge) {
     unmakeZone.style.display = 'block';
+    const charIdToPurge = activeCharId;
     unmakeBtn.onclick = async () => {
       if (!confirm('Unmake this character? This cannot be undone.')) return;
       if (!confirm('Final warning. All data and photos will be destroyed. Continue?')) return;
-      await deleteAllCharacterPhotos(id);
-      await purgeCharacter(id);
+      await deleteAllCharacterPhotos(charIdToPurge);
+      await purgeCharacter(charIdToPurge);
       showToast('Character unbound from existence.');
       showPanel('view-sanctuary');
       renderSanctuaryView();
@@ -5747,9 +5807,9 @@ roles.forEach(r=>{
   const photoSection = document.getElementById('forge-photo-section');
   if (photoSection) {
     // Only show photos for standard characters, keep hidden for Immutable Entities
-    if (id && document.getElementById('forge-container').dataset.isIE !== 'true') {
+    if (activeCharId && document.getElementById('forge-container').dataset.isIE !== 'true') {
       photoSection.style.display = 'block';
-      renderForgePhotos(id, c.image);
+      renderForgePhotos(activeCharId, c.image);
     } else {
       photoSection.style.display = 'none';
     }
@@ -8158,9 +8218,9 @@ if(voidedDiscs.length > 0) {
       <div class="discourse-card-footer">
         <span class="discourse-card-date">Severed ${date}</span>
       </div>
-      <div style="display:flex;gap:6px;margin-top:8px;">
-        <button class="surface-btn" data-id="${d.id}" style="flex:1;background:none;border:1px solid var(--accent-dim);color:var(--accent);font-size:10px;padding:6px;border-radius:6px;font-weight:700;">↩ Undeath</button>
-        <button class="purge-btn" data-id="${d.id}" style="flex:1;background:none;border:1px solid var(--danger);color:#ff6060;font-size:10px;padding:6px;border-radius:6px;font-weight:700;">✕ Purge</button>
+      <div class="void-card-actions">
+        <button class="surface-btn" data-id="${d.id}" type="button">↩ Undeath</button>
+        <button class="purge-btn" data-id="${d.id}" type="button">✕ Purge</button>
       </div>
     `;
     
@@ -8329,18 +8389,17 @@ function removeActiveModel() {
   showToast("Purged to the Abyss ◆");
 }
 
-function openSettingsModal(){
-  document.getElementById('input-api-key').value = localStorage.getItem('nq_api_key') || '';
-  document.getElementById('input-base-url').value = localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1';
-  renderModelSelect();
-  document.getElementById('settings-modal').classList.add('visible');
-  document.getElementById('cosm-overlay').classList.add('active');
+async function openSettingsModal(){
+  await openDataPage();
+  requestAnimationFrame(() => {
+    document.getElementById('data-neural-block')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 }
 
 function closeOverlay(){
   document.getElementById("cosm-overlay").classList.remove("active");
    ['folder-modal','rename-modal','move-modal',
- 'global-search-modal','capture-modal','discourse-modal','settings-modal',
+ 'global-search-modal','capture-modal','discourse-modal',
  'burn-disc-modal','ie-manifest-modal','role-modal','persona-select-modal','create-modal',
  'guardian-settings-modal'
 ].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove("visible");});
@@ -8526,6 +8585,9 @@ async function openDataPage(){
   // Pre-fill Supabase fields from secure storage
   document.getElementById('data-supa-url').value = (await readSecureKey('nq_supa_url')) || '';
   document.getElementById('data-supa-key').value = (await readSecureKey('nq_supa_key')) || '';
+  document.getElementById('input-api-key').value = (await readSecureKey('nq_api_key')) || '';
+  document.getElementById('input-base-url').value = localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1';
+  renderModelSelect();
   updateWatcherStatusUI();
   showPanel('view-data');
 }
@@ -9423,13 +9485,12 @@ document.getElementById('btn-ie-manifest-close').addEventListener('click', close
 
 document.getElementById('btn-ie-dev-forge').addEventListener('click', devCreateIEDraft);
 
-document.getElementById('btn-settings-confirm').addEventListener('click', async () => {
+  document.getElementById('btn-data-gateway-save').addEventListener('click', async () => {
     const apiKey = document.getElementById('input-api-key').value.trim();
     if (apiKey) await storeSecureKey('nq_api_key', apiKey);
     localStorage.setItem('nq_base_url', document.getElementById('input-base-url').value.trim());
     localStorage.setItem('nq_model', document.getElementById('input-model').value);
-    closeOverlay();
-    showToast("Gateway Solidified ◆");
+    showToast("Gateway solidified ◆");
   });
 
   document.getElementById('btn-forge-save').addEventListener('click',saveCharacterForge);
@@ -9866,7 +9927,9 @@ async function init(){
   await _workerReady;
   await renderTableView();
 
+  renderModelSelect();
   document.getElementById('input-api-key').value=await readSecureKey('nq_api_key')||'';
+  document.getElementById('input-base-url').value=localStorage.getItem('nq_base_url')||'https://openrouter.ai/api/v1';
   document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
   initWatcher();
   initGuardianModel();
