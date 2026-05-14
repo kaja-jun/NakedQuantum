@@ -83,7 +83,6 @@ button {
 .breadcrumb-btn.current { color: var(--accent); }
 .breadcrumb-arrow { color: var(--muted); opacity: 0.35; font-size: 10px; padding: 0 4px; flex-shrink: 0; }
 
-#sanctuary-breadcrumb-bar.breadcrumb-bar,
 #deep-soup-breadcrumb.breadcrumb-bar {
   display: flex;
   align-items: center;
@@ -852,8 +851,8 @@ button {
 }
 .section-grid.single-row { /* same grid, no special treatment */ }
 
-/* SANCTUARY */
-.sanctuary-view { background: transparent; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+/* SANCTUARY (base layout; realm palette lives under #view-sanctuary) */
+.sanctuary-view { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; -webkit-overflow-scrolling: touch; }
 
 .character-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; }
 .character-card:active { border-color: var(--accent); background: var(--surface2); }
@@ -1315,6 +1314,372 @@ button {
   white-space: nowrap;
 }
 
+/* ═══ SANCTUARY REALM (scoped — Soup / IE page unchanged) ═══ */
+#view-sanctuary.sanctuary-view {
+  --s-bg: #001a12;
+  --s-surface: #061e17;
+  --s-ie-surface: #06231b;
+  --s-border: #1e3a2f;
+  --s-text: #d8e2dd;
+  --s-text-sec: #8a9f95;
+  --s-text-muted: #5a7268;
+  --s-gold: #c8a050;
+  --s-glow: rgba(80, 140, 110, 0.06);
+  --s-mycelium: rgba(140, 200, 180, 0.08);
+  --s-branch: #0a2a1f;
+  background: var(--s-bg);
+  color: var(--s-text);
+}
+
+#view-sanctuary .sanctuary-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+#view-sanctuary .sanctuary-mycelium-canvas {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 52%;
+  width: 100%;
+  display: block;
+  opacity: 0.85;
+}
+#view-sanctuary .sanctuary-branches {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+#view-sanctuary .sanctuary-branch-svg {
+  position: absolute;
+  width: min(42vw, 160px);
+  height: min(42vw, 160px);
+  color: var(--s-branch);
+  opacity: 0.08;
+  animation: sanctuaryBranchBreathe 14s ease-in-out infinite;
+}
+#view-sanctuary .sanctuary-branch-tl { top: -4px; left: -4px; transform: rotate(0deg); }
+#view-sanctuary .sanctuary-branch-tr { top: -4px; right: -4px; transform: scaleX(-1); }
+#view-sanctuary .sanctuary-branch-bl { bottom: -4px; left: -4px; transform: scaleY(-1); }
+#view-sanctuary .sanctuary-branch-br { bottom: -4px; right: -4px; transform: scale(-1, -1); }
+#view-sanctuary .sanctuary-branch-tr,
+#view-sanctuary .sanctuary-branch-br { animation-delay: -3.5s; }
+#view-sanctuary .sanctuary-branch-bl { animation-delay: -7s; }
+@keyframes sanctuaryBranchBreathe {
+  0%, 100% { opacity: 0.08; }
+  50% { opacity: 0.15; }
+}
+
+#view-sanctuary .sanctuary-layers {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#view-sanctuary .sanctuary-app-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid var(--s-border);
+  background: linear-gradient(180deg, rgba(6, 30, 23, 0.92), rgba(6, 30, 23, 0.55));
+}
+#view-sanctuary .sanctuary-title-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+#view-sanctuary .sanctuary-glyph {
+  font-size: 11px;
+  color: var(--s-gold);
+  flex-shrink: 0;
+  opacity: 0.95;
+}
+#view-sanctuary .sanctuary-title-text {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--s-gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#view-sanctuary .sanctuary-menu-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--s-border);
+  background: var(--s-surface);
+  color: var(--s-text-sec);
+  opacity: 0.6;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+#view-sanctuary .sanctuary-menu-btn:active {
+  opacity: 1;
+  background: var(--s-ie-surface);
+}
+
+#view-sanctuary .sanctuary-drawer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+#view-sanctuary .sanctuary-drawer.open {
+  pointer-events: auto;
+  opacity: 1;
+}
+#view-sanctuary .sanctuary-drawer-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: block;
+}
+#view-sanctuary .sanctuary-drawer-panel {
+  position: absolute;
+  top: 56px;
+  right: 10px;
+  min-width: 200px;
+  background: var(--s-ie-surface);
+  border: 1px solid var(--s-border);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#view-sanctuary .sanctuary-drawer-item {
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--s-text);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+}
+#view-sanctuary .sanctuary-drawer-item:active {
+  background: rgba(80, 140, 110, 0.12);
+}
+
+#view-sanctuary .sanctuary-surface.table-surface {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 6px 140px;
+  background: transparent;
+}
+
+#view-sanctuary .ie-strip {
+  padding: 12px 12px 14px;
+  gap: 12px;
+}
+/* Slightly larger IE strip cards (Sanctuary only) */
+#view-sanctuary .ie-strip .ie-card {
+  width: 176px;
+  min-height: 218px;
+  background: var(--s-ie-surface);
+  border: 1px solid var(--s-border);
+  box-shadow: inset 0 0 24px var(--s-glow);
+}
+#view-sanctuary .ie-card::before {
+  background: linear-gradient(90deg, rgba(200, 160, 80, 0.35), transparent);
+  opacity: 0.35;
+}
+#view-sanctuary .ie-card.draft::before {
+  opacity: 0.15;
+}
+#view-sanctuary .ie-card:active {
+  background: var(--s-surface);
+  border-color: var(--s-gold);
+}
+#view-sanctuary .ie-card-text {
+  padding: 20px 10px 0;
+}
+#view-sanctuary .ie-card-name {
+  font-weight: 600;
+  color: var(--s-text-sec);
+  font-size: 14px;
+}
+#view-sanctuary .ie-card-archetype {
+  color: var(--s-text-muted);
+}
+#view-sanctuary .ie-card-function {
+  color: var(--s-text-sec);
+}
+#view-sanctuary .ie-card-sigil {
+  margin-bottom: 12px;
+}
+#view-sanctuary .ie-card-sigil svg {
+  animation: ieSigilSpin 30s linear infinite;
+  filter: drop-shadow(0 0 1px rgba(200, 160, 80, 0.22));
+}
+#view-sanctuary .ie-card-sigil.pulse svg {
+  animation: ieSigilSpin 30s linear infinite, ieSigilGlowSanctuary 4s ease-in-out infinite;
+}
+@keyframes ieSigilGlowSanctuary {
+  0%, 100% { opacity: 0.65; filter: drop-shadow(0 0 1px rgba(200, 160, 80, 0.2)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 4px rgba(200, 160, 80, 0.35)); }
+}
+
+#view-sanctuary .ie-card.ie-card-archive {
+  border-style: dashed;
+  border-color: rgba(30, 58, 47, 0.7);
+  opacity: 1;
+}
+#view-sanctuary .ie-card.ie-card-archive .ie-card-name {
+  color: var(--s-gold);
+  opacity: 0.85;
+}
+#view-sanctuary .ie-card.ie-card-archive .ie-card-function {
+  font-style: italic;
+  color: var(--s-text-muted);
+  font-size: 10px;
+  margin-top: 10px;
+}
+#view-sanctuary .ie-card.ie-card-archive .ie-card-sigil {
+  color: var(--s-text-muted);
+  font-size: 22px;
+  font-weight: 300;
+  opacity: 0.85;
+}
+
+#view-sanctuary .sanctuary-divider {
+  padding: 10px 14px;
+  margin-top: 2px;
+}
+#view-sanctuary .sanctuary-divider-line {
+  background: rgba(30, 58, 47, 0.3);
+  height: 1px;
+}
+#view-sanctuary .sanctuary-divider-label {
+  color: var(--s-gold);
+  opacity: 0.5;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  font-weight: 900;
+}
+
+#view-sanctuary .cards-section-label {
+  color: var(--s-text-muted);
+  opacity: 0.85;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#view-sanctuary .sanctuary-char-grid {
+  gap: 10px;
+  padding: 0 4px;
+}
+/* Custom characters: compact to align visually with IE strip cards */
+#view-sanctuary .character-card {
+  background: var(--s-surface);
+  border: 1px solid var(--s-border);
+  min-height: 168px;
+  padding: 10px 11px 8px;
+  box-shadow: inset 0 0 28px var(--s-glow);
+}
+#view-sanctuary .character-card:active {
+  border-color: rgba(80, 140, 110, 0.45);
+  background: var(--s-ie-surface);
+}
+#view-sanctuary .character-card.card-selected {
+  border-color: rgba(200, 160, 80, 0.55) !important;
+  background: rgba(80, 140, 110, 0.08) !important;
+}
+#view-sanctuary .char-card-name {
+  color: var(--s-text);
+  font-weight: 600;
+  font-size: 14px;
+}
+#view-sanctuary .char-card-role {
+  color: var(--s-text-sec);
+  font-size: 10px;
+}
+#view-sanctuary .char-avatar {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  background: #0a1f18;
+  border-color: var(--s-border);
+  color: var(--s-text-muted);
+}
+#view-sanctuary .char-card-footer {
+  padding-top: 6px;
+}
+#view-sanctuary .char-card-meta {
+  color: var(--s-text-muted);
+  font-size: 8px;
+  letter-spacing: 0.4px;
+}
+
+#view-sanctuary .table-empty {
+  opacity: 0.35;
+}
+#view-sanctuary .table-empty-text {
+  color: var(--s-text-sec);
+}
+
+/* Bloom burst (appended to body; class only used with sanctuary) */
+.sanctuary-bloom-node {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 60;
+  background: radial-gradient(circle, rgba(140, 200, 180, 0.18) 0%, rgba(140, 200, 180, 0.06) 38%, transparent 72%);
+  transform: scale(0.25);
+  opacity: 0.95;
+  transition: transform 0.58s ease-out, opacity 0.58s ease-out;
+}
+.sanctuary-bloom-node.sanctuary-bloom-node-on {
+  transform: scale(1.05);
+  opacity: 0;
+}
+.sanctuary-bloom-node.sanctuary-bloom-ambient {
+  background: radial-gradient(circle, rgba(140, 200, 180, 0.1) 0%, rgba(140, 200, 180, 0.03) 45%, transparent 75%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #view-sanctuary .sanctuary-branch-svg {
+    animation: none;
+    opacity: 0.1;
+  }
+  #view-sanctuary .ie-card-sigil svg,
+  #view-sanctuary .ie-card-sigil.pulse svg {
+    animation: none !important;
+  }
+  .sanctuary-bloom-node {
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .forge-view { background: var(--bg); overflow: hidden; }
 .forge-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px 100px; }
 .forge-container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
@@ -1765,12 +2130,33 @@ select.cosm-input {
   </div>
 
   <div class="view-panel sanctuary-view hidden" id="view-sanctuary">
-<div class="breadcrumb-bar" id="sanctuary-breadcrumb-bar">
-  <div class="breadcrumb-seg">
-    <button class="breadcrumb-btn current">◈ The Sanctuary</button>
-  </div>
-</div>
-    <div class="table-surface" id="sanctuary-surface"></div>
+    <div class="sanctuary-atmosphere" aria-hidden="true">
+      <canvas id="sanctuary-mycelium-canvas" class="sanctuary-mycelium-canvas" width="300" height="300"></canvas>
+      <div class="sanctuary-branches">
+        <svg class="sanctuary-branch-svg sanctuary-branch-tl" viewBox="0 0 100 100" preserveAspectRatio="xMinYMin meet" aria-hidden="true"><path d="M100 28 Q38 48 0 100" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <svg class="sanctuary-branch-svg sanctuary-branch-tr" viewBox="0 0 100 100" preserveAspectRatio="xMaxYMin meet" aria-hidden="true"><path d="M100 28 Q38 48 0 100" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <svg class="sanctuary-branch-svg sanctuary-branch-bl" viewBox="0 0 100 100" preserveAspectRatio="xMinYMax meet" aria-hidden="true"><path d="M100 28 Q38 48 0 100" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <svg class="sanctuary-branch-svg sanctuary-branch-br" viewBox="0 0 100 100" preserveAspectRatio="xMaxYMax meet" aria-hidden="true"><path d="M100 28 Q38 48 0 100" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+    <div class="sanctuary-layers">
+      <header class="sanctuary-app-header">
+        <div class="sanctuary-title-cluster">
+          <span class="sanctuary-glyph" aria-hidden="true">◈</span>
+          <span class="sanctuary-title-text">The Sanctuary</span>
+        </div>
+        <button type="button" class="sanctuary-menu-btn" id="sanctuary-menu-btn" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer">⋯</button>
+      </header>
+      <div class="sanctuary-drawer" id="sanctuary-drawer" aria-hidden="true">
+        <button type="button" class="sanctuary-drawer-scrim" id="sanctuary-drawer-scrim" tabindex="-1" aria-label="Close menu"></button>
+        <div class="sanctuary-drawer-panel" id="sanctuary-drawer-panel" role="menu">
+          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-persona" role="menuitem">⁂ Persona</button>
+          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-memory" role="menuitem">▣ Memory vault</button>
+          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-search" role="menuitem">⌕ Search</button>
+        </div>
+      </div>
+      <div class="table-surface sanctuary-surface" id="sanctuary-surface"></div>
+    </div>
   </div>
   <div class="view-panel hidden" id="view-ie" style="background:var(--bg);display:flex;flex-direction:column;">
   <div class="lighthouse-nav">
@@ -2217,6 +2603,189 @@ let deepSoupFolderId = null;
 let deepSoupPath = [{id: null, name: '꩜ Deep Soup'}];
 let deepMapperLoadSuppressed = false;
 let deepMapperSuppressTimer = null;
+
+/* SANCTUARY REALM — mycelium, blooms, drawer */
+let sanctuaryAmbienceActive = false;
+let sanctuaryMyceliumRaf = null;
+let sanctuaryAmbientBloomTimer = null;
+let sanctuaryMyceliumResizeObs = null;
+const SANCTUARY_MYCEL_MAX = 10;
+let sanctuaryMyceliumParticles = [];
+
+function closeSanctuaryDrawer(){
+  const d = document.getElementById('sanctuary-drawer');
+  const btn = document.getElementById('sanctuary-menu-btn');
+  if (d) {
+    d.classList.remove('open');
+    d.setAttribute('aria-hidden', 'true');
+  }
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+function openSanctuaryDrawer(){
+  const d = document.getElementById('sanctuary-drawer');
+  const btn = document.getElementById('sanctuary-menu-btn');
+  if (d) {
+    d.classList.add('open');
+    d.setAttribute('aria-hidden', 'false');
+  }
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+function sanctuaryPrefersReducedMotion(){
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; }
+}
+function spawnSanctuaryBloomPage(cx, cy, ambient){
+  if (sanctuaryPrefersReducedMotion()) return;
+  const panel = document.getElementById('view-sanctuary');
+  if (!panel || panel.classList.contains('hidden')) return;
+  const el = document.createElement('div');
+  el.className = 'sanctuary-bloom-node' + (ambient ? ' sanctuary-bloom-ambient' : '');
+  const size = ambient ? (90 + Math.random() * 100) : (100 + Math.random() * 90);
+  const jitterX = (Math.random() - 0.5) * (ambient ? size * 0.45 : 40);
+  const jitterY = (Math.random() - 0.5) * (ambient ? size * 0.45 : 40);
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.style.left = (cx + jitterX - size / 2) + 'px';
+  el.style.top = (cy + jitterY - size / 2) + 'px';
+  const dur = 520 + Math.floor(Math.random() * 140);
+  el.style.transitionDuration = dur + 'ms';
+  document.body.appendChild(el);
+  requestAnimationFrame(() => { el.classList.add('sanctuary-bloom-node-on'); });
+  setTimeout(() => { try { el.remove(); } catch (_) {} }, dur + 90);
+}
+function scheduleSanctuaryAmbientBloom(){
+  clearTimeout(sanctuaryAmbientBloomTimer);
+  if (!sanctuaryAmbienceActive || sanctuaryPrefersReducedMotion()) return;
+  const delay = 10000 + Math.random() * 14000;
+  sanctuaryAmbientBloomTimer = setTimeout(() => {
+    sanctuaryAmbientBloomTimer = null;
+    if (!sanctuaryAmbienceActive || document.hidden) { scheduleSanctuaryAmbientBloom(); return; }
+    const panel = document.getElementById('view-sanctuary');
+    if (!panel || panel.classList.contains('hidden')) { scheduleSanctuaryAmbientBloom(); return; }
+    const r = panel.getBoundingClientRect();
+    const cx = r.left + r.width * (0.12 + Math.random() * 0.76);
+    const cy = r.top + r.height * (0.18 + Math.random() * 0.64);
+    spawnSanctuaryBloomPage(cx, cy, true);
+    scheduleSanctuaryAmbientBloom();
+  }, delay);
+}
+function resizeSanctuaryMyceliumCanvas(){
+  const c = document.getElementById('sanctuary-mycelium-canvas');
+  const panel = document.getElementById('view-sanctuary');
+  if (!c || !panel) return;
+  const r = panel.getBoundingClientRect();
+  const bh = Math.max(120, r.height * 0.52);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  c.width = Math.max(1, Math.floor(r.width * dpr));
+  c.height = Math.max(1, Math.floor(bh * dpr));
+  c.style.width = Math.floor(r.width) + 'px';
+  c.style.height = Math.floor(bh) + 'px';
+}
+function initSanctuaryMyceliumParticles(w, h){
+  sanctuaryMyceliumParticles = [];
+  for (let i = 0; i < SANCTUARY_MYCEL_MAX; i++) {
+    sanctuaryMyceliumParticles.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.045,
+      vy: (Math.random() - 0.5) * 0.038 - 0.01
+    });
+  }
+}
+function tickSanctuaryMycelium(){
+  if (!sanctuaryAmbienceActive) {
+    sanctuaryMyceliumRaf = null;
+    return;
+  }
+  if (document.hidden) {
+    sanctuaryMyceliumRaf = null;
+    return;
+  }
+  const panel = document.getElementById('view-sanctuary');
+  const c = document.getElementById('sanctuary-mycelium-canvas');
+  if (!c || !panel || panel.classList.contains('hidden')) {
+    sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+    return;
+  }
+  if (sanctuaryPrefersReducedMotion()) {
+    sanctuaryMyceliumRaf = null;
+    return;
+  }
+  const ctx = c.getContext('2d');
+  if (!ctx) {
+    sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+    return;
+  }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = c.width / dpr;
+  const h = c.height / dpr;
+  if (sanctuaryMyceliumParticles.length !== SANCTUARY_MYCEL_MAX) initSanctuaryMyceliumParticles(w, h);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = 'rgba(140,200,180,0.08)';
+  for (const p of sanctuaryMyceliumParticles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < -4) p.x = w + 4;
+    if (p.x > w + 4) p.x = -4;
+    if (p.y < -4) p.y = h + 4;
+    if (p.y > h + 4) p.y = -4;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+}
+function startSanctuaryRealm(){
+  sanctuaryAmbienceActive = true;
+  const c = document.getElementById('sanctuary-mycelium-canvas');
+  const panel = document.getElementById('view-sanctuary');
+  if (c && panel && !sanctuaryPrefersReducedMotion()) {
+    resizeSanctuaryMyceliumCanvas();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    initSanctuaryMyceliumParticles(c.width / dpr, c.height / dpr);
+    cancelAnimationFrame(sanctuaryMyceliumRaf);
+    sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+    if (typeof ResizeObserver !== 'undefined') {
+      if (sanctuaryMyceliumResizeObs) sanctuaryMyceliumResizeObs.disconnect();
+      sanctuaryMyceliumResizeObs = new ResizeObserver(() => {
+        if (!sanctuaryAmbienceActive) return;
+        resizeSanctuaryMyceliumCanvas();
+        const d = Math.min(window.devicePixelRatio || 1, 2);
+        const cw = document.getElementById('sanctuary-mycelium-canvas');
+        if (cw) initSanctuaryMyceliumParticles(cw.width / d, cw.height / d);
+      });
+      sanctuaryMyceliumResizeObs.observe(panel);
+    }
+  }
+  scheduleSanctuaryAmbientBloom();
+}
+function stopSanctuaryRealm(){
+  sanctuaryAmbienceActive = false;
+  clearTimeout(sanctuaryAmbientBloomTimer);
+  sanctuaryAmbientBloomTimer = null;
+  cancelAnimationFrame(sanctuaryMyceliumRaf);
+  sanctuaryMyceliumRaf = null;
+  if (sanctuaryMyceliumResizeObs) {
+    sanctuaryMyceliumResizeObs.disconnect();
+    sanctuaryMyceliumResizeObs = null;
+  }
+  closeSanctuaryDrawer();
+}
+function onSanctuarySurfacePointerDown(ev){
+  const panel = document.getElementById('view-sanctuary');
+  if (!panel || panel.classList.contains('hidden')) return;
+  const dr = document.getElementById('sanctuary-drawer');
+  if (dr && dr.classList.contains('open')) return;
+  const t = ev.target;
+  if (!t || !t.closest) return;
+  const card = t.closest('.ie-card, .character-card');
+  if (!card || !panel.contains(card)) return;
+  const r = card.getBoundingClientRect();
+  const cx = r.left + r.width * (0.38 + Math.random() * 0.24);
+  const cy = r.top + r.height * (0.36 + Math.random() * 0.28);
+  spawnSanctuaryBloomPage(cx, cy, false);
+}
 
 /* PERSONA */
 function getGlobalPersona(){
@@ -4296,7 +4865,14 @@ function showPanel(id){
       const dps = document.getElementById('data-page-scroll');
       if (dps) { dps.scrollLeft = 0; dps.scrollTop = 0; }
     }
+    if (id === 'view-sanctuary') {
+      const ss = document.getElementById('sanctuary-surface');
+      if (ss) { ss.scrollLeft = 0; ss.scrollTop = 0; }
+    }
   });
+
+  if (id === 'view-sanctuary') startSanctuaryRealm();
+  else stopSanctuaryRealm();
 }
 
 /* HEADER BUTTONS */
@@ -4354,6 +4930,7 @@ activeIE = null;
 }
 
 function openSanctuarySearch(){
+  closeSanctuaryDrawer();
   const modal=document.getElementById('global-search-modal');
   document.getElementById('global-search-input').placeholder='Search characters...';
   document.getElementById('global-search-input').value='';
@@ -5739,14 +6316,13 @@ async function renderSanctuaryView(){
 }
         // CTA card -- always last
     const ctaCard = document.createElement('div');
-ctaCard.className = 'ie-card';
-ctaCard.style.cssText = 'border-style: dashed; opacity: 0.6;';
+ctaCard.className = 'ie-card ie-card-archive';
 ctaCard.innerHTML = `
   <div class="ie-card-text">
-    <div class="ie-card-name" style="color: var(--accent-dim);">All Entities</div>
+    <div class="ie-card-name">All Entities</div>
     <div class="ie-card-function">View the full archive</div>
   </div>
-  <div class="ie-card-sigil" style="opacity: 0.5;">∞</div>
+  <div class="ie-card-sigil">∞</div>
 `;
 ctaCard.addEventListener('click', () => openIEPage());
 strip.appendChild(ctaCard);
@@ -9565,6 +10141,45 @@ document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
   }
 });
   document.getElementById('btn-ie-back').addEventListener('click', ()=>{ showPanel('view-sanctuary'); renderSanctuaryView(); });
+
+  (function initSanctuaryChrome(){
+    const menu = document.getElementById('sanctuary-menu-btn');
+    const scrim = document.getElementById('sanctuary-drawer-scrim');
+    const persona = document.getElementById('sanctuary-drawer-persona');
+    const memory = document.getElementById('sanctuary-drawer-memory');
+    const search = document.getElementById('sanctuary-drawer-search');
+    const surface = document.getElementById('sanctuary-surface');
+    if (menu) {
+      menu.addEventListener('click', () => {
+        const d = document.getElementById('sanctuary-drawer');
+        if (d && d.classList.contains('open')) closeSanctuaryDrawer();
+        else openSanctuaryDrawer();
+      });
+    }
+    if (scrim) scrim.addEventListener('click', closeSanctuaryDrawer);
+    if (persona) persona.addEventListener('click', () => { closeSanctuaryDrawer(); openPersonaView(); });
+    if (memory) memory.addEventListener('click', () => { closeSanctuaryDrawer(); openMemoryVaultGlobal(); });
+    if (search) search.addEventListener('click', () => { openSanctuarySearch(); });
+    if (surface) surface.addEventListener('pointerdown', onSanctuarySurfacePointerDown, { passive: true });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        cancelAnimationFrame(sanctuaryMyceliumRaf);
+        sanctuaryMyceliumRaf = null;
+        return;
+      }
+      const panel = document.getElementById('view-sanctuary');
+      if (sanctuaryAmbienceActive && panel && !panel.classList.contains('hidden') && !sanctuaryPrefersReducedMotion()) {
+        cancelAnimationFrame(sanctuaryMyceliumRaf);
+        sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const d = document.getElementById('sanctuary-drawer');
+      if (d && d.classList.contains('open')) closeSanctuaryDrawer();
+    });
+  })();
+
 document.getElementById('ie-search-input').addEventListener('input', e => renderIEList(e.target.value));
 document.getElementById('btn-ie-manifest-close').addEventListener('click', closeOverlay);
 
