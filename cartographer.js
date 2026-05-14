@@ -1,7 +1,7 @@
 /**
 
 - NakedQuantum -- Sovereign NLP Pipeline
-- nlp.js v1.0.0
+- cartographer.js v0.3
 - 
 - Pure functions. No DOM. No DB. No globals.
 - Takes text in, returns rich shape data out.
@@ -559,8 +559,8 @@ const lastWord   = (finalWords[finalWords.length - 1] || '').replace(/[^a-z]/gi,
 // Signals
 const endsOnQuestion    = finalLine.endsWith('?');
 const endsOnFragment    = finalLen <= 5;
-const endsOnEllipsis    = /[...]$/.test(finalLine) || /...$/.test(finalLine);
-const endsOnDash        = /[----]$/.test(finalLine);
+const endsOnEllipsis    = finalLine.endsWith('...') || finalLine.endsWith('\u2026');
+const endsOnDash        = /[—–-]$/.test(finalLine);
 const endsOnDissolution = SENTIMENT.dissolution.has(lastWord) || SENTIMENT.existence.has(lastWord);
 const endsOnResolved    = SENTIMENT.resolved.has(lastWord) || SENTIMENT.positive.has(lastWord);
 const isFullSentence    = finalLen > 10 && !endsOnQuestion;
