@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.38.1</title>
+<title>NakedQuantum v0.38.4</title>
 <style>
 :root {
   --bg: #000000;
@@ -119,10 +119,11 @@ button {
   color: #ff6060;
 }
 
-/* Sanctuary custom characters -- wider cells than soup mesh grid */
-.cards-grid.sanctuary-char-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
-  gap: 16px;
+/* Sanctuary character grid -- fixed two columns on phone */
+.sanctuary-char-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .cards-section-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.45; font-weight: 900; text-transform: uppercase; padding: 14px 0 8px; }
@@ -1634,7 +1635,7 @@ select.cosm-input {
     <div style="font-size:10px;letter-spacing:2px;color:var(--accent);font-weight:900;">⩔ DATA SOVEREIGNTY</div>
     <div style="width:52px;"></div>
   </div>
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 100px;">
+  <div id="data-page-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 100px;">
     
     <div class="cards-section-label">Backup</div>
     <div class="management-actions">
@@ -3653,44 +3654,39 @@ async function getDiscourses(){const a=await dbGetAll("cosm_discourses");return 
 
 async function updateGravity(id, delta) {
   try {
-    const rows = db.exec(`SELECT gravity FROM cosm_discourses WHERE id='${id}'`);
-    if(!rows.length || !rows[0].values.length) return;
-    const current = rows[0].values[0][0] || 0;
-    const next = Math.max(0, current + delta);
-    db.run(`UPDATE cosm_discourses SET gravity=${next} WHERE id='${id}'`);
-    await persistDB();
+    const disc = await getDiscourse(id);
+    if (!disc) return;
+    const next = Math.max(0, (disc.gravity || 0) + delta);
+    await updateDiscourse(id, { gravity: next });
   } catch(e) { console.warn('gravity update failed', e); }
 }
 
 async function toggleFavourite(id) {
   try {
-    const rows = db.exec(`SELECT is_favourite FROM cosm_discourses WHERE id='${id}'`);
-    if(!rows.length || !rows[0].values.length) return;
-    const current = rows[0].values[0][0] || 0;
-    const next = current ? 0 : 1;
-    db.run(`UPDATE cosm_discourses SET is_favourite=${next} WHERE id='${id}'`);
-    await persistDB();
+    const disc = await getDiscourse(id);
+    if (!disc) return;
+    const next = disc.is_favourite ? 0 : 1;
+    await updateDiscourse(id, { is_favourite: next });
     return next;
   } catch(e) { console.warn('favourite toggle failed', e); }
 }
 
 // Decay pass -- run once per day, -1 gravity per 7 days untouched
 async function runGravityDecay() {
-  if(!db) return; // db not ready yet
-  // Ensure columns exist -- safe migration
-  try {
-    db.run(`ALTER TABLE cosm_discourses ADD COLUMN is_favourite INTEGER DEFAULT 0`);
-  } catch(e) { /* already exists */ }
-  try {
-    db.run(`ALTER TABLE cosm_discourses ADD COLUMN gravity INTEGER DEFAULT 0`);
-  } catch(e) { /* already exists */ }
   const lastDecay = parseInt(localStorage.getItem('nq_last_decay') || '0');
   const now = Date.now();
-  if(now - lastDecay < 86400000) return; // once per day
+  if (now - lastDecay < 86400000) return;
   const sevenDaysAgo = now - (7 * 86400000);
   try {
-        db.run(`UPDATE cosm_discourses SET gravity = MAX(0, gravity - 1) WHERE updated_at < ${sevenDaysAgo} AND (is_favourite = 0 OR is_favourite IS NULL)`);
-    await persistDB();
+    const all = await dbGetAll('cosm_discourses');
+    for (const d of all) {
+      if (d.isDeleted) continue;
+      const touch = d.updated_at || d.created_at || 0;
+      if (touch >= sevenDaysAgo) continue;
+      if (d.is_favourite) continue;
+      const g = Math.max(0, (d.gravity || 0) - 1);
+      if (g !== (d.gravity || 0)) await updateDiscourse(d.id, { gravity: g });
+    }
     localStorage.setItem('nq_last_decay', now.toString());
   } catch(e) { console.warn('decay pass failed', e.message, e); }
 }
@@ -4111,6 +4107,8 @@ async function batchDelete(){
   }
   exitSelectMode();
   showToast(`Moved to Void ◌`);
+  if(currentMode==='soup') await renderTableView();
+  else await renderSanctuaryView();
 }
 
 async function batchMove(){
@@ -4129,10 +4127,27 @@ async function batchMove(){
 
 async function confirmBatchMove(){
   const folderId=document.getElementById('move-parent-select').value||null;
-  for(const id of selectedItems)await updateDiscourse(id,{folder_id:folderId});
+  const destParent = folderId || null;
+  const ids = [...selectedItems];
+  let moved = 0;
+  for(const id of ids){
+    const disc = await getDiscourse(id);
+    if(disc){
+      await updateDiscourse(id,{folder_id:destParent});
+      moved++;
+      continue;
+    }
+    const folder = await dbGet('cosm_folders', id);
+    if(folder){
+      await dbPut('cosm_folders',{...folder,parent_id:destParent,updated_at:Date.now()});
+      moved++;
+    }
+  }
   closeOverlay();
   exitSelectMode();
-  showToast(`Moved ${selectedItems.size} items`);
+  showToast(moved ? `Moved ${moved} item(s) ◆` : 'Nothing moved');
+  if(currentMode==='soup') await renderTableView();
+  else await renderSanctuaryView();
 }
 
 async function batchBurn(){
@@ -4244,7 +4259,7 @@ function showPanel(id){
   
   panels.forEach(p=>{
     const el=document.getElementById(p);
-    if(el)el.classList.add('hidden');
+    if(el){ el.classList.add('hidden'); el.classList.remove('slide-back'); }
   });
   const active=document.getElementById(id);
   if(active)active.classList.remove('hidden');
@@ -4266,6 +4281,22 @@ function showPanel(id){
   }
 
   firefly.sd(id==='view-lighthouse'||id==='view-chat'?80:20);
+
+  // Undo horizontal drift / stuck scroll from nested views (e.g. Data → Sanctuary)
+  requestAnimationFrame(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollLeft = 0;
+    document.body.scrollLeft = 0;
+    const host = document.querySelector('.view-host');
+    if (host) { host.scrollLeft = 0; host.scrollTop = 0; }
+    if (id === 'view-soup' || id === 'view-sanctuary' || id === 'view-data') {
+      if (active) { active.scrollLeft = 0; active.scrollTop = 0; }
+    }
+    if (id !== 'view-data') {
+      const dps = document.getElementById('data-page-scroll');
+      if (dps) { dps.scrollLeft = 0; dps.scrollTop = 0; }
+    }
+  });
 }
 
 /* HEADER BUTTONS */
@@ -4292,7 +4323,7 @@ function updateHeaderButtons(){
       '<button class="hdr-btn" id="hdr-sanctuary-search">&#8982;</button>';
     document.getElementById('hdr-immutable').onclick = function(){ openIEPage(); };
     document.getElementById('hdr-create').onclick = function(){ openCreateModal(); };
-    document.getElementById('hdr-settings').onclick = function(){ openSettingsModal(); };
+    document.getElementById('hdr-settings').onclick = function(){};
     document.getElementById('hdr-memory-vault').onclick = function(){ openMemoryVaultGlobal(); };
     document.getElementById('hdr-sanctuary-search').onclick = function(){ openSanctuarySearch(); };
   }
@@ -4336,6 +4367,9 @@ async function renderTableView() {
   if (!surface) return;
   surface.onclick = (e) => { if(e.target===surface && selectMode) exitSelectMode(); };
     surface.innerHTML = '';
+  removeLineageThread();
+  currentFocusId = null;
+  focusChain = [];
   surface.onclick = (e) => {
     if(!e.target.closest('.nq-card')) unfocusMesh();
   };
@@ -4486,6 +4520,7 @@ async function renderTableView() {
       mesh.appendChild(card);
     }
     if(createCard) mesh.appendChild(createCard);
+    finalizeSoupMeshCreateLast();
 
     // Decay motes across all
     const forgottenCount = allD.filter(d => !d.isDeleted && (decayPhase(d.updated_at||d.created_at||0)==='forgotten'||decayPhase(d.updated_at||d.created_at||0)==='gone')).length;
@@ -4623,6 +4658,36 @@ let currentFocusId = null;
 // Chain of path knots -- session only
 let focusChain = [];
 
+/** Folder id equals ancestor or lies under it in the parent chain (descendant folders + self). */
+function folderIsUnderAncestor(folderId, ancestorFolderId, allFolders) {
+  if (!folderId || !ancestorFolderId) return false;
+  let fid = folderId;
+  const seen = new Set();
+  while (fid && !seen.has(fid)) {
+    seen.add(fid);
+    if (String(fid) === String(ancestorFolderId)) return true;
+    const row = allFolders.find(f => f.id === fid && !f.isDeleted);
+    fid = row && row.parent_id ? row.parent_id : null;
+    if (!fid || String(fid) === 'null' || String(fid) === 'root') return false;
+  }
+  return false;
+}
+
+function finalizeSoupMeshCreateLast() {
+  const mesh = document.getElementById('soup-mesh');
+  const create = document.getElementById('nq-create-card');
+  if (!mesh || !create || create.parentNode !== mesh) return;
+  mesh.appendChild(create);
+}
+
+/** True if mesh already has a folder card for this id (discourse cards also set data-folder-id — ignore those). */
+function meshAlreadyShowsFolderCard(mesh, folderId) {
+  if (!mesh || !folderId) return false;
+  return [...mesh.querySelectorAll('.nq-card')].some(
+    c => c.dataset.folderId === folderId && !c.dataset.id
+  );
+}
+
 async function focusMeshCard(id, folderId, label) {
   const mesh = document.getElementById('soup-mesh');
   if(!mesh) return;
@@ -4662,7 +4727,7 @@ async function focusMeshCard(id, folderId, label) {
   const nestedFolders = allFolders.filter(f =>
     !f.isDeleted &&
     String(f.parent_id) === String(id) &&
-    !mesh.querySelector(`[data-folder-id="${f.id}"]`)
+    !meshAlreadyShowsFolderCard(mesh, f.id)
   );
 
   for(const f of nestedFolders) {
@@ -4714,23 +4779,48 @@ async function focusMeshCard(id, folderId, label) {
   const tier2 = [];
   const tier3 = [];
 
+  const focusAsFolder = allFolders.find(f => f.id === id && !f.isDeleted);
+  const isFolderMeshFocus = !!focusAsFolder;
+
   cards.forEach(card => {
     if(card.id === 'nq-create-card') return;
     const cardFolderId = card.dataset.folderId || '';
     const cardParentFolderId = card.dataset.parentFolderId || '';
     const cardId = card.dataset.id || '';
 
-    const isTarget = cardId === id;
-    const isDirectChild = cardFolderId === id;
-    const isParentFolder = cardId === folderId;
-    const isNestedFolder = cardParentFolderId === id;
-    const isSibling = folderId && cardFolderId === folderId && cardId !== id;
+    let tier = 3;
+    if (isFolderMeshFocus) {
+      const homeId = cardFolderId || '';
+      const underFocus = homeId && folderIsUnderAncestor(homeId, id, allFolders);
+      if (underFocus) {
+        tier = 1;
+      } else {
+        const fp = focusAsFolder.parent_id;
+        let isNeu = false;
+        if (homeId) {
+          const meta = allFolders.find(x => x.id === homeId && !x.isDeleted);
+          if (meta && String(meta.parent_id || '') === String(fp || '') && homeId !== id) {
+            isNeu = true;
+          }
+        }
+        tier = isNeu ? 2 : 3;
+      }
+    } else {
+      const isTarget = cardId === id;
+      const isDirectChild = cardFolderId === id;
+      const isParentFolder = cardId === folderId;
+      const isNestedFolder = cardParentFolderId === id;
+      const isSibling = folderId && cardFolderId === folderId && cardId !== id;
+      if (isTarget || isDirectChild || isParentFolder || isNestedFolder) tier = 1;
+      else if (isSibling) tier = 2;
+      else tier = 3;
+    }
 
-    if(isTarget || isDirectChild || isParentFolder || isNestedFolder) {
+    if (tier === 1) {
       card.classList.add('in-focus');
       card.classList.remove('out-focus');
       tier1.push(card);
-    } else if(isSibling) {
+    } else if (tier === 2) {
       card.classList.remove('in-focus', 'out-focus');
       tier2.push(card);
     } else {
@@ -4744,6 +4834,7 @@ async function focusMeshCard(id, folderId, label) {
   const createCard = document.getElementById('nq-create-card');
   tier1.forEach(card => mesh.prepend(card));
   if(createCard) mesh.appendChild(createCard);
+  finalizeSoupMeshCreateLast();
 
   // Haptic
   const hapticCount = Math.min(tier1.length, 5);
@@ -4785,8 +4876,9 @@ function unfocusMesh() {
     const bTime = parseInt(b.dataset.time || 0);
     return (bFav - aFav) || (bGrav - aGrav) || (bTime - aTime);
   });
-  if(createCard) mesh.appendChild(createCard);
   cards.forEach(card => mesh.appendChild(card));
+  if(createCard) mesh.appendChild(createCard);
+  finalizeSoupMeshCreateLast();
   renderChainKnots(false);
 }
 
@@ -4794,7 +4886,9 @@ function drawLineageThread(id, folderId) {
   removeLineageThread();
   const mesh = document.getElementById('soup-mesh');
   if(!mesh) return;
-      const focusedCard = mesh.querySelector(`[data-id="${id}"]`) || mesh.querySelector(`[data-folder-id="${id}"]`);
+      const focusedCard = [...mesh.querySelectorAll('.nq-card')].find(
+        c => c.dataset.folderId === id && !c.dataset.id
+      ) || mesh.querySelector(`[data-id="${id}"]`);
   if(!focusedCard) return;
 
   const soupView = document.getElementById('view-soup');
@@ -4874,8 +4968,7 @@ function openQuickAction(card, item) {
     actions.push({ glyph: '◎', label: 'Preview', action: () => openPreview(item.data) });
     if(item.data.item_type === 'note') {
             actions.push({ glyph: '○', label: 'Convert to Chronicle', action: async () => {
-        db.run(`UPDATE cosm_discourses SET item_type='chronicle' WHERE id='${item.id}'`);
-        await persistDB();
+        await updateDiscourse(item.id, { item_type: 'chronicle' });
         await renderTableView();
         showToast('Converted to Chronicle ◆');
       }});
@@ -4896,7 +4989,6 @@ function openQuickAction(card, item) {
       showToast('Folder burned ◆');
     } else {
       await deleteDiscourse(item.id);
-      await persistDB();
       await renderTableView();
       showToast('Burned to void ◌');
     }
@@ -5685,7 +5777,7 @@ strip.appendChild(ctaCard);
     }
 
     const g = document.createElement('div');
-    g.className = 'cards-grid sanctuary-char-grid';
+    g.className = 'sanctuary-char-grid';
     
     for (const c of filteredChars) {
       const card = document.createElement('div');
@@ -8387,13 +8479,6 @@ function removeActiveModel() {
   localStorage.setItem('nq_model_history', JSON.stringify(modelHistory));
   renderModelSelect();
   showToast("Purged to the Abyss ◆");
-}
-
-async function openSettingsModal(){
-  await openDataPage();
-  requestAnimationFrame(() => {
-    document.getElementById('data-neural-block')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
 }
 
 function closeOverlay(){
