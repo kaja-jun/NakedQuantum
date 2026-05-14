@@ -1,7 +1,7 @@
 /**
 
 - NakedQuantum -- Sovereign NLP Pipeline
-- nlp.js v1.0.0
+- cartographer.js v0.3
 - 
 - Pure functions. No DOM. No DB. No globals.
 - Takes text in, returns rich shape data out.
