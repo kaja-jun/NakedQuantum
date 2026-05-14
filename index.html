@@ -3654,44 +3654,39 @@ async function getDiscourses(){const a=await dbGetAll("cosm_discourses");return 
 
 async function updateGravity(id, delta) {
   try {
-    const rows = db.exec(`SELECT gravity FROM cosm_discourses WHERE id='${id}'`);
-    if(!rows.length || !rows[0].values.length) return;
-    const current = rows[0].values[0][0] || 0;
-    const next = Math.max(0, current + delta);
-    db.run(`UPDATE cosm_discourses SET gravity=${next} WHERE id='${id}'`);
-    await persistDB();
+    const disc = await getDiscourse(id);
+    if (!disc) return;
+    const next = Math.max(0, (disc.gravity || 0) + delta);
+    await updateDiscourse(id, { gravity: next });
   } catch(e) { console.warn('gravity update failed', e); }
 }
 
 async function toggleFavourite(id) {
   try {
-    const rows = db.exec(`SELECT is_favourite FROM cosm_discourses WHERE id='${id}'`);
-    if(!rows.length || !rows[0].values.length) return;
-    const current = rows[0].values[0][0] || 0;
-    const next = current ? 0 : 1;
-    db.run(`UPDATE cosm_discourses SET is_favourite=${next} WHERE id='${id}'`);
-    await persistDB();
+    const disc = await getDiscourse(id);
+    if (!disc) return;
+    const next = disc.is_favourite ? 0 : 1;
+    await updateDiscourse(id, { is_favourite: next });
     return next;
   } catch(e) { console.warn('favourite toggle failed', e); }
 }
 
 // Decay pass -- run once per day, -1 gravity per 7 days untouched
 async function runGravityDecay() {
-  if(!db) return; // db not ready yet
-  // Ensure columns exist -- safe migration
-  try {
-    db.run(`ALTER TABLE cosm_discourses ADD COLUMN is_favourite INTEGER DEFAULT 0`);
-  } catch(e) { /* already exists */ }
-  try {
-    db.run(`ALTER TABLE cosm_discourses ADD COLUMN gravity INTEGER DEFAULT 0`);
-  } catch(e) { /* already exists */ }
   const lastDecay = parseInt(localStorage.getItem('nq_last_decay') || '0');
   const now = Date.now();
-  if(now - lastDecay < 86400000) return; // once per day
+  if (now - lastDecay < 86400000) return;
   const sevenDaysAgo = now - (7 * 86400000);
   try {
-        db.run(`UPDATE cosm_discourses SET gravity = MAX(0, gravity - 1) WHERE updated_at < ${sevenDaysAgo} AND (is_favourite = 0 OR is_favourite IS NULL)`);
-    await persistDB();
+    const all = await dbGetAll('cosm_discourses');
+    for (const d of all) {
+      if (d.isDeleted) continue;
+      const touch = d.updated_at || d.created_at || 0;
+      if (touch >= sevenDaysAgo) continue;
+      if (d.is_favourite) continue;
+      const g = Math.max(0, (d.gravity || 0) - 1);
+      if (g !== (d.gravity || 0)) await updateDiscourse(d.id, { gravity: g });
+    }
     localStorage.setItem('nq_last_decay', now.toString());
   } catch(e) { console.warn('decay pass failed', e.message, e); }
 }
@@ -4112,6 +4107,8 @@ async function batchDelete(){
   }
   exitSelectMode();
   showToast(`Moved to Void ◌`);
+  if(currentMode==='soup') await renderTableView();
+  else await renderSanctuaryView();
 }
 
 async function batchMove(){
@@ -4130,10 +4127,27 @@ async function batchMove(){
 
 async function confirmBatchMove(){
   const folderId=document.getElementById('move-parent-select').value||null;
-  for(const id of selectedItems)await updateDiscourse(id,{folder_id:folderId});
+  const destParent = folderId || null;
+  const ids = [...selectedItems];
+  let moved = 0;
+  for(const id of ids){
+    const disc = await getDiscourse(id);
+    if(disc){
+      await updateDiscourse(id,{folder_id:destParent});
+      moved++;
+      continue;
+    }
+    const folder = await dbGet('cosm_folders', id);
+    if(folder){
+      await dbPut('cosm_folders',{...folder,parent_id:destParent,updated_at:Date.now()});
+      moved++;
+    }
+  }
   closeOverlay();
   exitSelectMode();
-  showToast(`Moved ${selectedItems.size} items`);
+  showToast(moved ? `Moved ${moved} item(s) ◆` : 'Nothing moved');
+  if(currentMode==='soup') await renderTableView();
+  else await renderSanctuaryView();
 }
 
 async function batchBurn(){
@@ -4666,6 +4680,14 @@ function finalizeSoupMeshCreateLast() {
   mesh.appendChild(create);
 }
 
+/** True if mesh already has a folder card for this id (discourse cards also set data-folder-id — ignore those). */
+function meshAlreadyShowsFolderCard(mesh, folderId) {
+  if (!mesh || !folderId) return false;
+  return [...mesh.querySelectorAll('.nq-card')].some(
+    c => c.dataset.folderId === folderId && !c.dataset.id
+  );
+}
+
 async function focusMeshCard(id, folderId, label) {
   const mesh = document.getElementById('soup-mesh');
   if(!mesh) return;
@@ -4705,7 +4727,7 @@ async function focusMeshCard(id, folderId, label) {
   const nestedFolders = allFolders.filter(f =>
     !f.isDeleted &&
     String(f.parent_id) === String(id) &&
-    !mesh.querySelector(`[data-folder-id="${f.id}"]`)
+    !meshAlreadyShowsFolderCard(mesh, f.id)
   );
 
   for(const f of nestedFolders) {
@@ -4864,7 +4886,9 @@ function drawLineageThread(id, folderId) {
   removeLineageThread();
   const mesh = document.getElementById('soup-mesh');
   if(!mesh) return;
-      const focusedCard = mesh.querySelector(`[data-id="${id}"]`) || mesh.querySelector(`[data-folder-id="${id}"]`);
+      const focusedCard = [...mesh.querySelectorAll('.nq-card')].find(
+        c => c.dataset.folderId === id && !c.dataset.id
+      ) || mesh.querySelector(`[data-id="${id}"]`);
   if(!focusedCard) return;
 
   const soupView = document.getElementById('view-soup');
@@ -4944,8 +4968,7 @@ function openQuickAction(card, item) {
     actions.push({ glyph: '◎', label: 'Preview', action: () => openPreview(item.data) });
     if(item.data.item_type === 'note') {
             actions.push({ glyph: '○', label: 'Convert to Chronicle', action: async () => {
-        db.run(`UPDATE cosm_discourses SET item_type='chronicle' WHERE id='${item.id}'`);
-        await persistDB();
+        await updateDiscourse(item.id, { item_type: 'chronicle' });
         await renderTableView();
         showToast('Converted to Chronicle ◆');
       }});
@@ -4966,7 +4989,6 @@ function openQuickAction(card, item) {
       showToast('Folder burned ◆');
     } else {
       await deleteDiscourse(item.id);
-      await persistDB();
       await renderTableView();
       showToast('Burned to void ◌');
     }
