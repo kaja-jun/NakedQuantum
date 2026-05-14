@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.38</title>
+<title>NakedQuantum v0.38.1</title>
 <style>
 :root {
   --bg: #000000;
@@ -51,13 +51,19 @@ button {
 
 .soup-view { background: transparent; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
-.breadcrumb-bar { display: flex; align-items: center; padding: 14px 16px 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-shrink: 0; scrollbar-width: none; }
+/* GOLD THREAD BREADCRUMB */
+.breadcrumb-bar { position: relative; height: 48px; overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; flex-shrink: 0; scrollbar-width: none; padding: 0 20px; }
 .breadcrumb-bar::-webkit-scrollbar { display: none; }
-.breadcrumb-seg { display: flex; align-items: center; flex-shrink: 0; }
-.breadcrumb-btn { background: none; border: none; color: var(--muted); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; padding: 4px 6px; border-radius: 6px; white-space: nowrap; }
-.breadcrumb-btn:active { color: var(--accent); background: rgba(200,160,80,0.08); }
-.breadcrumb-btn.current { color: var(--accent); opacity: 0.9; }
-.breadcrumb-arrow { color: var(--muted); font-size: 10px; opacity: 0.5; padding: 0 2px; user-select: none; }
+.bc-thread-svg { position: absolute; top: 0; left: 0; height: 100%; pointer-events: none; }
+.bc-knot-wrap { position: absolute; top: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transform: translateX(-50%); }
+.bc-knot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; transition: transform 0.2s, opacity 0.2s; }
+.bc-knot.current { width: 10px; height: 10px; background: var(--accent); box-shadow: 0 0 8px rgba(200,160,80,0.5); }
+.bc-knot.compressed { width: 4px; height: 4px; background: var(--accent-dim); opacity: 0.4; }
+.bc-knot-label { font-size: 9px; letter-spacing: 1px; color: var(--accent); font-weight: 700; text-transform: uppercase; white-space: nowrap; margin-top: 3px; opacity: 0; transition: opacity 0.2s; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+.bc-knot-label.current { opacity: 1; font-size: 10px; }
+.bc-knot-label.parent { opacity: 0.6; font-size: 9px; }
+.bc-knot-wrap:active .bc-knot { transform: scale(1.4); }
+.bc-drop-line { stroke: rgba(200,160,80,0.4); stroke-width: 1; fill: none; }
 
 .cards-section-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.45; font-weight: 900; text-transform: uppercase; padding: 14px 0 8px; }
 .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(80px, 22vw, 160px), 1fr)); gap: 26px; }
@@ -69,6 +75,11 @@ button {
 .nq-card:active { border-color: var(--accent); background: var(--surface2); }
 .nq-create-card { border-style: dashed; border-color: var(--border); }
 .nq-create-card:active { border-color: var(--accent); }
+
+/* THICK FOLDER -- layered depth effect */
+.nq-card.folder-thick { position: relative; }
+.nq-card.folder-thick::before { content: ''; position: absolute; bottom: -4px; left: 4px; right: -4px; height: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; z-index: -1; }
+.nq-card.folder-thick::after { content: ''; position: absolute; bottom: -8px; left: 8px; right: -8px; height: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; z-index: -2; opacity: 0.7; }
 .nq-card.long-pressing { border-color: var(--accent); background: var(--surface2); transform: scale(0.97); }
 .nq-card.in-focus { border-color: var(--accent-dim); opacity: 1; }
 .nq-card.out-focus { opacity: 0.25; }
@@ -81,7 +92,7 @@ button {
 @keyframes favPulse { 0%,90%,100% { opacity:1; } 95% { opacity:0.2; } }
 
 /* Card body */
-.nq-card-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
+.nq-card-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px; word-break: break-word; hyphens: auto; -webkit-hyphens: auto; }
 .nq-card-preview { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* Card footer */
@@ -1539,12 +1550,6 @@ select.cosm-input {
 <div class="view-host">
   <div class="view-panel soup-view" id="view-soup">
     
-    <!-- THE GOLD LINE -->
-      <div id="gold-line-zone" style="display:none;">
-      <div class="gold-thread" id="gold-thread"></div>
-      <div id="gold-ticks-container"></div>
-    </div>
-  <div id="gold-line-trigger" style="position:absolute;top:0;bottom:0;left:0;width:20px;z-index:501;-webkit-user-select:none;user-select:none;"></div>
     <div class="breadcrumb-bar" id="breadcrumb-bar"></div>
     <div class="search-bar-wrap" id="search-bar-wrap" style="display:none;">
       <input class="search-input" id="search-input" placeholder="Search discourses...">
@@ -4240,6 +4245,7 @@ hdr.style.transform = 'translateY(0)';
 hdr.style.marginBottom = '0';
 removeLineageThread();
 currentFocusId = null;
+focusChain = [];
   if (currentView === 'lighthouse' && currentDiscourseId) {
     await saveCurrentDiscourse(true);
     mosaicCache = {};
@@ -4274,7 +4280,10 @@ async function renderTableView() {
     if(!e.target.closest('.nq-card')) unfocusMesh();
   };
   runGravityDecay();
-  renderBreadcrumb();
+    renderBreadcrumb();
+  // Remove old drop line -- renderBreadcrumb redraws it
+  const oldDrop = document.getElementById('bc-drop-svg');
+  if(oldDrop) oldDrop.remove();
   const safeMatch = (a, b) => {
     const isANull = (!a || String(a)==='null' || String(a)==='root' || String(a)==='undefined');
     const isBNull = (!b || String(b)==='null' || String(b)==='root' || String(b)==='undefined');
@@ -4327,23 +4336,31 @@ async function renderTableView() {
       if(dc > 0) meta.push(dc + (dc===1?' discourse':' discourses'));
       if(nc > 0) meta.push(nc + (nc===1?' spark':' sparks'));
       if(sc > 0) meta.push(sc + (sc===1?' folder':' folders'));
-      const card = document.createElement('div');
-      card.className = 'nq-card card' + (f._phase==='fading'?' card-fading':'');
-      card.dataset.folderId = f.id;
-      if(typeof selectedItems !== 'undefined' && selectedItems.has(f.id)) card.classList.add('card-selected');
-      card.innerHTML = `
-        <div class="nq-card-head">
-          <span class="nq-card-glyph">▤</span>
-          <span class="nq-card-fav"></span>
-        </div>
-        <div class="nq-card-title">${escHtml(f.name)}</div>
-        <div class="nq-card-foot">
-          <span class="nq-card-date">${meta.length?meta.join(' · '):'Empty'}</span>
-        </div>`;
+              // Count nested folders inside this folder
+        const nestedCount = allF.filter(sf => safeMatch(sf.parent_id, f.id) && !sf.isDeleted).length;
+        const isThick = nestedCount > 0;
+        const card = document.createElement('div');
+        card.className = 'nq-card card' + (f._phase==='fading'?' card-fading':'') + (isThick?' folder-thick':'');
+               card.dataset.folderId = f.id;
+        card.dataset.parentFolderId = f.parent_id || '';
+        card.dataset.fav = f.is_favourite || 0;
+        card.dataset.gravity = f.gravity || 0;
+        card.dataset.time = f.updated_at || f.created_at || 0;
+        if(typeof selectedItems !== 'undefined' && selectedItems.has(f.id)) card.classList.add('card-selected');
+        card.innerHTML = `
+          <div class="nq-card-head">
+            <span class="nq-card-glyph">▤</span>
+            <span class="nq-card-fav"></span>
+          </div>
+          <div class="nq-card-title">${escHtml(f.name)}</div>
+          <div class="nq-card-foot">
+            <span class="nq-card-date">${meta.length?meta.join(' · '):'Empty'}</span>
+            ${isThick?`<span style="font-size:9px;color:var(--accent-dim);opacity:0.7;letter-spacing:0.5px;">${nestedCount} nested ↓</span>`:''}
+          </div>`;
            card.onclick = () => {
         if(window.longPressConsumed){window.longPressConsumed=false;return;}
         if(typeof selectMode!=='undefined'&&selectMode){toggleSelectItem(f.id);return;}
-        focusMeshCard(f.id, f.parent_id || null);
+                focusMeshCard(f.id, f.parent_id || null, f.name);
       };
       card.onmousedown = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f});
       card.ontouchstart = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f}, {passive:true});
@@ -4543,51 +4560,124 @@ async function getFolderVitality(folderId, allF, allD){
 
 let currentFocusId = null;
 
-function focusMeshCard(id, folderId) {
+// Chain of path knots -- session only
+let focusChain = [];
+
+async function focusMeshCard(id, folderId, label) {
   const mesh = document.getElementById('soup-mesh');
   if(!mesh) return;
-  const cards = Array.from(mesh.querySelectorAll('.nq-card'));
 
-  // If tapping already focused card -- unfocus
+  // Tapping already focused card -- unfocus
   if(currentFocusId === id) {
     unfocusMesh();
     return;
   }
   currentFocusId = id;
 
-  // Classify cards
-  const focused = [];
-  const others = [];
-  cards.forEach(card => {
-    const cardFolderId = card.dataset.folderId || '';
-    const cardId = card.dataset.id || '';
-    const isTarget = cardId === id || cardFolderId === id;
-    // Children: cards whose folder_id matches the focused folder card id
-    const isChild = id && cardFolderId === id;
-    // Siblings: cards in same parent folder as focused content card
-    const isSibling = folderId && cardFolderId === folderId && cardId !== id;
-    // Parent folder card
-    const isParent = folderId && cardFolderId === '' && card.dataset.id === folderId;
+  // Update focus chain
+  const existingIdx = focusChain.findIndex(k => k.id === id);
+  if(existingIdx >= 0) {
+    // Trim chain -- remove injected cards beyond this point
+    focusChain = focusChain.slice(0, existingIdx + 1);
+    mesh.querySelectorAll('[data-injected="true"]').forEach(c => {
+      // Keep injected cards that belong to this chain level
+      const belongsToChain = focusChain.some(k => c.dataset.parentFolderId === k.id || c.dataset.folderId === k.id);
+      if(!belongsToChain) c.remove();
+    });
+  } else {
+    focusChain.push({ id, folderId, label: label || id });
+  }
 
-    if(isTarget || isChild || isSibling || isParent) {
+  // Inject nested folders that aren't in mesh yet
+  const allFolders = await getFolders();
+  const nestedFolders = allFolders.filter(f =>
+    !f.isDeleted &&
+    String(f.parent_id) === String(id) &&
+    !mesh.querySelector(`[data-folder-id="${f.id}"]`)
+  );
+
+  for(const f of nestedFolders) {
+    const allD = await getDiscourses();
+    const allF = allFolders;
+    const dc = allD.filter(d => String(d.folder_id) === String(f.id) && !d.isDeleted).length;
+    const nc = allD.filter(d => String(d.folder_id) === String(f.id) && d.item_type === 'note' && !d.isDeleted).length;
+    const sc = allF.filter(sf => String(sf.parent_id) === String(f.id) && !sf.isDeleted).length;
+    const meta = [];
+    if(dc > 0) meta.push(dc + (dc===1?' discourse':' discourses'));
+    if(nc > 0) meta.push(nc + (nc===1?' spark':' sparks'));
+    if(sc > 0) meta.push(sc + (sc===1?' folder':' folders'));
+    const nestedCount = sc;
+    const isThick = nestedCount > 0;
+
+    const card = document.createElement('div');
+    card.className = 'nq-card card' + (isThick ? ' folder-thick' : '');
+    card.dataset.folderId = f.id;
+    card.dataset.parentFolderId = f.parent_id || '';
+    card.dataset.fav = f.is_favourite || 0;
+    card.dataset.gravity = f.gravity || 0;
+    card.dataset.time = f.updated_at || f.created_at || 0;
+    card.dataset.injected = 'true';
+    card.innerHTML = `
+      <div class="nq-card-head">
+        <span class="nq-card-glyph">▤</span>
+        <span class="nq-card-fav"></span>
+      </div>
+      <div class="nq-card-title">${escHtml(f.name)}</div>
+      <div class="nq-card-foot">
+        <span class="nq-card-date">${meta.length?meta.join(' · '):'Empty'}</span>
+        ${isThick?`<span style="font-size:9px;color:var(--accent-dim);opacity:0.7;">${nestedCount} nested ↓</span>`:''}
+      </div>`;
+    card.onclick = () => {
+      if(window.longPressConsumed){window.longPressConsumed=false;return;}
+      focusMeshCard(f.id, f.parent_id || null, f.name);
+    };
+    card.onmousedown = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f});
+    card.ontouchstart = e => startLP(e, card, {type:'folder', id:f.id, name:f.name, data:f}, {passive:true});
+    card.onmouseup = () => cancelLP(card);
+    card.onmouseleave = () => cancelLP(card);
+    card.ontouchend = () => cancelLP(card);
+    mesh.appendChild(card);
+  }
+
+  // THREE TIER CLASSIFICATION -- re-read cards after injection
+  const cards = Array.from(mesh.querySelectorAll('.nq-card'));
+  const tier1 = [];
+  const tier2 = [];
+  const tier3 = [];
+
+  cards.forEach(card => {
+    if(card.id === 'nq-create-card') return;
+    const cardFolderId = card.dataset.folderId || '';
+    const cardParentFolderId = card.dataset.parentFolderId || '';
+    const cardId = card.dataset.id || '';
+
+    const isTarget = cardId === id;
+    const isDirectChild = cardFolderId === id;
+    const isParentFolder = cardId === folderId;
+    const isNestedFolder = cardParentFolderId === id;
+    const isSibling = folderId && cardFolderId === folderId && cardId !== id;
+
+    if(isTarget || isDirectChild || isParentFolder || isNestedFolder) {
       card.classList.add('in-focus');
       card.classList.remove('out-focus');
-      focused.push(card);
+      tier1.push(card);
+    } else if(isSibling) {
+      card.classList.remove('in-focus', 'out-focus');
+      tier2.push(card);
     } else {
       card.classList.add('out-focus');
       card.classList.remove('in-focus');
-      others.push(card);
+      tier3.push(card);
     }
   });
 
-  // Physical reorder -- move focused cards to top of mesh
-    // Physical reorder -- move focused cards to top but keep create card first
-  focused.forEach(card => mesh.prepend(card));
+  // Physical reorder
   const createCard = document.getElementById('nq-create-card');
+  tier1.forEach(card => mesh.prepend(card));
   if(createCard) mesh.prepend(createCard);
 
-  // Haptic -- one tick per connected card, max 5, 40ms apart
-  const hapticCount = Math.min(focused.length, 5);
+  // Haptic
+  const hapticCount = Math.min(tier1.length, 5);
   for(let i = 0; i < hapticCount; i++) {
     setTimeout(() => {
       try { window.webkit?.messageHandlers?.haptic?.postMessage('light'); } catch(e) {}
@@ -4595,18 +4685,26 @@ function focusMeshCard(id, folderId) {
     }, i * 40);
   }
 
+  // Update chain knots with ghost if focused item has nested folders
+  const hasDepth = allFolders.some(f => !f.isDeleted && String(f.parent_id) === String(id));
+  renderChainKnots(hasDepth);
   drawLineageThread(id, folderId);
 }
 
 function unfocusMesh() {
   currentFocusId = null;
+  focusChain = [];
   const mesh = document.getElementById('soup-mesh');
   if(!mesh) return;
+
+  // Remove all injected nested folder cards
+  mesh.querySelectorAll('[data-injected="true"]').forEach(c => c.remove());
+
   mesh.querySelectorAll('.nq-card').forEach(card => {
     card.classList.remove('in-focus', 'out-focus');
   });
   removeLineageThread();
-  // Re-sort cards back to gravity order -- exclude create card
+
   const createCard = document.getElementById('nq-create-card');
   const cards = Array.from(mesh.querySelectorAll('.nq-card:not(.nq-create-card)'));
   cards.sort((a, b) => {
@@ -4618,9 +4716,9 @@ function unfocusMesh() {
     const bTime = parseInt(b.dataset.time || 0);
     return (bFav - aFav) || (bGrav - aGrav) || (bTime - aTime);
   });
-  // Create card always first
   if(createCard) mesh.prepend(createCard);
   cards.forEach(card => mesh.appendChild(card));
+  renderChainKnots(false);
 }
 
 function drawLineageThread(id, folderId) {
@@ -4644,7 +4742,12 @@ function drawLineageThread(id, folderId) {
   const cardMidY = cardRect.top + cardRect.height / 2;
 
   // Anchor point -- bottom centre of breadcrumb bar
-  const anchorX = bcRect.left + bcRect.width / 2;
+    // Anchor from current knot X position
+  const KNOT_SPACING = 52;
+  const SIDE_PAD = 24;
+  const knotIdx = breadcrumbPath.length - 1;
+  const knotLocalX = SIDE_PAD + knotIdx * KNOT_SPACING;
+  const anchorX = bcRect.left + knotLocalX - (document.getElementById('breadcrumb-bar').scrollLeft || 0);
   const anchorY = bcRect.bottom;
 
   // Main thread -- from breadcrumb anchor down to focused card
@@ -4857,7 +4960,7 @@ async function buildDiscourseCard(d){
         openPreview(d);
         return;
       }
-      focusMeshCard(d.id, d.folder_id || null);
+            focusMeshCard(d.id, d.folder_id || null, d.title);
       return;
     }
     // Root card (no folder) -- single tap goes straight to editor
@@ -4870,7 +4973,7 @@ async function buildDiscourseCard(d){
       openDiscourse(d.id);
       return;
     }
-    focusMeshCard(d.id, d.folder_id);
+        focusMeshCard(d.id, d.folder_id, d.title);
   });
 
   card.addEventListener('mousedown', e => startLP(e, card, {type:'discourse', id:d.id, name:d.title, data:d}));
@@ -4886,18 +4989,115 @@ async function buildDiscourseCard(d){
 }
 
 /* BREADCRUMB */
-function renderBreadcrumb(){
-  const bar=document.getElementById('breadcrumb-bar');bar.innerHTML='';
-  breadcrumbPath.forEach((seg,idx)=>{
-    const isLast=idx===breadcrumbPath.length-1;
-    const segEl=document.createElement('div');segEl.className='breadcrumb-seg';
-    const btn=document.createElement('button');btn.className='breadcrumb-btn'+(isLast?' current':'');btn.textContent=seg.name;
-    if(!isLast)btn.addEventListener('click',()=>navToBc(idx));
-    segEl.appendChild(btn);
-    if(!isLast){const arrow=document.createElement('span');arrow.className='breadcrumb-arrow';arrow.textContent='▸';segEl.appendChild(arrow);}
-    bar.appendChild(segEl);
+function renderBreadcrumb(){ renderChainKnots(); }
+
+function renderChainKnots(showGhost = false) {
+  const bar = document.getElementById('breadcrumb-bar');
+  bar.innerHTML = '';
+
+  // Always starts with Soup knot
+  const fullChain = [{id: null, label: 'Soup', folderId: null}, ...focusChain];
+  if(showGhost) fullChain.push({ id: '__ghost__', label: '···', folderId: null, ghost: true });
+  const total = fullChain.length;
+
+  const KNOT_SPACING = 56;
+  const SIDE_PAD = 28;
+  const totalWidth = Math.max(bar.offsetWidth || window.innerWidth, SIDE_PAD * 2 + total * KNOT_SPACING);
+  const barH = 48;
+  const midY = 20;
+
+  // SVG horizontal line
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.classList.add('bc-thread-svg');
+  svg.style.cssText = `width:${totalWidth}px;height:${barH}px;`;
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', SIDE_PAD);
+  line.setAttribute('y1', midY);
+  line.setAttribute('x2', SIDE_PAD + (total - 1) * KNOT_SPACING);
+  line.setAttribute('y2', midY);
+  line.setAttribute('stroke', 'rgba(200,160,80,0.3)');
+  line.setAttribute('stroke-width', '1');
+  svg.appendChild(line);
+  bar.appendChild(svg);
+
+  fullChain.forEach((knot, idx) => {
+    const isFirst = idx === 0;
+    const isLast = idx === total - 1;
+    const isParent = idx === total - 2;
+    const isGhost = idx > total - 2 && !isLast; // future: faded ghost knots
+    const isCompressed = !isFirst && !isLast && !isParent && total > 4;
+
+    const x = SIDE_PAD + idx * KNOT_SPACING;
+    const wrap = document.createElement('div');
+    wrap.className = 'bc-knot-wrap';
+    wrap.style.left = x + 'px';
+
+        const dot = document.createElement('div');
+    dot.className = 'bc-knot' +
+      (isLast && !knot.ghost ? ' current' : '') +
+      (isCompressed ? ' compressed' : '') +
+      (knot.ghost ? ' compressed' : '');
+    dot.style.opacity = knot.ghost ? '0.25' : '';
+    wrap.appendChild(dot);
+
+    const label = document.createElement('div');
+    label.className = 'bc-knot-label' +
+      (isLast && !knot.ghost ? ' current' : isParent ? ' parent' : '');
+    label.textContent = knot.label.replace('◈ ', '').replace('◈  ', '');
+    label.style.opacity = knot.ghost ? '0.25' : '';
+    wrap.appendChild(label);
+
+    // Click
+    wrap.addEventListener('click', () => {
+      if(knot.ghost) return; // ghost not tappable
+      if(isFirst) {
+        focusChain = [];
+        unfocusMesh();
+        renderChainKnots(false);
+      } else if(!isLast) {
+        focusChain = focusChain.slice(0, idx);
+        focusMeshCard(knot.id, knot.folderId, knot.label);
+      }
+    });
+
+    bar.appendChild(wrap);
   });
+
+  // Set scroll width and auto-scroll to current
+  bar.scrollLeft = Math.max(0, SIDE_PAD + (total - 1) * KNOT_SPACING - bar.offsetWidth + 60);
+
+  // Drop line from current knot to mesh
+  drawBreadcrumbDrop(SIDE_PAD + (total - 1) * KNOT_SPACING, midY + 6);
 }
+
+function drawBreadcrumbDrop(knotX, knotY) {
+  // Remove existing drop
+  const existing = document.getElementById('bc-drop-svg');
+  if(existing) existing.remove();
+  if(breadcrumbPath.length <= 1) return; // at root, no drop
+
+  const bar = document.getElementById('breadcrumb-bar');
+  const barRect = bar.getBoundingClientRect();
+  const surface = document.getElementById('table-surface');
+  const surfaceRect = surface.getBoundingClientRect();
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.id = 'bc-drop-svg';
+  svg.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;`;
+
+  const startX = barRect.left + knotX - bar.scrollLeft;
+  const startY = barRect.bottom;
+  const endY = surfaceRect.top + 20;
+
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', `M ${startX} ${startY} C ${startX} ${startY + 30} ${startX} ${endY - 30} ${startX} ${endY}`);
+  path.setAttribute('class', 'bc-drop-line');
+  svg.appendChild(path);
+
+  document.body.appendChild(svg);
+}
+
 /* THE GOLD LINE LOGIC */
 let threadSleepTimer = null;
 
