@@ -53,25 +53,56 @@ button {
 
 .soup-view { background: transparent; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
-/* GOLD THREAD BREADCRUMB — flex row, scrollable; current knot centers via scrollIntoView */
+/* GOLD THREAD BREADCRUMB — permanent spine + scroll row; only Soup + focused show captions */
 .breadcrumb-bar {
   position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  flex-wrap: nowrap;
-  gap: 12px;
-  min-height: 48px;
+  display: block;
+  min-height: 50px;
   height: auto;
-  padding: 6px 20px 8px;
+  padding: 6px 0 8px;
   overflow-x: auto;
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   flex-shrink: 0;
   scrollbar-width: none;
-  border-bottom: 1px solid rgba(200, 160, 80, 0.12);
 }
 .breadcrumb-bar::-webkit-scrollbar { display: none; }
+.bc-breadcrumb-inner {
+  position: relative;
+  display: inline-block;
+  min-width: 100%;
+  width: max-content;
+  vertical-align: top;
+  box-sizing: border-box;
+  padding: 0 0 2px;
+}
+.bc-spine-line {
+  position: absolute;
+  left: max(22px, calc(12px + env(safe-area-inset-left, 0px)));
+  right: max(14px, env(safe-area-inset-right, 0px));
+  top: 17px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(200, 160, 80, 0.65) 0%,
+    rgba(200, 160, 80, 0.35) 28%,
+    rgba(200, 160, 80, 0.22) 55%,
+    rgba(200, 160, 80, 0.14) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+.bc-knot-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  gap: 18px;
+  padding: 4px max(12px, env(safe-area-inset-right, 0px)) 2px max(18px, calc(10px + env(safe-area-inset-left, 0px)));
+  min-height: 44px;
+}
 .bc-thread-svg { display: none; }
 .bc-knot-wrap {
   position: relative;
@@ -79,19 +110,48 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  padding-top: 6px;
   min-height: 40px;
   cursor: pointer;
   transform: none;
 }
-.bc-knot-wrap.bc-knot-wrap--compact { padding: 0 2px; }
-.bc-knot-wrap.bc-knot-wrap--current { min-width: 0; max-width: min(240px, 52vw); padding-bottom: 1px; }
+.bc-knot-wrap.bc-knot-wrap--compact { padding: 6px 2px 0; }
+.bc-knot-wrap.bc-knot-wrap--current { min-width: 0; max-width: min(260px, 58vw); }
+.bc-knot-wrap.bc-knot-wrap--soup { margin-right: 4px; }
 .bc-knot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; transition: transform 0.2s, opacity 0.2s; }
-.bc-knot.bc-knot-dot { width: 5px; height: 5px; opacity: 0.75; }
+.bc-knot.bc-knot-dot { width: 5px; height: 5px; opacity: 0.8; }
 .bc-knot.current { width: 10px; height: 10px; background: var(--accent); box-shadow: 0 0 8px rgba(200,160,80,0.5); }
 .bc-knot.compressed { width: 4px; height: 4px; background: var(--accent-dim); opacity: 0.4; }
-.bc-knot-label { font-size: 9px; letter-spacing: 1px; color: var(--accent); font-weight: 700; text-transform: uppercase; white-space: nowrap; margin-top: 3px; opacity: 0; transition: opacity 0.2s; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
-.bc-knot-label.current { opacity: 1; font-size: 10px; max-width: none; overflow: visible; text-overflow: clip; padding: 0 4px; text-align: center; }
+.bc-knot-label {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+  margin-top: 6px;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bc-knot-label.bc-knot-label--soup {
+  text-transform: none;
+  font-size: 10px;
+  letter-spacing: 0.35px;
+  font-weight: 800;
+  max-width: none;
+  opacity: 1;
+  padding: 0 2px 0 0;
+}
+.bc-knot-label.current {
+  text-transform: none;
+  font-size: 10px;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  padding: 0 4px;
+  text-align: center;
+}
 .bc-knot-label.parent { opacity: 0.6; font-size: 9px; }
 .bc-knot-wrap:active .bc-knot { transform: scale(1.4); }
 .bc-drop-line { stroke: rgba(200,160,80,0.4); stroke-width: 1; fill: none; }
@@ -6168,27 +6228,52 @@ async function renderChainKnots(showGhost = false) {
   bar.innerHTML = '';
 
   const allFolders = await getFolders() || [];
-  const segments = [];
-  segments.push({ kind: 'soup', id: null, folderId: null, label: 'Soup', tooltip: 'The Soup' });
-
-  focusChain.forEach((k, i) => {
-    const isLast = i === focusChain.length - 1;
-    const lab = String(k.label || k.id || '').replace(/^◈\s*/, '').trim() || String(k.id || '');
-    segments.push({
-      kind: isLast ? 'current' : 'path',
-      id: k.id,
-      folderId: k.folderId,
-      label: lab,
-      tooltip: lab
-    });
-  });
-
-  if (focusChain.length) {
-    const last = focusChain[focusChain.length - 1];
+  const last = focusChain.length ? focusChain[focusChain.length - 1] : null;
+  let descList = [];
+  if (last) {
     const asFolder = allFolders.find(f => !f.isDeleted && f.id === last.id);
     const descRoot = asFolder ? last.id : (last.folderId != null && String(last.folderId) !== '' ? last.folderId : null);
     if (descRoot != null && String(descRoot) !== '') {
-      for (const d of collectSubfolderTree(descRoot, allFolders)) {
+      descList = collectSubfolderTree(descRoot, allFolders);
+    }
+  }
+  const hasPathMulti = focusChain.length > 1;
+  const hasDesc = descList.length > 0;
+  const useFullChain = hasPathMulti || hasDesc;
+
+  const segments = [];
+  segments.push({
+    kind: 'soup',
+    id: null,
+    folderId: null,
+    label: 'The Soup',
+    tooltip: 'The Soup'
+  });
+
+  if (focusChain.length) {
+    if (!useFullChain) {
+      const k = focusChain[0];
+      const lab = String(k.label || k.id || '').replace(/^◈\s*/, '').trim() || String(k.id || '');
+      segments.push({
+        kind: 'current',
+        id: k.id,
+        folderId: k.folderId,
+        label: lab,
+        tooltip: lab
+      });
+    } else {
+      focusChain.forEach((k, i) => {
+        const isLast = i === focusChain.length - 1;
+        const lab = String(k.label || k.id || '').replace(/^◈\s*/, '').trim() || String(k.id || '');
+        segments.push({
+          kind: isLast ? 'current' : 'path',
+          id: k.id,
+          folderId: k.folderId,
+          label: lab,
+          tooltip: lab
+        });
+      });
+      for (const d of descList) {
         segments.push({
           kind: 'desc',
           id: d.id,
@@ -6204,12 +6289,26 @@ async function renderChainKnots(showGhost = false) {
     segments.push({ kind: 'ghost', id: '__ghost__', folderId: null, label: '···', tooltip: '' });
   }
 
+  const inner = document.createElement('div');
+  inner.className = 'bc-breadcrumb-inner';
+  const spine = document.createElement('div');
+  spine.className = 'bc-spine-line';
+  spine.setAttribute('aria-hidden', 'true');
+  const row = document.createElement('div');
+  row.className = 'bc-knot-row';
+  inner.appendChild(spine);
+  inner.appendChild(row);
+  bar.appendChild(inner);
+
   segments.forEach((seg, idx) => {
     const isCurrent = seg.kind === 'current';
     const isGhost = seg.kind === 'ghost';
+    const isSoup = seg.kind === 'soup';
 
     const wrap = document.createElement('div');
-    wrap.className = 'bc-knot-wrap' + (isCurrent ? ' bc-knot-wrap--current' : ' bc-knot-wrap--compact');
+    wrap.className = 'bc-knot-wrap' +
+      (isCurrent ? ' bc-knot-wrap--current' : ' bc-knot-wrap--compact') +
+      (isSoup ? ' bc-knot-wrap--soup' : '');
     if (isCurrent) wrap.dataset.knotRole = 'current';
     wrap.dataset.knotIdx = String(idx);
 
@@ -6226,7 +6325,12 @@ async function renderChainKnots(showGhost = false) {
     if (isGhost) dot.style.opacity = '0.25';
     wrap.appendChild(dot);
 
-    if (isCurrent && !isGhost) {
+    if (isSoup && !isGhost) {
+      const soupLab = document.createElement('div');
+      soupLab.className = 'bc-knot-label bc-knot-label--soup';
+      soupLab.textContent = 'The Soup';
+      wrap.appendChild(soupLab);
+    } else if (isCurrent && !isGhost) {
       const label = document.createElement('div');
       label.className = 'bc-knot-label current';
       label.textContent = seg.label;
@@ -6253,19 +6357,23 @@ async function renderChainKnots(showGhost = false) {
           const leaf = chain[chain.length - 1];
           await focusMeshCard(leaf.id, leaf.folderId, leaf.label);
         }
-        return;
       }
     });
 
-    bar.appendChild(wrap);
+    row.appendChild(wrap);
   });
 
   requestAnimationFrame(() => {
     const cur = bar.querySelector('.bc-knot-wrap--current');
-    if (cur && cur.scrollIntoView) {
-      try {
-        cur.scrollIntoView({ block: 'nearest', inline: 'center' });
-      } catch (e) { /* ignore */ }
+    if (cur) {
+      const barRect = bar.getBoundingClientRect();
+      const curRect = cur.getBoundingClientRect();
+      const curCenter = curRect.left + curRect.width / 2;
+      const want = barRect.left + barRect.width / 2;
+      bar.scrollLeft += curCenter - want;
+      const maxScroll = Math.max(0, bar.scrollWidth - bar.clientWidth);
+      if (bar.scrollLeft > maxScroll) bar.scrollLeft = maxScroll;
+      if (bar.scrollLeft < 0) bar.scrollLeft = 0;
     }
     requestAnimationFrame(() => {
       const br = bar.getBoundingClientRect();
