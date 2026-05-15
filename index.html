@@ -195,6 +195,57 @@ button {
 .search-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 9px 14px; border-radius: 10px; font-size: 14px; outline: none; caret-color: var(--accent); }
 .search-input:focus { border-color: var(--accent-dim); }
 .search-input::placeholder { color: var(--muted); opacity: 0.6; }
+.soup-search-row { display: flex; align-items: center; gap: 8px; }
+.soup-search-close {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--surface2); color: var(--muted);
+  font-size: 16px; line-height: 1; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+}
+.soup-search-close:active { background: var(--surface); border-color: var(--accent-dim); color: var(--text); }
+.header-actions.header-actions-soup { gap: 10px; }
+.hdr-btn.hdr-btn-soup { width: 42px; height: 42px; font-size: 19px; border-radius: 11px; }
+#view-soup .soup-drawer {
+  position: absolute; inset: 0; z-index: 35; pointer-events: none; opacity: 0;
+  transition: opacity 0.22s ease;
+}
+#view-soup .soup-drawer.open { pointer-events: auto; opacity: 1; }
+#view-soup .soup-drawer-scrim {
+  position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45);
+  border: none; padding: 0; margin: 0; cursor: pointer; display: block;
+}
+#view-soup .soup-drawer-panel {
+  position: absolute; top: 52px; right: 10px; min-width: 200px;
+  max-height: min(72vh, 360px); overflow-y: auto; -webkit-overflow-scrolling: touch;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 8px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  display: flex; flex-direction: column; gap: 4px;
+}
+#view-soup .soup-drawer-item {
+  text-align: left; padding: 12px 14px; border-radius: 10px; border: none;
+  background: transparent; color: var(--text); font-size: 13px; font-weight: 600;
+  letter-spacing: 0.2px; cursor: pointer;
+}
+#view-soup .soup-drawer-item:active { background: var(--surface2); }
+.realm-local-nav {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  position: relative; min-height: 48px; padding: 8px 52px;
+  background: rgba(0, 0, 0, 0.55); border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 25;
+}
+.realm-local-nav .btn-back-table {
+  position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+}
+.realm-local-title {
+  font-size: 10px; letter-spacing: 2px; font-weight: 800; color: var(--accent);
+  text-transform: uppercase; pointer-events: none; text-align: center;
+}
+#view-abyss { padding-top: 48px; position: relative; }
+#view-abyss #abyss-canvas { top: 48px; height: calc(100% - 48px); }
+#view-abyss .realm-local-nav {
+  position: absolute; top: 0; left: 0; right: 0;
+  background: rgba(4, 4, 10, 0.82);
+}
 
 .table-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; opacity: 0.22; padding: 60px 20px; user-select: none; grid-column: 1 / -1; }
 .table-empty-glyph { font-size: 40px; }
@@ -1406,9 +1457,55 @@ button {
   cursor: pointer;
   display: block;
 }
+#view-sanctuary .sanctuary-app-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 12px;
+  background: transparent;
+  border-bottom: none;
+  position: relative;
+  z-index: 5;
+}
+#view-sanctuary .sanctuary-title-cluster {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--s-gold);
+}
+#view-sanctuary .sanctuary-glyph {
+  opacity: 0.85;
+  font-size: 13px;
+  line-height: 1;
+}
+#view-sanctuary #sanctuary-panel-menu {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  border: 1px solid var(--s-border);
+  background: var(--s-ie-surface);
+  color: var(--s-text-sec);
+  font-size: 22px;
+  line-height: 1;
+  padding-bottom: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+#view-sanctuary #sanctuary-panel-menu:active {
+  background: var(--s-surface);
+  border-color: rgba(163, 184, 194, 0.45);
+}
 #view-sanctuary .sanctuary-drawer-panel {
   position: absolute;
-  top: 56px;
+  top: 58px;
   right: 10px;
   min-width: 200px;
   max-height: min(72vh, 420px);
@@ -1708,6 +1805,10 @@ button {
 #view-chat .chat-header {
   background: #0e1113;
   border-bottom-color: #2a3136;
+}
+#view-chat #btn-chat-back {
+  flex-shrink: 0;
+  margin-right: 2px;
 }
 #view-chat .chat-char-name {
   color: #a3b8c2;
@@ -2038,7 +2139,7 @@ select.cosm-input {
 
 .folder-card, .discourse-card, .character-card, .ie-row, .ie-deck-card,
 .hdr-btn, .bar-pill, .breadcrumb-btn, .tbtn, .btn-back-table,
-.nq-wordmark, .bottom-bar, .lighthouse-nav {
+.nq-wordmark, .bottom-bar, .lighthouse-nav, .soup-drawer-item {
   user-select: none;
   -webkit-user-select: none;
 }
@@ -2073,13 +2174,27 @@ select.cosm-input {
   <div class="view-panel soup-view" id="view-soup">
     
     <div class="breadcrumb-bar" id="breadcrumb-bar"></div>
+    <div id="soup-drawer" class="soup-drawer" aria-hidden="true">
+      <button type="button" class="soup-drawer-scrim" id="soup-drawer-scrim" tabindex="-1" aria-label="Close menu"></button>
+      <div class="soup-drawer-panel" id="soup-drawer-panel" role="menu">
+        <button type="button" class="soup-drawer-item" id="soup-drawer-search" role="menuitem">⌕ Search</button>
+        <button type="button" class="soup-drawer-item" id="soup-drawer-settings" role="menuitem">⩔ Settings</button>
+      </div>
+    </div>
     <div class="search-bar-wrap" id="search-bar-wrap" style="display:none;">
-      <input class="search-input" id="search-input" placeholder="Search discourses...">
+      <div class="soup-search-row">
+        <input class="search-input" id="search-input" placeholder="Search discourses...">
+        <button type="button" class="soup-search-close" id="soup-search-close" aria-label="Close search">✕</button>
+      </div>
     </div>
     <div class="table-surface" id="table-surface"></div>
   </div>
   <div class="view-panel hidden" id="view-abyss" style="background:#04040a;overflow:hidden;">
-  <canvas id="abyss-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+  <div class="realm-local-nav" id="abyss-local-nav" role="navigation" aria-label="Abyss">
+    <button type="button" class="btn-back-table" id="btn-abyss-back" aria-label="Back to Soup">←</button>
+    <div class="realm-local-title">The Abyss</div>
+  </div>
+  <canvas id="abyss-canvas" style="position:absolute;left:0;right:0;bottom:0;top:48px;width:100%;height:calc(100% - 48px);"></canvas>
   <div id="abyss-tooltip"></div>
   <div id="abyss-sheet">
     <div id="abyss-sheet-handle"></div>
@@ -2087,6 +2202,10 @@ select.cosm-input {
   </div>
 </div>
 <div class="view-panel deep-soup-view hidden" id="view-deep-soup">
+  <div class="realm-local-nav" id="deep-soup-local-nav" role="navigation" aria-label="Deep Soup">
+    <button type="button" class="btn-back-table" id="btn-deep-soup-back" aria-label="Back to Soup">←</button>
+    <div class="realm-local-title">Deep Soup</div>
+  </div>
   <div class="breadcrumb-bar" id="deep-soup-breadcrumb"></div>
   <div class="table-surface" id="deep-soup-surface" style="padding-top:0;"></div>
 </div>
@@ -2236,6 +2355,13 @@ select.cosm-input {
       </div>
     </div>
     <div class="sanctuary-layers">
+      <header class="sanctuary-app-header" id="sanctuary-app-header">
+        <div class="sanctuary-title-cluster">
+          <span class="sanctuary-glyph" aria-hidden="true">◈</span>
+          <span class="sanctuary-title-text">The Sanctuary</span>
+        </div>
+        <button type="button" id="sanctuary-panel-menu" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer-panel">⋯</button>
+      </header>
       <div class="sanctuary-drawer" id="sanctuary-drawer" aria-hidden="true">
         <button type="button" class="sanctuary-drawer-scrim" id="sanctuary-drawer-scrim" tabindex="-1" aria-label="Close menu"></button>
         <div class="sanctuary-drawer-panel" id="sanctuary-drawer-panel" role="menu">
@@ -2373,6 +2499,7 @@ select.cosm-input {
 
  <div class="view-panel chat-view hidden" id="view-chat">
     <div class="chat-header">
+    <button type="button" class="tbtn" id="btn-chat-back" aria-label="Back">←</button>
     <div id="chat-avatar-pill" class="chat-avatar-pill"></div>
     <div class="chat-char-info">
       <div class="chat-char-name" id="chat-char-name">Character Name</div>
@@ -2692,6 +2819,8 @@ const LONG_PRESS_DURATION=1000,MOVE_THRESHOLD=10;
 let selectMode=false, selectedItems=new Set();
 let deepSoupFolderId = null;
 let deepSoupPath = [{id: null, name: '꩜ Deep Soup'}];
+let soupLocalSearchOpen = false;
+let chatReturnPanel = 'view-soup';
 let deepMapperLoadSuppressed = false;
 let deepMapperSuppressTimer = null;
 
@@ -2705,7 +2834,7 @@ let sanctuaryMyceliumParticles = [];
 
 function closeSanctuaryDrawer(){
   const d = document.getElementById('sanctuary-drawer');
-  const btn = document.getElementById('hdr-sanctuary-menu');
+  const btn = document.getElementById('sanctuary-panel-menu');
   if (d) {
     d.classList.remove('open');
     d.setAttribute('aria-hidden', 'true');
@@ -2714,12 +2843,53 @@ function closeSanctuaryDrawer(){
 }
 function openSanctuaryDrawer(){
   const d = document.getElementById('sanctuary-drawer');
-  const btn = document.getElementById('hdr-sanctuary-menu');
+  const btn = document.getElementById('sanctuary-panel-menu');
   if (d) {
     d.classList.add('open');
     d.setAttribute('aria-hidden', 'false');
   }
   if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+function closeSoupDrawer(){
+  const d = document.getElementById('soup-drawer');
+  const btn = document.getElementById('hdr-soup-menu');
+  if (d) {
+    d.classList.remove('open');
+    d.setAttribute('aria-hidden', 'true');
+  }
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+function openSoupDrawer(){
+  const d = document.getElementById('soup-drawer');
+  const btn = document.getElementById('hdr-soup-menu');
+  if (d) {
+    d.classList.add('open');
+    d.setAttribute('aria-hidden', 'false');
+  }
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+function resetSoupSearchChrome(){
+  soupLocalSearchOpen = false;
+  const sw = document.getElementById('search-bar-wrap');
+  if (sw) sw.style.display = 'none';
+  const si = document.getElementById('search-input');
+  if (si) si.value = '';
+  searchQuery = '';
+}
+async function showSoupLocalSearch(){
+  soupLocalSearchOpen = true;
+  const w = document.getElementById('search-bar-wrap');
+  if (w) w.style.display = 'block';
+  await renderTableView();
+  requestAnimationFrame(() => {
+    const inp = document.getElementById('search-input');
+    if (!inp) return;
+    try { inp.focus({ preventScroll: true }); } catch (_) { inp.focus(); }
+  });
+}
+async function hideSoupLocalSearch(){
+  resetSoupSearchChrome();
+  await renderTableView();
 }
 function sanctuaryPrefersReducedMotion(){
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; }
@@ -3984,6 +4154,7 @@ async function openIEChat(id){
     isSending = false;
   activeCharId = id;
   activeIE = ie;
+  chatReturnPanel = (currentView === 'ie') ? 'view-ie' : 'view-sanctuary';
   document.getElementById('view-chat').classList.add('ie-encounter');
   document.getElementById('chat-input').placeholder = 'Speak with intention...';
   document.getElementById('chat-persona-pill').style.display = 'none';
@@ -4871,7 +5042,7 @@ function goHome(){
 function switchAppMode(mode){
   currentMode=mode;
   const mt=document.getElementById('mode-toast');
-  if(mode==='soup'){showPanel('view-soup');mt.textContent='◈ THE SOUP';}
+  if(mode==='soup'){showPanel('view-soup');mt.textContent='◈ THE SOUP';void renderTableView();}
   else{showPanel('view-sanctuary');mt.textContent='◈ THE SANCTUARY';renderSanctuaryView();}
   mt.style.opacity='1';setTimeout(()=>{mt.style.opacity='0';},1500);
 updateHeaderButtons();
@@ -4881,6 +5052,7 @@ renderDefaultBar(mode);
 /* SHOW PANEL (Unifying logic) */
 function showPanel(id){
     abyssStop();
+  const wasSoup = (currentView === 'soup');
   const panels = [
    'view-soup', 'view-sanctuary', 'view-abyss', 'view-deep-soup', 'view-data',
   'view-lighthouse', 'view-forge', 'view-chat', 'view-memory', 
@@ -4924,20 +5096,27 @@ function showPanel(id){
   const active=document.getElementById(id);
   if(active)active.classList.remove('hidden');
   currentView=id.replace('view-','');
+
+  if (id === 'view-soup' || wasSoup) {
+    closeSoupDrawer();
+    resetSoupSearchChrome();
+  }
+  if (wasSoup && id !== 'view-soup') void renderTableView();
   
     if(id==='view-soup'){renderDefaultBar('soup');}
   else if(id==='view-sanctuary'){renderDefaultBar('sanctuary');}
   else{hideBottomBar();}
   
-  // Guardian gets its own realm -- header hidden, edge glow active
+  // Realms that carry their own top chrome — hide global wordmark row
   const header = document.getElementById('nq-header') || document.querySelector('.nq-header');
   const edgeGlow = document.getElementById('guardian-edge-glow');
-  if(id === 'view-guardian'){
-    if(header) header.style.display = 'none';
-    if(edgeGlow) edgeGlow.classList.add('active');
+  const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-deep-soup');
+  if (hideGlobalHeader) {
+    if (header) header.style.display = 'none';
+    if (id === 'view-guardian' && edgeGlow) edgeGlow.classList.add('active');
   } else {
-    if(header) header.style.display = '';
-    if(edgeGlow) edgeGlow.classList.remove('active');
+    if (header) header.style.display = '';
+    if (edgeGlow) edgeGlow.classList.remove('active');
   }
 
   firefly.sd(id==='view-lighthouse'||id==='view-chat'?80:20);
@@ -4969,28 +5148,28 @@ function showPanel(id){
 /* HEADER BUTTONS */
 function updateHeaderButtons(){
   const c=document.getElementById('header-actions');
+  if(!c) return;
+  c.className = 'header-actions' + (currentMode === 'soup' ? ' header-actions-soup' : '');
   if(currentMode==='soup'){
     c.innerHTML=
-      '<button class="hdr-btn" id="hdr-guardian" style="font-size:18px;">&#43065;</button>'+
-      '<button class="hdr-btn" id="hdr-deep-soup">꩜</button>'+
-          '<button class="hdr-btn" id="hdr-abyss" title="Abyss">&#9689;</button>'+
-      '<button class="hdr-btn" id="hdr-data">&#10868;</button>'+
-      '<button class="hdr-btn" id="hdr-search">&#8982;</button>';
+      '<button class="hdr-btn hdr-btn-soup" id="hdr-guardian" style="font-size:20px;">&#43065;</button>'+
+      '<button class="hdr-btn hdr-btn-soup" id="hdr-sanctuary" title="The Sanctuary">&#8962;</button>'+
+      '<button class="hdr-btn hdr-btn-soup" id="hdr-abyss" title="Abyss">&#9689;</button>'+
+      '<button class="hdr-btn hdr-btn-soup" id="hdr-deep-soup" title="Deep Soup">꩜</button>'+
+      '<button class="hdr-btn hdr-btn-soup" id="hdr-soup-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Soup menu" aria-expanded="false" aria-controls="soup-drawer-panel">⋯</button>';
     document.getElementById('hdr-guardian').onclick=function(){ openGuardianView(); };
+    document.getElementById('hdr-sanctuary').onclick=function(){ switchAppMode('sanctuary'); };
+    document.getElementById('hdr-abyss').onclick=function(){ openAbyssView(); };
     document.getElementById('hdr-deep-soup').onclick=function(){ openDeepSoupView(); };
-        document.getElementById('hdr-abyss').onclick=function(){ openAbyssView(); };
-    document.getElementById('hdr-data').onclick=function(){ openDataPage(); };
-    document.getElementById('hdr-search').onclick=function(){ openGlobalSearch(); };
-  } else {
-    c.innerHTML =
-      '<button class="hdr-btn" id="hdr-sanctuary-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer">⋯</button>';
-    document.getElementById('hdr-sanctuary-menu').onclick = function () {
-      const d = document.getElementById('sanctuary-drawer');
-      if (d && d.classList.contains('open')) closeSanctuaryDrawer();
-      else openSanctuaryDrawer();
+    document.getElementById('hdr-soup-menu').onclick=function(){
+      const d = document.getElementById('soup-drawer');
+      if (d && d.classList.contains('open')) closeSoupDrawer();
+      else openSoupDrawer();
     };
+  } else {
+    c.innerHTML = '';
   }
-  }
+}
 
 async function goBack() {
 const hdr = document.querySelector('.nq-header');
@@ -5051,7 +5230,7 @@ async function renderTableView() {
 
   const isAtRoot = (!currentFolderId || currentFolderId === 'root');
   const sw = document.getElementById('search-bar-wrap');
-  if(sw) sw.style.display = isAtRoot ? 'none' : 'block';
+  if (sw) sw.style.display = soupLocalSearchOpen ? 'block' : 'none';
 
   const allF = (await getFolders()) || [];
   const allD = (await getDiscourses()) || [];
@@ -6647,6 +6826,14 @@ function closeCharacterForge() {
 }
 
 /* CHAT */
+async function closeChatToOrigin(){
+  const pid = chatReturnPanel || 'view-soup';
+  showPanel(pid);
+  if (pid === 'view-sanctuary') await renderSanctuaryView();
+  else if (pid === 'view-ie') renderIEList(document.getElementById('ie-search-input')?.value || '');
+  else await renderTableView();
+}
+
 async function openChat(id){
   const ieCheck = await getImmutableEntity(id);
   if(ieCheck && ieCheck.signature){ openIEBottomSheet(id); return; }
@@ -6659,6 +6846,7 @@ async function openChat(id){
   document.getElementById('chat-persona-pill').style.display = '';
   document.getElementById('btn-chat-edit').style.display = '';// reset any stuck send state
   activeCharId = id;
+  chatReturnPanel = currentMode === 'sanctuary' ? 'view-sanctuary' : 'view-soup';
   const c = await getCharacter(id);
     // Avatar pill -- show primary photo or letter initial
   const pill = document.getElementById('chat-avatar-pill');
@@ -10236,6 +10424,12 @@ document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
     if (persona) persona.addEventListener('click', () => { closeSanctuaryDrawer(); openPersonaView(); });
     if (memory) memory.addEventListener('click', () => { closeSanctuaryDrawer(); openMemoryVaultGlobal(); });
     if (search) search.addEventListener('click', () => { openSanctuarySearch(); });
+    const menuBtn = document.getElementById('sanctuary-panel-menu');
+    if (menuBtn) menuBtn.addEventListener('click', () => {
+      const d = document.getElementById('sanctuary-drawer');
+      if (d && d.classList.contains('open')) closeSanctuaryDrawer();
+      else openSanctuaryDrawer();
+    });
     if (surface) surface.addEventListener('pointerdown', onSanctuarySurfacePointerDown, { passive: true });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
@@ -10251,10 +10445,44 @@ document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
     });
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return;
+      const sd = document.getElementById('soup-drawer');
+      if (sd && sd.classList.contains('open')) {
+        closeSoupDrawer();
+        e.preventDefault();
+        return;
+      }
       const d = document.getElementById('sanctuary-drawer');
       if (d && d.classList.contains('open')) closeSanctuaryDrawer();
     });
   })();
+
+  (function initSoupChrome(){
+    const scrim = document.getElementById('soup-drawer-scrim');
+    const itemSearch = document.getElementById('soup-drawer-search');
+    const itemSettings = document.getElementById('soup-drawer-settings');
+    if (scrim) scrim.addEventListener('click', closeSoupDrawer);
+    if (itemSearch) itemSearch.addEventListener('click', () => {
+      closeSoupDrawer();
+      if (soupLocalSearchOpen) void hideSoupLocalSearch();
+      else void showSoupLocalSearch();
+    });
+    if (itemSettings) itemSettings.addEventListener('click', () => {
+      closeSoupDrawer();
+      void openDataPage();
+    });
+    const closeS = document.getElementById('soup-search-close');
+    if (closeS) closeS.addEventListener('click', () => { void hideSoupLocalSearch(); });
+  })();
+
+document.getElementById('btn-abyss-back').addEventListener('click', () => {
+  abyssStop();
+  showPanel('view-soup');
+  void renderTableView();
+});
+document.getElementById('btn-deep-soup-back').addEventListener('click', () => {
+  showPanel('view-soup');
+  void renderTableView();
+});
 
 document.getElementById('ie-search-input').addEventListener('input', e => renderIEList(e.target.value));
 document.getElementById('btn-ie-manifest-close').addEventListener('click', closeOverlay);
@@ -10281,6 +10509,7 @@ document.getElementById('btn-ie-dev-forge').addEventListener('click', devCreateI
   document.querySelectorAll('.forge-section-header').forEach(h=>{h.addEventListener('click',()=>{h.parentElement.classList.toggle('open');});});
   document.getElementById('btn-memory-back').addEventListener('click',()=>{showPanel('view-chat');});
   document.getElementById('btn-add-manual-memory').addEventListener('click',addManualAnchor);
+  document.getElementById('btn-chat-back').addEventListener('click', ()=>{ void closeChatToOrigin(); });
   document.getElementById('btn-chat-edit').addEventListener('click',()=>openCharacterForge(activeCharId));
   document.getElementById('btn-chat-clear').addEventListener('click',clearChatHistory);
   document.getElementById('btn-send').addEventListener('click',handleChatSend);
@@ -10685,7 +10914,6 @@ async function readSecureKey(storageKey) {
 async function init(){
   // Paint UI immediately -- header, panel, bottom bar need no DB
   currentMode = 'soup';
-  currentView = 'soup';
   currentFolderId = null;
   breadcrumbPath = [{id: null, name: '◈ The Soup'}];
   updateHeaderButtons();
