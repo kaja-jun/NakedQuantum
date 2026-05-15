@@ -60,7 +60,7 @@ button {
 .bc-knot.current { width: 10px; height: 10px; background: var(--accent); box-shadow: 0 0 8px rgba(200,160,80,0.5); }
 .bc-knot.compressed { width: 4px; height: 4px; background: var(--accent-dim); opacity: 0.4; }
 .bc-knot-label { font-size: 9px; letter-spacing: 1px; color: var(--accent); font-weight: 700; text-transform: uppercase; white-space: nowrap; margin-top: 3px; opacity: 0; transition: opacity 0.2s; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
-.bc-knot-label.current { opacity: 1; font-size: 10px; }
+.bc-knot-label.current { opacity: 1; font-size: 10px; max-width: none; overflow: visible; text-overflow: clip; padding: 0 4px; }
 .bc-knot-label.parent { opacity: 0.6; font-size: 9px; }
 .bc-knot-wrap:active .bc-knot { transform: scale(1.4); }
 .bc-drop-line { stroke: rgba(200,160,80,0.4); stroke-width: 1; fill: none; }
@@ -1367,17 +1367,18 @@ button {
 
 /* ═══ SANCTUARY REALM (scoped — Soup / IE page unchanged) ═══ */
 #view-sanctuary.sanctuary-view {
-  --s-bg: #000000;
-  --s-surface: transparent;          /* was #0a1410 */
-  --s-ie-surface: transparent;       /* was #0f1a14 */
-  --s-border: rgba(209,191,167,0.16); /* warm bone, was #1e3028 */
-  --s-text: #e8e2d6;                 /* warm white, was #d4ddd6 */
-  --s-text-sec: #b8a995;             /* was #8a9e92 */
-  --s-text-muted: #8c7c6a;           /* was #566b5e */
-  --s-warm: #d1bfa7;                 /* replace your --s-gold usage */
-  --s-glow: rgba(209,191,167,0.035); /* was green */
-  --s-mycelium: rgba(209,191,167,0.045); /* was green */
-  --s-branch: #3a3028;               /* warm dark brown, was #1a3025 */
+  --s-bg: #050607;
+  --s-surface: #0e1113;
+  --s-ie-surface: #12171a;
+  --s-border: #2a3136;
+  --s-text: #dfe6e8;
+  --s-text-sec: #9aa5ad;
+  --s-text-muted: #6e787f;
+  --s-accent-cool: #a3b8c2;
+  --s-sigil-gold: #c8a050;
+  --s-glow: rgba(160, 180, 200, 0.05);
+  --s-mycelium: rgba(180, 200, 210, 0.04);
+  --s-branch: #141a22;
   background: var(--s-bg);
   color: var(--s-text);
 }
@@ -1389,7 +1390,7 @@ button {
   pointer-events: none;
   overflow: hidden;
 }
-#view-sanctuary.sanctuary-mycelium-canvas {
+#view-sanctuary .sanctuary-mycelium-canvas {
   position: absolute;
   inset: auto 0 0 0;
   height: 60%;
@@ -1481,7 +1482,7 @@ button {
   letter-spacing: 2px;
   font-weight: 800;
   text-transform: uppercase;
-  color: var(--s-gold);
+  color: var(--s-accent-cool);
 }
 #view-sanctuary .sanctuary-glyph {
   opacity: 0.85;
@@ -1557,7 +1558,7 @@ button {
 /* Slightly larger IE strip cards (Sanctuary only) */
 #view-sanctuary .ie-strip .ie-card,
 #view-sanctuary .character-card {
-  background: transparent; /* kill the green fill */
+  background: var(--s-surface);
   border: 1px solid var(--s-border);
   box-shadow: inset 0 0 24px var(--s-glow);
 }
@@ -1569,8 +1570,8 @@ button {
   opacity: 0.15;
 }
 #view-sanctuary .ie-card:active {
-  background: var(--s-surface);
-  border-color: var(--s-gold);
+  background: var(--s-ie-surface);
+  border-color: var(--s-accent-cool);
 }
 #view-sanctuary .ie-card-text {
   padding: 20px 10px 0;
@@ -1590,15 +1591,15 @@ button {
   margin-bottom: 12px;
 }
 #view-sanctuary .ie-card-sigil svg {
+  filter: drop-shadow(0 0 4px rgba(200, 160, 80, 0.45));
   animation: ieSigilSpin 30s linear infinite;
-  filter: drop-shadow(0 0 1px rgba(163, 184, 194, 0.28));
 }
 #view-sanctuary .ie-card-sigil.pulse svg {
   animation: ieSigilSpin 30s linear infinite, ieSigilGlowSanctuary 4s ease-in-out infinite;
 }
 @keyframes ieSigilGlowSanctuary {
-  0%, 100% { opacity: 0.65; filter: drop-shadow(0 0 1px rgba(163, 184, 194, 0.22)); }
-  50% { opacity: 1; filter: drop-shadow(0 0 5px rgba(163, 184, 194, 0.38)); }
+  0%, 100% { opacity: 0.65; filter: drop-shadow(0 0 2px rgba(200, 160, 80, 0.35)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 10px rgba(200, 160, 80, 0.85)); }
 }
 
 #view-sanctuary .ie-card.ie-card-archive {
@@ -1607,7 +1608,7 @@ button {
   opacity: 1;
 }
 #view-sanctuary .ie-card.ie-card-archive .ie-card-name {
-  color: var(--s-gold);
+  color: var(--s-text-sec);
   opacity: 0.85;
 }
 #view-sanctuary .ie-card.ie-card-archive .ie-card-function {
@@ -1632,8 +1633,8 @@ button {
   height: 1px;
 }
 #view-sanctuary .sanctuary-divider-label {
-  color: var(--s-gold);
-  opacity: 0.5;
+  color: var(--s-accent-cool);
+  opacity: 0.45;
   letter-spacing: 3.5px;
   text-transform: uppercase;
   font-weight: 900;
@@ -1699,19 +1700,6 @@ button {
   color: var(--s-text-sec);
 }
 
-/* Bloom burst (appended to body; class only used with sanctuary) */
-.sanctuary-bloom-node { display: none!important; }
-.sanctuary-bloom-node.sanctuary-bloom-node-on {
-  transform: scale(1.4); /* Expands wide */
-  opacity: 0; /* Fades to nothing */
-  margin-top: -40px; /* Drifts upward as it exhales */
-}
-
-/* Ambient blooms can be slightly larger/slower */
-.sanctuary-bloom-node.sanctuary-bloom-ambient {
-  transition-duration: 5s;
-}
-
 @media (prefers-reduced-motion: reduce) {
   #view-sanctuary .sanctuary-branch-svg {
     animation: none;
@@ -1720,9 +1708,6 @@ button {
   #view-sanctuary .ie-card-sigil svg,
   #view-sanctuary .ie-card-sigil.pulse svg {
     animation: none !important;
-  }
-  .sanctuary-bloom-node {
-    transition-duration: 0.01ms !important;
   }
 }
 
@@ -2822,10 +2807,9 @@ let chatReturnPanel = 'view-soup';
 let deepMapperLoadSuppressed = false;
 let deepMapperSuppressTimer = null;
 
-/* SANCTUARY REALM — mycelium, blooms, drawer */
+/* SANCTUARY REALM — mycelium, organic branches, drawer */
 let sanctuaryAmbienceActive = false;
 let sanctuaryMyceliumRaf = null;
-let sanctuaryAmbientBloomTimer = null;
 let sanctuaryMyceliumResizeObs = null;
 const SANCTUARY_MYCEL_MAX = 10;
 let sanctuaryMyceliumParticles = [];
@@ -2892,52 +2876,6 @@ async function hideSoupLocalSearch(){
 function sanctuaryPrefersReducedMotion(){
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; }
 }
-function spawnSanctuaryBloomPage(cx, cy, ambient){
-  if (sanctuaryPrefersReducedMotion()) return;
-  const panel = document.getElementById('view-sanctuary');
-  if (!panel || panel.classList.contains('hidden')) return;
-  const el = document.createElement('div');
-  el.className = 'sanctuary-bloom-node' + (ambient ? ' sanctuary-bloom-ambient' : '');
-  const size = ambient ? (90 + Math.random() * 100) : (100 + Math.random() * 90);
-  const jitterX = (Math.random() - 0.5) * (ambient ? size * 0.45 : 40);
-  const jitterY = (Math.random() - 0.5) * (ambient ? size * 0.45 : 40);
-  el.style.width = size + 'px';
-  el.style.height = size + 'px';
-  el.style.left = (cx + jitterX - size / 2) + 'px';
-  el.style.top = (cy + jitterY - size / 2) + 'px';
-  // Inside spawnSanctuaryBloomPage:
-const dur = ambient ? 4500 + Math.random() * 1500 : 3000 + Math.random() * 1000;
-el.style.transitionDuration = dur + 'ms';
-document.body.appendChild(el);
-
-// Force reflow
-void el.offsetWidth;
-
-// The Exhale
-el.style.opacity = '0.8'; // appears
-requestAnimationFrame(() => { 
-  el.classList.add('sanctuary-bloom-node-on'); 
-});
-
-setTimeout(() => { try { el.remove(); } catch (_) {} }, dur + 100);
-}
-
-function scheduleSanctuaryAmbientBloom(){
-clearTimeout(sanctuaryAmbientBloomTimer);
-  if (!sanctuaryAmbienceActive || sanctuaryPrefersReducedMotion()) return;
-  const delay = 10000 + Math.random() * 14000;
-  sanctuaryAmbientBloomTimer = setTimeout(() => {
-    sanctuaryAmbientBloomTimer = null;
-    if (!sanctuaryAmbienceActive || document.hidden) { scheduleSanctuaryAmbientBloom(); return; }
-    const panel = document.getElementById('view-sanctuary');
-    if (!panel || panel.classList.contains('hidden')) { scheduleSanctuaryAmbientBloom(); return; }
-    const r = panel.getBoundingClientRect();
-    const cx = r.left + r.width * (0.12 + Math.random() * 0.76);
-    const cy = r.top + r.height * (0.18 + Math.random() * 0.64);
-    spawnSanctuaryBloomPage(cx, cy, true);
-    scheduleSanctuaryAmbientBloom();
-  }, delay);
-}
 
 function resizeSanctuaryMyceliumCanvas(){
   const c = document.getElementById('sanctuary-mycelium-canvas');
@@ -3000,7 +2938,7 @@ function tickSanctuaryMycelium(){
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   
   ctx.lineWidth = 0.6;
-  ctx.strokeStyle = 'rgba(209, 191, 167, 0.15)'; // Warm bone color
+  ctx.strokeStyle = 'rgba(180, 200, 210, 0.12)';
 
   for (let i = 0; i < sanctuaryMyceliumParticles.length; i++) {
     let p = sanctuaryMyceliumParticles[i];
@@ -3050,22 +2988,23 @@ sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
 }
 
 const branchState = [];
+let branchTickRaf = null;
 
 function initOrganicBranches() {
-  document.querySelectorAll('#view-sanctuary.sanctuary-branch-svg').forEach((svg, idx) => {
-    // build a simple curved trunk with 2-3 offshoots
-    const w = svg.clientWidth, h = svg.clientHeight;
+  branchState.length = 0;
+  document.querySelectorAll('#view-sanctuary .sanctuary-branch-svg').forEach((svg) => {
+    const w = svg.clientWidth || 100;
+    const h = svg.clientHeight || 100;
     const baseX = w * 0.15, baseY = h * 0.15;
     const points = [];
     const segments = 12;
     for (let i = 0; i <= segments; i++) {
       const t = i / segments;
-      // gentle outward curve
-      const x = baseX + Math.pow(t, 1.4) * w * 0.7 + (Math.random()-0.5)*4;
-      const y = baseY + Math.pow(t, 1.2) * h * 0.7 + (Math.random()-0.5)*4;
+      const x = baseX + Math.pow(t, 1.4) * w * 0.7 + (Math.random() - 0.5) * 4;
+      const y = baseY + Math.pow(t, 1.2) * h * 0.7 + (Math.random() - 0.5) * 4;
       points.push({ x, y, ox: x, oy: y, depth: t });
     }
-    branchState.push({ svg, points, phase: Math.random()*Math.PI*2 });
+    branchState.push({ svg, points, phase: Math.random() * Math.PI * 2 });
     drawBranch(svg, points);
   });
 }
@@ -3090,26 +3029,41 @@ function drawBranch(svg, points) {
 }
 
 function tickBranches(time) {
+  branchTickRaf = null;
   if (!sanctuaryAmbienceActive) return;
+  if (document.hidden) {
+    branchTickRaf = requestAnimationFrame(tickBranches);
+    return;
+  }
   branchState.forEach(b => {
     const sway = Math.sin(time * 0.0003 + b.phase) * 0.8;
     b.points.forEach((p,i) => {
-      const amp = p.depth * 2.2; // tips move more
-      // perpendicular offset
+      const amp = p.depth * 2.2;
       p.x = p.ox + Math.cos(time*0.0002 + i*0.3) * amp * sway;
       p.y = p.oy + Math.sin(time*0.0002 + i*0.3) * amp * sway * 0.6;
     });
     drawBranch(b.svg, b.points);
   });
-  requestAnimationFrame(tickBranches);
+  branchTickRaf = requestAnimationFrame(tickBranches);
 }
 
-// start
-initOrganicBranches();
-requestAnimationFrame(tickBranches);
+function stopBranchRhythm() {
+  if (branchTickRaf != null) {
+    cancelAnimationFrame(branchTickRaf);
+    branchTickRaf = null;
+  }
+}
+
+function startBranchRhythm() {
+  stopBranchRhythm();
+  if (!branchState.length || sanctuaryPrefersReducedMotion()) return;
+  branchTickRaf = requestAnimationFrame(tickBranches);
+}
 
 function startSanctuaryRealm(){
   sanctuaryAmbienceActive = true;
+  initOrganicBranches();
+  startBranchRhythm();
   const c = document.getElementById('sanctuary-mycelium-canvas');
   const panel = document.getElementById('view-sanctuary');
   if (c && panel && !sanctuaryPrefersReducedMotion()) {
@@ -3130,13 +3084,11 @@ function startSanctuaryRealm(){
       sanctuaryMyceliumResizeObs.observe(panel);
     }
   }
-  scheduleSanctuaryAmbientBloom();
 }
 
 function stopSanctuaryRealm(){
   sanctuaryAmbienceActive = false;
-  clearTimeout(sanctuaryAmbientBloomTimer);
-  sanctuaryAmbientBloomTimer = null;
+  stopBranchRhythm();
   cancelAnimationFrame(sanctuaryMyceliumRaf);
   sanctuaryMyceliumRaf = null;
   if (sanctuaryMyceliumResizeObs) {
@@ -3151,14 +3103,6 @@ function onSanctuarySurfacePointerDown(ev){
   if (!panel || panel.classList.contains('hidden')) return;
   const dr = document.getElementById('sanctuary-drawer');
   if (dr && dr.classList.contains('open')) return;
-  const t = ev.target;
-  if (!t || !t.closest) return;
-  const card = t.closest('.ie-card, .character-card');
-  if (!card || !panel.contains(card)) return;
-  const r = card.getBoundingClientRect();
-  const cx = r.left + r.width * (0.38 + Math.random() * 0.24);
-  const cy = r.top + r.height * (0.36 + Math.random() * 0.28);
-  spawnSanctuaryBloomPage(cx, cy, false);
 }
 
 /* PERSONA */
@@ -5801,14 +5745,9 @@ async function focusMeshCard(id, folderId, label) {
   if(createCard) mesh.appendChild(createCard);
   finalizeSoupMeshCreateLast();
 
-  // Haptic
-  const hapticCount = Math.min(tier1.length, 5);
-  for(let i = 0; i < hapticCount; i++) {
-    setTimeout(() => {
-      try { window.webkit?.messageHandlers?.haptic?.postMessage('light'); } catch(e) {}
-      if(navigator.vibrate) navigator.vibrate(10);
-    }, i * 40);
-  }
+  // Haptic — single pulse per focus change
+  try { window.webkit?.messageHandlers?.haptic?.postMessage('light'); } catch (e) {}
+  if (navigator.vibrate) navigator.vibrate(12);
 
   // Update chain knots with ghost if focused item has nested folders
   const hasDepth = allFolders.some(f => !f.isDeleted && String(f.parent_id) === String(id));
@@ -5849,35 +5788,44 @@ function unfocusMesh() {
 
 function drawLineageThread(id, folderId) {
   removeLineageThread();
+  if (!currentFocusId) return;
   const mesh = document.getElementById('soup-mesh');
   if(!mesh) return;
-      const focusedCard = [...mesh.querySelectorAll('.nq-card')].find(
+  const focusedCard = [...mesh.querySelectorAll('.nq-card')].find(
         c => c.dataset.folderId === id && !c.dataset.id
       ) || mesh.querySelector(`[data-id="${id}"]`);
   if(!focusedCard) return;
 
-  const soupView = document.getElementById('view-soup');
   const breadcrumb = document.getElementById('breadcrumb-bar');
+  if (!breadcrumb) return;
+
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.id = 'lineage-thread';
   svg.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;';
   document.body.appendChild(svg);
 
-  const bcRect = breadcrumb.getBoundingClientRect();
   const cardRect = focusedCard.getBoundingClientRect();
   const cardCX = cardRect.left + cardRect.width / 2;
   const cardTopY = cardRect.top;
   const cardMidY = cardRect.top + cardRect.height / 2;
 
-  // Anchor from current knot X position (must match renderChainKnots spacing + focusChain depth)
-  const KNOT_SPACING = 56;
-  const SIDE_PAD = 28;
-  const knotIdx = focusChain.length;
-  const knotLocalX = SIDE_PAD + knotIdx * KNOT_SPACING;
-  const anchorX = bcRect.left + knotLocalX - (document.getElementById('breadcrumb-bar').scrollLeft || 0);
-  const anchorY = bcRect.bottom;
+  const knotEl = breadcrumb.querySelector('[data-knot-idx="' + focusChain.length + '"]');
+  let anchorX;
+  let anchorY;
+  if (knotEl) {
+    const kr = knotEl.getBoundingClientRect();
+    anchorX = kr.left + kr.width / 2;
+    anchorY = kr.bottom;
+  } else {
+    const bcRect = breadcrumb.getBoundingClientRect();
+    const KNOT_SPACING = 56;
+    const SIDE_PAD = 28;
+    const knotIdx = focusChain.length;
+    const knotLocalX = SIDE_PAD + knotIdx * KNOT_SPACING;
+    anchorX = bcRect.left + knotLocalX - (breadcrumb.scrollLeft || 0);
+    anchorY = bcRect.bottom;
+  }
 
-  // Main thread -- from breadcrumb anchor down to focused card
   const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   line.setAttribute('d', `M ${anchorX} ${anchorY} C ${anchorX} ${anchorY + (cardTopY - anchorY) * 0.6} ${cardCX} ${cardTopY - 20} ${cardCX} ${cardMidY}`);
   line.setAttribute('stroke', 'rgba(200,160,80,0.4)');
@@ -5885,7 +5833,6 @@ function drawLineageThread(id, folderId) {
   line.setAttribute('fill', 'none');
   svg.appendChild(line);
 
-  // Small anchor dot at breadcrumb
   const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
   dot.setAttribute('cx', anchorX);
   dot.setAttribute('cy', anchorY);
@@ -5893,7 +5840,6 @@ function drawLineageThread(id, folderId) {
   dot.setAttribute('fill', 'rgba(200,160,80,0.5)');
   svg.appendChild(dot);
 
-  // Branch lines -- from focused card to each connected child
   const children = mesh.querySelectorAll('.in-focus:not(#nq-create-card)');
   children.forEach(child => {
     if(child === focusedCard) return;
@@ -6158,6 +6104,7 @@ function renderChainKnots(showGhost = false) {
     const wrap = document.createElement('div');
     wrap.className = 'bc-knot-wrap';
     wrap.style.left = x + 'px';
+    wrap.dataset.knotIdx = String(idx);
 
         const dot = document.createElement('div');
     dot.className = 'bc-knot' +
@@ -6190,8 +6137,14 @@ function renderChainKnots(showGhost = false) {
     bar.appendChild(wrap);
   });
 
-  // Set scroll width and auto-scroll to current
-  bar.scrollLeft = Math.max(0, SIDE_PAD + (total - 1) * KNOT_SPACING - bar.offsetWidth + 60);
+  const wraps = bar.querySelectorAll('.bc-knot-wrap');
+  const curWrap = wraps[wraps.length - 1];
+  if (curWrap) {
+    const cx = curWrap.offsetLeft + curWrap.offsetWidth / 2;
+    bar.scrollLeft = Math.max(0, cx - bar.clientWidth / 2);
+  } else {
+    bar.scrollLeft = Math.max(0, SIDE_PAD + (total - 1) * KNOT_SPACING - bar.offsetWidth + 60);
+  }
 
   // Drop line from current knot to mesh
   drawBreadcrumbDrop(SIDE_PAD + (total - 1) * KNOT_SPACING, midY + 6);
@@ -6201,6 +6154,7 @@ function drawBreadcrumbDrop(knotX, knotY) {
   // Remove existing drop
   const existing = document.getElementById('bc-drop-svg');
   if(existing) existing.remove();
+  if (focusChain.length > 0) return;
   if(breadcrumbPath.length <= 1) return; // at root, no drop
 
   const bar = document.getElementById('breadcrumb-bar');
