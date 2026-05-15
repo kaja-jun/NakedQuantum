@@ -3638,6 +3638,7 @@ function initWorker(){
 
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
+/* Set false for production builds (relaxes watcher thresholds and skips lock screen). */
 const NQ_DEV_MODE = true;
 //const NQ_DEV_MODE = false;
 
@@ -4412,7 +4413,9 @@ function openIEBottomSheet(id){
     if(!e) return;
     
     const sigilEl = document.getElementById('ie-manifest-sigil');
-    sigilEl.innerHTML = e.sigil_svg || '◈';
+    const rawSigil = (e.sigil_svg || '').trim();
+    if (/^<svg[\s>]/i.test(rawSigil)) sigilEl.innerHTML = rawSigil;
+    else sigilEl.textContent = '◈';
     
     document.getElementById('ie-manifest-name').textContent = e.display_name || 'Unnamed';
     document.getElementById('ie-manifest-archetype').textContent = e.archetype_tag || '';
@@ -11463,18 +11466,31 @@ async function bootApp() {
     cooldownActive = true;
     btn.disabled = true;
     let secs = 30;
-    const interval = setInterval(() => {
+    let interval = null;
+    interval = setInterval(() => {
       secs--;
       btn.textContent = `◈ Retry Face ID (${secs}s)`;
       if (secs <= 0) {
         clearInterval(interval);
+        interval = null;
         btn.textContent = '◈ Try Face ID';
         btn.disabled = false;
         cooldownActive = false;
       }
     }, 1000);
-    
-    const unlocked = await unlockWithPRF();
+
+    let unlocked = false;
+    try {
+      unlocked = await unlockWithPRF();
+    } finally {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+      btn.textContent = '◈ Try Face ID';
+      btn.disabled = false;
+      cooldownActive = false;
+    }
     if (unlocked) {
       lockScreen.style.display = 'none';
       await init();

@@ -1,3 +1,6 @@
+/* jshint esversion: 11 */
+/* global caches */
+/* global self */
 const CACHE = "nq-v1";
 const FILES = [
   "/",
