@@ -54,7 +54,7 @@ button {
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 .hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
-.nq-header.nq-header--sanctuary-realm {
+#nq-header.nq-header--sanctuary-realm {
   background: #050607;
   border-bottom-color: #2a3136;
 }
@@ -2407,7 +2407,7 @@ select.cosm-input {
   <button id="btn-fallback-unlock" style="display:none; background:var(--accent); color:#000; font-weight:900; padding:12px 24px; border-radius:20px; border:none; text-transform:uppercase; font-size:11px; letter-spacing:1px;">Force Unlock</button>
 </div>
 
-<div class="nq-header">
+<div class="nq-header" id="nq-header">
   <div class="nq-wordmark" id="nq-wordmark">NakedQuantum</div>
   <div class="header-actions" id="header-actions"></div>
 </div>
@@ -3152,14 +3152,16 @@ function sanctuaryPrefersReducedMotion(){
 
 function resizeSanctuaryMyceliumCanvas(){
   const c = document.getElementById('sanctuary-mycelium-canvas');
-  const panel = document.getElementById('view-sanctuary');
-  if (!c || !panel) return;
-  const r = panel.getBoundingClientRect();
+  if (!c) return;
+  /* Match firefly: full viewport buffer so mycelium is not clipped to the
+     view-sanctuary rect (which sits below the global header). */
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  c.width = Math.max(1, Math.floor(r.width * dpr));
-  c.height = Math.max(1, Math.floor(r.height * dpr));
-  c.style.width = Math.floor(r.width) + 'px';
-  c.style.height = Math.floor(r.height) + 'px';
+  c.width = Math.max(1, Math.floor(vw * dpr));
+  c.height = Math.max(1, Math.floor(vh * dpr));
+  c.style.width = Math.floor(vw) + 'px';
+  c.style.height = Math.floor(vh) + 'px';
 }
 
 function initSanctuaryMyceliumParticles(w, h){
@@ -3354,7 +3356,7 @@ function startSanctuaryRealm(){
         const cw = document.getElementById('sanctuary-mycelium-canvas');
         if (cw) initSanctuaryMyceliumParticles(cw.width / d, cw.height / d);
       });
-      sanctuaryMyceliumResizeObs.observe(panel);
+      sanctuaryMyceliumResizeObs.observe(document.documentElement);
     }
   }
 }
@@ -5437,9 +5439,10 @@ function switchAppMode(mode){
 
 /* SHOW PANEL (Unifying logic) */
 function syncNqHeaderForCurrentPanel(activePanelId) {
-  const hdr = document.getElementById('nq-header');
-  const realmSanctuary = activePanelId === 'view-sanctuary' && currentMode === 'sanctuary';
-  if (hdr) hdr.classList.toggle('nq-header--sanctuary-realm', realmSanctuary);
+  const hdr = document.getElementById('nq-header') || document.querySelector('.nq-header');
+  const onSanctuaryPanel = activePanelId === 'view-sanctuary';
+  const realmSanctuary = onSanctuaryPanel && currentMode === 'sanctuary';
+  if (hdr) hdr.classList.toggle('nq-header--sanctuary-realm', onSanctuaryPanel);
   const wm = document.getElementById('nq-wordmark');
   if (wm) {
     wm.classList.toggle('nq-wordmark--sanctuary-realm', realmSanctuary);
