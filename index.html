@@ -1384,58 +1384,6 @@ button {
   overflow: hidden;
 }
 
-#view-sanctuary .sanctuary-app-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px 8px;
-  border-bottom: 1px solid var(--s-border);
-  background: linear-gradient(180deg, rgba(6, 30, 23, 0.92), rgba(6, 30, 23, 0.55));
-}
-#view-sanctuary .sanctuary-title-cluster {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-#view-sanctuary .sanctuary-glyph {
-  font-size: 11px;
-  color: var(--s-gold);
-  flex-shrink: 0;
-  opacity: 0.95;
-}
-#view-sanctuary .sanctuary-title-text {
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
-  color: var(--s-gold);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-#view-sanctuary .sanctuary-menu-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid var(--s-border);
-  background: var(--s-surface);
-  color: var(--s-text-sec);
-  opacity: 0.6;
-  font-size: 20px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-}
-#view-sanctuary .sanctuary-menu-btn:active {
-  opacity: 1;
-  background: var(--s-ie-surface);
-}
-
 #view-sanctuary .sanctuary-drawer {
   position: absolute;
   inset: 0;
@@ -1463,6 +1411,9 @@ button {
   top: 56px;
   right: 10px;
   min-width: 200px;
+  max-height: min(72vh, 420px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--s-ie-surface);
   border: 1px solid var(--s-border);
   border-radius: 14px;
@@ -2140,16 +2091,11 @@ select.cosm-input {
       </div>
     </div>
     <div class="sanctuary-layers">
-      <header class="sanctuary-app-header">
-        <div class="sanctuary-title-cluster">
-          <span class="sanctuary-glyph" aria-hidden="true">◈</span>
-          <span class="sanctuary-title-text">The Sanctuary</span>
-        </div>
-        <button type="button" class="sanctuary-menu-btn" id="sanctuary-menu-btn" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer">⋯</button>
-      </header>
       <div class="sanctuary-drawer" id="sanctuary-drawer" aria-hidden="true">
         <button type="button" class="sanctuary-drawer-scrim" id="sanctuary-drawer-scrim" tabindex="-1" aria-label="Close menu"></button>
         <div class="sanctuary-drawer-panel" id="sanctuary-drawer-panel" role="menu">
+          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-immutable" role="menuitem">∞ Immutable Entities</button>
+          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-create" role="menuitem">⌗ Create</button>
           <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-persona" role="menuitem">⁂ Persona</button>
           <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-memory" role="menuitem">▣ Memory vault</button>
           <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-search" role="menuitem">⌕ Search</button>
@@ -2614,7 +2560,7 @@ let sanctuaryMyceliumParticles = [];
 
 function closeSanctuaryDrawer(){
   const d = document.getElementById('sanctuary-drawer');
-  const btn = document.getElementById('sanctuary-menu-btn');
+  const btn = document.getElementById('hdr-sanctuary-menu');
   if (d) {
     d.classList.remove('open');
     d.setAttribute('aria-hidden', 'true');
@@ -2623,7 +2569,7 @@ function closeSanctuaryDrawer(){
 }
 function openSanctuaryDrawer(){
   const d = document.getElementById('sanctuary-drawer');
-  const btn = document.getElementById('sanctuary-menu-btn');
+  const btn = document.getElementById('hdr-sanctuary-menu');
   if (d) {
     d.classList.add('open');
     d.setAttribute('aria-hidden', 'false');
@@ -4891,17 +4837,13 @@ function updateHeaderButtons(){
     document.getElementById('hdr-data').onclick=function(){ openDataPage(); };
     document.getElementById('hdr-search').onclick=function(){ openGlobalSearch(); };
   } else {
-    c.innerHTML=
-      '<button class="hdr-btn" id="hdr-immutable" style="font-size:16px;">&#8734;</button>'+
-      '<button class="hdr-btn" id="hdr-create" style="font-size:18px;">⌗</button>'+   // ⌗
-      '<button class="hdr-btn" id="hdr-settings">&#11041;</button>'+                       // ⬡
-      '<button class="hdr-btn" id="hdr-memory-vault" style="font-size:16px;">&#8277;</button>'+
-      '<button class="hdr-btn" id="hdr-sanctuary-search">&#8982;</button>';
-    document.getElementById('hdr-immutable').onclick = function(){ openIEPage(); };
-    document.getElementById('hdr-create').onclick = function(){ openCreateModal(); };
-    document.getElementById('hdr-settings').onclick = function(){};
-    document.getElementById('hdr-memory-vault').onclick = function(){ openMemoryVaultGlobal(); };
-    document.getElementById('hdr-sanctuary-search').onclick = function(){ openSanctuarySearch(); };
+    c.innerHTML =
+      '<button class="hdr-btn" id="hdr-sanctuary-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer">⋯</button>';
+    document.getElementById('hdr-sanctuary-menu').onclick = function () {
+      const d = document.getElementById('sanctuary-drawer');
+      if (d && d.classList.contains('open')) closeSanctuaryDrawer();
+      else openSanctuaryDrawer();
+    };
   }
   }
 
@@ -5529,6 +5471,7 @@ function removeLineageThread() {
 }
 
 function openQuickAction(card, item) {
+  if (item && item.type === 'character' && currentMode === 'sanctuary') return;
   // Remove any existing menu
   const existing = document.getElementById('nq-quick-action');
   if(existing) existing.remove();
@@ -6387,14 +6330,6 @@ strip.appendChild(ctaCard);
         openChat(c.id);
       });
 
-      card.addEventListener('mousedown', e => startLP(e, card, {type:'character', id:c.id, name:c.name, data:c}));
-      card.addEventListener('mouseup', () => cancelLP(card));
-      card.addEventListener('mouseleave', () => cancelLP(card));
-      card.addEventListener('touchstart', e => startLP(e, card, {type:'character', id:c.id, name:c.name, data:c}), {passive: true});
-      card.addEventListener('touchend', () => cancelLP(card));
-      card.addEventListener('touchcancel', () => cancelLP(card));
-      card.addEventListener('touchmove', e => handleTM(e, card), {passive: true});
-      
       g.appendChild(card);
     }
     surface.appendChild(g);
@@ -10143,20 +10078,16 @@ document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
   document.getElementById('btn-ie-back').addEventListener('click', ()=>{ showPanel('view-sanctuary'); renderSanctuaryView(); });
 
   (function initSanctuaryChrome(){
-    const menu = document.getElementById('sanctuary-menu-btn');
     const scrim = document.getElementById('sanctuary-drawer-scrim');
+    const immutable = document.getElementById('sanctuary-drawer-immutable');
+    const create = document.getElementById('sanctuary-drawer-create');
     const persona = document.getElementById('sanctuary-drawer-persona');
     const memory = document.getElementById('sanctuary-drawer-memory');
     const search = document.getElementById('sanctuary-drawer-search');
     const surface = document.getElementById('sanctuary-surface');
-    if (menu) {
-      menu.addEventListener('click', () => {
-        const d = document.getElementById('sanctuary-drawer');
-        if (d && d.classList.contains('open')) closeSanctuaryDrawer();
-        else openSanctuaryDrawer();
-      });
-    }
     if (scrim) scrim.addEventListener('click', closeSanctuaryDrawer);
+    if (immutable) immutable.addEventListener('click', () => { closeSanctuaryDrawer(); openIEPage(); });
+    if (create) create.addEventListener('click', () => { closeSanctuaryDrawer(); openCreateModal(); });
     if (persona) persona.addEventListener('click', () => { closeSanctuaryDrawer(); openPersonaView(); });
     if (memory) memory.addEventListener('click', () => { closeSanctuaryDrawer(); openMemoryVaultGlobal(); });
     if (search) search.addEventListener('click', () => { openSanctuarySearch(); });
