@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.38.4</title>
+<title>NakedQuantum v0.39</title>
 <style>
 :root {
   --bg: #000000;
@@ -999,7 +999,7 @@ button {
 .section-grid.single-row { /* same grid, no special treatment */ }
 
 /* SANCTUARY (base layout; realm palette lives under #view-sanctuary) */
-.sanctuary-view { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; -webkit-overflow-scrolling: touch; height: 100%; }
+.sanctuary-view { position: absolute; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; -webkit-overflow-scrolling: touch; height: 100%; }
 
 .character-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; }
 .character-card:active { border-color: var(--accent); background: var(--surface2); }
@@ -1645,7 +1645,6 @@ button {
   --s-sigil-gold: #c8a050;
   --s-glow: rgba(160, 180, 200, 0.05);
   --s-mycelium: rgba(180, 200, 210, 0.04);
-  --s-branch: #141a22;
   background: var(--s-bg);
   color: var(--s-text);
 }
@@ -1667,38 +1666,6 @@ button {
   height: 100%;
   opacity: 0.88;
 }
-/* Replace the existing sanctuary-branch-svg block */
-#view-sanctuary .sanctuary-branch-svg {
-  color: var(--s-branch);
-  /* Make the line invisible initially, but ready to draw */
-  stroke-dasharray: 150; 
-  stroke-dashoffset: 150; 
-  opacity: 0.25;
-  animation: branchCreep 25s ease-in-out infinite alternate;
-}
-
-@keyframes branchCreep {
-  0% { 
-    stroke-dashoffset: 150; 
-    opacity: 0; 
-  }
-  20% {
-    opacity: 0.15;
-  }
-  100% { 
-    stroke-dashoffset: 0; /* Fully grown */
-    opacity: 0.3; 
-  }
-}
-
-/* Keep your transforms, but adjust delays so they don't grow simultaneously */
-#view-sanctuary .sanctuary-branch-tl { top: -4px; left: -4px; transform: rotate(0deg); animation-delay: 0s; }
-#view-sanctuary .sanctuary-branch-tr { top: -4px; right: -4px; transform: scaleX(-1); animation-delay: -7s; }
-#view-sanctuary .sanctuary-branch-bl { bottom: -4px; left: -4px; transform: scaleY(-1); animation-delay: -14s; }
-#view-sanctuary .sanctuary-branch-br { bottom: -4px; right: -4px; transform: scale(-1, -1); animation-delay: -21s; }
-#view-sanctuary .sanctuary-branch-tr,
-#view-sanctuary .sanctuary-branch-br { animation-delay: -3.5s; }
-#view-sanctuary .sanctuary-branch-bl { animation-delay: -7s; }
 
 #view-sanctuary .sanctuary-layers {
   position: relative;
@@ -2595,12 +2562,6 @@ select.cosm-input {
   <div class="view-panel sanctuary-view hidden" id="view-sanctuary">
     <div class="sanctuary-atmosphere" aria-hidden="true">
       <canvas id="sanctuary-mycelium-canvas" class="sanctuary-mycelium-canvas" width="300" height="300"></canvas>
-      <div class="sanctuary-branches">
-        <svg class="sanctuary-branch-svg sanctuary-branch-tl" viewBox="0 0 100 100" preserveAspectRatio="xMinYMin meet" aria-hidden="true"><path d="M100 28 Q38 48 0 100" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        <svg class="sanctuary-branch-svg sanctuary-branch-tr" viewBox="0 0 100 100" preserveAspectRatio="xMaxYMin meet" aria-hidden="true"><path d="M100 28 Q38 48 0 100" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        <svg class="sanctuary-branch-svg sanctuary-branch-bl" viewBox="0 0 100 100" preserveAspectRatio="xMinYMax meet" aria-hidden="true"><path d="M100 28 Q38 48 0 100" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        <svg class="sanctuary-branch-svg sanctuary-branch-br" viewBox="0 0 100 100" preserveAspectRatio="xMaxYMax meet" aria-hidden="true"><path d="M100 28 Q38 48 0 100" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-      </div>
     </div>
     <div class="sanctuary-layers">
       <div class="sanctuary-drawer" id="sanctuary-drawer" aria-hidden="true">
@@ -3074,6 +3035,7 @@ function closeSanctuaryDrawer(){
   }
   if (btn) btn.setAttribute('aria-expanded', 'false');
 }
+
 function openSanctuaryDrawer(){
   const d = document.getElementById('sanctuary-drawer');
   const btn = document.getElementById('hdr-sanctuary-menu') || document.getElementById('sanctuary-panel-menu');
@@ -3083,6 +3045,7 @@ function openSanctuaryDrawer(){
   }
   if (btn) btn.setAttribute('aria-expanded', 'true');
 }
+
 function closeSoupDrawer(){
   const d = document.getElementById('soup-drawer');
   const btn = document.getElementById('hdr-soup-menu');
@@ -3092,6 +3055,7 @@ function closeSoupDrawer(){
   }
   if (btn) btn.setAttribute('aria-expanded', 'false');
 }
+
 function openSoupDrawer(){
   const d = document.getElementById('soup-drawer');
   const btn = document.getElementById('hdr-soup-menu');
@@ -3101,6 +3065,7 @@ function openSoupDrawer(){
   }
   if (btn) btn.setAttribute('aria-expanded', 'true');
 }
+
 function resetSoupSearchChrome(){
   soupLocalSearchOpen = false;
   const sw = document.getElementById('search-bar-wrap');
@@ -3109,6 +3074,7 @@ function resetSoupSearchChrome(){
   if (si) si.value = '';
   searchQuery = '';
 }
+
 async function showSoupLocalSearch(){
   soupLocalSearchOpen = true;
   const w = document.getElementById('search-bar-wrap');
@@ -3120,10 +3086,12 @@ async function showSoupLocalSearch(){
     try { inp.focus({ preventScroll: true }); } catch (_) { inp.focus(); }
   });
 }
+
 async function hideSoupLocalSearch(){
   resetSoupSearchChrome();
   await renderTableView();
 }
+
 function resetSanctuarySearchChrome(){
   sanctuaryLocalSearchOpen = false;
   const sw = document.getElementById('sanctuary-search-bar-wrap');
@@ -3132,6 +3100,7 @@ function resetSanctuarySearchChrome(){
   if (si) si.value = '';
   sanctuarySearchQuery = '';
 }
+
 async function showSanctuaryLocalSearch(){
   sanctuaryLocalSearchOpen = true;
   closeSanctuaryDrawer();
@@ -3144,14 +3113,17 @@ async function showSanctuaryLocalSearch(){
     try { inp.focus({ preventScroll: true }); } catch (_) { inp.focus(); }
   });
 }
+
 async function hideSanctuaryLocalSearch(){
   resetSanctuarySearchChrome();
   await renderSanctuaryView();
 }
+
 function onSanctuarySearchInput(val){
   sanctuarySearchQuery = (val == null ? '' : String(val));
   void renderSanctuaryView();
 }
+
 function sanctuaryPrefersReducedMotion(){
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; }
 }
@@ -3213,7 +3185,9 @@ function tickSanctuaryMycelium(){
   if (sanctuaryMyceliumParticles.length < SANCTUARY_MYCEL_MAX) initSanctuaryMyceliumParticles(w, h);
    // Instead of clearRect, we draw a highly transparent black box. 
   // This leaves a trail that slowly fades away, creating the "web" look.
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.015)'; 
+ 
+ctx.fillStyle = 'rgba(5, 6, 7, 0.015)';
+
   ctx.fillRect(0, 0, c.width, c.height);
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -3268,83 +3242,8 @@ function tickSanctuaryMycelium(){
 sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
 }
 
-const branchState = [];
-let branchTickRaf = null;
-
-function initOrganicBranches() {
-  branchState.length = 0;
-  document.querySelectorAll('#view-sanctuary .sanctuary-branch-svg').forEach((svg) => {
-    const w = svg.clientWidth || 100;
-    const h = svg.clientHeight || 100;
-    const baseX = w * 0.15, baseY = h * 0.15;
-    const points = [];
-    const segments = 12;
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments;
-      const x = baseX + Math.pow(t, 1.4) * w * 0.7 + (Math.random() - 0.5) * 4;
-      const y = baseY + Math.pow(t, 1.2) * h * 0.7 + (Math.random() - 0.5) * 4;
-      points.push({ x, y, ox: x, oy: y, depth: t });
-    }
-    branchState.push({ svg, points, phase: Math.random() * Math.PI * 2 });
-    drawBranch(svg, points);
-  });
-}
-
-function drawBranch(svg, points) {
-  svg.innerHTML = '';
-  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-  let d = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length; i++) {
-    const p0 = points[i-1], p1 = points[i];
-    const cx = (p0.x + p1.x)/2;
-    const cy = (p0.y + p1.y)/2;
-    d += ` Q ${cx} ${cy} ${p1.x} ${p1.y}`;
-  }
-  path.setAttribute('d', d);
-  path.setAttribute('stroke', 'currentColor');
-  path.setAttribute('stroke-width', '1.4');
-  path.setAttribute('fill', 'none');
-  path.setAttribute('stroke-linecap', 'round');
-  path.setAttribute('opacity', '0.18');
-  svg.appendChild(path);
-}
-
-function tickBranches(time) {
-  branchTickRaf = null;
-  if (!sanctuaryAmbienceActive) return;
-  if (document.hidden) {
-    branchTickRaf = requestAnimationFrame(tickBranches);
-    return;
-  }
-  branchState.forEach(b => {
-    const sway = Math.sin(time * 0.0003 + b.phase) * 0.8;
-    b.points.forEach((p,i) => {
-      const amp = p.depth * 2.2;
-      p.x = p.ox + Math.cos(time*0.0002 + i*0.3) * amp * sway;
-      p.y = p.oy + Math.sin(time*0.0002 + i*0.3) * amp * sway * 0.6;
-    });
-    drawBranch(b.svg, b.points);
-  });
-  branchTickRaf = requestAnimationFrame(tickBranches);
-}
-
-function stopBranchRhythm() {
-  if (branchTickRaf != null) {
-    cancelAnimationFrame(branchTickRaf);
-    branchTickRaf = null;
-  }
-}
-
-function startBranchRhythm() {
-  stopBranchRhythm();
-  if (!branchState.length || sanctuaryPrefersReducedMotion()) return;
-  branchTickRaf = requestAnimationFrame(tickBranches);
-}
-
 function startSanctuaryRealm(){
   sanctuaryAmbienceActive = true;
-  initOrganicBranches();
-  startBranchRhythm();
   const c = document.getElementById('sanctuary-mycelium-canvas');
   const panel = document.getElementById('view-sanctuary');
   if (c && panel && !sanctuaryPrefersReducedMotion()) {
@@ -3371,7 +3270,6 @@ function startSanctuaryRealm(){
 
 function stopSanctuaryRealm(){
   sanctuaryAmbienceActive = false;
-  stopBranchRhythm();
   cancelAnimationFrame(sanctuaryMyceliumRaf);
   sanctuaryMyceliumRaf = null;
   if (sanctuaryMyceliumResizeObs) {
@@ -5532,8 +5430,12 @@ function showPanel(id){
       header.classList.remove('nq-header--sanctuary-realm');
     }
     if (id === 'view-guardian' && edgeGlow) edgeGlow.classList.add('active');
-  } else {
-    if (header) header.style.display = '';
+    } else {
+    if (header) {
+      header.style.display = '';
+      header.style.transform = '';
+      header.style.marginBottom = '';
+    }
     if (edgeGlow) edgeGlow.classList.remove('active');
     syncNqHeaderForCurrentPanel(id);
   }
