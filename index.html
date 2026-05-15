@@ -54,7 +54,10 @@ button {
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 .hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
-
+.nq-header.nq-header--sanctuary-realm {
+  background: #050607;
+  border-bottom-color: #2a3136;
+}
 #mode-toast { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent-dim); color: var(--accent); padding: 5px 14px; border-radius: 20px; font-size: 9px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
 
 .view-host { flex: 1; position: relative; overflow: hidden; z-index: 1; }
@@ -1278,7 +1281,7 @@ button {
 #view-ie.ie-realm-view {
   display: flex;
   flex-direction: column;
-  background: #000000;
+  background: #050607;
 }
 #view-ie.ie-realm-view .ie-card {
   background: #0e1113;
@@ -1296,7 +1299,7 @@ button {
 #view-ie.ie-realm-view .ie-card-archetype,
 #view-ie.ie-realm-view .ie-card-function,
 #view-ie.ie-realm-view .ie-card-meta { color: #9aa5ad; }
-#view-ie.ie-realm-view .ie-lh-nav { border-bottom: 1px solid #2a3136; }
+#view-ie.ie-realm-view .ie-lh-nav { border-bottom: 1px solid #2a3136; background: #050607; }
 #view-ie.ie-realm-view .ie-page-title {
   font-size: 10px;
   letter-spacing: 2px;
@@ -1632,7 +1635,6 @@ button {
 /* ═══ SANCTUARY REALM (scoped — Soup / IE page unchanged) ═══ */
 #view-sanctuary.sanctuary-view {
   --s-bg: #050607;
-  --s-shell: #000000;
   --s-surface: #0e1113;
   --s-ie-surface: #12171a;
   --s-border: #2a3136;
@@ -1644,8 +1646,7 @@ button {
   --s-glow: rgba(160, 180, 200, 0.05);
   --s-mycelium: rgba(180, 200, 210, 0.04);
   --s-branch: #141a22;
-  /* Match global header (#000) so the strip does not sit on a lighter “band” */
-  background: var(--s-shell);
+  background: var(--s-bg);
   color: var(--s-text);
 }
 
@@ -1658,11 +1659,10 @@ button {
 }
 #view-sanctuary .sanctuary-mycelium-canvas {
   position: absolute;
-  inset: auto 0 0 0;
-  height: 60%;
+  inset: 0;
   width: 100%;
-  opacity: 0.9;
-  mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+  height: 100%;
+  opacity: 0.88;
 }
 /* Replace the existing sanctuary-branch-svg block */
 #view-sanctuary .sanctuary-branch-svg {
@@ -3422,12 +3422,81 @@ function savePersonaRoles(roles){
   localStorage.setItem('nq_persona_roles',JSON.stringify(roles));
 }
 
-/* FIREFLY */
-class FF{constructor(){this.canvas=document.getElementById('firefly-canvas');this.ctx=this.canvas.getContext('2d');this.p=[];this.d=15;this.r();window.addEventListener('resize',()=>this.r());this.a();}r(){this.canvas.width=innerWidth;this.canvas.height=innerHeight;}sd(l){this.d=Math.min(60,15+Math.floor(l/200));}a(){this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);while(this.p.length<this.d)this.p.push({x:Math.random()*this.canvas.width,y:Math.random()*this.canvas.height,s:Math.random()*1.5+.2,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,a:Math.random()*.4+.1,p:Math.random()*.01+.002});if(this.p.length>this.d)this.p.splice(this.d);this.p.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.a+=p.p;if(p.a>.6||p.a<.1)p.p*=-1;if(p.x<0)p.x=this.canvas.width;if(p.x>this.canvas.width)p.x=0;if(p.y<0)p.y=this.canvas.height;if(p.y>this.canvas.height)p.y=0;this.ctx.beginPath();this.ctx.arc(p.x,p.y,p.s,0,Math.PI*2);this.ctx.fillStyle=`rgba(200,160,80,${p.a})`;this.ctx.fill();});requestAnimationFrame(()=>this.a());}}
-const firefly=new FF();
-document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){firefly.paused=true;}
-  else{firefly.paused=false;firefly.a();}
+/* FIREFLY — Soup-only atmosphere (canvas is fixed; off-Soup we stop drawing so it never bleeds through) */
+class FF {
+  constructor() {
+    this.canvas = document.getElementById('firefly-canvas');
+    this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
+    this.p = [];
+    this.d = 15;
+    this.paused = false;
+    this.soupActive = true;
+    this._raf = null;
+    this.r();
+    window.addEventListener('resize', () => this.r());
+    this.a();
+  }
+  r() {
+    if (!this.canvas) return;
+    this.canvas.width = innerWidth;
+    this.canvas.height = innerHeight;
+  }
+  sd(l) {
+    if (!this.soupActive) return;
+    this.d = Math.min(60, 15 + Math.floor(l / 200));
+  }
+  setSoupActive(on) {
+    const next = !!on;
+    if (this.soupActive === next) return;
+    this.soupActive = next;
+    if (this._raf != null) {
+      cancelAnimationFrame(this._raf);
+      this._raf = null;
+    }
+    if (this.ctx && this.canvas) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.p = [];
+    if (this.soupActive && !document.hidden && !this.paused) this.a();
+  }
+  a() {
+    if (!this.canvas || !this.ctx) return;
+    if (!this.soupActive || this.paused || document.hidden) return;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    while (this.p.length < this.d) {
+      this.p.push({
+        x: Math.random() * this.canvas.width,
+        y: Math.random() * this.canvas.height,
+        s: Math.random() * 1.5 + 0.2,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2,
+        a: Math.random() * 0.4 + 0.1,
+        p: Math.random() * 0.01 + 0.002
+      });
+    }
+    if (this.p.length > this.d) this.p.splice(this.d);
+    this.p.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.a += p.p;
+      if (p.a > 0.6 || p.a < 0.1) p.p *= -1;
+      if (p.x < 0) p.x = this.canvas.width;
+      if (p.x > this.canvas.width) p.x = 0;
+      if (p.y < 0) p.y = this.canvas.height;
+      if (p.y > this.canvas.height) p.y = 0;
+      this.ctx.beginPath();
+      this.ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2);
+      this.ctx.fillStyle = `rgba(200,160,80,${p.a})`;
+      this.ctx.fill();
+    });
+    this._raf = requestAnimationFrame(() => this.a());
+  }
+}
+const firefly = new FF();
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) firefly.paused = true;
+  else {
+    firefly.paused = false;
+    if (firefly.soupActive) firefly.a();
+  }
 });
 
 /* DB -- ABYSS-PROOF WORKER (NULL FIXED)- Nuclear fix 
@@ -5368,9 +5437,11 @@ function switchAppMode(mode){
 
 /* SHOW PANEL (Unifying logic) */
 function syncNqHeaderForCurrentPanel(activePanelId) {
+  const hdr = document.getElementById('nq-header');
+  const realmSanctuary = activePanelId === 'view-sanctuary' && currentMode === 'sanctuary';
+  if (hdr) hdr.classList.toggle('nq-header--sanctuary-realm', realmSanctuary);
   const wm = document.getElementById('nq-wordmark');
   if (wm) {
-    const realmSanctuary = activePanelId === 'view-sanctuary' && currentMode === 'sanctuary';
     wm.classList.toggle('nq-wordmark--sanctuary-realm', realmSanctuary);
     wm.textContent = realmSanctuary ? 'The Sanctuary' : 'NakedQuantum';
   }
@@ -5445,7 +5516,10 @@ function showPanel(id){
   const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-deep-soup'
     || id === 'view-ie' || id === 'view-forge' || id === 'view-persona' || id === 'view-memory');
   if (hideGlobalHeader) {
-    if (header) header.style.display = 'none';
+    if (header) {
+      header.style.display = 'none';
+      header.classList.remove('nq-header--sanctuary-realm');
+    }
     if (id === 'view-guardian' && edgeGlow) edgeGlow.classList.add('active');
   } else {
     if (header) header.style.display = '';
@@ -5453,7 +5527,12 @@ function showPanel(id){
     syncNqHeaderForCurrentPanel(id);
   }
 
-  firefly.sd(id==='view-lighthouse'||id==='view-chat'?80:20);
+  if (typeof firefly !== 'undefined' && firefly.setSoupActive) {
+    firefly.setSoupActive(id === 'view-soup');
+    if (id === 'view-soup') {
+      firefly.sd(id === 'view-lighthouse' || id === 'view-chat' ? 80 : 20);
+    }
+  }
 
   // Undo horizontal drift / stuck scroll from nested views (e.g. Data → Sanctuary)
   requestAnimationFrame(() => {
