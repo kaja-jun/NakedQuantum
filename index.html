@@ -38,6 +38,8 @@ button {
 
 .nq-wordmark { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; opacity: 0.8; cursor: pointer; user-select: none; -webkit-user-select: none; padding: 8px 0; transition: opacity 0.15s; }
 .nq-wordmark.pressing { opacity: 0.3; }
+.nq-wordmark.nq-wordmark--sanctuary-realm { color: #a3b8c2; letter-spacing: 2px; }
+.header-actions.header-actions-sanctuary { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 .hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
@@ -1577,76 +1579,9 @@ button {
   cursor: pointer;
   display: block;
 }
-#view-sanctuary .sanctuary-app-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: max(8px, env(safe-area-inset-top, 0px)) 14px 12px;
-  background: transparent;
-  border-bottom: none;
-  position: relative;
-  z-index: 5;
-}
-#view-sanctuary .sanctuary-title-cluster {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-#view-sanctuary #sanctuary-home-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  border: 1px solid var(--s-border);
-  background: var(--s-ie-surface);
-  color: var(--s-accent-cool);
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  padding: 0;
-}
-#view-sanctuary #sanctuary-home-btn:active {
-  background: var(--s-surface);
-  border-color: rgba(163, 184, 194, 0.45);
-}
-#view-sanctuary .sanctuary-title-text {
-  font-size: 11px;
-  letter-spacing: 2px;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: var(--s-accent-cool);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-#view-sanctuary #sanctuary-panel-menu {
-  width: 42px;
-  height: 42px;
-  border-radius: 11px;
-  border: 1px solid var(--s-border);
-  background: var(--s-ie-surface);
-  color: var(--s-text-sec);
-  font-size: 22px;
-  line-height: 1;
-  padding-bottom: 2px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-#view-sanctuary #sanctuary-panel-menu:active {
-  background: var(--s-surface);
-  border-color: rgba(163, 184, 194, 0.45);
-}
 #view-sanctuary .sanctuary-drawer-panel {
   position: absolute;
-  top: 58px;
+  top: 12px;
   right: 10px;
   min-width: 200px;
   max-height: min(72vh, 420px);
@@ -2472,13 +2407,6 @@ select.cosm-input {
       </div>
     </div>
     <div class="sanctuary-layers">
-      <header class="sanctuary-app-header" id="sanctuary-app-header">
-        <div class="sanctuary-title-cluster">
-          <button type="button" id="sanctuary-home-btn" aria-label="Back to Soup" title="Back to Soup">⌂</button>
-          <span class="sanctuary-title-text">The Sanctuary</span>
-        </div>
-        <button type="button" id="sanctuary-panel-menu" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer-panel">⋯</button>
-      </header>
       <div class="sanctuary-drawer" id="sanctuary-drawer" aria-hidden="true">
         <button type="button" class="sanctuary-drawer-scrim" id="sanctuary-drawer-scrim" tabindex="-1" aria-label="Close menu"></button>
         <div class="sanctuary-drawer-panel" id="sanctuary-drawer-panel" role="menu">
@@ -2950,7 +2878,7 @@ let sanctuaryMyceliumParticles = [];
 
 function closeSanctuaryDrawer(){
   const d = document.getElementById('sanctuary-drawer');
-  const btn = document.getElementById('sanctuary-panel-menu');
+  const btn = document.getElementById('hdr-sanctuary-menu') || document.getElementById('sanctuary-panel-menu');
   if (d) {
     d.classList.remove('open');
     d.setAttribute('aria-hidden', 'true');
@@ -2959,7 +2887,7 @@ function closeSanctuaryDrawer(){
 }
 function openSanctuaryDrawer(){
   const d = document.getElementById('sanctuary-drawer');
-  const btn = document.getElementById('sanctuary-panel-menu');
+  const btn = document.getElementById('hdr-sanctuary-menu') || document.getElementById('sanctuary-panel-menu');
   if (d) {
     d.classList.add('open');
     d.setAttribute('aria-hidden', 'false');
@@ -5177,38 +5105,24 @@ async function batchBurn(){
   await openBurnDiscModal();
 }
 
-let wpt=null;
 let wTapTimer=null;
 const wEl=document.getElementById('nq-wordmark');
 
 wEl.addEventListener('touchstart',()=>{
   wEl.classList.add('pressing');
-  wpt=setTimeout(()=>{
-    clearTimeout(wTapTimer);
-    wTapTimer=null;
-    wEl.classList.remove('pressing');
-    switchAppMode(currentMode==='soup'?'sanctuary':'soup');
-    if(navigator.vibrate)navigator.vibrate(40);
-  },600);
 },{passive:true});
 
 wEl.addEventListener('touchend',()=>{
   wEl.classList.remove('pressing');
-  if(wpt){
-    clearTimeout(wpt);
-    wpt=null;
-    // Short tap -- go home
-    wTapTimer=setTimeout(()=>{
-      goHome();
-    },50);
-  }
+  wTapTimer=setTimeout(()=>{
+    goHome();
+  },50);
 });
 
 wEl.addEventListener('touchmove',()=>{
   wEl.classList.remove('pressing');
-  clearTimeout(wpt);
   clearTimeout(wTapTimer);
-  wpt=null;wTapTimer=null;
+  wTapTimer=null;
 });
 
 function goHome(){
@@ -5220,7 +5134,6 @@ function goHome(){
     showPanel('view-soup');
     renderTableView();
     mt.textContent='◈ HOME';
-    document.getElementById('nq-wordmark').textContent = 'NakedQuantum';
   } else {
     showPanel('view-sanctuary');
     renderSanctuaryView();
@@ -5244,12 +5157,20 @@ function switchAppMode(mode){
     mt.textContent='◈ THE SANCTUARY';
   }
   mt.style.opacity='1';setTimeout(()=>{mt.style.opacity='0';},1500);
-  document.getElementById('nq-wordmark').textContent = mode === 'sanctuary' ? 'The Sanctuary' : 'NakedQuantum';
-updateHeaderButtons();
-renderDefaultBar(mode);
+  renderDefaultBar(mode);
 }
 
 /* SHOW PANEL (Unifying logic) */
+function syncNqHeaderForCurrentPanel(activePanelId) {
+  const wm = document.getElementById('nq-wordmark');
+  if (wm) {
+    const realmSanctuary = activePanelId === 'view-sanctuary' && currentMode === 'sanctuary';
+    wm.classList.toggle('nq-wordmark--sanctuary-realm', realmSanctuary);
+    wm.textContent = realmSanctuary ? 'The Sanctuary' : 'NakedQuantum';
+  }
+  updateHeaderButtons();
+}
+
 function showPanel(id){
     abyssStop();
   const wasSoup = (currentView === 'soup');
@@ -5310,13 +5231,14 @@ function showPanel(id){
   // Realms that carry their own top chrome — hide global wordmark row
   const header = document.getElementById('nq-header') || document.querySelector('.nq-header');
   const edgeGlow = document.getElementById('guardian-edge-glow');
-  const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-deep-soup' || id === 'view-sanctuary');
+  const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-deep-soup');
   if (hideGlobalHeader) {
     if (header) header.style.display = 'none';
     if (id === 'view-guardian' && edgeGlow) edgeGlow.classList.add('active');
   } else {
     if (header) header.style.display = '';
     if (edgeGlow) edgeGlow.classList.remove('active');
+    syncNqHeaderForCurrentPanel(id);
   }
 
   firefly.sd(id==='view-lighthouse'||id==='view-chat'?80:20);
@@ -5350,7 +5272,7 @@ function updateHeaderButtons(){
   const c=document.getElementById('header-actions');
   if(!c) return;
   c.className = 'header-actions';
-  if(currentMode==='soup'){
+  if (currentMode === 'soup') {
     c.innerHTML=
       '<button class="hdr-btn" id="hdr-guardian" style="font-size:20px;">&#43065;</button>'+
       '<button class="hdr-btn" id="hdr-sanctuary" title="The Sanctuary">&#8962;</button>'+
@@ -5365,6 +5287,20 @@ function updateHeaderButtons(){
       const d = document.getElementById('soup-drawer');
       if (d && d.classList.contains('open')) closeSoupDrawer();
       else openSoupDrawer();
+    };
+  } else if (currentMode === 'sanctuary' && currentView === 'sanctuary') {
+    c.className = 'header-actions header-actions-sanctuary';
+    c.innerHTML =
+      '<button type="button" class="hdr-btn" id="hdr-sanctuary-home" title="Back to Soup" aria-label="Back to Soup">⌂</button>' +
+      '<button type="button" class="hdr-btn" id="hdr-sanctuary-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer-panel">⋯</button>';
+    document.getElementById('hdr-sanctuary-home').onclick = function () {
+      closeSanctuaryDrawer();
+      switchAppMode('soup');
+    };
+    document.getElementById('hdr-sanctuary-menu').onclick = function () {
+      const d = document.getElementById('sanctuary-drawer');
+      if (d && d.classList.contains('open')) closeSanctuaryDrawer();
+      else openSanctuaryDrawer();
     };
   } else {
     c.innerHTML = '';
@@ -10668,17 +10604,6 @@ document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
     if (persona) persona.addEventListener('click', () => { closeSanctuaryDrawer(); openPersonaView(); });
     if (memory) memory.addEventListener('click', () => { closeSanctuaryDrawer(); openMemoryVaultGlobal(); });
     if (search) search.addEventListener('click', () => { openSanctuarySearch(); });
-    const homeBtn = document.getElementById('sanctuary-home-btn');
-    if (homeBtn) homeBtn.addEventListener('click', () => {
-      closeSanctuaryDrawer();
-      switchAppMode('soup');
-    });
-    const menuBtn = document.getElementById('sanctuary-panel-menu');
-    if (menuBtn) menuBtn.addEventListener('click', () => {
-      const d = document.getElementById('sanctuary-drawer');
-      if (d && d.classList.contains('open')) closeSanctuaryDrawer();
-      else openSanctuaryDrawer();
-    });
     if (surface) surface.addEventListener('pointerdown', onSanctuarySurfacePointerDown, { passive: true });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
