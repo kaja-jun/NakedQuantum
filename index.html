@@ -1278,7 +1278,7 @@ button {
 #view-ie.ie-realm-view {
   display: flex;
   flex-direction: column;
-  background: #050607;
+  background: #000000;
 }
 #view-ie.ie-realm-view .ie-card {
   background: #0e1113;
@@ -1632,6 +1632,7 @@ button {
 /* ═══ SANCTUARY REALM (scoped — Soup / IE page unchanged) ═══ */
 #view-sanctuary.sanctuary-view {
   --s-bg: #050607;
+  --s-shell: #000000;
   --s-surface: #0e1113;
   --s-ie-surface: #12171a;
   --s-border: #2a3136;
@@ -1643,7 +1644,8 @@ button {
   --s-glow: rgba(160, 180, 200, 0.05);
   --s-mycelium: rgba(180, 200, 210, 0.04);
   --s-branch: #141a22;
-  background: var(--s-bg);
+  /* Match global header (#000) so the strip does not sit on a lighter “band” */
+  background: var(--s-shell);
   color: var(--s-text);
 }
 
@@ -1709,7 +1711,8 @@ button {
   flex-shrink: 0;
   position: relative;
   z-index: 3;
-  padding: 4px 12px 2px;
+  /* One gutter only — same horizontal inset as .sanctuary-surface (cards sit in surface only) */
+  padding: 2px max(12px, env(safe-area-inset-right, 0px)) 2px max(12px, env(safe-area-inset-left, 0px));
   background: transparent;
 }
 #view-sanctuary .sanctuary-search-bar-wrap .search-input {
@@ -1795,12 +1798,12 @@ button {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 2px 12px 140px;
+  padding: 0 max(12px, env(safe-area-inset-right, 0px)) 140px max(12px, env(safe-area-inset-left, 0px));
   background: transparent;
 }
 
 #view-sanctuary .ie-strip {
-  padding: 6px 12px 12px;
+  padding: 4px 0 10px;
   gap: 12px;
 }
 /* Slightly larger IE strip cards (Sanctuary only) */
@@ -1873,8 +1876,8 @@ button {
 }
 
 #view-sanctuary .sanctuary-divider {
-  padding: 10px 14px;
-  margin-top: 2px;
+  padding: 8px 0;
+  margin-top: 0;
 }
 #view-sanctuary .sanctuary-divider-line {
   background: rgba(42, 49, 54, 0.45);
@@ -1891,15 +1894,15 @@ button {
 #view-sanctuary .cards-section-label {
   color: var(--s-text-muted);
   opacity: 0.85;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 #view-sanctuary .sanctuary-char-grid {
   grid-template-columns: repeat(2, minmax(0, min(160px, calc((100% - 12px) / 2))));
   justify-content: flex-start;
   gap: 12px;
-  padding: 0 12px 12px;
+  padding: 0 0 12px;
 }
 /* Match IE strip card footprint (160×200) */
 #view-sanctuary .character-card {
