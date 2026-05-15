@@ -1651,7 +1651,10 @@ button {
 }
 
 #view-sanctuary .sanctuary-atmosphere {
-  position: fixed;
+  /* absolute (not fixed): view-panel uses will-change:transform, which makes
+     fixed descendants bind to this panel — a full-viewport canvas then clips
+     and leaves a “ghost” band under the global header. */
+  position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
@@ -1744,11 +1747,14 @@ button {
   z-index: 40;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.22s ease;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0s linear 0.22s;
 }
 #view-sanctuary .sanctuary-drawer.open {
   pointer-events: auto;
   opacity: 1;
+  visibility: visible;
+  transition: opacity 0.22s ease, visibility 0s linear 0s;
 }
 #view-sanctuary .sanctuary-drawer-scrim {
   position: absolute;
@@ -3152,16 +3158,16 @@ function sanctuaryPrefersReducedMotion(){
 
 function resizeSanctuaryMyceliumCanvas(){
   const c = document.getElementById('sanctuary-mycelium-canvas');
-  if (!c) return;
-  /* Match firefly: full viewport buffer so mycelium is not clipped to the
-     view-sanctuary rect (which sits below the global header). */
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  const atm = document.querySelector('#view-sanctuary .sanctuary-atmosphere');
+  if (!c || !atm) return;
+  const r = atm.getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  c.width = Math.max(1, Math.floor(vw * dpr));
-  c.height = Math.max(1, Math.floor(vh * dpr));
-  c.style.width = Math.floor(vw) + 'px';
-  c.style.height = Math.floor(vh) + 'px';
+  const rw = Math.max(1, Math.floor(r.width * dpr));
+  const rh = Math.max(1, Math.floor(r.height * dpr));
+  c.width = rw;
+  c.height = rh;
+  c.style.width = Math.floor(r.width) + 'px';
+  c.style.height = Math.floor(r.height) + 'px';
 }
 
 function initSanctuaryMyceliumParticles(w, h){
@@ -3356,7 +3362,9 @@ function startSanctuaryRealm(){
         const cw = document.getElementById('sanctuary-mycelium-canvas');
         if (cw) initSanctuaryMyceliumParticles(cw.width / d, cw.height / d);
       });
-      sanctuaryMyceliumResizeObs.observe(document.documentElement);
+      const atmObs = document.querySelector('#view-sanctuary .sanctuary-atmosphere');
+      if (atmObs) sanctuaryMyceliumResizeObs.observe(atmObs);
+      else sanctuaryMyceliumResizeObs.observe(panel);
     }
   }
 }
