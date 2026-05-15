@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.38.1</title>
+<title>NakedQuantum v0.38.3</title>
 <style>
 :root {
   --bg: #000000;
@@ -852,7 +852,7 @@ button {
 .section-grid.single-row { /* same grid, no special treatment */ }
 
 /* SANCTUARY (base layout; realm palette lives under #view-sanctuary) */
-.sanctuary-view { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; -webkit-overflow-scrolling: touch; }
+.sanctuary-view { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; -webkit-overflow-scrolling: touch; height: 100%; }
 
 .character-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; }
 .character-card:active { border-color: var(--accent); background: var(--surface2); }
@@ -1316,23 +1316,23 @@ button {
 
 /* ═══ SANCTUARY REALM (scoped — Soup / IE page unchanged) ═══ */
 #view-sanctuary.sanctuary-view {
-  --s-bg: #050607;
-  --s-surface: #0e1113;
-  --s-ie-surface: #12171a;
-  --s-border: #2a3136;
-  --s-text: #dfe6e8;
-  --s-text-sec: #9aa5ad;
-  --s-text-muted: #6e787f;
-  --s-gold: #a3b8c2;
-  --s-glow: rgba(160, 180, 200, 0.05);
-  --s-mycelium: rgba(180, 200, 210, 0.04);
-  --s-branch: #141a22;
+  --s-bg: #000000;
+  --s-surface: #0a1410;
+  --s-ie-surface: #0f1a14;
+  --s-border: #1e3028;
+  --s-text: #d4ddd6;
+  --s-text-sec: #8a9e92;
+  --s-text-muted: #566b5e;
+  --s-gold: #c8a050;
+  --s-glow: rgba(80,160,100,0.04);
+  --s-mycelium: rgba(100,180,120,0.035);
+  --s-branch: #1a3025;
   background: var(--s-bg);
   color: var(--s-text);
 }
 
 #view-sanctuary .sanctuary-atmosphere {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
@@ -1359,7 +1359,7 @@ button {
   width: min(42vw, 160px);
   height: min(42vw, 160px);
   color: var(--s-branch);
-  opacity: 0.08;
+  opacity: 0.12;
   animation: sanctuaryBranchBreathe 14s ease-in-out infinite;
 }
 #view-sanctuary .sanctuary-branch-tl { top: -4px; left: -4px; transform: rotate(0deg); }
@@ -1370,8 +1370,8 @@ button {
 #view-sanctuary .sanctuary-branch-br { animation-delay: -3.5s; }
 #view-sanctuary .sanctuary-branch-bl { animation-delay: -7s; }
 @keyframes sanctuaryBranchBreathe {
-  0%, 100% { opacity: 0.08; }
-  50% { opacity: 0.15; }
+  0%, 100% { opacity: 0.12; }
+  50% { opacity: 0.22; }
 }
 
 #view-sanctuary .sanctuary-layers {
@@ -2778,7 +2778,9 @@ function initSanctuaryMyceliumParticles(w, h){
       x: Math.random() * w,
       y: Math.random() * h,
       vx: (Math.random() - 0.5) * 0.045,
-      vy: (Math.random() - 0.5) * 0.038 - 0.01
+      vy: (Math.random() - 0.5) * 0.038 - 0.01,
+      phase: Math.random() * Math.PI * 2, // random start in breath cycle
+      speed: 0.003 + Math.random() * 0.004 // each particle breathes at own pace
     });
   }
 }
@@ -2813,16 +2815,19 @@ function tickSanctuaryMycelium(){
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, c.width, c.height);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = 'rgba(180,200,210,0.07)';
-  for (const p of sanctuaryMyceliumParticles) {
+    for (const p of sanctuaryMyceliumParticles) {
     p.x += p.vx;
     p.y += p.vy;
+    p.phase += p.speed;
     if (p.x < -4) p.x = w + 4;
     if (p.x > w + 4) p.x = -4;
     if (p.y < -4) p.y = h + 4;
     if (p.y > h + 4) p.y = -4;
+    // Each particle breathes independently -- 0.3 to 0.6 opacity
+    const alpha = 0.3 + 0.3 * (0.5 + 0.5 * Math.sin(p.phase));
+    ctx.fillStyle = `rgba(100,180,120,${alpha * 0.25})`;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, 1.8, 0, Math.PI * 2);
     ctx.fill();
   }
   sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
@@ -4851,13 +4856,14 @@ wEl.addEventListener('touchmove',()=>{
 
 function goHome(){
   const mt=document.getElementById('mode-toast');
-  if(currentMode==='soup'){
+    if(currentMode==='soup'){
     breadcrumbPath=[{id:null,name:'◈ The Soup'}];
     currentFolderId=null;
     deepSoupFolderId=null;
     showPanel('view-soup');
     renderTableView();
     mt.textContent='◈ HOME';
+    document.getElementById('nq-wordmark').textContent = 'NakedQuantum';
   } else {
     showPanel('view-sanctuary');
     renderSanctuaryView();
@@ -4872,8 +4878,14 @@ function switchAppMode(mode){
   currentMode=mode;
   const mt=document.getElementById('mode-toast');
   if(mode==='soup'){showPanel('view-soup');mt.textContent='◈ THE SOUP';}
-  else{showPanel('view-sanctuary');mt.textContent='◈ THE SANCTUARY';renderSanctuaryView();}
+      else {
+    showPanel('view-sanctuary');
+    renderSanctuaryView();
+    mt.textContent='◈ SANCTUARY';
+    document.getElementById('nq-wordmark').textContent = 'The Sanctuary';
+  }
   mt.style.opacity='1';setTimeout(()=>{mt.style.opacity='0';},1500);
+  document.getElementById('nq-wordmark').textContent = mode === 'sanctuary' ? 'The Sanctuary' : 'NakedQuantum';
 updateHeaderButtons();
 renderDefaultBar(mode);
 }
