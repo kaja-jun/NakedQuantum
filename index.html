@@ -51,16 +51,45 @@ button {
 
 .soup-view { background: transparent; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
-/* GOLD THREAD BREADCRUMB */
-.breadcrumb-bar { position: relative; height: 48px; overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; flex-shrink: 0; scrollbar-width: none; padding: 0 20px; }
+/* GOLD THREAD BREADCRUMB — flex row, scrollable; current knot centers via scrollIntoView */
+.breadcrumb-bar {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  flex-wrap: nowrap;
+  gap: 12px;
+  min-height: 48px;
+  height: auto;
+  padding: 6px 20px 8px;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  flex-shrink: 0;
+  scrollbar-width: none;
+  border-bottom: 1px solid rgba(200, 160, 80, 0.12);
+}
 .breadcrumb-bar::-webkit-scrollbar { display: none; }
-.bc-thread-svg { position: absolute; top: 0; left: 0; height: 100%; pointer-events: none; }
-.bc-knot-wrap { position: absolute; top: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transform: translateX(-50%); }
+.bc-thread-svg { display: none; }
+.bc-knot-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 40px;
+  cursor: pointer;
+  transform: none;
+}
+.bc-knot-wrap.bc-knot-wrap--compact { padding: 0 2px; }
+.bc-knot-wrap.bc-knot-wrap--current { min-width: 0; max-width: min(240px, 52vw); padding-bottom: 1px; }
 .bc-knot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; transition: transform 0.2s, opacity 0.2s; }
+.bc-knot.bc-knot-dot { width: 5px; height: 5px; opacity: 0.75; }
 .bc-knot.current { width: 10px; height: 10px; background: var(--accent); box-shadow: 0 0 8px rgba(200,160,80,0.5); }
 .bc-knot.compressed { width: 4px; height: 4px; background: var(--accent-dim); opacity: 0.4; }
 .bc-knot-label { font-size: 9px; letter-spacing: 1px; color: var(--accent); font-weight: 700; text-transform: uppercase; white-space: nowrap; margin-top: 3px; opacity: 0; transition: opacity 0.2s; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
-.bc-knot-label.current { opacity: 1; font-size: 10px; max-width: none; overflow: visible; text-overflow: clip; padding: 0 4px; }
+.bc-knot-label.current { opacity: 1; font-size: 10px; max-width: none; overflow: visible; text-overflow: clip; padding: 0 4px; text-align: center; }
 .bc-knot-label.parent { opacity: 0.6; font-size: 9px; }
 .bc-knot-wrap:active .bc-knot { transform: scale(1.4); }
 .bc-drop-line { stroke: rgba(200,160,80,0.4); stroke-width: 1; fill: none; }
@@ -82,13 +111,6 @@ button {
 }
 .breadcrumb-btn.current { color: var(--accent); }
 .breadcrumb-arrow { color: var(--muted); opacity: 0.35; font-size: 10px; padding: 0 4px; flex-shrink: 0; }
-
-#deep-soup-breadcrumb.breadcrumb-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-}
 
 /* Deep soup void -- narrow columns need compact action row */
 .void-card-actions {
@@ -203,8 +225,6 @@ button {
   align-items: center; justify-content: center;
 }
 .soup-search-close:active { background: var(--surface); border-color: var(--accent-dim); color: var(--text); }
-.header-actions.header-actions-soup { gap: 10px; }
-.hdr-btn.hdr-btn-soup { width: 42px; height: 42px; font-size: 19px; border-radius: 11px; }
 #view-soup .soup-drawer {
   position: absolute; inset: 0; z-index: 35; pointer-events: none; opacity: 0;
   transition: opacity 0.22s ease;
@@ -1128,6 +1148,100 @@ button {
   50%      { opacity: 1;   filter: drop-shadow(0 0 5px rgba(200,160,80,0.7)); }
 }
 
+.ie-manifest-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-top: 10px;
+}
+.ie-manifest-divider {
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ie-manifest-divider--tight {
+  margin-top: 12px;
+  padding-top: 12px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+#ie-manifest-modal.ie-manifest-moonlit {
+  background: #12171a !important;
+  border-top-color: #2a3136 !important;
+  color: #dfe6e8;
+}
+#ie-manifest-modal.ie-manifest-moonlit .ie-manifest-divider {
+  border-top-color: #2a3136;
+}
+#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-name { color: #dfe6e8 !important; }
+#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-archetype { color: #9aa5ad !important; }
+#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-function { color: #9aa5ad !important; }
+#ie-manifest-modal.ie-manifest-moonlit .ie-manifest-label {
+  color: #6e787f !important;
+  opacity: 1 !important;
+}
+#ie-manifest-modal.ie-manifest-moonlit .ie-manifest-text {
+  color: #dfe6e8 !important;
+  opacity: 0.9 !important;
+}
+#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-meta { color: #6e787f !important; }
+#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-models { color: #8a9aa3 !important; }
+#ie-manifest-modal.ie-manifest-moonlit #btn-ie-manifest-enter {
+  background: #a3b8c2 !important;
+  color: #050607 !important;
+  border: 1px solid #2a3136 !important;
+}
+#ie-manifest-modal.ie-manifest-moonlit #btn-ie-manifest-close {
+  border-color: #2a3136;
+  color: #9aa5ad;
+}
+
+#view-ie.ie-realm-view {
+  display: flex;
+  flex-direction: column;
+  background: #050607;
+}
+#view-ie.ie-realm-view .ie-card {
+  background: #0e1113;
+  border-color: #2a3136;
+}
+#view-ie.ie-realm-view .ie-card:active {
+  border-color: rgba(163, 184, 194, 0.55);
+  background: #12171a;
+}
+#view-ie.ie-realm-view .ie-card::before {
+  background: linear-gradient(90deg, rgba(163, 184, 194, 0.35), transparent);
+  opacity: 0.35;
+}
+#view-ie.ie-realm-view .ie-card-name { color: #dfe6e8; }
+#view-ie.ie-realm-view .ie-card-archetype,
+#view-ie.ie-realm-view .ie-card-function,
+#view-ie.ie-realm-view .ie-card-meta { color: #9aa5ad; }
+#view-ie.ie-realm-view .ie-lh-nav { border-bottom: 1px solid #2a3136; }
+#view-ie.ie-realm-view .ie-page-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #a3b8c2;
+  font-weight: 900;
+  white-space: nowrap;
+  text-align: center;
+}
+#view-ie.ie-realm-view .ie-forge-btn {
+  border-color: rgba(163, 184, 194, 0.4);
+  color: #a3b8c2;
+}
+#view-ie.ie-realm-view .cosm-input {
+  border-color: #2a3136;
+  background: #0e1113;
+  color: #dfe6e8;
+}
+
 /* CHARACTER AVATAR */
 .char-avatar {
   width: 36px; height: 36px;
@@ -1468,7 +1582,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px 12px;
+  padding: max(8px, env(safe-area-inset-top, 0px)) 14px 12px;
   background: transparent;
   border-bottom: none;
   position: relative;
@@ -1476,18 +1590,39 @@ button {
 }
 #view-sanctuary .sanctuary-title-cluster {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+#view-sanctuary #sanctuary-home-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  border: 1px solid var(--s-border);
+  background: var(--s-ie-surface);
+  color: var(--s-accent-cool);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+#view-sanctuary #sanctuary-home-btn:active {
+  background: var(--s-surface);
+  border-color: rgba(163, 184, 194, 0.45);
+}
+#view-sanctuary .sanctuary-title-text {
   font-size: 11px;
   letter-spacing: 2px;
   font-weight: 800;
   text-transform: uppercase;
   color: var(--s-accent-cool);
-}
-#view-sanctuary .sanctuary-glyph {
-  opacity: 0.85;
-  font-size: 13px;
-  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 #view-sanctuary #sanctuary-panel-menu {
   width: 42px;
@@ -2189,7 +2324,6 @@ select.cosm-input {
     <button type="button" class="btn-back-table" id="btn-deep-soup-back" aria-label="Back to Soup">←</button>
     <div class="realm-local-title">Deep Soup</div>
   </div>
-  <div class="breadcrumb-bar" id="deep-soup-breadcrumb"></div>
   <div class="table-surface" id="deep-soup-surface" style="padding-top:0;"></div>
 </div>
 <div class="view-panel hidden" id="view-data" style="background:var(--bg);display:flex;flex-direction:column;">
@@ -2340,7 +2474,7 @@ select.cosm-input {
     <div class="sanctuary-layers">
       <header class="sanctuary-app-header" id="sanctuary-app-header">
         <div class="sanctuary-title-cluster">
-          <span class="sanctuary-glyph" aria-hidden="true">◈</span>
+          <button type="button" id="sanctuary-home-btn" aria-label="Back to Soup" title="Back to Soup">⌂</button>
           <span class="sanctuary-title-text">The Sanctuary</span>
         </div>
         <button type="button" id="sanctuary-panel-menu" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer-panel">⋯</button>
@@ -2358,11 +2492,11 @@ select.cosm-input {
       <div class="table-surface sanctuary-surface" id="sanctuary-surface"></div>
     </div>
   </div>
-  <div class="view-panel hidden" id="view-ie" style="background:var(--bg);display:flex;flex-direction:column;">
-  <div class="lighthouse-nav">
+  <div class="view-panel hidden ie-realm-view" id="view-ie">
+  <div class="lighthouse-nav ie-lh-nav">
     <button class="btn-back-table" id="btn-ie-back">← Back</button>
-    <div style="font-size:10px;letter-spacing:2px;color:var(--accent);font-weight:900;white-space:nowrap;">∞ IMMUTABLE ENTITY</div>
-    <button class="tbtn gold" id="btn-ie-dev-forge" style="font-size:10px;white-space:nowrap;">Forge IE</button>
+    <div class="ie-page-title">∞ IMMUTABLE ENTITY</div>
+    <button class="tbtn ie-forge-btn" id="btn-ie-dev-forge" style="font-size:10px;white-space:nowrap;">Forge IE</button>
   </div>
   <div style="padding:12px 16px 8px;flex-shrink:0;">
     <input class="cosm-input" id="ie-search-input" placeholder="Search by name, archetype, or function..." style="font-size:13px;">
@@ -2710,14 +2844,14 @@ select.cosm-input {
   </div>
 </div>
 
-<div class="cosm-modal" id="ie-manifest-modal">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:10px;">
+<div class="cosm-modal ie-manifest-moonlit" id="ie-manifest-modal">
+  <div class="ie-manifest-head">
     <div id="ie-manifest-sigil" style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;"></div>
-    <div id="ie-manifest-name" style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--text);text-align:center;"></div>
-    <div id="ie-manifest-archetype" style="font-size:10px;letter-spacing:3px;color:var(--accent-dim);text-transform:uppercase;"></div>
-    <div id="ie-manifest-function" style="font-size:13px;color:var(--muted);font-style:italic;text-align:center;max-width:280px;line-height:1.5;"></div>
+    <div id="ie-manifest-name" style="font-family:var(--font-serif);font-size:22px;font-weight:700;text-align:center;"></div>
+    <div id="ie-manifest-archetype" style="font-size:10px;letter-spacing:3px;text-transform:uppercase;"></div>
+    <div id="ie-manifest-function" style="font-size:13px;font-style:italic;text-align:center;max-width:280px;line-height:1.5;"></div>
   </div>
-  <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:16px;display:flex;flex-direction:column;gap:14px;">
+  <div class="ie-manifest-divider">
     <div class="ie-manifest-section">
       <div class="ie-manifest-label">Origin</div>
       <div class="ie-manifest-text" id="ie-manifest-origin"></div>
@@ -2735,7 +2869,7 @@ select.cosm-input {
       <div class="ie-manifest-text" id="ie-manifest-voice"></div>
     </div>
   </div>
-  <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;display:flex;align-items:center;justify-content:space-between;">
+  <div class="ie-manifest-divider ie-manifest-divider--tight">
     <div id="ie-manifest-meta" style="font-size:9px;color:var(--muted);letter-spacing:0.5px;"></div>
     <div id="ie-manifest-models" style="font-size:9px;color:var(--accent-dim);letter-spacing:0.5px;"></div>
   </div>
@@ -2801,7 +2935,7 @@ let longPressTimer=null,isLongPress=false,longPressConsumed=false,touchStartPos=
 const LONG_PRESS_DURATION=1000,MOVE_THRESHOLD=10;
 let selectMode=false, selectedItems=new Set();
 let deepSoupFolderId = null;
-let deepSoupPath = [{id: null, name: '꩜ Deep Soup'}];
+let deepSoupPath = [{id: null, name: 'Deep Soup'}];
 let soupLocalSearchOpen = false;
 let chatReturnPanel = 'view-soup';
 let deepMapperLoadSuppressed = false;
@@ -5176,7 +5310,7 @@ function showPanel(id){
   // Realms that carry their own top chrome — hide global wordmark row
   const header = document.getElementById('nq-header') || document.querySelector('.nq-header');
   const edgeGlow = document.getElementById('guardian-edge-glow');
-  const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-deep-soup');
+  const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-deep-soup' || id === 'view-sanctuary');
   if (hideGlobalHeader) {
     if (header) header.style.display = 'none';
     if (id === 'view-guardian' && edgeGlow) edgeGlow.classList.add('active');
@@ -5215,14 +5349,14 @@ function showPanel(id){
 function updateHeaderButtons(){
   const c=document.getElementById('header-actions');
   if(!c) return;
-  c.className = 'header-actions' + (currentMode === 'soup' ? ' header-actions-soup' : '');
+  c.className = 'header-actions';
   if(currentMode==='soup'){
     c.innerHTML=
-      '<button class="hdr-btn hdr-btn-soup" id="hdr-guardian" style="font-size:20px;">&#43065;</button>'+
-      '<button class="hdr-btn hdr-btn-soup" id="hdr-sanctuary" title="The Sanctuary">&#8962;</button>'+
-      '<button class="hdr-btn hdr-btn-soup" id="hdr-abyss" title="Abyss">&#9689;</button>'+
-      '<button class="hdr-btn hdr-btn-soup" id="hdr-deep-soup" title="Deep Soup">꩜</button>'+
-      '<button class="hdr-btn hdr-btn-soup" id="hdr-soup-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Soup menu" aria-expanded="false" aria-controls="soup-drawer-panel">⋯</button>';
+      '<button class="hdr-btn" id="hdr-guardian" style="font-size:20px;">&#43065;</button>'+
+      '<button class="hdr-btn" id="hdr-sanctuary" title="The Sanctuary">&#8962;</button>'+
+      '<button class="hdr-btn" id="hdr-abyss" title="Abyss">&#9689;</button>'+
+      '<button class="hdr-btn" id="hdr-deep-soup" title="Deep Soup">꩜</button>'+
+      '<button class="hdr-btn" id="hdr-soup-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Soup menu" aria-expanded="false" aria-controls="soup-drawer-panel">⋯</button>';
     document.getElementById('hdr-guardian').onclick=function(){ openGuardianView(); };
     document.getElementById('hdr-sanctuary').onclick=function(){ switchAppMode('sanctuary'); };
     document.getElementById('hdr-abyss').onclick=function(){ openAbyssView(); };
@@ -5280,10 +5414,10 @@ async function renderTableView() {
   currentFocusId = null;
   focusChain = [];
   surface.onclick = (e) => {
-    if(!e.target.closest('.nq-card')) unfocusMesh();
+    if(!e.target.closest('.nq-card')) void unfocusMesh();
   };
   runGravityDecay();
-    renderBreadcrumb();
+    await renderBreadcrumb();
   // Remove old drop line -- renderBreadcrumb redraws it
   const oldDrop = document.getElementById('bc-drop-svg');
   if(oldDrop) oldDrop.remove();
@@ -5603,7 +5737,7 @@ async function focusMeshCard(id, folderId, label) {
 
   // Tapping already focused card -- unfocus
   if(currentFocusId === id) {
-    unfocusMesh();
+    await unfocusMesh();
     return;
   }
   const prevFocusId = currentFocusId;
@@ -5751,11 +5885,11 @@ async function focusMeshCard(id, folderId, label) {
 
   // Update chain knots with ghost if focused item has nested folders
   const hasDepth = allFolders.some(f => !f.isDeleted && String(f.parent_id) === String(id));
-  renderChainKnots(hasDepth);
+  await renderChainKnots(hasDepth);
   drawLineageThread(id, folderId);
 }
 
-function unfocusMesh() {
+async function unfocusMesh() {
   currentFocusId = null;
   focusChain = [];
   const mesh = document.getElementById('soup-mesh');
@@ -5783,7 +5917,7 @@ function unfocusMesh() {
   cards.forEach(card => mesh.appendChild(card));
   if(createCard) mesh.appendChild(createCard);
   finalizeSoupMeshCreateLast();
-  renderChainKnots(false);
+  await renderChainKnots(false);
 }
 
 function drawLineageThread(id, folderId) {
@@ -5809,7 +5943,7 @@ function drawLineageThread(id, folderId) {
   const cardTopY = cardRect.top;
   const cardMidY = cardRect.top + cardRect.height / 2;
 
-  const knotEl = breadcrumb.querySelector('[data-knot-idx="' + focusChain.length + '"]');
+  const knotEl = breadcrumb.querySelector('.bc-knot-wrap--current');
   let anchorX;
   let anchorY;
   if (knotEl) {
@@ -6060,97 +6194,157 @@ async function buildDiscourseCard(d){
   return card;
 }
 
-/* BREADCRUMB */
-function renderBreadcrumb(){ renderChainKnots(); }
+/* BREADCRUMB — flex chain: path + current label + descendant folder knots; native title tooltips */
+function focusChainForFolder(targetFolderId, allFolders) {
+  if (!targetFolderId) return [];
+  const stack = [];
+  let cur = allFolders.find(f => f.id === targetFolderId && !f.isDeleted);
+  const guard = new Set();
+  while (cur && !guard.has(cur.id)) {
+    guard.add(cur.id);
+    stack.push({ id: cur.id, folderId: cur.parent_id, label: cur.name || cur.id });
+    const pid = cur.parent_id;
+    if (!pid || String(pid) === 'null' || String(pid) === 'root' || String(pid) === 'undefined') break;
+    cur = allFolders.find(f => f.id === pid && !f.isDeleted);
+  }
+  return stack.reverse();
+}
 
-function renderChainKnots(showGhost = false) {
+function collectSubfolderTree(parentFolderId, allFolders) {
+  if (parentFolderId == null || parentFolderId === '') return [];
+  const out = [];
+  const kids = allFolders.filter(f => !f.isDeleted && String(f.parent_id) === String(parentFolderId));
+  kids.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
+  for (const c of kids) {
+    out.push(c);
+    out.push(...collectSubfolderTree(c.id, allFolders));
+  }
+  return out;
+}
+
+async function renderBreadcrumb() {
+  await renderChainKnots(false);
+}
+
+async function renderChainKnots(showGhost = false) {
   const bar = document.getElementById('breadcrumb-bar');
+  if (!bar) return;
   bar.innerHTML = '';
 
-  // Always starts with Soup knot
-  const fullChain = [{id: null, label: 'Soup', folderId: null}, ...focusChain];
-  if(showGhost) fullChain.push({ id: '__ghost__', label: '···', folderId: null, ghost: true });
-  const total = fullChain.length;
+  const allFolders = await getFolders() || [];
+  const segments = [];
+  segments.push({ kind: 'soup', id: null, folderId: null, label: 'Soup', tooltip: 'The Soup' });
 
-  const KNOT_SPACING = 56;
-  const SIDE_PAD = 28;
-  const totalWidth = Math.max(bar.offsetWidth || window.innerWidth, SIDE_PAD * 2 + total * KNOT_SPACING);
-  const barH = 48;
-  const midY = 20;
+  focusChain.forEach((k, i) => {
+    const isLast = i === focusChain.length - 1;
+    const lab = String(k.label || k.id || '').replace(/^◈\s*/, '').trim() || String(k.id || '');
+    segments.push({
+      kind: isLast ? 'current' : 'path',
+      id: k.id,
+      folderId: k.folderId,
+      label: lab,
+      tooltip: lab
+    });
+  });
 
-  // SVG horizontal line
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.classList.add('bc-thread-svg');
-  svg.style.cssText = `width:${totalWidth}px;height:${barH}px;`;
+  if (focusChain.length) {
+    const last = focusChain[focusChain.length - 1];
+    const asFolder = allFolders.find(f => !f.isDeleted && f.id === last.id);
+    const descRoot = asFolder ? last.id : (last.folderId != null && String(last.folderId) !== '' ? last.folderId : null);
+    if (descRoot != null && String(descRoot) !== '') {
+      for (const d of collectSubfolderTree(descRoot, allFolders)) {
+        segments.push({
+          kind: 'desc',
+          id: d.id,
+          folderId: d.parent_id,
+          label: d.name,
+          tooltip: d.name || d.id
+        });
+      }
+    }
+  }
 
-  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  line.setAttribute('x1', SIDE_PAD);
-  line.setAttribute('y1', midY);
-  line.setAttribute('x2', SIDE_PAD + (total - 1) * KNOT_SPACING);
-  line.setAttribute('y2', midY);
-  line.setAttribute('stroke', 'rgba(200,160,80,0.3)');
-  line.setAttribute('stroke-width', '1');
-  svg.appendChild(line);
-  bar.appendChild(svg);
+  if (showGhost) {
+    segments.push({ kind: 'ghost', id: '__ghost__', folderId: null, label: '···', tooltip: '' });
+  }
 
-  fullChain.forEach((knot, idx) => {
-    const isFirst = idx === 0;
-    const isLast = idx === total - 1;
-    const isParent = idx === total - 2;
-    const isGhost = idx > total - 2 && !isLast; // future: faded ghost knots
-    const isCompressed = !isFirst && !isLast && !isParent && total > 4;
+  segments.forEach((seg, idx) => {
+    const isCurrent = seg.kind === 'current';
+    const isGhost = seg.kind === 'ghost';
 
-    const x = SIDE_PAD + idx * KNOT_SPACING;
     const wrap = document.createElement('div');
-    wrap.className = 'bc-knot-wrap';
-    wrap.style.left = x + 'px';
+    wrap.className = 'bc-knot-wrap' + (isCurrent ? ' bc-knot-wrap--current' : ' bc-knot-wrap--compact');
+    if (isCurrent) wrap.dataset.knotRole = 'current';
     wrap.dataset.knotIdx = String(idx);
 
-        const dot = document.createElement('div');
-    dot.className = 'bc-knot' +
-      (isLast && !knot.ghost ? ' current' : '') +
-      (isCompressed ? ' compressed' : '') +
-      (knot.ghost ? ' compressed' : '');
-    dot.style.opacity = knot.ghost ? '0.25' : '';
+    const tip = seg.tooltip || seg.label || '';
+    if (tip) {
+      wrap.title = tip;
+      wrap.setAttribute('aria-label', tip);
+    }
+
+    const dot = document.createElement('div');
+    dot.className = 'bc-knot' + (isCurrent ? ' current' : '');
+    if (!isCurrent && !isGhost) dot.classList.add('bc-knot-dot');
+    if (isGhost) dot.classList.add('compressed');
+    if (isGhost) dot.style.opacity = '0.25';
     wrap.appendChild(dot);
 
-    const label = document.createElement('div');
-    label.className = 'bc-knot-label' +
-      (isLast && !knot.ghost ? ' current' : isParent ? ' parent' : '');
-    label.textContent = knot.label.replace('◈ ', '').replace('◈  ', '');
-    label.style.opacity = knot.ghost ? '0.25' : '';
-    wrap.appendChild(label);
+    if (isCurrent && !isGhost) {
+      const label = document.createElement('div');
+      label.className = 'bc-knot-label current';
+      label.textContent = seg.label;
+      wrap.appendChild(label);
+    }
 
-    // Click
-    wrap.addEventListener('click', () => {
-      if(knot.ghost) return; // ghost not tappable
-      if(isFirst) {
+    wrap.addEventListener('click', async () => {
+      if (isGhost) return;
+      if (seg.kind === 'current') return;
+      if (seg.kind === 'soup') {
         focusChain = [];
-        unfocusMesh();
-        renderChainKnots(false);
-      } else if(!isLast) {
+        await unfocusMesh();
+        return;
+      }
+      if (seg.kind === 'path') {
         focusChain = focusChain.slice(0, idx);
-        focusMeshCard(knot.id, knot.folderId, knot.label);
+        await focusMeshCard(seg.id, seg.folderId, seg.label);
+        return;
+      }
+      if (seg.kind === 'desc') {
+        const chain = focusChainForFolder(seg.id, allFolders);
+        if (chain.length) {
+          focusChain = chain.slice(0, -1);
+          const leaf = chain[chain.length - 1];
+          await focusMeshCard(leaf.id, leaf.folderId, leaf.label);
+        }
+        return;
       }
     });
 
     bar.appendChild(wrap);
   });
 
-  const wraps = bar.querySelectorAll('.bc-knot-wrap');
-  const curWrap = wraps[wraps.length - 1];
-  if (curWrap) {
-    const cx = curWrap.offsetLeft + curWrap.offsetWidth / 2;
-    bar.scrollLeft = Math.max(0, cx - bar.clientWidth / 2);
-  } else {
-    bar.scrollLeft = Math.max(0, SIDE_PAD + (total - 1) * KNOT_SPACING - bar.offsetWidth + 60);
-  }
-
-  // Drop line from current knot to mesh
-  drawBreadcrumbDrop(SIDE_PAD + (total - 1) * KNOT_SPACING, midY + 6);
+  requestAnimationFrame(() => {
+    const cur = bar.querySelector('.bc-knot-wrap--current');
+    if (cur && cur.scrollIntoView) {
+      try {
+        cur.scrollIntoView({ block: 'nearest', inline: 'center' });
+      } catch (e) { /* ignore */ }
+    }
+    requestAnimationFrame(() => {
+      const br = bar.getBoundingClientRect();
+      let cx = br.left + br.width / 2;
+      const cur2 = bar.querySelector('.bc-knot-wrap--current');
+      if (cur2) {
+        const kr = cur2.getBoundingClientRect();
+        cx = kr.left + kr.width / 2;
+      }
+      drawBreadcrumbDrop(cx);
+    });
+  });
 }
 
-function drawBreadcrumbDrop(knotX, knotY) {
+function drawBreadcrumbDrop(screenCenterX) {
   // Remove existing drop
   const existing = document.getElementById('bc-drop-svg');
   if(existing) existing.remove();
@@ -6158,15 +6352,17 @@ function drawBreadcrumbDrop(knotX, knotY) {
   if(breadcrumbPath.length <= 1) return; // at root, no drop
 
   const bar = document.getElementById('breadcrumb-bar');
+  if (!bar) return;
   const barRect = bar.getBoundingClientRect();
   const surface = document.getElementById('table-surface');
+  if (!surface) return;
   const surfaceRect = surface.getBoundingClientRect();
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.id = 'bc-drop-svg';
   svg.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;`;
 
-  const startX = barRect.left + knotX - bar.scrollLeft;
+  const startX = screenCenterX != null ? screenCenterX : (barRect.left + barRect.width / 2);
   const startY = barRect.bottom;
   const endY = surfaceRect.top + 20;
 
@@ -9071,44 +9267,16 @@ function buildForgottenCard(d){
 /* DEEP SOUP */
 function openDeepSoupView(){ 
   deepSoupFolderId=null;
-  deepSoupPath=[{id:null, name:'꩜ Deep Soup'}];
+  deepSoupPath=[{id:null,name:'Deep Soup'}];
   showPanel('view-deep-soup'); 
   renderDeepSoupView(); 
 }
 
-function renderDeepSoupBreadcrumb(){
-  const bar = document.getElementById('deep-soup-breadcrumb');
-  if(!bar) return;
-  bar.innerHTML = '';
-  deepSoupPath.forEach((seg, idx) => {
-    const isLast = idx === deepSoupPath.length - 1;
-    const segEl = document.createElement('div');
-    segEl.className = 'breadcrumb-seg';
-    const btn = document.createElement('button');
-    btn.className = 'breadcrumb-btn' + (isLast ? ' current' : '');
-    btn.textContent = seg.name;
-    if(!isLast){
-      btn.addEventListener('click', ()=>{
-        deepSoupPath = deepSoupPath.slice(0, idx + 1);
-        deepSoupFolderId = seg.id;
-        renderDeepSoupView();
-      });
-    }
-    segEl.appendChild(btn);
-    if(!isLast){
-      const arrow = document.createElement('span');
-      arrow.className = 'breadcrumb-arrow';
-      arrow.textContent = '▸';
-      segEl.appendChild(arrow);
-    }
-    bar.appendChild(segEl);
-  });
-}
+function renderDeepSoupBreadcrumb(){ /* removed — local nav + back stack only */ }
 
 async function renderDeepSoupView(){
   const surface = document.getElementById('deep-soup-surface');
   surface.innerHTML = '';
-renderDeepSoupBreadcrumb();
   const allF = await getFolders();
   const allD = await dbGetAll("cosm_discourses");
   const safeMatch=(a,b)=>{
@@ -10500,6 +10668,11 @@ document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
     if (persona) persona.addEventListener('click', () => { closeSanctuaryDrawer(); openPersonaView(); });
     if (memory) memory.addEventListener('click', () => { closeSanctuaryDrawer(); openMemoryVaultGlobal(); });
     if (search) search.addEventListener('click', () => { openSanctuarySearch(); });
+    const homeBtn = document.getElementById('sanctuary-home-btn');
+    if (homeBtn) homeBtn.addEventListener('click', () => {
+      closeSanctuaryDrawer();
+      switchAppMode('soup');
+    });
     const menuBtn = document.getElementById('sanctuary-panel-menu');
     if (menuBtn) menuBtn.addEventListener('click', () => {
       const d = document.getElementById('sanctuary-drawer');
@@ -10556,6 +10729,13 @@ document.getElementById('btn-abyss-back').addEventListener('click', () => {
   void renderTableView();
 });
 document.getElementById('btn-deep-soup-back').addEventListener('click', () => {
+  if (Array.isArray(deepSoupPath) && deepSoupPath.length > 1) {
+    deepSoupPath = deepSoupPath.slice(0, -1);
+    const last = deepSoupPath[deepSoupPath.length - 1];
+    deepSoupFolderId = last.id;
+    void renderDeepSoupView();
+    return;
+  }
   showPanel('view-soup');
   void renderTableView();
 });
