@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="NakedQuantum">
 <link rel="manifest" href="/manifest.json">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.38.3</title>
+<title>NakedQuantum v0.38.4</title>
 <style>
 :root {
   --bg: #000000;
@@ -1317,16 +1317,16 @@ button {
 /* ═══ SANCTUARY REALM (scoped — Soup / IE page unchanged) ═══ */
 #view-sanctuary.sanctuary-view {
   --s-bg: #000000;
-  --s-surface: #0a1410;
-  --s-ie-surface: #0f1a14;
-  --s-border: #1e3028;
-  --s-text: #d4ddd6;
-  --s-text-sec: #8a9e92;
-  --s-text-muted: #566b5e;
-  --s-gold: #c8a050;
-  --s-glow: rgba(80,160,100,0.04);
-  --s-mycelium: rgba(100,180,120,0.035);
-  --s-branch: #1a3025;
+  --s-surface: transparent;          /* was #0a1410 */
+  --s-ie-surface: transparent;       /* was #0f1a14 */
+  --s-border: rgba(209,191,167,0.16); /* warm bone, was #1e3028 */
+  --s-text: #e8e2d6;                 /* warm white, was #d4ddd6 */
+  --s-text-sec: #b8a995;             /* was #8a9e92 */
+  --s-text-muted: #8c7c6a;           /* was #566b5e */
+  --s-warm: #d1bfa7;                 /* replace your --s-gold usage */
+  --s-glow: rgba(209,191,167,0.035); /* was green */
+  --s-mycelium: rgba(209,191,167,0.045); /* was green */
+  --s-branch: #3a3028;               /* warm dark brown, was #1a3025 */
   background: var(--s-bg);
   color: var(--s-text);
 }
@@ -1338,41 +1338,46 @@ button {
   pointer-events: none;
   overflow: hidden;
 }
-#view-sanctuary .sanctuary-mycelium-canvas {
+#view-sanctuary.sanctuary-mycelium-canvas {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 52%;
+  inset: auto 0 0 0;
+  height: 60%;
   width: 100%;
-  display: block;
-  opacity: 0.85;
+  opacity: 0.9;
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
 }
-#view-sanctuary .sanctuary-branches {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
+/* Replace the existing sanctuary-branch-svg block */
 #view-sanctuary .sanctuary-branch-svg {
-  position: absolute;
-  width: min(42vw, 160px);
-  height: min(42vw, 160px);
   color: var(--s-branch);
-  opacity: 0.12;
-  animation: sanctuaryBranchBreathe 14s ease-in-out infinite;
+  /* Make the line invisible initially, but ready to draw */
+  stroke-dasharray: 150; 
+  stroke-dashoffset: 150; 
+  opacity: 0.25;
+  animation: branchCreep 25s ease-in-out infinite alternate;
 }
-#view-sanctuary .sanctuary-branch-tl { top: -4px; left: -4px; transform: rotate(0deg); }
-#view-sanctuary .sanctuary-branch-tr { top: -4px; right: -4px; transform: scaleX(-1); }
-#view-sanctuary .sanctuary-branch-bl { bottom: -4px; left: -4px; transform: scaleY(-1); }
-#view-sanctuary .sanctuary-branch-br { bottom: -4px; right: -4px; transform: scale(-1, -1); }
+
+@keyframes branchCreep {
+  0% { 
+    stroke-dashoffset: 150; 
+    opacity: 0; 
+  }
+  20% {
+    opacity: 0.15;
+  }
+  100% { 
+    stroke-dashoffset: 0; /* Fully grown */
+    opacity: 0.3; 
+  }
+}
+
+/* Keep your transforms, but adjust delays so they don't grow simultaneously */
+#view-sanctuary .sanctuary-branch-tl { top: -4px; left: -4px; transform: rotate(0deg); animation-delay: 0s; }
+#view-sanctuary .sanctuary-branch-tr { top: -4px; right: -4px; transform: scaleX(-1); animation-delay: -7s; }
+#view-sanctuary .sanctuary-branch-bl { bottom: -4px; left: -4px; transform: scaleY(-1); animation-delay: -14s; }
+#view-sanctuary .sanctuary-branch-br { bottom: -4px; right: -4px; transform: scale(-1, -1); animation-delay: -21s; }
 #view-sanctuary .sanctuary-branch-tr,
 #view-sanctuary .sanctuary-branch-br { animation-delay: -3.5s; }
 #view-sanctuary .sanctuary-branch-bl { animation-delay: -7s; }
-@keyframes sanctuaryBranchBreathe {
-  0%, 100% { opacity: 0.12; }
-  50% { opacity: 0.22; }
-}
 
 #view-sanctuary .sanctuary-layers {
   position: relative;
@@ -1453,10 +1458,9 @@ button {
   gap: 12px;
 }
 /* Slightly larger IE strip cards (Sanctuary only) */
-#view-sanctuary .ie-strip .ie-card {
-  width: 176px;
-  min-height: 218px;
-  background: var(--s-ie-surface);
+#view-sanctuary .ie-strip .ie-card,
+#view-sanctuary .character-card {
+  background: transparent; /* kill the green fill */
   border: 1px solid var(--s-border);
   box-shadow: inset 0 0 24px var(--s-glow);
 }
@@ -1599,22 +1603,16 @@ button {
 }
 
 /* Bloom burst (appended to body; class only used with sanctuary) */
-.sanctuary-bloom-node {
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 60;
-  background: radial-gradient(circle, rgba(180, 200, 210, 0.16) 0%, rgba(160, 180, 200, 0.05) 38%, transparent 72%);
-  transform: scale(0.25);
-  opacity: 0.95;
-  transition: transform 0.58s ease-out, opacity 0.58s ease-out;
-}
+.sanctuary-bloom-node { display: none!important; }
 .sanctuary-bloom-node.sanctuary-bloom-node-on {
-  transform: scale(1.05);
-  opacity: 0;
+  transform: scale(1.4); /* Expands wide */
+  opacity: 0; /* Fades to nothing */
+  margin-top: -40px; /* Drifts upward as it exhales */
 }
+
+/* Ambient blooms can be slightly larger/slower */
 .sanctuary-bloom-node.sanctuary-bloom-ambient {
-  background: radial-gradient(circle, rgba(180, 200, 210, 0.09) 0%, rgba(160, 180, 200, 0.03) 45%, transparent 75%);
+  transition-duration: 5s;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2721,6 +2719,7 @@ function openSanctuaryDrawer(){
   }
   if (btn) btn.setAttribute('aria-expanded', 'true');
 }
+
 function sanctuaryPrefersReducedMotion(){
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; }
 }
@@ -2737,14 +2736,25 @@ function spawnSanctuaryBloomPage(cx, cy, ambient){
   el.style.height = size + 'px';
   el.style.left = (cx + jitterX - size / 2) + 'px';
   el.style.top = (cy + jitterY - size / 2) + 'px';
-  const dur = 520 + Math.floor(Math.random() * 140);
-  el.style.transitionDuration = dur + 'ms';
-  document.body.appendChild(el);
-  requestAnimationFrame(() => { el.classList.add('sanctuary-bloom-node-on'); });
-  setTimeout(() => { try { el.remove(); } catch (_) {} }, dur + 90);
+  // Inside spawnSanctuaryBloomPage:
+const dur = ambient ? 4500 + Math.random() * 1500 : 3000 + Math.random() * 1000;
+el.style.transitionDuration = dur + 'ms';
+document.body.appendChild(el);
+
+// Force reflow
+void el.offsetWidth;
+
+// The Exhale
+el.style.opacity = '0.8'; // appears
+requestAnimationFrame(() => { 
+  el.classList.add('sanctuary-bloom-node-on'); 
+});
+
+setTimeout(() => { try { el.remove(); } catch (_) {} }, dur + 100);
 }
+
 function scheduleSanctuaryAmbientBloom(){
-  clearTimeout(sanctuaryAmbientBloomTimer);
+clearTimeout(sanctuaryAmbientBloomTimer);
   if (!sanctuaryAmbienceActive || sanctuaryPrefersReducedMotion()) return;
   const delay = 10000 + Math.random() * 14000;
   sanctuaryAmbientBloomTimer = setTimeout(() => {
@@ -2759,31 +2769,32 @@ function scheduleSanctuaryAmbientBloom(){
     scheduleSanctuaryAmbientBloom();
   }, delay);
 }
+
 function resizeSanctuaryMyceliumCanvas(){
   const c = document.getElementById('sanctuary-mycelium-canvas');
   const panel = document.getElementById('view-sanctuary');
   if (!c || !panel) return;
   const r = panel.getBoundingClientRect();
-  const bh = Math.max(120, r.height * 0.52);
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   c.width = Math.max(1, Math.floor(r.width * dpr));
-  c.height = Math.max(1, Math.floor(bh * dpr));
+  c.height = Math.max(1, Math.floor(r.height * dpr));
   c.style.width = Math.floor(r.width) + 'px';
-  c.style.height = Math.floor(bh) + 'px';
+  c.style.height = Math.floor(r.height) + 'px';
 }
+
 function initSanctuaryMyceliumParticles(w, h){
   sanctuaryMyceliumParticles = [];
   for (let i = 0; i < SANCTUARY_MYCEL_MAX; i++) {
     sanctuaryMyceliumParticles.push({
       x: Math.random() * w,
       y: Math.random() * h,
-      vx: (Math.random() - 0.5) * 0.045,
-      vy: (Math.random() - 0.5) * 0.038 - 0.01,
-      phase: Math.random() * Math.PI * 2, // random start in breath cycle
-      speed: 0.003 + Math.random() * 0.004 // each particle breathes at own pace
+      angle: Math.random() * Math.PI * 2, // Direction of growth
+      speed: 0.15 + Math.random() * 0.2,  // Slow creeping growth
+      life: 500 + Math.random() * 1000    // How long before it dies and respawns
     });
   }
 }
+
 function tickSanctuaryMycelium(){
   if (!sanctuaryAmbienceActive) {
     sanctuaryMyceliumRaf = null;
@@ -2811,27 +2822,123 @@ function tickSanctuaryMycelium(){
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = c.width / dpr;
   const h = c.height / dpr;
-  if (sanctuaryMyceliumParticles.length !== SANCTUARY_MYCEL_MAX) initSanctuaryMyceliumParticles(w, h);
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, c.width, c.height);
+  if (sanctuaryMyceliumParticles.length < SANCTUARY_MYCEL_MAX) initSanctuaryMyceliumParticles(w, h);
+   // Instead of clearRect, we draw a highly transparent black box. 
+  // This leaves a trail that slowly fades away, creating the "web" look.
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.015)'; 
+  ctx.fillRect(0, 0, c.width, c.height);
+
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    for (const p of sanctuaryMyceliumParticles) {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.phase += p.speed;
-    if (p.x < -4) p.x = w + 4;
-    if (p.x > w + 4) p.x = -4;
-    if (p.y < -4) p.y = h + 4;
-    if (p.y > h + 4) p.y = -4;
-    // Each particle breathes independently -- 0.3 to 0.6 opacity
-    const alpha = 0.3 + 0.3 * (0.5 + 0.5 * Math.sin(p.phase));
-    ctx.fillStyle = `rgba(100,180,120,${alpha * 0.25})`;
+  
+  ctx.lineWidth = 0.6;
+  ctx.strokeStyle = 'rgba(209, 191, 167, 0.15)'; // Warm bone color
+
+  for (let i = 0; i < sanctuaryMyceliumParticles.length; i++) {
+    let p = sanctuaryMyceliumParticles[i];
+    
+    // Save old position
+    let oldX = p.x;
+    let oldY = p.y;
+
+    // Wander slightly (Mycelium doesn't grow perfectly straight)
+    p.angle += (Math.random() - 0.5) * 0.3;
+    p.x += Math.cos(p.angle) * p.speed;
+    p.y += Math.sin(p.angle) * p.speed;
+    p.life--;
+
+    // Draw the segment
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 1.8, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(oldX, oldY);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+
+    // Occasional branching (spawns a temporary child)
+    if (Math.random() < 0.005 && sanctuaryMyceliumParticles.length < 15) {
+      sanctuaryMyceliumParticles.push({
+        x: p.x,
+        y: p.y,
+        angle: p.angle + (Math.random() > 0.5 ? 0.8 : -0.8), // Branch off at an angle
+        speed: p.speed * 0.8,
+        life: 200
+      });
+    }
+
+    // Death and rebirth
+    if (p.life <= 0 || p.x < -10 || p.x > w + 10 || p.y < -10 || p.y > h + 10) {
+      if (i >= SANCTUARY_MYCEL_MAX) {
+        // If it's a child branch, let it die
+        sanctuaryMyceliumParticles.splice(i, 1);
+        i--;
+      } else {
+        // If it's a root spore, respawn it somewhere else
+        p.x = Math.random() * w;
+        p.y = Math.random() * h;
+        p.life = 500 + Math.random() * 1000;
+      }
+    }
   }
-  sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
 }
+
+const branchState = [];
+
+function initOrganicBranches() {
+  document.querySelectorAll('#view-sanctuary.sanctuary-branch-svg').forEach((svg, idx) => {
+    // build a simple curved trunk with 2-3 offshoots
+    const w = svg.clientWidth, h = svg.clientHeight;
+    const baseX = w * 0.15, baseY = h * 0.15;
+    const points = [];
+    const segments = 12;
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      // gentle outward curve
+      const x = baseX + Math.pow(t, 1.4) * w * 0.7 + (Math.random()-0.5)*4;
+      const y = baseY + Math.pow(t, 1.2) * h * 0.7 + (Math.random()-0.5)*4;
+      points.push({ x, y, ox: x, oy: y, depth: t });
+    }
+    branchState.push({ svg, points, phase: Math.random()*Math.PI*2 });
+    drawBranch(svg, points);
+  });
+}
+
+function drawBranch(svg, points) {
+  svg.innerHTML = '';
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    const p0 = points[i-1], p1 = points[i];
+    const cx = (p0.x + p1.x)/2;
+    const cy = (p0.y + p1.y)/2;
+    d += ` Q ${cx} ${cy} ${p1.x} ${p1.y}`;
+  }
+  path.setAttribute('d', d);
+  path.setAttribute('stroke', 'currentColor');
+  path.setAttribute('stroke-width', '1.4');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('opacity', '0.18');
+  svg.appendChild(path);
+}
+
+function tickBranches(time) {
+  if (!sanctuaryAmbienceActive) return;
+  branchState.forEach(b => {
+    const sway = Math.sin(time * 0.0003 + b.phase) * 0.8;
+    b.points.forEach((p,i) => {
+      const amp = p.depth * 2.2; // tips move more
+      // perpendicular offset
+      p.x = p.ox + Math.cos(time*0.0002 + i*0.3) * amp * sway;
+      p.y = p.oy + Math.sin(time*0.0002 + i*0.3) * amp * sway * 0.6;
+    });
+    drawBranch(b.svg, b.points);
+  });
+  requestAnimationFrame(tickBranches);
+}
+
+// start
+initOrganicBranches();
+requestAnimationFrame(tickBranches);
+
 function startSanctuaryRealm(){
   sanctuaryAmbienceActive = true;
   const c = document.getElementById('sanctuary-mycelium-canvas');
@@ -2856,6 +2963,7 @@ function startSanctuaryRealm(){
   }
   scheduleSanctuaryAmbientBloom();
 }
+
 function stopSanctuaryRealm(){
   sanctuaryAmbienceActive = false;
   clearTimeout(sanctuaryAmbientBloomTimer);
@@ -2868,6 +2976,7 @@ function stopSanctuaryRealm(){
   }
   closeSanctuaryDrawer();
 }
+
 function onSanctuarySurfacePointerDown(ev){
   const panel = document.getElementById('view-sanctuary');
   if (!panel || panel.classList.contains('hidden')) return;
