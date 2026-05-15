@@ -1316,17 +1316,17 @@ button {
 
 /* ═══ SANCTUARY REALM (scoped — Soup / IE page unchanged) ═══ */
 #view-sanctuary.sanctuary-view {
-  --s-bg: #001a12;
-  --s-surface: #061e17;
-  --s-ie-surface: #06231b;
-  --s-border: #1e3a2f;
-  --s-text: #d8e2dd;
-  --s-text-sec: #8a9f95;
-  --s-text-muted: #5a7268;
-  --s-gold: #c8a050;
-  --s-glow: rgba(80, 140, 110, 0.06);
-  --s-mycelium: rgba(140, 200, 180, 0.08);
-  --s-branch: #0a2a1f;
+  --s-bg: #050607;
+  --s-surface: #0e1113;
+  --s-ie-surface: #12171a;
+  --s-border: #2a3136;
+  --s-text: #dfe6e8;
+  --s-text-sec: #9aa5ad;
+  --s-text-muted: #6e787f;
+  --s-gold: #a3b8c2;
+  --s-glow: rgba(160, 180, 200, 0.05);
+  --s-mycelium: rgba(180, 200, 210, 0.04);
+  --s-branch: #141a22;
   background: var(--s-bg);
   color: var(--s-text);
 }
@@ -1384,58 +1384,6 @@ button {
   overflow: hidden;
 }
 
-#view-sanctuary .sanctuary-app-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px 8px;
-  border-bottom: 1px solid var(--s-border);
-  background: linear-gradient(180deg, rgba(6, 30, 23, 0.92), rgba(6, 30, 23, 0.55));
-}
-#view-sanctuary .sanctuary-title-cluster {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-#view-sanctuary .sanctuary-glyph {
-  font-size: 11px;
-  color: var(--s-gold);
-  flex-shrink: 0;
-  opacity: 0.95;
-}
-#view-sanctuary .sanctuary-title-text {
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
-  color: var(--s-gold);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-#view-sanctuary .sanctuary-menu-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid var(--s-border);
-  background: var(--s-surface);
-  color: var(--s-text-sec);
-  opacity: 0.6;
-  font-size: 20px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-}
-#view-sanctuary .sanctuary-menu-btn:active {
-  opacity: 1;
-  background: var(--s-ie-surface);
-}
-
 #view-sanctuary .sanctuary-drawer {
   position: absolute;
   inset: 0;
@@ -1463,6 +1411,9 @@ button {
   top: 56px;
   right: 10px;
   min-width: 200px;
+  max-height: min(72vh, 420px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--s-ie-surface);
   border: 1px solid var(--s-border);
   border-radius: 14px;
@@ -1485,7 +1436,7 @@ button {
   cursor: pointer;
 }
 #view-sanctuary .sanctuary-drawer-item:active {
-  background: rgba(80, 140, 110, 0.12);
+  background: rgba(160, 180, 200, 0.1);
 }
 
 #view-sanctuary .sanctuary-surface.table-surface {
@@ -1510,7 +1461,7 @@ button {
   box-shadow: inset 0 0 24px var(--s-glow);
 }
 #view-sanctuary .ie-card::before {
-  background: linear-gradient(90deg, rgba(200, 160, 80, 0.35), transparent);
+  background: linear-gradient(90deg, rgba(163, 184, 194, 0.35), transparent);
   opacity: 0.35;
 }
 #view-sanctuary .ie-card.draft::before {
@@ -1539,19 +1490,19 @@ button {
 }
 #view-sanctuary .ie-card-sigil svg {
   animation: ieSigilSpin 30s linear infinite;
-  filter: drop-shadow(0 0 1px rgba(200, 160, 80, 0.22));
+  filter: drop-shadow(0 0 1px rgba(163, 184, 194, 0.28));
 }
 #view-sanctuary .ie-card-sigil.pulse svg {
   animation: ieSigilSpin 30s linear infinite, ieSigilGlowSanctuary 4s ease-in-out infinite;
 }
 @keyframes ieSigilGlowSanctuary {
-  0%, 100% { opacity: 0.65; filter: drop-shadow(0 0 1px rgba(200, 160, 80, 0.2)); }
-  50% { opacity: 1; filter: drop-shadow(0 0 4px rgba(200, 160, 80, 0.35)); }
+  0%, 100% { opacity: 0.65; filter: drop-shadow(0 0 1px rgba(163, 184, 194, 0.22)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 5px rgba(163, 184, 194, 0.38)); }
 }
 
 #view-sanctuary .ie-card.ie-card-archive {
   border-style: dashed;
-  border-color: rgba(30, 58, 47, 0.7);
+  border-color: rgba(42, 49, 54, 0.75);
   opacity: 1;
 }
 #view-sanctuary .ie-card.ie-card-archive .ie-card-name {
@@ -1576,7 +1527,7 @@ button {
   margin-top: 2px;
 }
 #view-sanctuary .sanctuary-divider-line {
-  background: rgba(30, 58, 47, 0.3);
+  background: rgba(42, 49, 54, 0.45);
   height: 1px;
 }
 #view-sanctuary .sanctuary-divider-label {
@@ -1607,12 +1558,12 @@ button {
   box-shadow: inset 0 0 28px var(--s-glow);
 }
 #view-sanctuary .character-card:active {
-  border-color: rgba(80, 140, 110, 0.45);
+  border-color: rgba(163, 184, 194, 0.45);
   background: var(--s-ie-surface);
 }
 #view-sanctuary .character-card.card-selected {
-  border-color: rgba(200, 160, 80, 0.55) !important;
-  background: rgba(80, 140, 110, 0.08) !important;
+  border-color: rgba(163, 184, 194, 0.55) !important;
+  background: rgba(160, 180, 200, 0.08) !important;
 }
 #view-sanctuary .char-card-name {
   color: var(--s-text);
@@ -1627,7 +1578,7 @@ button {
   width: 32px;
   height: 32px;
   font-size: 13px;
-  background: #0a1f18;
+  background: #0a1014;
   border-color: var(--s-border);
   color: var(--s-text-muted);
 }
@@ -1653,7 +1604,7 @@ button {
   border-radius: 50%;
   pointer-events: none;
   z-index: 60;
-  background: radial-gradient(circle, rgba(140, 200, 180, 0.18) 0%, rgba(140, 200, 180, 0.06) 38%, transparent 72%);
+  background: radial-gradient(circle, rgba(180, 200, 210, 0.16) 0%, rgba(160, 180, 200, 0.05) 38%, transparent 72%);
   transform: scale(0.25);
   opacity: 0.95;
   transition: transform 0.58s ease-out, opacity 0.58s ease-out;
@@ -1663,7 +1614,7 @@ button {
   opacity: 0;
 }
 .sanctuary-bloom-node.sanctuary-bloom-ambient {
-  background: radial-gradient(circle, rgba(140, 200, 180, 0.1) 0%, rgba(140, 200, 180, 0.03) 45%, transparent 75%);
+  background: radial-gradient(circle, rgba(180, 200, 210, 0.09) 0%, rgba(160, 180, 200, 0.03) 45%, transparent 75%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1678,6 +1629,151 @@ button {
   .sanctuary-bloom-node {
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Moonlit — Character forge & chat (same family as Sanctuary) */
+#view-forge.forge-view {
+  background: #050607;
+  color: #dfe6e8;
+}
+#view-forge .forge-scroll {
+  background: #050607;
+}
+#view-forge .forge-section {
+  background: #0e1113;
+  border-color: #2a3136;
+}
+#view-forge .forge-section-header:active {
+  background: rgba(160, 180, 200, 0.07);
+}
+#view-forge .forge-section-title {
+  color: #a3b8c2;
+}
+#view-forge .forge-label {
+  color: #6e787f;
+}
+#view-forge .forge-textarea {
+  background: #050607;
+  border-color: #2a3136;
+  color: #dfe6e8;
+}
+#view-forge .forge-textarea:focus {
+  border-color: rgba(163, 184, 194, 0.55);
+}
+#view-forge .cosm-input,
+#view-forge select.cosm-input {
+  background: #050607;
+  border-color: #2a3136;
+  color: #dfe6e8;
+}
+#view-forge .cosm-input:focus {
+  border-color: rgba(163, 184, 194, 0.5);
+}
+#view-forge .range-input {
+  accent-color: #a3b8c2;
+}
+#view-forge .range-val {
+  color: #a3b8c2;
+}
+#view-forge .forge-footer {
+  background: rgba(5, 6, 7, 0.93);
+  border-top-color: #2a3136;
+}
+#view-forge .btn-forge-save {
+  background: #a3b8c2;
+  color: #050607;
+}
+#view-forge .btn-forge-close {
+  background: #12171a;
+  color: #dfe6e8;
+  border-color: #2a3136;
+}
+#view-forge .forge-chevron {
+  opacity: 0.55;
+  color: #9aa5ad;
+}
+#view-forge .forge-photo-slot {
+  border-color: rgba(163, 184, 194, 0.4);
+  background: #12171a;
+}
+#view-forge .forge-photo-slot:active {
+  border-color: #a3b8c2;
+  background: #0e1113;
+}
+
+#view-chat.chat-view {
+  background: #050607;
+  color: #dfe6e8;
+}
+#view-chat .chat-header {
+  background: #0e1113;
+  border-bottom-color: #2a3136;
+}
+#view-chat .chat-char-name {
+  color: #a3b8c2;
+}
+#view-chat .chat-avatar-pill {
+  background: #12171a;
+  border-color: #2a3136;
+  color: #6e787f;
+}
+#view-chat .chat-msg.user {
+  background: #12171a;
+  border: 1px solid #2a3136;
+  color: #dfe6e8;
+}
+#view-chat .chat-msg.char {
+  background: #0e1113;
+  border: 1px solid rgba(163, 184, 194, 0.28);
+  color: #dfe6e8;
+}
+#view-chat.ie-encounter .chat-msg.char {
+  background: none;
+  border: none;
+  color: #dfe6e8;
+}
+#view-chat.ie-encounter .chat-msg.user {
+  color: #9aa5ad;
+}
+#view-chat.ie-encounter .chat-msg.user::after {
+  background: #2a3136;
+}
+#view-chat.ie-encounter .chat-char-name {
+  color: #a3b8c2;
+}
+#view-chat .chat-input-area {
+  background: #0e1113;
+  border-top-color: #2a3136;
+}
+#view-chat .chat-input {
+  background: #050607;
+  border-color: #2a3136;
+  color: #dfe6e8;
+}
+#view-chat .chat-input:focus {
+  border-color: rgba(163, 184, 194, 0.55);
+}
+#view-chat .btn-send {
+  background: #a3b8c2;
+  color: #050607;
+}
+#view-chat #btn-chat-retry {
+  background: #12171a !important;
+  color: #dfe6e8 !important;
+  border: 1px solid #2a3136 !important;
+}
+#view-chat .tbtn {
+  background: #12171a;
+  color: #9aa5ad;
+  border-color: #2a3136;
+}
+#view-chat #chat-persona-pill {
+  color: #8a9aa8 !important;
+  border-color: #2a3136 !important;
+  background: rgba(5, 6, 7, 0.35);
+}
+#view-chat #ie-model-chip {
+  color: #8a9aa8 !important;
 }
 
 .forge-view { background: var(--bg); overflow: hidden; }
@@ -2140,16 +2236,11 @@ select.cosm-input {
       </div>
     </div>
     <div class="sanctuary-layers">
-      <header class="sanctuary-app-header">
-        <div class="sanctuary-title-cluster">
-          <span class="sanctuary-glyph" aria-hidden="true">◈</span>
-          <span class="sanctuary-title-text">The Sanctuary</span>
-        </div>
-        <button type="button" class="sanctuary-menu-btn" id="sanctuary-menu-btn" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer">⋯</button>
-      </header>
       <div class="sanctuary-drawer" id="sanctuary-drawer" aria-hidden="true">
         <button type="button" class="sanctuary-drawer-scrim" id="sanctuary-drawer-scrim" tabindex="-1" aria-label="Close menu"></button>
         <div class="sanctuary-drawer-panel" id="sanctuary-drawer-panel" role="menu">
+          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-immutable" role="menuitem">∞ Immutable Entities</button>
+          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-create" role="menuitem">⌗ Create</button>
           <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-persona" role="menuitem">⁂ Persona</button>
           <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-memory" role="menuitem">▣ Memory vault</button>
           <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-search" role="menuitem">⌕ Search</button>
@@ -2614,7 +2705,7 @@ let sanctuaryMyceliumParticles = [];
 
 function closeSanctuaryDrawer(){
   const d = document.getElementById('sanctuary-drawer');
-  const btn = document.getElementById('sanctuary-menu-btn');
+  const btn = document.getElementById('hdr-sanctuary-menu');
   if (d) {
     d.classList.remove('open');
     d.setAttribute('aria-hidden', 'true');
@@ -2623,7 +2714,7 @@ function closeSanctuaryDrawer(){
 }
 function openSanctuaryDrawer(){
   const d = document.getElementById('sanctuary-drawer');
-  const btn = document.getElementById('sanctuary-menu-btn');
+  const btn = document.getElementById('hdr-sanctuary-menu');
   if (d) {
     d.classList.add('open');
     d.setAttribute('aria-hidden', 'false');
@@ -2722,7 +2813,7 @@ function tickSanctuaryMycelium(){
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, c.width, c.height);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = 'rgba(140,200,180,0.08)';
+  ctx.fillStyle = 'rgba(180,200,210,0.07)';
   for (const p of sanctuaryMyceliumParticles) {
     p.x += p.vx;
     p.y += p.vy;
@@ -4891,17 +4982,13 @@ function updateHeaderButtons(){
     document.getElementById('hdr-data').onclick=function(){ openDataPage(); };
     document.getElementById('hdr-search').onclick=function(){ openGlobalSearch(); };
   } else {
-    c.innerHTML=
-      '<button class="hdr-btn" id="hdr-immutable" style="font-size:16px;">&#8734;</button>'+
-      '<button class="hdr-btn" id="hdr-create" style="font-size:18px;">⌗</button>'+   // ⌗
-      '<button class="hdr-btn" id="hdr-settings">&#11041;</button>'+                       // ⬡
-      '<button class="hdr-btn" id="hdr-memory-vault" style="font-size:16px;">&#8277;</button>'+
-      '<button class="hdr-btn" id="hdr-sanctuary-search">&#8982;</button>';
-    document.getElementById('hdr-immutable').onclick = function(){ openIEPage(); };
-    document.getElementById('hdr-create').onclick = function(){ openCreateModal(); };
-    document.getElementById('hdr-settings').onclick = function(){};
-    document.getElementById('hdr-memory-vault').onclick = function(){ openMemoryVaultGlobal(); };
-    document.getElementById('hdr-sanctuary-search').onclick = function(){ openSanctuarySearch(); };
+    c.innerHTML =
+      '<button class="hdr-btn" id="hdr-sanctuary-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer">⋯</button>';
+    document.getElementById('hdr-sanctuary-menu').onclick = function () {
+      const d = document.getElementById('sanctuary-drawer');
+      if (d && d.classList.contains('open')) closeSanctuaryDrawer();
+      else openSanctuaryDrawer();
+    };
   }
   }
 
@@ -5529,6 +5616,7 @@ function removeLineageThread() {
 }
 
 function openQuickAction(card, item) {
+  if (item && item.type === 'character' && currentMode === 'sanctuary') return;
   // Remove any existing menu
   const existing = document.getElementById('nq-quick-action');
   if(existing) existing.remove();
@@ -6387,14 +6475,6 @@ strip.appendChild(ctaCard);
         openChat(c.id);
       });
 
-      card.addEventListener('mousedown', e => startLP(e, card, {type:'character', id:c.id, name:c.name, data:c}));
-      card.addEventListener('mouseup', () => cancelLP(card));
-      card.addEventListener('mouseleave', () => cancelLP(card));
-      card.addEventListener('touchstart', e => startLP(e, card, {type:'character', id:c.id, name:c.name, data:c}), {passive: true});
-      card.addEventListener('touchend', () => cancelLP(card));
-      card.addEventListener('touchcancel', () => cancelLP(card));
-      card.addEventListener('touchmove', e => handleTM(e, card), {passive: true});
-      
       g.appendChild(card);
     }
     surface.appendChild(g);
@@ -10143,20 +10223,16 @@ document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
   document.getElementById('btn-ie-back').addEventListener('click', ()=>{ showPanel('view-sanctuary'); renderSanctuaryView(); });
 
   (function initSanctuaryChrome(){
-    const menu = document.getElementById('sanctuary-menu-btn');
     const scrim = document.getElementById('sanctuary-drawer-scrim');
+    const immutable = document.getElementById('sanctuary-drawer-immutable');
+    const create = document.getElementById('sanctuary-drawer-create');
     const persona = document.getElementById('sanctuary-drawer-persona');
     const memory = document.getElementById('sanctuary-drawer-memory');
     const search = document.getElementById('sanctuary-drawer-search');
     const surface = document.getElementById('sanctuary-surface');
-    if (menu) {
-      menu.addEventListener('click', () => {
-        const d = document.getElementById('sanctuary-drawer');
-        if (d && d.classList.contains('open')) closeSanctuaryDrawer();
-        else openSanctuaryDrawer();
-      });
-    }
     if (scrim) scrim.addEventListener('click', closeSanctuaryDrawer);
+    if (immutable) immutable.addEventListener('click', () => { closeSanctuaryDrawer(); openIEPage(); });
+    if (create) create.addEventListener('click', () => { closeSanctuaryDrawer(); openCreateModal(); });
     if (persona) persona.addEventListener('click', () => { closeSanctuaryDrawer(); openPersonaView(); });
     if (memory) memory.addEventListener('click', () => { closeSanctuaryDrawer(); openMemoryVaultGlobal(); });
     if (search) search.addEventListener('click', () => { openSanctuarySearch(); });
