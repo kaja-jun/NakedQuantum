@@ -40,6 +40,17 @@ button {
 .nq-wordmark.pressing { opacity: 0.3; }
 .nq-wordmark.nq-wordmark--sanctuary-realm { color: #a3b8c2; letter-spacing: 2px; }
 .header-actions.header-actions-sanctuary { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+#hdr-sanctuary-home.hdr-btn,
+#hdr-sanctuary-menu.hdr-btn {
+  background: #12171a;
+  border: 1px solid #2a3136;
+  color: #a3b8c2;
+}
+#hdr-sanctuary-home.hdr-btn:active,
+#hdr-sanctuary-menu.hdr-btn:active {
+  background: #0e1113;
+  border-color: rgba(163, 184, 194, 0.45);
+}
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 .hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
@@ -1304,6 +1315,71 @@ button {
   color: #dfe6e8;
 }
 
+/* Persona + Memory vault — Sanctuary moonlit satellites */
+#view-persona.realm-sub-view,
+#view-memory.realm-sub-view {
+  background: #050607;
+  color: #dfe6e8;
+}
+#view-persona.realm-sub-view .lighthouse-nav,
+#view-memory.realm-sub-view .lighthouse-nav {
+  background: #050607;
+  border-bottom: 1px solid #2a3136;
+}
+#view-persona.realm-sub-view .realm-local-title,
+#view-memory.realm-sub-view .realm-local-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #a3b8c2;
+  font-weight: 900;
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#view-persona.realm-sub-view .btn-back-table,
+#view-memory.realm-sub-view .btn-back-table {
+  color: #a3b8c2;
+  border-color: rgba(163, 184, 194, 0.35);
+}
+#view-persona.realm-sub-view .tbtn,
+#view-memory.realm-sub-view .tbtn {
+  border-color: rgba(163, 184, 194, 0.4);
+  color: #a3b8c2;
+}
+#view-persona.realm-sub-view .cards-section-label {
+  color: #6e787f;
+  opacity: 1;
+}
+#view-persona.realm-sub-view .forge-textarea {
+  background: #0e1113;
+  border: 1px solid #2a3136;
+  color: #dfe6e8;
+}
+#view-persona.realm-sub-view .forge-textarea:focus {
+  border-color: rgba(163, 184, 194, 0.5);
+}
+#view-memory.realm-sub-view .memory-vault-card {
+  background: #0e1113 !important;
+  border: 1px solid #2a3136 !important;
+}
+#view-memory.realm-sub-view .memory-vault-char {
+  color: #a3b8c2 !important;
+  font-weight: 700;
+}
+#view-memory.realm-sub-view .cards-section-label {
+  color: #6e787f;
+  opacity: 1;
+}
+#view-persona.realm-sub-view #roles-surface > div {
+  background: #0e1113 !important;
+  border-color: #2a3136 !important;
+}
+#view-persona.realm-sub-view .role-chip-title {
+  color: #a3b8c2 !important;
+}
 /* CHARACTER AVATAR */
 .char-avatar {
   width: 36px; height: 36px;
@@ -1778,15 +1854,20 @@ button {
 }
 
 #view-sanctuary .sanctuary-char-grid {
-  gap: 10px;
-  padding: 0 4px;
+  grid-template-columns: repeat(2, minmax(0, min(160px, calc((100% - 12px) / 2))));
+  justify-content: center;
+  gap: 12px;
+  padding: 0 8px 12px;
 }
-/* Custom characters: compact to align visually with IE strip cards */
+/* Match IE strip card footprint (160×200) */
 #view-sanctuary .character-card {
   background: var(--s-surface);
   border: 1px solid var(--s-border);
-  min-height: 168px;
-  padding: 10px 11px 8px;
+  width: 160px;
+  min-height: 200px;
+  max-width: 100%;
+  padding: 10px 10px 8px;
+  box-sizing: border-box;
   box-shadow: inset 0 0 28px var(--s-glow);
 }
 #view-sanctuary .character-card:active {
@@ -1909,6 +1990,10 @@ button {
 #view-forge .forge-photo-slot:active {
   border-color: #a3b8c2;
   background: #0e1113;
+}
+#view-forge .cards-section-label {
+  color: #6e787f;
+  opacity: 1;
 }
 
 #view-chat.chat-view {
@@ -2586,7 +2671,7 @@ select.cosm-input {
     <input type="text" id="ie-model-input" class="cosm-input" 
       placeholder="paste model id..." 
       style="flex:1;margin:0;">
-    <button id="ie-model-add-btn" class="tbtn gold">+ Add</button>
+    <button type="button" id="ie-model-add-btn" class="tbtn">+ Add</button>
   </div>
 </div>
         </div>
@@ -2630,21 +2715,22 @@ select.cosm-input {
   </div>
 </div>
 
-<div class="view-panel hidden" id="view-memory" style="background:var(--bg);display:flex;flex-direction:column;">
+<div class="view-panel hidden realm-sub-view" id="view-memory" style="background:#050607;display:flex;flex-direction:column;">
   <div class="lighthouse-nav">
-    <button class="btn-back-table" id="btn-memory-back">← Chat</button>
-    <div style="font-size:10px;letter-spacing:2px;color:var(--accent);font-weight:900;">▣ MEMORY VAULT</div>
-    <button class="tbtn gold" id="btn-add-manual-memory">+ Anchor</button>
+    <button type="button" class="btn-back-table" id="btn-memory-back" data-back-target="chat">← Chat</button>
+    <div class="realm-local-title">▣ MEMORY VAULT</div>
+    <button type="button" class="tbtn" id="btn-add-manual-memory">+ Anchor</button>
   </div>
   <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 100px;">
     <div id="memory-surface"></div>
   </div>
 </div>
 
-<div class="view-panel hidden" id="view-persona" style="background:var(--bg);display:flex;flex-direction:column;">
+<div class="view-panel hidden realm-sub-view" id="view-persona" style="background:#050607;display:flex;flex-direction:column;">
   <div class="lighthouse-nav">
-    <div style="font-size:10px;letter-spacing:2px;color:var(--accent);font-weight:900;">⁂ PERSONA</div>
-    <button class="tbtn gold" id="btn-save-persona">Save</button>
+    <button type="button" class="btn-back-table" id="btn-persona-back" aria-label="Back to Sanctuary">← Back</button>
+    <div class="realm-local-title">⁂ PERSONA</div>
+    <button type="button" class="tbtn" id="btn-save-persona">Save</button>
   </div>
   <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 100px;">
     <div class="cards-section-label">Global Bio</div>
@@ -2653,7 +2739,7 @@ select.cosm-input {
     <textarea id="persona-personality" class="forge-textarea" placeholder="How you show up in encounters..." style="min-height:120px;"></textarea>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:24px;">
       <div class="cards-section-label" style="margin:0;">Roles</div>
-      <button class="tbtn gold" id="btn-add-role">+ New Role</button>
+      <button type="button" class="tbtn" id="btn-add-role">+ New Role</button>
     </div>
     <div id="roles-surface" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;"></div>
   </div>
@@ -3990,7 +4076,7 @@ async function renderForgePhotos(charId, primarySlotStr) {
   
   let primarySlot = (primarySlotStr !== undefined && primarySlotStr !== null && primarySlotStr !== '') ? Number(primarySlotStr) : -1;
   
-  section.innerHTML = `<div class="cards-section-label" style="margin-top:0;">Visages</div><div class="forge-photo-slots"></div>`;
+  section.innerHTML = `<div class="cards-section-label" style="margin-top:0;">Photos</div><div class="forge-photo-slots"></div>`;
   const slotsContainer = section.querySelector('.forge-photo-slots');
   
   for (let i = 0; i < 3; i++) {
@@ -4873,7 +4959,7 @@ function renderRoles(){
     div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;';
     div.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-size:12px;font-weight:900;color:var(--accent);">${escHtml(r.name)}</span>
+        <span class="role-chip-title" style="font-size:12px;font-weight:900;">${escHtml(r.name)}</span>
         <button onclick="deleteRole('${r.id}')" style="background:none;border:1px solid var(--danger);color:#ff6060;font-size:10px;padding:3px 8px;border-radius:6px;font-weight:700;">✕</button>
       </div>
       <div style="font-size:13px;color:var(--text);font-family:Georgia,serif;line-height:1.6;">${escHtml(r.description)}</div>
@@ -5291,7 +5377,8 @@ function showPanel(id){
   // Realms that carry their own top chrome — hide global wordmark row
   const header = document.getElementById('nq-header') || document.querySelector('.nq-header');
   const edgeGlow = document.getElementById('guardian-edge-glow');
-  const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-deep-soup');
+  const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-deep-soup'
+    || id === 'view-ie' || id === 'view-forge' || id === 'view-persona' || id === 'view-memory');
   if (hideGlobalHeader) {
     if (header) header.style.display = 'none';
     if (id === 'view-guardian' && edgeGlow) edgeGlow.classList.add('active');
@@ -7737,10 +7824,11 @@ async function openMemoryVaultGlobal(){
     const l=document.createElement('div');l.className='cards-section-label';l.textContent='All Memories';surface.appendChild(l);
     sorted.forEach(s=>{
       const div=document.createElement('div');
-      div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;';
+      div.className = 'memory-vault-card';
+      div.style.cssText='border-radius:10px;padding:12px 14px;margin-bottom:8px;';
       div.innerHTML=`
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:10px;color:var(--accent);font-weight:700;">${escHtml(charMap[s.charId]||'Unknown')}</span>
+          <span class="memory-vault-char" style="font-size:10px;font-weight:700;">${escHtml(charMap[s.charId]||'Unknown')}</span>
           <span style="font-size:9px;color:var(--muted);">${new Date(s.created_at).toLocaleDateString()}</span>
         </div>
         <div style="font-size:13px;line-height:1.6;color:var(--text);font-family:Georgia,serif;">${escHtml(s.text)}</div>
@@ -7751,12 +7839,17 @@ async function openMemoryVaultGlobal(){
   
   // Reuse the memory view panel but with a back button to Sanctuary
   document.getElementById('btn-memory-back').textContent='← Sanctuary';
-  document.getElementById('btn-memory-back').onclick=()=>{showPanel('view-sanctuary');renderSanctuaryView();};
+  document.getElementById('btn-memory-back').dataset.backTarget = 'sanctuary';
   showPanel('view-memory');
 }
 
 async function openMemoryView(){
   if(!activeCharId)return;
+  const mb = document.getElementById('btn-memory-back');
+  if (mb) {
+    mb.textContent = '← Chat';
+    mb.dataset.backTarget = 'chat';
+  }
   await renderMemoryView();
   showPanel('view-memory');
 }
@@ -7777,10 +7870,11 @@ async function renderMemoryView(){
 
   function buildMemoryItem(s){
     const div=document.createElement('div');
-    div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;';
+    div.className='memory-vault-card';
+    div.style.cssText='border-radius:10px;padding:12px 14px;margin-bottom:8px;';
     div.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:900;">${s.type==='manual'?'ANCHORED':'AUTO'}</span>
+        <span class="memory-vault-char" style="font-size:9px;letter-spacing:2px;font-weight:900;">${s.type==='manual'?'ANCHORED':'AUTO'}</span>
         <span style="font-size:9px;color:var(--muted);">${new Date(s.created_at).toLocaleDateString()}</span>
       </div>
       <div style="font-size:13px;line-height:1.6;color:var(--text);font-family:Georgia,serif;">${escHtml(s.text)}</div>
@@ -10791,12 +10885,24 @@ document.getElementById('btn-ie-dev-forge').addEventListener('click', devCreateI
   document.getElementById('btn-role-cancel').addEventListener('click',closeOverlay);
   document.getElementById('btn-role-confirm').addEventListener('click',confirmAddRole);
   document.getElementById('btn-save-persona').addEventListener('click',savePersonaPage);
+  document.getElementById('btn-persona-back').addEventListener('click', () => {
+    showPanel('view-sanctuary');
+    void renderSanctuaryView();
+  });
   document.getElementById('btn-add-role').addEventListener('click',addNewRole);
   document.getElementById('chat-persona-pill').addEventListener('click',openPersonaPillSelector);
   document.getElementById('btn-persona-select-cancel').addEventListener('click',closeOverlay);
   document.getElementById('forge-temp').addEventListener('input',e=>{document.getElementById('forge-temp-val').textContent=parseFloat(e.target.value).toFixed(1);});
   document.querySelectorAll('.forge-section-header').forEach(h=>{h.addEventListener('click',()=>{h.parentElement.classList.toggle('open');});});
-  document.getElementById('btn-memory-back').addEventListener('click',()=>{showPanel('view-chat');});
+  document.getElementById('btn-memory-back').addEventListener('click', () => {
+    const t = document.getElementById('btn-memory-back').dataset.backTarget;
+    if (t === 'sanctuary') {
+      showPanel('view-sanctuary');
+      void renderSanctuaryView();
+    } else {
+      showPanel('view-chat');
+    }
+  });
   document.getElementById('btn-add-manual-memory').addEventListener('click',addManualAnchor);
   document.getElementById('btn-chat-back').addEventListener('click', ()=>{ void closeChatToOrigin(); });
   document.getElementById('btn-chat-edit').addEventListener('click',()=>openCharacterForge(activeCharId));
