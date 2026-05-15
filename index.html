@@ -1314,6 +1314,18 @@ button {
   background: #0e1113;
   color: #dfe6e8;
 }
+#view-ie.ie-realm-view .btn-back-table,
+#view-ie.ie-realm-view #btn-ie-back {
+  border-color: #2a3136;
+  color: #9aa5ad;
+  background: rgba(14, 17, 19, 0.55);
+}
+#view-ie.ie-realm-view .btn-back-table:active,
+#view-ie.ie-realm-view #btn-ie-back:active {
+  border-color: rgba(163, 184, 194, 0.5);
+  color: #dfe6e8;
+  background: #12171a;
+}
 
 /* Persona + Memory vault — Sanctuary moonlit satellites */
 #view-persona.realm-sub-view,
@@ -1693,6 +1705,36 @@ button {
   overflow: hidden;
 }
 
+#view-sanctuary .sanctuary-search-bar-wrap {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 3;
+  padding: 4px 12px 2px;
+  background: transparent;
+}
+#view-sanctuary .sanctuary-search-bar-wrap .search-input {
+  background: var(--s-surface);
+  border-color: var(--s-border);
+  color: var(--s-text);
+  caret-color: var(--s-accent-cool);
+}
+#view-sanctuary .sanctuary-search-bar-wrap .search-input:focus {
+  border-color: rgba(163, 184, 194, 0.55);
+}
+#view-sanctuary .sanctuary-search-bar-wrap .search-input::placeholder {
+  color: var(--s-text-muted);
+}
+#view-sanctuary .sanctuary-search-close {
+  border-color: var(--s-border);
+  background: var(--s-surface);
+  color: var(--s-text-muted);
+}
+#view-sanctuary .sanctuary-search-close:active {
+  border-color: rgba(163, 184, 194, 0.45);
+  color: var(--s-text);
+  background: var(--s-ie-surface);
+}
+
 #view-sanctuary .sanctuary-drawer {
   position: absolute;
   inset: 0;
@@ -1753,12 +1795,12 @@ button {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 10px 6px 140px;
+  padding: 2px 12px 140px;
   background: transparent;
 }
 
 #view-sanctuary .ie-strip {
-  padding: 12px 12px 14px;
+  padding: 6px 12px 12px;
   gap: 12px;
 }
 /* Slightly larger IE strip cards (Sanctuary only) */
@@ -1849,15 +1891,15 @@ button {
 #view-sanctuary .cards-section-label {
   color: var(--s-text-muted);
   opacity: 0.85;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
 #view-sanctuary .sanctuary-char-grid {
   grid-template-columns: repeat(2, minmax(0, min(160px, calc((100% - 12px) / 2))));
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
-  padding: 0 8px 12px;
+  padding: 0 12px 12px;
 }
 /* Match IE strip card footprint (160×200) */
 #view-sanctuary .character-card {
@@ -2556,10 +2598,16 @@ select.cosm-input {
         <button type="button" class="sanctuary-drawer-scrim" id="sanctuary-drawer-scrim" tabindex="-1" aria-label="Close menu"></button>
         <div class="sanctuary-drawer-panel" id="sanctuary-drawer-panel" role="menu">
           <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-immutable" role="menuitem">∞ Immutable Entities</button>
-          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-create" role="menuitem">⌗ Create</button>
+          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-create" role="menuitem">⌗ Create Character</button>
           <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-persona" role="menuitem">⁂ Persona</button>
           <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-memory" role="menuitem">▣ Memory vault</button>
           <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-search" role="menuitem">⌕ Search</button>
+        </div>
+      </div>
+      <div class="search-bar-wrap sanctuary-search-bar-wrap" id="sanctuary-search-bar-wrap" style="display:none;">
+        <div class="soup-search-row">
+          <input class="search-input" id="sanctuary-search-input" placeholder="Search characters & entities..." autocomplete="off">
+          <button type="button" class="soup-search-close sanctuary-search-close" id="sanctuary-search-close" aria-label="Close search">✕</button>
         </div>
       </div>
       <div class="table-surface sanctuary-surface" id="sanctuary-surface"></div>
@@ -2891,21 +2939,6 @@ select.cosm-input {
   </div>
 </div>
 
-<div class="cosm-modal" id="create-modal">
-  <div class="modal-title">⌗ Create</div>
-  <div class="management-actions">
-    <button class="management-btn" id="btn-create-character">
-      <span>◈</span> Create Character
-    </button>
-    <button class="management-btn" id="btn-create-persona">
-      <span>⁂</span> Persona
-    </button>
-  </div>
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-create-cancel">Cancel</button>
-  </div>
-</div>
-
 <div class="cosm-modal" id="burn-disc-modal">
   <div class="modal-title">⌬ Engram</div>
   <div style="font-size:11px;color:var(--muted);">Character</div>
@@ -3011,6 +3044,7 @@ let selectMode=false, selectedItems=new Set();
 let deepSoupFolderId = null;
 let deepSoupPath = [{id: null, name: 'Deep Soup'}];
 let soupLocalSearchOpen = false;
+let sanctuaryLocalSearchOpen = false;
 let chatReturnPanel = 'view-soup';
 let deepMapperLoadSuppressed = false;
 let deepMapperSuppressTimer = null;
@@ -3080,6 +3114,34 @@ async function showSoupLocalSearch(){
 async function hideSoupLocalSearch(){
   resetSoupSearchChrome();
   await renderTableView();
+}
+function resetSanctuarySearchChrome(){
+  sanctuaryLocalSearchOpen = false;
+  const sw = document.getElementById('sanctuary-search-bar-wrap');
+  if (sw) sw.style.display = 'none';
+  const si = document.getElementById('sanctuary-search-input');
+  if (si) si.value = '';
+  sanctuarySearchQuery = '';
+}
+async function showSanctuaryLocalSearch(){
+  sanctuaryLocalSearchOpen = true;
+  closeSanctuaryDrawer();
+  const w = document.getElementById('sanctuary-search-bar-wrap');
+  if (w) w.style.display = 'block';
+  await renderSanctuaryView();
+  requestAnimationFrame(() => {
+    const inp = document.getElementById('sanctuary-search-input');
+    if (!inp) return;
+    try { inp.focus({ preventScroll: true }); } catch (_) { inp.focus(); }
+  });
+}
+async function hideSanctuaryLocalSearch(){
+  resetSanctuarySearchChrome();
+  await renderSanctuaryView();
+}
+function onSanctuarySearchInput(val){
+  sanctuarySearchQuery = (val == null ? '' : String(val));
+  void renderSanctuaryView();
 }
 function sanctuaryPrefersReducedMotion(){
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; }
@@ -3319,11 +3381,6 @@ function getGlobalPersona(){
 }
 function saveGlobalPersona(bio,personality){
   localStorage.setItem('nq_global_persona',JSON.stringify({bio,personality}));
-}
-
-function openCreateModal(){
-  document.getElementById('create-modal').classList.add('visible');
-  document.getElementById('cosm-overlay').classList.add('active');
 }
 
 let currentIEModels = [];
@@ -5320,6 +5377,7 @@ function syncNqHeaderForCurrentPanel(activePanelId) {
 function showPanel(id){
     abyssStop();
   const wasSoup = (currentView === 'soup');
+  const wasSanctuary = (currentView === 'sanctuary');
   const panels = [
    'view-soup', 'view-sanctuary', 'view-abyss', 'view-deep-soup', 'view-data',
   'view-lighthouse', 'view-forge', 'view-chat', 'view-memory', 
@@ -5367,6 +5425,10 @@ function showPanel(id){
   if (id === 'view-soup' || wasSoup) {
     closeSoupDrawer();
     resetSoupSearchChrome();
+  }
+  if (id === 'view-sanctuary' || wasSanctuary) {
+    closeSanctuaryDrawer();
+    resetSanctuarySearchChrome();
   }
   if (wasSoup && id !== 'view-soup') void renderTableView();
   
@@ -5476,16 +5538,6 @@ document.getElementById('btn-chat-edit').style.display = '';
 activeIE = null;
     renderSanctuaryView(); 
   }
-}
-
-function openSanctuarySearch(){
-  closeSanctuaryDrawer();
-  const modal=document.getElementById('global-search-modal');
-  document.getElementById('global-search-input').placeholder='Search characters...';
-  document.getElementById('global-search-input').value='';
-  document.getElementById('global-search-results').innerHTML='<div class="global-search-empty">Search characters...</div>';
-  modal.classList.add('visible');
-  document.getElementById('cosm-overlay').classList.add('active');
 }
 
 async function renderTableView() {
@@ -6923,6 +6975,9 @@ async function deleteCurrentDiscourse() {
 /* SANCTUARY */
 async function renderSanctuaryView(){
   const surface = document.getElementById('sanctuary-surface');
+  if (!surface) return;
+  const ssw = document.getElementById('sanctuary-search-bar-wrap');
+  if (ssw) ssw.style.display = sanctuaryLocalSearchOpen ? 'block' : 'none';
   surface.innerHTML = '';
   
   const allC = await getCharacters();
@@ -9711,7 +9766,7 @@ function closeOverlay(){
   document.getElementById("cosm-overlay").classList.remove("active");
    ['folder-modal','rename-modal','move-modal',
  'global-search-modal','capture-modal','discourse-modal',
- 'burn-disc-modal','ie-manifest-modal','role-modal','persona-select-modal','create-modal',
+ 'burn-disc-modal','ie-manifest-modal','role-modal','persona-select-modal',
  'guardian-settings-modal'
 ].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove("visible");});
 }
@@ -10771,25 +10826,15 @@ document.getElementById('btn-data-sync-page').addEventListener('click', ()=>hand
 });
   document.getElementById('btn-burn-cancel').addEventListener('click',closeOverlay);
   document.getElementById('btn-burn-confirm').addEventListener('click',confirmBurnDisc);
-  document.getElementById('btn-create-character').addEventListener('click', ()=>{
-  closeOverlay();
-  handleNewCharacter();
-});
-document.getElementById('btn-create-persona').addEventListener('click', ()=>{
-  closeOverlay();
-  openPersonaView();
-});
-document.getElementById('btn-create-cancel').addEventListener('click', closeOverlay);
-
-document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
-  const input = document.getElementById('ie-model-input');
-  const val = input.value.trim();
-  if(val && !currentIEModels.includes(val)){
-    currentIEModels.push(val);
-    input.value = '';
-    renderIEModelList();
-  }
-});
+  document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
+    const input = document.getElementById('ie-model-input');
+    const val = input.value.trim();
+    if(val && !currentIEModels.includes(val)){
+      currentIEModels.push(val);
+      input.value = '';
+      renderIEModelList();
+    }
+  });
   document.getElementById('btn-ie-back').addEventListener('click', ()=>{ showPanel('view-sanctuary'); renderSanctuaryView(); });
 
   (function initSanctuaryChrome(){
@@ -10802,10 +10847,18 @@ document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
     const surface = document.getElementById('sanctuary-surface');
     if (scrim) scrim.addEventListener('click', closeSanctuaryDrawer);
     if (immutable) immutable.addEventListener('click', () => { closeSanctuaryDrawer(); openIEPage(); });
-    if (create) create.addEventListener('click', () => { closeSanctuaryDrawer(); openCreateModal(); });
+    if (create) create.addEventListener('click', () => { closeSanctuaryDrawer(); void handleNewCharacter(); });
     if (persona) persona.addEventListener('click', () => { closeSanctuaryDrawer(); openPersonaView(); });
     if (memory) memory.addEventListener('click', () => { closeSanctuaryDrawer(); openMemoryVaultGlobal(); });
-    if (search) search.addEventListener('click', () => { openSanctuarySearch(); });
+    if (search) search.addEventListener('click', () => {
+      closeSanctuaryDrawer();
+      if (sanctuaryLocalSearchOpen) void hideSanctuaryLocalSearch();
+      else void showSanctuaryLocalSearch();
+    });
+    const sClose = document.getElementById('sanctuary-search-close');
+    if (sClose) sClose.addEventListener('click', () => { void hideSanctuaryLocalSearch(); });
+    const sInp = document.getElementById('sanctuary-search-input');
+    if (sInp) sInp.addEventListener('input', (e) => onSanctuarySearchInput(e.target.value));
     if (surface) surface.addEventListener('pointerdown', onSanctuarySurfacePointerDown, { passive: true });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
