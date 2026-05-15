@@ -998,8 +998,10 @@ button {
 }
 .section-grid.single-row { /* same grid, no special treatment */ }
 
-/* SANCTUARY (base layout; realm palette lives under #view-sanctuary) */
-.sanctuary-view { position: absolute; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; -webkit-overflow-scrolling: touch; height: 100%; }
+/* SANCTUARY (base layout; realm palette lives under #view-sanctuary)
+   Must stay position:absolute — same element has .view-panel; relative here
+   overrides .view-panel and breaks inset:0, causing the header/mycelium “ghost gap”. */
+.sanctuary-view { position: absolute; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; -webkit-overflow-scrolling: touch; height: 100%; inset: 0; }
 
 .character-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; }
 .character-card:active { border-color: var(--accent); background: var(--surface2); }
