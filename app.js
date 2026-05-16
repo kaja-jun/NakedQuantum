@@ -2516,6 +2516,9 @@ function syncDataRealmFromPanel(activePanelId) {
 
 function showPanel(id){
     abyssStop();
+  /* Leaving (or re-entering) realms: always collapse Abyss sheet — a stale `.open` sheet
+     kept pointer-events:auto and blocked the canvas on the next visit. */
+  abyssCloseSheet();
   const wasSoup = (currentView === 'soup');
   const wasSanctuary = (currentView === 'sanctuary');
   const panels = [
@@ -5632,7 +5635,23 @@ async function buildAbyssObjects() {
   var allDiscs = await dbGetAll('cosm_discourses');
   var active = allDiscs.filter(function(d) { return !d.isDeleted; });
 
-  if (!active.length) return;
+  if (!active.length) {
+    abyssObjects.push({
+      kind: 'anchor-old',
+      x: 0.14,
+      y: 0.16,
+      ts: Date.now() - 86400000,
+      emergeAt: 0
+    });
+    abyssObjects.push({
+      kind: 'anchor-new',
+      x: 0.86,
+      y: 0.84,
+      ts: Date.now(),
+      emergeAt: 0
+    });
+    return;
+  }
 
   // ── Chronological anchors ─────────────────────────────────────────────────
   var times = active.map(function(d) { return d.created_at || 0; });
@@ -5678,6 +5697,8 @@ async function buildAbyssObjects() {
     });
   }
 
+  var summariesMap = new Map();
+  try {
   // ── Guardian log fragments ────────────────────────────────────────────────
   var logs = await dbGetAll('guardian_logs');
   var recentLogs = logs
@@ -5746,14 +5767,27 @@ async function buildAbyssObjects() {
     }
   }
   // Pre-load all guardian_summaries into a Map for fast contradiction checks
-  var summariesMap = new Map();
   var allSummaries = await dbGetAll('guardian_summaries');
   for (var si = 0; si < allSummaries.length; si++) {
     summariesMap.set(allSummaries[si].id, allSummaries[si]);
   }
+  } catch (extErr) {
+    console.warn('[Abyss] guardian / summaries layer:', extErr && extErr.message ? extErr.message : extErr);
+  }
   
   // ── Watcher similarity + contradiction threads ────────────────────────────
   if (isWatcherReady && watcherDB) {
+    try {
+    function abyssArcTension(map) {
+      if (!map || !map.emotional_arc) return 0;
+      var a = map.emotional_arc;
+      if (typeof a === 'string') {
+        try { a = JSON.parse(a); } catch (parseEx) { return 0; }
+      }
+      if (!a || typeof a !== 'object') return 0;
+      var t = a.tension_shift;
+      return typeof t === 'number' ? t : 0;
+    }
     var links = await wdb.getAll('links');
     var strong = links.filter(function(l) { return l.score >= 0.73; }).slice(0, 30);
     for (var k = 0; k < strong.length; k++) {
@@ -5770,8 +5804,8 @@ async function buildAbyssObjects() {
       // Check for contradiction via guardian_summaries
       var mapA = summariesMap.get(link.a) || null;
       var mapB = summariesMap.get(link.b) || null;
-      var arcA = mapA && mapA.emotional_arc ? mapA.emotional_arc.tension_shift || 0 : 0;
-      var arcB = mapB && mapB.emotional_arc ? mapB.emotional_arc.tension_shift || 0 : 0;
+      var arcA = abyssArcTension(mapA);
+      var arcB = abyssArcTension(mapB);
       var isContradiction = (arcA > 0.02 && arcB < -0.02) || (arcA < -0.02 && arcB > 0.02);
       var threadKind = isContradiction ? 'thread-contra' : 'thread-sim';
       abyssObjects.push({
@@ -5787,6 +5821,9 @@ async function buildAbyssObjects() {
           : 0.0006 + link.score * 0.0012,     // smooth, faster if strong
         pulseCooldown: Math.random() * 4000   // staggered starts
       });
+    }
+    } catch (wErr) {
+      console.warn('[Abyss] watcher threads:', wErr && wErr.message ? wErr.message : wErr);
     }
   }
 }
@@ -5819,18 +5856,21 @@ function abyssHash(str) {
 }
 
 function abyssTick() {
-  if (!abyssRunning) return;
+  if (!abyssRunning || !abyssCtx) return;
   abyssAnimFrame = requestAnimationFrame(abyssTick);
-  
-  var now = performance.now();
-  if (now - abyssLastFrame < ABYSS_FRAME_MS) return;
-  abyssLastFrame = now;
+  try {
+    var now = performance.now();
+    if (now - abyssLastFrame < ABYSS_FRAME_MS) return;
+    abyssLastFrame = now;
 
-  var elapsed = Date.now() - abyssEnterTime;
-  abyssUpdate(elapsed);      // move everything
-  abyssCtx.fillStyle = '#000000';
-  abyssCtx.fillRect(0, 0, abyssW, abyssH);
-  abyssDraw(elapsed);        // paint everything
+    var elapsed = Date.now() - abyssEnterTime;
+    abyssUpdate(elapsed);      // move everything
+    abyssCtx.fillStyle = '#000000';
+    abyssCtx.fillRect(0, 0, abyssW, abyssH);
+    abyssDraw(elapsed);        // paint everything
+  } catch (err) {
+    console.error('[Abyss] tick', err);
+  }
 }
 
 /* ── Physics & motion ── */
@@ -6594,8 +6634,18 @@ async function abyssOpenThreadSheet(obj) {
 
 function abyssResize() {
   if (!abyssCanvas) return;
-  abyssW = abyssCanvas.offsetWidth;
-  abyssH = abyssCanvas.offsetHeight;
+  var w = abyssCanvas.clientWidth || abyssCanvas.offsetWidth;
+  var h = abyssCanvas.clientHeight || abyssCanvas.offsetHeight;
+  if (!w || !h) {
+    var host = document.getElementById('view-abyss');
+    if (host) {
+      var br = host.getBoundingClientRect();
+      w = Math.max(1, Math.floor(br.width));
+      h = Math.max(1, Math.floor(br.height - 48));
+    }
+  }
+  abyssW = Math.max(1, w | 0);
+  abyssH = Math.max(1, h | 0);
   abyssCanvas.width = abyssW;
   abyssCanvas.height = abyssH;
 }
@@ -6752,10 +6802,20 @@ function abyssTouchEndCore() {
 }
 
 async function openAbyssView() {
+  closeOverlay();
+  if (typeof closeSparkEditSheet === 'function') closeSparkEditSheet();
   showPanel('view-abyss');
   abyssStop();
   abyssCanvas = document.getElementById('abyss-canvas');
+  if (!abyssCanvas) {
+    console.error('[Abyss] #abyss-canvas missing from DOM');
+    return;
+  }
   abyssCtx = abyssCanvas.getContext('2d');
+  if (!abyssCtx) {
+    console.error('[Abyss] Canvas 2D context unavailable');
+    return;
+  }
   // Wait for panel transition to settle before reading dimensions
     await new Promise(r => setTimeout(r, 120));
   abyssResize();
@@ -6789,6 +6849,7 @@ abyssCanvas.addEventListener('touchend',    abyssTouchEnd,    { passive: false }
 abyssCanvas.addEventListener('touchcancel', abyssTouchEnd);
 abyssCanvas.addEventListener('mousedown', abyssMouseDown);
   window.addEventListener('resize', abyssResize);
+  requestAnimationFrame(function() { abyssResize(); });
 
   abyssRunning = true;
   try { await buildAbyssObjects(); } catch(e) { console.warn('Abyss build partial:', e.message); }
@@ -8270,6 +8331,7 @@ document.getElementById('btn-data-sync-page').addEventListener('click', ()=>hand
 
 document.getElementById('btn-abyss-back').addEventListener('click', () => {
   abyssStop();
+  abyssCloseSheet();
   showPanel('view-soup');
   void renderTableView();
 });
@@ -8865,6 +8927,6 @@ async function bootApp() {
   }
 }
 
-if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js?v=nq-v4');
+if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js?v=nq-v5');
 
 window.cosmOSPinDisc=async function({title,raw_text,source_link,backlink}){const disc=await createDiscourse({title,raw_text,source_link:JSON.stringify(source_link)});if(backlink){const blId="bl_"+Date.now();await dbPut("cosm_backlinks",{id:blId,discourse_id:disc.id,...backlink,created_at:Date.now()});}return disc.id;};

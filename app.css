@@ -478,7 +478,7 @@ button {
   text-transform: uppercase; pointer-events: none; text-align: center;
 }
 #view-abyss { padding-top: 48px; position: relative; }
-#view-abyss #abyss-canvas { top: 48px; height: calc(100% - 48px); }
+#view-abyss #abyss-canvas { top: 48px; height: calc(100% - 48px); z-index: 1; touch-action: none; }
 #view-abyss .realm-local-nav {
   position: absolute; top: 0; left: 0; right: 0;
   background: rgba(4, 4, 10, 0.82);
