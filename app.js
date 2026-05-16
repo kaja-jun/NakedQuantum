@@ -23,6 +23,8 @@ let deepSoupPath = [{id: null, name: 'Deep Soup'}];
 let soupLocalSearchOpen = false;
 let sanctuaryLocalSearchOpen = false;
 let chatReturnPanel = 'view-soup';
+/** Clears THE SOUP / HOME pill when leaving the Soup grid or cancelling a pending hide. */
+let modeToastTimer = null;
 let deepMapperLoadSuppressed = false;
 let deepMapperSuppressTimer = null;
 
@@ -1563,16 +1565,18 @@ document.getElementById('chat-input').style.height = 'auto';
   const ieModels = ie.model_variants ? 
   (typeof ie.model_variants === 'string' ? JSON.parse(ie.model_variants) : ie.model_variants) 
   : [];
+  currentIEModels = ieModels.map(m => m.model_id).filter(Boolean);
 const chip = document.getElementById('ie-model-chip');
 const bar = document.getElementById('ie-model-bar');
 if(chip && ieModels.length > 0){
   if(bar) bar.style.display = 'block';
   chip.dataset.idx = '0';
-  chip.dataset.models = JSON.stringify(ieModels); // THIS was missing
+  chip.dataset.models = JSON.stringify(ieModels);
   chip.textContent = `◈ ${ieModels[0].model_id?.split('/').pop() || 'model'}`;
 } else if(chip){
   if(bar) bar.style.display = 'none';
   chip.dataset.models = '[]';
+  currentIEModels = [];
 }
   document.getElementById('chat-persona-pill').style.display = 'none';
   // Hide edit button -- IE is immutable
@@ -1586,9 +1590,15 @@ if(chip && ieModels.length > 0){
 }
 
 function cycleIEModel(){
-  if(!currentIEModels.length) return;
   const chip = document.getElementById('ie-model-chip');
   if(!chip) return;
+  if (!currentIEModels.length && chip.dataset.models) {
+    try {
+      const parsed = JSON.parse(chip.dataset.models);
+      currentIEModels = (parsed || []).map(m => (typeof m === 'string' ? m : m.model_id)).filter(Boolean);
+    } catch (e) { return; }
+  }
+  if(!currentIEModels.length) return;
   let idx = parseInt(chip.dataset.idx || '0');
   idx = (idx + 1) % currentIEModels.length;
   chip.dataset.idx = idx;
@@ -2396,18 +2406,43 @@ wEl.addEventListener('touchmove',()=>{
   wTapTimer=null;
 });
 
+function dismissModeToast() {
+  if (modeToastTimer) {
+    clearTimeout(modeToastTimer);
+    modeToastTimer = null;
+  }
+  const mt = document.getElementById('mode-toast');
+  if (mt) mt.style.opacity = '0';
+}
+
+/** Realm pill: only on main Soup grid; never after navigating to Sanctuary/chat/etc. */
+function flashModeToastForSoupGrid(text, durationMs) {
+  dismissModeToast();
+  const mt = document.getElementById('mode-toast');
+  if (!mt) return;
+  if (currentMode !== 'soup' || currentView !== 'soup') return;
+  mt.textContent = text;
+  mt.style.opacity = '1';
+  modeToastTimer = setTimeout(() => {
+    modeToastTimer = null;
+    if (currentMode !== 'soup' || currentView !== 'soup') {
+      mt.style.opacity = '0';
+      return;
+    }
+    mt.style.opacity = '0';
+  }, durationMs);
+}
+
 function goHome(){
-  const mt=document.getElementById('mode-toast');
     if(currentMode==='soup'){
     breadcrumbPath=[{id:null,name:'◈ The Soup'}];
     currentFolderId=null;
     deepSoupFolderId=null;
     showPanel('view-soup');
     renderTableView();
-    mt.textContent='◈ HOME';
-    mt.style.opacity='1';
-    setTimeout(()=>{mt.style.opacity='0';},1200);
+    flashModeToastForSoupGrid('◈ HOME', 1200);
   } else {
+    dismissModeToast();
     showPanel('view-sanctuary');
     renderSanctuaryView();
   }
@@ -2416,14 +2451,12 @@ function goHome(){
 /* APP MODE */
 function switchAppMode(mode){
   currentMode=mode;
-  const mt=document.getElementById('mode-toast');
   if(mode==='soup'){
     showPanel('view-soup');
-    mt.textContent='◈ THE SOUP';
     void renderTableView();
-    mt.style.opacity='1';
-    setTimeout(()=>{mt.style.opacity='0';},1500);
+    flashModeToastForSoupGrid('◈ THE SOUP', 1500);
   } else {
+    dismissModeToast();
     showPanel('view-sanctuary');
     renderSanctuaryView();
   }
@@ -2527,6 +2560,7 @@ function showPanel(id){
   const active=document.getElementById(id);
   if(active)active.classList.remove('hidden');
   currentView=id.replace('view-','');
+  if (id !== 'view-soup') dismissModeToast();
   syncDataRealmFromPanel(id);
 
   if (id === 'view-soup' || wasSoup) {
@@ -3109,13 +3143,16 @@ async function focusMeshCard(id, folderId, label) {
         tier = isNeu ? 2 : 3;
       }
     } else {
+      // Focused id is a discourse/spark (not a folder card): tier-1 = item + ancestor folder cards + subfolders of its folder
       const isTarget = cardId === id;
-      const isDirectChild = cardFolderId === id;
-      const isParentFolder = cardId === folderId;
-      const isNestedFolder = cardParentFolderId === id;
-      const isSibling = folderId && cardFolderId === folderId && cardId !== id;
-      if (isTarget || isDirectChild || isParentFolder || isNestedFolder) tier = 1;
-      else if (isSibling) tier = 2;
+      const isSiblingDiscourse = !!(folderId && cardId && cardFolderId === folderId && cardId !== id);
+      const isAncestorOrSelfFolder =
+        !!(!cardId && cardFolderId && folderId &&
+          (String(cardFolderId) === String(folderId) || folderIsUnderAncestor(folderId, cardFolderId, allFolders)));
+      const isNestedSubfolder =
+        !!(!cardId && cardParentFolderId && folderId && String(cardParentFolderId) === String(folderId));
+      if (isTarget || isAncestorOrSelfFolder || isNestedSubfolder) tier = 1;
+      else if (isSiblingDiscourse) tier = 2;
       else tier = 3;
     }
 
@@ -3144,8 +3181,9 @@ async function focusMeshCard(id, folderId, label) {
   if (navigator.vibrate) navigator.vibrate(12);
 
   // Update chain knots with ghost if focused item has nested folders
-  const hasDepth = allFolders.some(f => !f.isDeleted && String(f.parent_id) === String(id));
-  await renderChainKnots(hasDepth);
+  const anchorFolderId = focusAsFolder ? id : folderId;
+  const hasDepth = anchorFolderId && allFolders.some(f => !f.isDeleted && String(f.parent_id) === String(anchorFolderId));
+  await renderChainKnots(!!hasDepth);
   drawLineageThread(id, folderId);
 }
 
@@ -3363,7 +3401,6 @@ function openCreateMenu(card) {
     { glyph: '◇', label: 'Spark', action: () => openQuickCapture() },
     { glyph: '○', label: 'Chronicle', action: () => handleNewChronicle() },
     { glyph: '⌬', label: 'Engram', action: () => openBurnDiscModal() },
-    { glyph: '◈', label: 'Discourse', action: () => handleNewDiscourse() },
   ];
 
   actions.forEach(a => {
@@ -3377,7 +3414,7 @@ function openCreateMenu(card) {
   let left = rect.left;
   let top = rect.bottom + 6;
   if(left + 180 > window.innerWidth - 10) left = window.innerWidth - 190;
-  if(top + 260 > window.innerHeight) top = rect.top - 268;
+  if(top + 220 > window.innerHeight) top = rect.top - 228;
   menu.style.left = left + 'px';
   menu.style.top = top + 'px';
 
@@ -4424,6 +4461,7 @@ async function openChat(id){
   if(ieCheck && !ieCheck.signature){ showToast('◈ Draft -- go to ∞ page to forge'); return; }
   // Reset IE state -- critical to prevent bleed from IE chat
     activeIE = null;
+  currentIEModels = [];
   isSending = false;
   document.getElementById('view-chat').classList.remove('ie-encounter');
   document.getElementById('chat-input').placeholder = 'Send a message...';
