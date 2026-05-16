@@ -352,11 +352,66 @@ button {
 .nq-qa-divider { height: 1px; background: var(--border); margin: 3px 0; opacity: 0.5; }
 
 /* PREVIEW OVERLAY */
-.nq-preview-overlay { position: fixed; inset: 0; z-index: 998; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
-.nq-preview-sheet { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; max-width: 480px; max-height: 70vh; overflow-y: auto; }
-.nq-preview-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
-.nq-preview-body { font-size: 13px; color: var(--muted); line-height: 1.7; font-style: italic; }
-.nq-preview-close { margin-top: 16px; text-align: center; font-size: 11px; color: var(--muted); opacity: 0.5; letter-spacing: 1px; }
+/* Spark edit / create bottom sheet */
+.nq-spark-root { position: fixed; inset: 0; z-index: 10040; display: flex; align-items: flex-end; justify-content: center; pointer-events: auto; }
+.nq-spark-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.72); }
+.nq-spark-panel {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: min(78vh, 640px);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -12px 48px rgba(0,0,0,0.55);
+  padding: 0 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 1;
+  border-top: 3px solid color-mix(in srgb, var(--accent) 70%, #c9a227);
+}
+.nq-spark-head {
+  font-size: 10px;
+  letter-spacing: 4px;
+  font-weight: 900;
+  color: color-mix(in srgb, var(--accent) 90%, #e8c86a);
+  text-align: center;
+  padding: 14px 0 4px;
+}
+.nq-spark-panel .nq-spark-title { margin-top: 0; }
+.nq-spark-body {
+  min-height: 120px;
+  max-height: 280px;
+  resize: none;
+  font-family: Georgia, serif;
+  line-height: 1.65;
+  font-size: 15px;
+  overflow-y: auto;
+}
+.nq-spark-foot { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.nq-spark-counter { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
+.nq-spark-counter.over { color: #e07070; font-weight: 800; }
+.nq-spark-btns { display: flex; gap: 10px; justify-content: flex-end; }
+.nq-spark-btn {
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+}
+.nq-spark-btn-save {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface2));
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  color: var(--accent);
+}
+.nq-spark-btn:disabled { opacity: 0.45; pointer-events: none; }
+.nq-spark-newfolder-wrap { margin-top: -4px; }
 
 /* Legacy aliases -- keep old class names working during migration */
 .folder-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; height: 120px; display: flex; flex-direction: column; justify-content: space-between; }
@@ -867,9 +922,11 @@ button {
   max-height: 70vh;
   display: flex;
   flex-direction: column;
+  pointer-events: none;
 }
 #abyss-sheet.open {
   transform: translateY(0);
+  pointer-events: auto;
 }
 #abyss-sheet-handle {
   width: 36px;

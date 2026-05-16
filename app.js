@@ -17,6 +17,7 @@ localStorage.setItem('cosm_user_id',cosmUserId);
 let activeIE = null;
 let longPressTimer=null,isLongPress=false,longPressConsumed=false,touchStartPos={x:0,y:0};
 const LONG_PRESS_DURATION=1000,MOVE_THRESHOLD=10;
+const SPARK_MAX_CHARS=300;
 let selectMode=false, selectedItems=new Set();
 let deepSoupFolderId = null;
 let deepSoupPath = [{id: null, name: 'Deep Soup'}];
@@ -3309,7 +3310,6 @@ function openQuickAction(card, item) {
 
     const actions = [];
   if(isContent) {
-    actions.push({ glyph: '◎', label: 'Preview', action: () => openPreview(item.data) });
     if(item.data.item_type === 'note') {
             actions.push({ glyph: '○', label: 'Convert to Chronicle', action: async () => {
         await updateDiscourse(item.id, { item_type: 'chronicle' });
@@ -3365,26 +3365,194 @@ function openQuickAction(card, item) {
   document.body.appendChild(menu);
 }
 
-function openPreview(d) {
-  const existing = document.getElementById('nq-preview-overlay');
-  if(existing) existing.remove();
+function closeSparkEditSheet() {
+  const root = document.getElementById('nq-spark-sheet-root');
+  if (root && root._nqSparkEsc) {
+    document.removeEventListener('keydown', root._nqSparkEsc);
+    root._nqSparkEsc = null;
+  }
+  if (root) root.remove();
+}
 
-  const overlay = document.createElement('div');
-  overlay.className = 'nq-preview-overlay';
-  overlay.id = 'nq-preview-overlay';
+async function persistNewSpark(title, raw_text, folderVal, newFolderInputEl) {
+  let fId = folderVal || null;
+  if (fId === '__new__') {
+    const nfn = newFolderInputEl && newFolderInputEl.value.trim();
+    if (!nfn) { showToast('Type a folder name first ◆'); return null; }
+    fId = await createFolder(nfn, currentFolderId);
+    currentFolderId = fId;
+  }
+  if (!fId) fId = currentFolderId || null;
+  const now = Date.now();
+  const sparkId = 'n_' + now;
+  const body = raw_text.slice(0, SPARK_MAX_CHARS);
+  await dbPut('cosm_discourses', { id: sparkId, title, raw_text: body, folder_id: fId, source_link: null, item_type: 'note', created_at: now, updated_at: now });
+  if (isWatcherReady) queueWatcherEmbed(sparkId, title, body, 'note');
+  return sparkId;
+}
 
-  const maxChars = d.item_type === 'note' ? 280 : 800;
-  const preview = d.raw_text ? d.raw_text.slice(0, maxChars) : 'No content.';
-  const isTruncated = d.raw_text && d.raw_text.length > maxChars;
-  overlay.innerHTML = `
-    <div class="nq-preview-sheet">
-      <div class="nq-preview-title">${escHtml(d.title || 'Untitled')}</div>
-         <div class="nq-preview-body">${escHtml(preview)}${isTruncated ? '…' : ''}</div>
-      <div class="nq-preview-close">TAP ANYWHERE TO CLOSE</div>
-    </div>`;
+async function openSparkEditSheet(opts) {
+  closeSparkEditSheet();
+  const id = opts && opts.id != null && String(opts.id) !== '' ? opts.id : null;
+  const isCreate = !id;
 
-  overlay.addEventListener('click', () => overlay.remove());
-  document.body.appendChild(overlay);
+  const root = document.createElement('div');
+  root.id = 'nq-spark-sheet-root';
+  root.className = 'nq-spark-root';
+  const backdrop = document.createElement('div');
+  backdrop.className = 'nq-spark-backdrop';
+  const panel = document.createElement('div');
+  panel.className = 'nq-spark-panel';
+  panel.setAttribute('role', 'dialog');
+
+  const head = document.createElement('div');
+  head.className = 'nq-spark-head';
+  head.textContent = 'SPARK';
+
+  const titleInp = document.createElement('input');
+  titleInp.type = 'text';
+  titleInp.className = 'nq-spark-title cosm-input';
+  titleInp.placeholder = 'Title…';
+  titleInp.maxLength = 120;
+  titleInp.value = String(opts.title || '').slice(0, 120);
+
+  const ta = document.createElement('textarea');
+  ta.className = 'nq-spark-body cosm-input';
+  ta.placeholder = 'Thought, aphorism, idea…';
+  ta.value = opts.raw_text != null ? String(opts.raw_text) : '';
+
+  const newFoldRow = document.createElement('div');
+  newFoldRow.className = 'nq-spark-newfolder-wrap';
+  newFoldRow.style.display = 'none';
+  const newFoldInp = document.createElement('input');
+  newFoldInp.type = 'text';
+  newFoldInp.className = 'nq-spark-newfolder cosm-input';
+  newFoldInp.placeholder = 'New folder name…';
+  newFoldInp.maxLength = 60;
+
+  let folderSel = null;
+  if (isCreate) {
+    folderSel = document.createElement('select');
+    folderSel.className = 'nq-spark-folder cosm-select';
+    const folders = await getFolders();
+    folderSel.appendChild(new Option('-- Auto-wrap in folder --', ''));
+    folders.forEach(f => {
+      const o = document.createElement('option');
+      o.value = f.id;
+      o.textContent = f.name;
+      if (f.id === currentFolderId) o.selected = true;
+      folderSel.appendChild(o);
+    });
+    folderSel.appendChild(new Option('+ New folder…', '__new__'));
+    folderSel.addEventListener('change', () => {
+      newFoldRow.style.display = folderSel.value === '__new__' ? 'block' : 'none';
+    });
+  }
+
+  const foot = document.createElement('div');
+  foot.className = 'nq-spark-foot';
+  const counter = document.createElement('div');
+  counter.className = 'nq-spark-counter';
+  const btns = document.createElement('div');
+  btns.className = 'nq-spark-btns';
+  const btnCancel = document.createElement('button');
+  btnCancel.type = 'button';
+  btnCancel.className = 'nq-spark-btn nq-spark-btn-cancel';
+  btnCancel.textContent = 'Cancel';
+  const btnSave = document.createElement('button');
+  btnSave.type = 'button';
+  btnSave.className = 'nq-spark-btn nq-spark-btn-save';
+  btnSave.textContent = 'Save';
+
+  function syncCounter() {
+    const n = ta.value.length;
+    counter.textContent = n + ' / ' + SPARK_MAX_CHARS;
+    counter.classList.toggle('over', n > SPARK_MAX_CHARS);
+  }
+  ta.addEventListener('input', syncCounter);
+  ta.addEventListener('paste', (ev) => {
+    ev.preventDefault();
+    const clip = (ev.clipboardData || window.clipboardData).getData('text') || '';
+    const s0 = ta.selectionStart;
+    const s1 = ta.selectionEnd;
+    const merged = ta.value.slice(0, s0) + clip + ta.value.slice(s1);
+    ta.value = merged.slice(0, SPARK_MAX_CHARS);
+    syncCounter();
+  });
+
+  btnCancel.addEventListener('click', () => closeSparkEditSheet());
+  backdrop.addEventListener('click', () => closeSparkEditSheet());
+
+  const esc = (ev) => {
+    if (ev.key === 'Escape') {
+      document.removeEventListener('keydown', esc);
+      root._nqSparkEsc = null;
+      closeSparkEditSheet();
+    }
+  };
+  root._nqSparkEsc = esc;
+  document.addEventListener('keydown', esc);
+
+  let busy = false;
+  btnSave.addEventListener('click', async () => {
+    if (busy) return;
+    busy = true;
+    btnSave.disabled = true;
+    try {
+      const title = titleInp.value.trim() || 'Untitled Capture';
+      let raw = ta.value;
+      if (isCreate && !raw.trim()) {
+        showToast('Nothing to Spark ◆');
+        return;
+      }
+      if (raw.length > SPARK_MAX_CHARS) {
+        raw = raw.slice(0, SPARK_MAX_CHARS);
+        showToast('Body capped at ' + SPARK_MAX_CHARS + ' ◆');
+      }
+      if (isCreate) {
+        const fv = folderSel.value || null;
+        const sid = await persistNewSpark(title, raw, fv, newFoldInp);
+        if (!sid) return;
+      } else {
+        await updateDiscourse(id, { title, raw_text: raw, updated_at: Date.now() });
+        if (isWatcherReady) queueWatcherEmbed(id, title, raw, 'note');
+      }
+      closeSparkEditSheet();
+      if (navigator.vibrate) navigator.vibrate(50);
+      await renderTableView();
+      showToast(isCreate ? 'Sparked ◆' : 'Saved ◆');
+    } catch (err) {
+      console.error(err);
+      showToast('Spark save failed ◆');
+    } finally {
+      busy = false;
+      btnSave.disabled = false;
+    }
+  });
+
+  newFoldRow.appendChild(newFoldInp);
+  foot.appendChild(counter);
+  btns.appendChild(btnCancel);
+  btns.appendChild(btnSave);
+  foot.appendChild(btns);
+
+  panel.appendChild(head);
+  if (isCreate) {
+    panel.appendChild(folderSel);
+    panel.appendChild(newFoldRow);
+  }
+  panel.appendChild(titleInp);
+  panel.appendChild(ta);
+  panel.appendChild(foot);
+  root.appendChild(backdrop);
+  root.appendChild(panel);
+  document.body.appendChild(root);
+  syncCounter();
+  setTimeout(() => {
+    ta.focus();
+    const end = ta.value.length;
+    ta.setSelectionRange(end, end);
+  }, 80);
 }
 
 function openCreateMenu(card) {
@@ -3456,15 +3624,17 @@ async function buildDiscourseCard(d){
       e.target.closest('.nq-card-fav').classList.toggle('active', !!next);
       return;
     }
-    // Root card (no folder) -- single tap goes straight to editor
-        // Spark -- single tap shows preview, never enters editor directly
-        // Spark -- first tap focuses + thread, second tap shows preview
+    // Spark (orphan): first tap opens edit sheet. Spark (in folder): first tap focuses + thread, second tap opens sheet.
     if(d.item_type === 'note') {
-      if(currentFocusId === d.id) {
-        openPreview(d);
+      if(!d.folder_id) {
+        openSparkEditSheet({ id: d.id, title: d.title, raw_text: d.raw_text });
         return;
       }
-            focusMeshCard(d.id, d.folder_id || null, d.title);
+      if(currentFocusId === d.id) {
+        openSparkEditSheet({ id: d.id, title: d.title, raw_text: d.raw_text });
+        return;
+      }
+      focusMeshCard(d.id, d.folder_id || null, d.title);
       return;
     }
     // Root card (no folder) -- single tap goes straight to editor
@@ -3686,6 +3856,14 @@ async function renderChainKnots(showGhost = false) {
         cx = kr.left + kr.width / 2;
       }
       drawBreadcrumbDrop(cx);
+      const spineEl = inner.querySelector('.bc-spine-line');
+      const soupWrap = row.querySelector('.bc-knot-wrap--soup');
+      if (spineEl && soupWrap) {
+        const ir = inner.getBoundingClientRect();
+        const sr = soupWrap.getBoundingClientRect();
+        const centerPx = sr.left + sr.width / 2 - ir.left;
+        spineEl.style.left = Math.max(0, centerPx) + 'px';
+      }
     });
   });
 }
@@ -6433,16 +6611,14 @@ function abyssStop() {
 
 var abyssTouchStartX = -9999;
 var abyssTouchStartY = -9999;
+var abyssMouseTracking = false;
 
-function abyssTouchStart(e) {
-  e.preventDefault();
-  var t = e.touches[0];
-    var rect = abyssGetRect();
-  abyssTouchX = t.clientX - rect.left;
-  abyssTouchY = t.clientY - rect.top;
+function abyssBeginPress(clientX, clientY) {
+  var rect = abyssGetRect();
+  abyssTouchX = clientX - rect.left;
+  abyssTouchY = clientY - rect.top;
   abyssTouchStartX = abyssTouchX;
   abyssTouchStartY = abyssTouchY;
-    // Spawn a cluster of rings -- cosmic membrane effect
   var rx = abyssTouchX;
   var ry = abyssTouchY;
   var ringDefs = [
@@ -6468,15 +6644,53 @@ function abyssTouchStart(e) {
     }, def.delay);
   });
 }
+
+function abyssTouchStart(e) {
+  e.preventDefault();
+  if (!e.touches || !e.touches[0]) return;
+  var t = e.touches[0];
+  abyssBeginPress(t.clientX, t.clientY);
+}
+
 function abyssTouchMove(e) {
   e.preventDefault();
+  if (!e.touches || !e.touches[0]) return;
   var t = e.touches[0];
   var rect = abyssGetRect();
   abyssTouchX = t.clientX - rect.left;
   abyssTouchY = t.clientY - rect.top;
 }
+
+function abyssMouseMoveWin(e) {
+  if (!abyssMouseTracking) return;
+  var rect = abyssGetRect();
+  abyssTouchX = e.clientX - rect.left;
+  abyssTouchY = e.clientY - rect.top;
+}
+
+function abyssMouseUpWin() {
+  if (!abyssMouseTracking) return;
+  abyssMouseTracking = false;
+  window.removeEventListener('mousemove', abyssMouseMoveWin);
+  window.removeEventListener('mouseup', abyssMouseUpWin);
+  abyssTouchEndCore();
+}
+
+function abyssMouseDown(e) {
+  if (!abyssCanvas || e.button !== 0) return;
+  e.preventDefault();
+  abyssMouseTracking = true;
+  abyssBeginPress(e.clientX, e.clientY);
+  window.addEventListener('mousemove', abyssMouseMoveWin);
+  window.addEventListener('mouseup', abyssMouseUpWin);
+}
+
 function abyssTouchEnd(e) {
   e.preventDefault();
+  abyssTouchEndCore();
+}
+
+function abyssTouchEndCore() {
   var tapX = abyssTouchStartX;
   var tapY = abyssTouchStartY;
   var movedX = Math.abs(abyssTouchX - tapX);
@@ -6486,12 +6700,10 @@ function abyssTouchEnd(e) {
   abyssTouchStartX = -9999;
   abyssTouchStartY = -9999;
 
-  // Only treat as tap if finger didn't drag (scroll/pan protection)
   if (movedX > 10 || movedY > 10) return;
 
   document.getElementById('abyss-tooltip').style.display = 'none';
 
-  // Check nodes
   var closest = null;
   var minD = 34;
   for (var i = 0; i < abyssObjects.length; i++) {
@@ -6514,21 +6726,20 @@ function abyssTouchEnd(e) {
     return;
   }
 
-  // Check threads
   var closestThread = null;
   var minThreadD = 18;
-  for (var i = 0; i < abyssObjects.length; i++) {
-    var obj = abyssObjects[i];
-    if (obj.kind !== 'thread-sim' && obj.kind !== 'thread-contra') continue;
-    var ax = obj.dotA.x * abyssW, ay = obj.dotA.y * abyssH;
-    var bx = obj.dotB.x * abyssW, by = obj.dotB.y * abyssH;
+  for (var j = 0; j < abyssObjects.length; j++) {
+    var obj2 = abyssObjects[j];
+    if (obj2.kind !== 'thread-sim' && obj2.kind !== 'thread-contra') continue;
+    var ax = obj2.dotA.x * abyssW, ay = obj2.dotA.y * abyssH;
+    var bx = obj2.dotB.x * abyssW, by = obj2.dotB.y * abyssH;
     var dx = bx - ax, dy = by - ay;
     var lenSq = dx * dx + dy * dy;
-    var t = lenSq > 0 ? Math.max(0, Math.min(1, ((tapX - ax) * dx + (tapY - ay) * dy) / lenSq)) : 0;
-    var px = ax + t * dx - tapX;
-    var py = ay + t * dy - tapY;
+    var tt = lenSq > 0 ? Math.max(0, Math.min(1, ((tapX - ax) * dx + (tapY - ay) * dy) / lenSq)) : 0;
+    var px = ax + tt * dx - tapX;
+    var py = ay + tt * dy - tapY;
     var d = Math.sqrt(px * px + py * py);
-    if (d < minThreadD) { minThreadD = d; closestThread = obj; }
+    if (d < minThreadD) { minThreadD = d; closestThread = obj2; }
   }
   if (closestThread) {
     abyssOpenThreadSheet(closestThread);
@@ -6536,7 +6747,6 @@ function abyssTouchEnd(e) {
     return;
   }
 
-  // Tapped empty space
   abyssCloseSheet();
   abyssSelectedNode = null;
 }
@@ -6568,11 +6778,16 @@ abyssCanvas.removeEventListener('touchstart', abyssTouchStart);
 abyssCanvas.removeEventListener('touchmove',  abyssTouchMove);
 abyssCanvas.removeEventListener('touchend',   abyssTouchEnd);
 abyssCanvas.removeEventListener('touchcancel',abyssTouchEnd);
+abyssCanvas.removeEventListener('mousedown', abyssMouseDown);
   window.removeEventListener('resize', abyssResize);
+  window.removeEventListener('mousemove', abyssMouseMoveWin);
+  window.removeEventListener('mouseup', abyssMouseUpWin);
+  abyssMouseTracking = false;
 abyssCanvas.addEventListener('touchstart',  abyssTouchStart,  { passive: false });
 abyssCanvas.addEventListener('touchmove',   abyssTouchMove,   { passive: false });
 abyssCanvas.addEventListener('touchend',    abyssTouchEnd,    { passive: false });
 abyssCanvas.addEventListener('touchcancel', abyssTouchEnd);
+abyssCanvas.addEventListener('mousedown', abyssMouseDown);
   window.addEventListener('resize', abyssResize);
 
   abyssRunning = true;
@@ -6838,20 +7053,8 @@ async function confirmRename(){
 /* QUICK CAPTURE */
 let _cs=false;
 async function openQuickCapture(){
-  const sel=document.getElementById('capture-folder');sel.innerHTML='<option value="">-- Auto-wrap in folder --</option>';
-  const folders=await getFolders();folders.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name;if(f.id===currentFolderId)o.selected=true;sel.appendChild(o);});
-  const no=document.createElement('option');no.value='__new__';no.textContent='+ New folder...';sel.appendChild(no);
-  document.getElementById('capture-title').value='';document.getElementById('capture-title').dataset.userEdited='';
-  document.getElementById('capture-body').value='';_cs=false;
-  document.getElementById('capture-modal').classList.add('visible');document.getElementById('cosm-overlay').classList.add('active');
-    setTimeout(()=>{
-    const ta = document.getElementById('capture-body');
-    ta.focus();
-    ta.oninput = function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 320) + 'px';
-    };
-  },100);
+  document.getElementById('capture-modal').classList.remove('visible');
+  await openSparkEditSheet({ id: null, title: '', raw_text: '' });
 }
 
 function closeQuickCapture(){document.getElementById('capture-modal').classList.remove('visible');closeOverlay();}
@@ -6861,12 +7064,10 @@ async function confirmQuickCapture(){
   try{
     const title=document.getElementById('capture-title').value.trim()||'Untitled Capture';
     const raw_text=document.getElementById('capture-body').value.trim();if(!raw_text){showToast('Nothing to Spark ◆');return;}
-    let fId=document.getElementById('capture-folder').value||null;let isNF=false;let nfn='';
-        if(fId==='__new__'){nfn=document.getElementById('capture-new-folder-input').value.trim();if(!nfn){showToast('Type a folder name first ◆');return;}fId=await createFolder(nfn,currentFolderId);currentFolderId=fId;}
-    if(!fId){ fId = currentFolderId || null; }
-    const now=Date.now();const sparkId='n_'+now;await dbPut('cosm_discourses',{id:sparkId,title,raw_text,folder_id:fId,source_link:null,item_type:'note',created_at:now,updated_at:now});
-if(isWatcherReady) queueWatcherEmbed(sparkId, title, raw_text, 'note');
-        closeQuickCapture();if(navigator.vibrate)navigator.vibrate(50);
+    const fId=document.getElementById('capture-folder').value||null;
+    const sid=await persistNewSpark(title,raw_text,fId,document.getElementById('capture-new-folder-input'));
+    if(!sid)return;
+    closeQuickCapture();if(navigator.vibrate)navigator.vibrate(50);
     await renderTableView();showToast('Sparked ◆');
   }catch(err){console.error(err);showToast('Spark failed ◆');}finally{_cs=false;}
 }
@@ -8664,6 +8865,6 @@ async function bootApp() {
   }
 }
 
-if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js?v=nq-v3');
+if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js?v=nq-v4');
 
 window.cosmOSPinDisc=async function({title,raw_text,source_link,backlink}){const disc=await createDiscourse({title,raw_text,source_link:JSON.stringify(source_link)});if(backlink){const blId="bl_"+Date.now();await dbPut("cosm_backlinks",{id:blId,discourse_id:disc.id,...backlink,created_at:Date.now()});}return disc.id;};
