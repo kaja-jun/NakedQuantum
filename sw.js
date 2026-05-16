@@ -1,12 +1,14 @@
 /* jshint esversion: 11 */
 /* global caches */
 /* global self */
-const CACHE = "nq-v2";
+/** Bump this string whenever app.js / app.css / index shell meaningfully change so old CacheStorage buckets are dropped on activate. */
+const CACHE = "nq-v3";
+const ASSET_Q = "?v=nq-v3";
 const FILES = [
   "/",
   "/index.html",
-  "/app.css",
-  "/app.js",
+  "/app.css" + ASSET_Q,
+  "/app.js" + ASSET_Q,
   "/manifest.json",
   "/icon-512.png"
 ];
@@ -42,6 +44,25 @@ self.addEventListener("fetch", e => {
     );
     return;
   }
+
+  const url = new URL(e.request.url);
+  const path = url.pathname;
+  // Always try network first for the live-edited bundle so deploys are visible without nuking site data.
+  if (path === "/app.js" || path === "/app.css") {
+    e.respondWith(
+      fetch(e.request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.ok) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE).then(c => c.put(e.request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
   );

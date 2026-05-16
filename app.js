@@ -8664,6 +8664,6 @@ async function bootApp() {
   }
 }
 
-if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');
+if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js?v=nq-v3');
 
 window.cosmOSPinDisc=async function({title,raw_text,source_link,backlink}){const disc=await createDiscourse({title,raw_text,source_link:JSON.stringify(source_link)});if(backlink){const blId="bl_"+Date.now();await dbPut("cosm_backlinks",{id:blId,discourse_id:disc.id,...backlink,created_at:Date.now()});}return disc.id;};
