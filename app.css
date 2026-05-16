@@ -11,21 +11,28 @@
   --danger: #8a3030;
   --code-bg: #0d0d0b;
   --font-serif: Georgia, serif;
+  --on-accent: #000000;
 }
 
-/* Realm skin mount: `document.documentElement.dataset.realm` is synced from `showPanel`
-   in app.js (soup | sanctuary | abyss | deep-soup | data | guardian | lighthouse).
-   Lighthouse editor body stays unthemed until the TipTap pass; the flag is for hooks. */
+/* Realm: `data-realm` on <html> (app.js). Sanctuary Moonlit — edit only
+   html[data-realm="sanctuary"] { … }; shared UI uses var(--accent), var(--border), etc.
+   Lighthouse editor body: separate pass. */
 
-/* Sanctuary: retarget shared tokens so components using var(--accent) etc. read Moonlit
-   while forge / chat / memory / persona / IE share the same chrome as #view-sanctuary. */
+/* Sanctuary realm — tune Moonlit here; active while data-realm=sanctuary (home, forge,
+   chat, memory, persona, IE, modals, toast, headers). Components use var(--*) below. */
 html[data-realm="sanctuary"] {
+  --bg: #050607;
+  --text: #dfe6e8;
+  --muted: #8b96a0;
   --accent: #a3b8c2;
   --accent-dim: #6d7f88;
   --border: #2a3136;
   --surface: #0e1113;
   --surface2: #12171a;
   --surface3: #161a1d;
+  --code-bg: #080a0c;
+  --danger: #8a3030;
+  --on-accent: #050607;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -39,29 +46,29 @@ button {
 
 #firefly-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
-.nq-header { height: 56px; background: #000; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);}
+.nq-header { height: 56px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);}
 
 .nq-wordmark { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; opacity: 0.8; cursor: pointer; user-select: none; -webkit-user-select: none; padding: 8px 0; transition: opacity 0.15s; }
 .nq-wordmark.pressing { opacity: 0.3; }
-.nq-wordmark.nq-wordmark--sanctuary-realm { color: #a3b8c2; letter-spacing: 2px; }
+.nq-wordmark.nq-wordmark--sanctuary-realm { color: var(--accent); letter-spacing: 2px; }
 .header-actions.header-actions-sanctuary { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 #hdr-sanctuary-home.hdr-btn,
 #hdr-sanctuary-menu.hdr-btn {
-  background: #12171a;
-  border: 1px solid #2a3136;
-  color: #a3b8c2;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--accent);
 }
 #hdr-sanctuary-home.hdr-btn:active,
 #hdr-sanctuary-menu.hdr-btn:active {
-  background: #0e1113;
-  border-color: rgba(163, 184, 194, 0.45);
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .header-actions { display: flex; align-items: center; gap: 8px; }
 .hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 .hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
 #nq-header.nq-header--sanctuary-realm {
-  background: #050607;
-  border-bottom-color: #2a3136;
+  background: var(--bg);
+  border-bottom-color: var(--border);
 }
 #mode-toast { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent-dim); color: var(--accent); padding: 5px 14px; border-radius: 20px; font-size: 9px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
 
@@ -103,10 +110,10 @@ button {
   height: 1px;
   background: linear-gradient(
     90deg,
-    rgba(200, 160, 80, 0.65) 0%,
-    rgba(200, 160, 80, 0.35) 28%,
-    rgba(200, 160, 80, 0.22) 55%,
-    rgba(200, 160, 80, 0.14) 100%
+    color-mix(in srgb, var(--accent) 65%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 35%, transparent) 28%,
+    color-mix(in srgb, var(--accent) 22%, transparent) 55%,
+    color-mix(in srgb, var(--accent) 14%, transparent) 100%
   );
   pointer-events: none;
   z-index: 0;
@@ -140,7 +147,7 @@ button {
 .bc-knot-wrap.bc-knot-wrap--soup { margin-right: 4px; }
 .bc-knot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; transition: transform 0.2s, opacity 0.2s; }
 .bc-knot.bc-knot-dot { width: 5px; height: 5px; opacity: 0.8; }
-.bc-knot.current { width: 10px; height: 10px; background: var(--accent); box-shadow: 0 0 8px rgba(200,160,80,0.5); }
+.bc-knot.current { width: 10px; height: 10px; background: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 50%, transparent); }
 .bc-knot.compressed { width: 4px; height: 4px; background: var(--accent-dim); opacity: 0.4; }
 .bc-knot-label {
   font-size: 9px;
@@ -173,7 +180,7 @@ button {
 }
 .bc-knot-label.parent { opacity: 0.6; font-size: 9px; }
 .bc-knot-wrap:active .bc-knot { transform: scale(1.4); }
-.bc-drop-line { stroke: rgba(200,160,80,0.4); stroke-width: 1; fill: none; }
+.bc-drop-line { stroke: color-mix(in srgb, var(--accent) 40%, transparent); stroke-width: 1; fill: none; }
 
 /* Deep soup / sanctuary breadcrumb row (avoid default blue link styling on buttons) */
 .breadcrumb-seg { display: inline-flex; align-items: center; flex-shrink: 0; }
@@ -232,7 +239,7 @@ button {
 .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(80px, 22vw, 160px), 1fr)); gap: 26px; }
 
 .folder-card, .discourse-card, .character-card { user-select: none; -webkit-user-select: none; }
-.card-selected { border-color: var(--accent) !important; background: rgba(200,160,80,0.08) !important; }
+.card-selected { border-color: var(--accent) !important; background: color-mix(in srgb, var(--accent) 8%, transparent) !important; }
 /* ── RPG CARD -- unified for all types ── */
 .nq-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; height: 120px; display: flex; flex-direction: column; justify-content: space-between; user-select: none; -webkit-user-select: none; z-index: 1; }
 .nq-card:active { border-color: var(--accent); background: var(--surface2); }
@@ -331,7 +338,8 @@ button {
 .realm-local-nav {
   flex-shrink: 0; display: flex; align-items: center; justify-content: center;
   position: relative; min-height: 48px; padding: 8px 52px;
-  background: rgba(0, 0, 0, 0.55); border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
   z-index: 25;
 }
 .realm-local-nav .btn-back-table {
@@ -353,7 +361,7 @@ button {
 .table-empty-text { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; }
 
 .lighthouse-view { background: var(--bg); overflow: hidden; }
-.lighthouse-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #000; flex-shrink: 0; gap: 8px; }
+.lighthouse-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg); flex-shrink: 0; gap: 8px; }
 .btn-back-table { display: flex; align-items: center; gap: 7px; background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; letter-spacing: 1px; font-weight: 700; padding: 7px 12px; border-radius: 8px; white-space: nowrap; }
 .btn-back-table:active { color: var(--text); border-color: var(--accent-dim); }
 .btn-back-arrow { font-size: 14px; opacity: 0.7; }
@@ -501,7 +509,7 @@ button {
 .discourse-title-input::placeholder { color: var(--muted); opacity: 0.6; }
 .discourse-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
 .meta-separator { opacity: 0.3; }
-.source-link { display: inline-flex; align-items: center; gap: 5px; color: var(--accent); font-size: 10px; padding: 3px 8px; border: 1px solid var(--accent-dim); border-radius: 6px; background: rgba(200,160,80,0.06); text-decoration: none; }
+.source-link { display: inline-flex; align-items: center; gap: 5px; color: var(--accent); font-size: 10px; padding: 3px 8px; border: 1px solid var(--accent-dim); border-radius: 6px; background: color-mix(in srgb, var(--accent) 6%, transparent); text-decoration: none; }
 
 /* THE GOLD LINE */
 #gold-line-zone {
@@ -519,7 +527,7 @@ button {
 .gold-thread {
   position: absolute; top: 20px; bottom: 100px; left: 7px; width: 1px;
   background: linear-gradient(to bottom, transparent, var(--accent), var(--accent-dim), transparent);
-  box-shadow: 0 0 10px rgba(200, 160, 80, 0.2);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 20%, transparent);
   transform-origin: top;
     -webkit-user-select: none;
   user-select: none;
@@ -566,7 +574,7 @@ button {
   height: 6px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 8px rgba(200,160,80,0.5);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 50%, transparent);
   z-index: 1010;
   display: none;
   opacity: 0;
@@ -600,8 +608,8 @@ button {
   animation: watcherAmbientPulse 4s ease-in-out infinite;
 }
 @keyframes watcherAmbientPulse {
-  0%, 100% { box-shadow: 0 0 4px rgba(200,160,80,0.3); opacity: 0.4; }
-  50% { box-shadow: 0 0 14px rgba(200,160,80,0.8), 0 0 4px rgba(200,160,80,1); opacity: 1; }
+  0%, 100% { box-shadow: 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent); opacity: 0.4; }
+  50% { box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 80%, transparent), 0 0 4px var(--accent); opacity: 1; }
 }
 
 .watcher-panel {
@@ -735,7 +743,7 @@ button {
 .lineage-children.open { display: block; }
 .lineage-siblings::-webkit-scrollbar { display: none; }
 
-.mosaic-block { border-left: 2px solid var(--accent-dim); padding: 10px 14px; background: rgba(200,160,80,0.04); border-radius: 0 8px 8px 0; }
+.mosaic-block { border-left: 2px solid var(--accent-dim); padding: 10px 14px; background: color-mix(in srgb, var(--accent) 4%, transparent); border-radius: 0 8px 8px 0; }
 .mosaic-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .mosaic-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.65; font-weight: 900; text-transform: uppercase; }
 .btn-delete-mosaic { background: none; border: none; color: var(--muted); font-size: 11px; padding: 2px 4px; border-radius: 4px; }
@@ -1227,8 +1235,8 @@ button {
   animation: ieSigilSpin 30s linear infinite, ieSigilGlow 4s ease-in-out infinite;
 }
 @keyframes ieSigilGlow {
-  0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(200,160,80,0.3)); }
-  50%      { opacity: 1;   filter: drop-shadow(0 0 5px rgba(200,160,80,0.7)); }
+  0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 30%, transparent)); }
+  50%      { opacity: 1;   filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 70%, transparent)); }
 }
 
 .ie-manifest-head {
@@ -1255,104 +1263,104 @@ button {
   gap: 12px;
 }
 #ie-manifest-modal.ie-manifest-moonlit {
-  background: #12171a !important;
-  border-top-color: #2a3136 !important;
-  color: #dfe6e8;
+  background: var(--surface2) !important;
+  border-top-color: var(--border) !important;
+  color: var(--text);
 }
 #ie-manifest-modal.ie-manifest-moonlit .ie-manifest-divider {
-  border-top-color: #2a3136;
+  border-top-color: var(--border);
 }
-#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-name { color: #dfe6e8 !important; }
-#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-archetype { color: #9aa5ad !important; }
-#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-function { color: #9aa5ad !important; }
+#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-name { color: var(--text) !important; }
+#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-archetype { color: var(--muted) !important; }
+#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-function { color: var(--muted) !important; }
 #ie-manifest-modal.ie-manifest-moonlit .ie-manifest-label {
-  color: #6e787f !important;
+  color: var(--muted) !important;
   opacity: 1 !important;
 }
 #ie-manifest-modal.ie-manifest-moonlit .ie-manifest-text {
-  color: #dfe6e8 !important;
+  color: var(--text) !important;
   opacity: 0.9 !important;
 }
-#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-meta { color: #6e787f !important; }
-#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-models { color: #8a9aa3 !important; }
+#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-meta { color: var(--muted) !important; }
+#ie-manifest-modal.ie-manifest-moonlit #ie-manifest-models { color: var(--muted) !important; }
 #ie-manifest-modal.ie-manifest-moonlit #btn-ie-manifest-enter {
-  background: #a3b8c2 !important;
-  color: #050607 !important;
-  border: 1px solid #2a3136 !important;
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  border: 1px solid var(--border) !important;
 }
 #ie-manifest-modal.ie-manifest-moonlit #btn-ie-manifest-close {
-  border-color: #2a3136;
-  color: #9aa5ad;
+  border-color: var(--border);
+  color: var(--muted);
 }
 
 #view-ie.ie-realm-view {
   display: flex;
   flex-direction: column;
-  background: #050607;
+  background: var(--bg);
 }
 #view-ie.ie-realm-view .ie-card {
-  background: #0e1113;
-  border-color: #2a3136;
+  background: var(--surface);
+  border-color: var(--border);
 }
 #view-ie.ie-realm-view .ie-card:active {
-  border-color: rgba(163, 184, 194, 0.55);
-  background: #12171a;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--surface2);
 }
 #view-ie.ie-realm-view .ie-card::before {
-  background: linear-gradient(90deg, rgba(163, 184, 194, 0.35), transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 35%, transparent), transparent);
   opacity: 0.35;
 }
-#view-ie.ie-realm-view .ie-card-name { color: #dfe6e8; }
+#view-ie.ie-realm-view .ie-card-name { color: var(--text); }
 #view-ie.ie-realm-view .ie-card-archetype,
 #view-ie.ie-realm-view .ie-card-function,
-#view-ie.ie-realm-view .ie-card-meta { color: #9aa5ad; }
-#view-ie.ie-realm-view .ie-lh-nav { border-bottom: 1px solid #2a3136; background: #050607; }
+#view-ie.ie-realm-view .ie-card-meta { color: var(--muted); }
+#view-ie.ie-realm-view .ie-lh-nav { border-bottom: 1px solid var(--border); background: var(--bg); }
 #view-ie.ie-realm-view .ie-page-title {
   font-size: 10px;
   letter-spacing: 2px;
-  color: #a3b8c2;
+  color: var(--accent);
   font-weight: 900;
   white-space: nowrap;
   text-align: center;
 }
 #view-ie.ie-realm-view .ie-forge-btn {
-  border-color: rgba(163, 184, 194, 0.4);
-  color: #a3b8c2;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent);
 }
 #view-ie.ie-realm-view .cosm-input {
-  border-color: #2a3136;
-  background: #0e1113;
-  color: #dfe6e8;
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
 }
 #view-ie.ie-realm-view .btn-back-table,
 #view-ie.ie-realm-view #btn-ie-back {
-  border-color: #2a3136;
-  color: #9aa5ad;
-  background: rgba(14, 17, 19, 0.55);
+  border-color: var(--border);
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
 }
 #view-ie.ie-realm-view .btn-back-table:active,
 #view-ie.ie-realm-view #btn-ie-back:active {
-  border-color: rgba(163, 184, 194, 0.5);
-  color: #dfe6e8;
-  background: #12171a;
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  color: var(--text);
+  background: var(--surface2);
 }
 
 /* Persona + Memory vault — Sanctuary moonlit satellites */
 #view-persona.realm-sub-view,
 #view-memory.realm-sub-view {
-  background: #050607;
-  color: #dfe6e8;
+  background: var(--bg);
+  color: var(--text);
 }
 #view-persona.realm-sub-view .lighthouse-nav,
 #view-memory.realm-sub-view .lighthouse-nav {
-  background: #050607;
-  border-bottom: 1px solid #2a3136;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
 }
 #view-persona.realm-sub-view .realm-local-title,
 #view-memory.realm-sub-view .realm-local-title {
   font-size: 10px;
   letter-spacing: 2px;
-  color: #a3b8c2;
+  color: var(--accent);
   font-weight: 900;
   flex: 1;
   min-width: 0;
@@ -1363,44 +1371,44 @@ button {
 }
 #view-persona.realm-sub-view .btn-back-table,
 #view-memory.realm-sub-view .btn-back-table {
-  color: #a3b8c2;
-  border-color: rgba(163, 184, 194, 0.35);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
 }
 #view-persona.realm-sub-view .tbtn,
 #view-memory.realm-sub-view .tbtn {
-  border-color: rgba(163, 184, 194, 0.4);
-  color: #a3b8c2;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent);
 }
 #view-persona.realm-sub-view .cards-section-label {
-  color: #6e787f;
+  color: var(--muted);
   opacity: 1;
 }
 #view-persona.realm-sub-view .forge-textarea {
-  background: #0e1113;
-  border: 1px solid #2a3136;
-  color: #dfe6e8;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 #view-persona.realm-sub-view .forge-textarea:focus {
-  border-color: rgba(163, 184, 194, 0.5);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
 }
 #view-memory.realm-sub-view .memory-vault-card {
-  background: #0e1113 !important;
-  border: 1px solid #2a3136 !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
 }
 #view-memory.realm-sub-view .memory-vault-char {
-  color: #a3b8c2 !important;
+  color: var(--accent) !important;
   font-weight: 700;
 }
 #view-memory.realm-sub-view .cards-section-label {
-  color: #6e787f;
+  color: var(--muted);
   opacity: 1;
 }
 #view-persona.realm-sub-view #roles-surface > div {
-  background: #0e1113 !important;
-  border-color: #2a3136 !important;
+  background: var(--surface) !important;
+  border-color: var(--border) !important;
 }
 #view-persona.realm-sub-view .role-chip-title {
-  color: #a3b8c2 !important;
+  color: var(--accent) !important;
 }
 /* CHARACTER AVATAR */
 .char-avatar {
@@ -1639,19 +1647,19 @@ button {
   white-space: nowrap;
 }
 
-/* ═══ SANCTUARY REALM (scoped — Soup / IE page unchanged) ═══ */
+/* ═══ SANCTUARY REALM (scoped — inherits html[data-realm=sanctuary] tokens) ═══ */
 #view-sanctuary.sanctuary-view {
-  --s-bg: #050607;
-  --s-surface: #0e1113;
-  --s-ie-surface: #12171a;
-  --s-border: #2a3136;
-  --s-text: #dfe6e8;
-  --s-text-sec: #9aa5ad;
-  --s-text-muted: #6e787f;
-  --s-accent-cool: #a3b8c2;
-  --s-sigil-gold: #c8a050;
-  --s-glow: rgba(160, 180, 200, 0.05);
-  --s-mycelium: rgba(180, 200, 210, 0.04);
+  --s-bg: var(--bg);
+  --s-surface: var(--surface);
+  --s-ie-surface: var(--surface2);
+  --s-border: var(--border);
+  --s-text: var(--text);
+  --s-text-sec: var(--muted);
+  --s-text-muted: var(--accent-dim);
+  --s-accent-cool: var(--accent);
+  --s-sigil-gold: var(--accent);
+  --s-glow: color-mix(in srgb, var(--accent) 8%, transparent);
+  --s-mycelium: color-mix(in srgb, var(--accent) 5%, transparent);
   background: var(--s-bg);
   color: var(--s-text);
 }
@@ -1699,7 +1707,7 @@ button {
   caret-color: var(--s-accent-cool);
 }
 #view-sanctuary .sanctuary-search-bar-wrap .search-input:focus {
-  border-color: rgba(163, 184, 194, 0.55);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 #view-sanctuary .sanctuary-search-bar-wrap .search-input::placeholder {
   color: var(--s-text-muted);
@@ -1710,7 +1718,7 @@ button {
   color: var(--s-text-muted);
 }
 #view-sanctuary .sanctuary-search-close:active {
-  border-color: rgba(163, 184, 194, 0.45);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
   color: var(--s-text);
   background: var(--s-ie-surface);
 }
@@ -1770,7 +1778,7 @@ button {
   cursor: pointer;
 }
 #view-sanctuary .sanctuary-drawer-item:active {
-  background: rgba(160, 180, 200, 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 #view-sanctuary .sanctuary-surface.table-surface {
@@ -1794,7 +1802,7 @@ button {
   box-shadow: inset 0 0 24px var(--s-glow);
 }
 #view-sanctuary .ie-card::before {
-  background: linear-gradient(90deg, rgba(163, 184, 194, 0.35), transparent);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 35%, transparent), transparent);
   opacity: 0.35;
 }
 #view-sanctuary .ie-card.draft::before {
@@ -1822,20 +1830,20 @@ button {
   margin-bottom: 12px;
 }
 #view-sanctuary .ie-card-sigil svg {
-  filter: drop-shadow(0 0 4px rgba(200, 160, 80, 0.45));
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 45%, transparent));
   animation: ieSigilSpin 30s linear infinite;
 }
 #view-sanctuary .ie-card-sigil.pulse svg {
   animation: ieSigilSpin 30s linear infinite, ieSigilGlowSanctuary 4s ease-in-out infinite;
 }
 @keyframes ieSigilGlowSanctuary {
-  0%, 100% { opacity: 0.65; filter: drop-shadow(0 0 2px rgba(200, 160, 80, 0.35)); }
-  50% { opacity: 1; filter: drop-shadow(0 0 10px rgba(200, 160, 80, 0.85)); }
+  0%, 100% { opacity: 0.65; filter: drop-shadow(0 0 2px color-mix(in srgb, var(--accent) 35%, transparent)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 85%, transparent)); }
 }
 
 #view-sanctuary .ie-card.ie-card-archive {
   border-style: dashed;
-  border-color: rgba(42, 49, 54, 0.75);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent);
   opacity: 1;
 }
 #view-sanctuary .ie-card.ie-card-archive .ie-card-name {
@@ -1860,7 +1868,7 @@ button {
   margin-top: 0;
 }
 #view-sanctuary .sanctuary-divider-line {
-  background: rgba(42, 49, 54, 0.45);
+  background: color-mix(in srgb, var(--border) 45%, transparent);
   height: 1px;
 }
 #view-sanctuary .sanctuary-divider-label {
@@ -1896,12 +1904,12 @@ button {
   box-shadow: inset 0 0 28px var(--s-glow);
 }
 #view-sanctuary .character-card:active {
-  border-color: rgba(163, 184, 194, 0.45);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
   background: var(--s-ie-surface);
 }
 #view-sanctuary .character-card.card-selected {
-  border-color: rgba(163, 184, 194, 0.55) !important;
-  background: rgba(160, 180, 200, 0.08) !important;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent) !important;
+  background: color-mix(in srgb, var(--accent) 8%, transparent) !important;
 }
 #view-sanctuary .char-card-name {
   color: var(--s-text);
@@ -1916,7 +1924,7 @@ button {
   width: 32px;
   height: 32px;
   font-size: 13px;
-  background: #0a1014;
+  background: var(--surface3);
   border-color: var(--s-border);
   color: var(--s-text-muted);
 }
@@ -1947,157 +1955,157 @@ button {
   }
 }
 
-/* Moonlit — Character forge & chat (same family as Sanctuary) */
+/* Moonlit — Character forge & chat (inherits html[data-realm=sanctuary] tokens) */
 #view-forge.forge-view {
-  background: #050607;
-  color: #dfe6e8;
+  background: var(--bg);
+  color: var(--text);
 }
 #view-forge .forge-scroll {
-  background: #050607;
+  background: var(--bg);
 }
 #view-forge .forge-section {
-  background: #0e1113;
-  border-color: #2a3136;
+  background: var(--surface);
+  border-color: var(--border);
 }
 #view-forge .forge-section-header:active {
-  background: rgba(160, 180, 200, 0.07);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 #view-forge .forge-section-title {
-  color: #a3b8c2;
+  color: var(--accent);
 }
 #view-forge .forge-label {
-  color: #6e787f;
+  color: var(--muted);
 }
 #view-forge .forge-textarea {
-  background: #050607;
-  border-color: #2a3136;
-  color: #dfe6e8;
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text);
 }
 #view-forge .forge-textarea:focus {
-  border-color: rgba(163, 184, 194, 0.55);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 #view-forge .cosm-input,
 #view-forge select.cosm-input {
-  background: #050607;
-  border-color: #2a3136;
-  color: #dfe6e8;
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text);
 }
 #view-forge .cosm-input:focus {
-  border-color: rgba(163, 184, 194, 0.5);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
 }
 #view-forge .range-input {
-  accent-color: #a3b8c2;
+  accent-color: var(--accent);
 }
 #view-forge .range-val {
-  color: #a3b8c2;
+  color: var(--accent);
 }
 #view-forge .forge-footer {
-  background: rgba(5, 6, 7, 0.93);
-  border-top-color: #2a3136;
+  background: color-mix(in srgb, var(--bg) 93%, transparent);
+  border-top-color: var(--border);
 }
 #view-forge .btn-forge-save {
-  background: #a3b8c2;
-  color: #050607;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 #view-forge .btn-forge-close {
-  background: #12171a;
-  color: #dfe6e8;
-  border-color: #2a3136;
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
 }
 #view-forge .forge-chevron {
   opacity: 0.55;
-  color: #9aa5ad;
+  color: var(--muted);
 }
 #view-forge .forge-photo-slot {
-  border-color: rgba(163, 184, 194, 0.4);
-  background: #12171a;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--surface2);
 }
 #view-forge .forge-photo-slot:active {
-  border-color: #a3b8c2;
-  background: #0e1113;
+  border-color: var(--accent);
+  background: var(--surface);
 }
 #view-forge .cards-section-label {
-  color: #6e787f;
+  color: var(--muted);
   opacity: 1;
 }
 
 #view-chat.chat-view {
-  background: #050607;
-  color: #dfe6e8;
+  background: var(--bg);
+  color: var(--text);
 }
 #view-chat .chat-header {
-  background: #0e1113;
-  border-bottom-color: #2a3136;
+  background: var(--surface);
+  border-bottom-color: var(--border);
 }
 #view-chat #btn-chat-back {
   flex-shrink: 0;
   margin-right: 2px;
 }
 #view-chat .chat-char-name {
-  color: #a3b8c2;
+  color: var(--accent);
 }
 #view-chat .chat-avatar-pill {
-  background: #12171a;
-  border-color: #2a3136;
-  color: #6e787f;
+  background: var(--surface2);
+  border-color: var(--border);
+  color: var(--muted);
 }
 #view-chat .chat-msg.user {
-  background: #12171a;
-  border: 1px solid #2a3136;
-  color: #dfe6e8;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 #view-chat .chat-msg.char {
-  background: #0e1113;
-  border: 1px solid rgba(163, 184, 194, 0.28);
-  color: #dfe6e8;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  color: var(--text);
 }
 #view-chat.ie-encounter .chat-msg.char {
   background: none;
   border: none;
-  color: #dfe6e8;
+  color: var(--text);
 }
 #view-chat.ie-encounter .chat-msg.user {
-  color: #9aa5ad;
+  color: var(--muted);
 }
 #view-chat.ie-encounter .chat-msg.user::after {
-  background: #2a3136;
+  background: var(--border);
 }
 #view-chat.ie-encounter .chat-char-name {
-  color: #a3b8c2;
+  color: var(--accent);
 }
 #view-chat .chat-input-area {
-  background: #0e1113;
-  border-top-color: #2a3136;
+  background: var(--surface);
+  border-top-color: var(--border);
 }
 #view-chat .chat-input {
-  background: #050607;
-  border-color: #2a3136;
-  color: #dfe6e8;
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--text);
 }
 #view-chat .chat-input:focus {
-  border-color: rgba(163, 184, 194, 0.55);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 #view-chat .btn-send {
-  background: #a3b8c2;
-  color: #050607;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 #view-chat #btn-chat-retry {
-  background: #12171a !important;
-  color: #dfe6e8 !important;
-  border: 1px solid #2a3136 !important;
+  background: var(--surface2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
 }
 #view-chat .tbtn {
-  background: #12171a;
-  color: #9aa5ad;
-  border-color: #2a3136;
+  background: var(--surface2);
+  color: var(--muted);
+  border-color: var(--border);
 }
 #view-chat #chat-persona-pill {
-  color: #8a9aa8 !important;
-  border-color: #2a3136 !important;
-  background: rgba(5, 6, 7, 0.35);
+  color: var(--muted) !important;
+  border-color: var(--border) !important;
+  background: color-mix(in srgb, var(--bg) 65%, transparent);
 }
 #view-chat #ie-model-chip {
-  color: #8a9aa8 !important;
+  color: var(--muted) !important;
 }
 
 .forge-view { background: var(--bg); overflow: hidden; }
@@ -2119,7 +2127,7 @@ button {
 .range-input { flex: 1; accent-color: var(--accent); }
 .range-val { font-size: 12px; color: var(--accent); font-weight: 700; min-width: 30px; text-align: right; }
 .forge-footer { position: sticky; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 10px; z-index: 10; }
-.btn-forge-save { flex: 2; background: var(--accent); color: #000; border: none; border-radius: 10px; padding: 14px; font-weight: 900; font-size: 14px; letter-spacing: 1px; }
+.btn-forge-save { flex: 2; background: var(--accent); color: var(--on-accent); border: none; border-radius: 10px; padding: 14px; font-weight: 900; font-size: 14px; letter-spacing: 1px; }
 .btn-forge-close { flex: 1; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-weight: 700; font-size: 14px; }
 
 .chat-view { background: var(--bg); display: flex; flex-direction: column; }
@@ -2133,7 +2141,7 @@ button {
 .chat-input-area { padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); display: flex; gap: 10px; align-items: flex-end; }
 .chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-size: 14px; outline: none; resize: none; max-height: 120px; font-family: inherit; }
 .chat-input:focus { border-color: var(--accent-dim); }
-.btn-send { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); border: none; color: #000; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.btn-send { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); border: none; color: var(--on-accent); font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
 .cosm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 800; display: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 .cosm-overlay.active { display: block; }
@@ -2154,7 +2162,7 @@ select.cosm-input {
 .modal-buttons { display: flex; gap: 10px; }
 .modal-buttons button { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: 900; font-size: 14px; }
 .modal-btn-cancel { background: var(--surface2); color: var(--text); }
-.modal-btn-confirm { background: var(--accent); color: #000; }
+.modal-btn-confirm { background: var(--accent); color: var(--on-accent); }
 .management-actions { display: flex; flex-direction: column; gap: 8px; }
 .management-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 16px; border-radius: 10px; font-size: 14px; font-weight: 700; text-align: left; display: flex; align-items: center; gap: 10px; touch-action: manipulation; }
 .management-btn:active { background: var(--surface2); }
@@ -2200,7 +2208,7 @@ select.cosm-input {
 .model-chip.active {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(200, 160, 80, 0.05);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
 }
 
 #userInput {
@@ -2222,7 +2230,7 @@ select.cosm-input {
   border-top: 1px solid var(--accent-dim); /* The glow when you type */
 }
 
-#cosm-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 9px 20px; border-radius: 20px; font-size: 12px; font-weight: 900; letter-spacing: 1px; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s; white-space: nowrap; }
+#cosm-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: var(--on-accent); padding: 9px 20px; border-radius: 20px; font-size: 12px; font-weight: 900; letter-spacing: 1px; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s; white-space: nowrap; }
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
