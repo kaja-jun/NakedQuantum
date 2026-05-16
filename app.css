@@ -85,7 +85,7 @@ button {
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   background: var(--bg);
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
   z-index: 999;
 }
 .nq-watcher-led-strip.hidden { display: none !important; }
@@ -115,7 +115,13 @@ button {
   border-radius: 50%;
   flex-shrink: 0;
   transition: opacity 0.2s ease, box-shadow 0.25s ease, background 0.2s ease;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  /* Dim base so the three pucks read on pure black even before .is-lit */
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0.45;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.nq-watcher-led.is-lit {
+  opacity: 1;
 }
 .nq-watcher-led--active.is-lit {
   background: #c8a050;
@@ -129,9 +135,8 @@ button {
   box-shadow: 0 0 8px color-mix(in srgb, #4a8f62 45%, transparent), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 .nq-watcher-led--offline.is-lit {
-  background: #2a2a2c;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  opacity: 0.95;
+  background: #3a3a3e;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 @keyframes watcherLedGoldPulse {
   0%, 100% { opacity: 1; filter: brightness(1); }
