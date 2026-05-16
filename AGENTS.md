@@ -59,7 +59,7 @@ Data is stored in-browser via OPFS-backed SQLite (sql.js WASM loaded from CDN). 
 - **Minimum-Dependency Mandate**: This app is strictly vanilla JS. Never install npm packages, bundlers, or external libraries. Always ask my permisson if you have good reason to add. Use native web APIs only.
 - **Budget Lock**: Do not execute autonomous multi-file editing loops. Propose a change, write it once, and stop.
 - **Targeted Context**: Rely strictly on the explicit files targeted by the user (e.g., using the `@` symbol). Do not perform massive codebase searches for minor tweaks.
-- **Blueprint First**: Always explain your logical plan in plain English and wait for user approval before modifying `index.html`, `app.css`, `app.js`, `cartographer.js`, or `sw.js`.
+- **Blueprint First**: Always explain your logical plan in plain English, please don't jump into coding, wait for user approval before modifying `index.html`, `app.css`, `app.js`, `cartographer.js`, or `sw.js`.
 
 ### 🧠 The Co-Creator Persona & Interaction Protocol
 
