@@ -2367,6 +2367,42 @@ function syncNqHeaderForCurrentPanel(activePanelId) {
   updateHeaderButtons();
 }
 
+/** Maps visible panel + `currentMode` to `<html data-realm="…">` for global hooks / future CSS. */
+function syncDataRealmFromPanel(activePanelId) {
+  let realm;
+  switch (activePanelId) {
+    case 'view-lighthouse':
+      realm = 'lighthouse';
+      break;
+    case 'view-abyss':
+      realm = 'abyss';
+      break;
+    case 'view-deep-soup':
+      realm = 'deep-soup';
+      break;
+    case 'view-data':
+      realm = 'data';
+      break;
+    case 'view-guardian':
+      realm = 'guardian';
+      break;
+    case 'view-soup':
+      realm = 'soup';
+      break;
+    case 'view-sanctuary':
+    case 'view-forge':
+    case 'view-chat':
+    case 'view-memory':
+    case 'view-persona':
+    case 'view-ie':
+      realm = currentMode === 'sanctuary' ? 'sanctuary' : 'soup';
+      break;
+    default:
+      realm = 'soup';
+  }
+  document.documentElement.dataset.realm = realm;
+}
+
 function showPanel(id){
     abyssStop();
   const wasSoup = (currentView === 'soup');
@@ -2414,6 +2450,7 @@ function showPanel(id){
   const active=document.getElementById(id);
   if(active)active.classList.remove('hidden');
   currentView=id.replace('view-','');
+  syncDataRealmFromPanel(id);
 
   if (id === 'view-soup' || wasSoup) {
     closeSoupDrawer();
