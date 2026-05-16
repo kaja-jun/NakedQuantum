@@ -15,8 +15,18 @@
 
 /* Realm skin mount: `document.documentElement.dataset.realm` is synced from `showPanel`
    in app.js (soup | sanctuary | abyss | deep-soup | data | guardian | lighthouse).
-   V1 sets the attribute only; add selectors under html[data-realm="…"] when theming.
    Lighthouse editor body stays unthemed until the TipTap pass; the flag is for hooks. */
+
+/* Sanctuary: retarget shared tokens so components using var(--accent) etc. read Moonlit
+   while forge / chat / memory / persona / IE share the same chrome as #view-sanctuary. */
+html[data-realm="sanctuary"] {
+  --accent: #a3b8c2;
+  --accent-dim: #6d7f88;
+  --border: #2a3136;
+  --surface: #0e1113;
+  --surface2: #12171a;
+  --surface3: #161a1d;
+}
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
@@ -993,7 +1003,7 @@ button {
 }
 .section-grid.single-row { /* same grid, no special treatment */ }
 
-/* SANCTUARY (base layout; realm palette lives under #view-sanctuary)
+/* SANCTUARY (base layout; Moonlit palette also via html[data-realm="sanctuary"] tokens above)
    Must stay position:absolute — same element has .view-panel; relative here
    overrides .view-panel and breaks inset:0, causing the header/mycelium “ghost gap”. */
 .sanctuary-view { position: absolute; display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; -webkit-overflow-scrolling: touch; height: 100%; inset: 0; }
