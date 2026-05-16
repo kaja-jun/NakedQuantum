@@ -619,7 +619,7 @@ ends_on_resolved:    endsOnResolved
 - 
 - The single export. Takes raw text, returns the full shape map.
 - No async. No DB. No side effects.
-- Call this from generateFastMap() in index.html.
+- Call this from generateFastMap() in app.js.
   */
   export function generateFastMapData(text) {
   const words     = text.trim().split(/\s+/).filter(Boolean);

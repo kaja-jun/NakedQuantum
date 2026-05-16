@@ -1,10 +1,12 @@
 /* jshint esversion: 11 */
 /* global caches */
 /* global self */
-const CACHE = "nq-v1";
+const CACHE = "nq-v2";
 const FILES = [
   "/",
   "/index.html",
+  "/app.css",
+  "/app.js",
   "/manifest.json",
   "/icon-512.png"
 ];
