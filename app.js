@@ -5633,6 +5633,7 @@ function abyssAge(ts) {
 async function buildAbyssObjects() {
   abyssObjects = [];
   var allDiscs = await dbGetAll('cosm_discourses');
+  if (!Array.isArray(allDiscs)) allDiscs = [];
   var active = allDiscs.filter(function(d) { return !d.isDeleted; });
 
   if (!active.length) {
@@ -6353,12 +6354,13 @@ var abyssSelectedNode = null;
 
 function abyssCloseSheet() {
   var sheet = document.getElementById('abyss-sheet');
-  sheet.classList.remove('open');
+  if (sheet) sheet.classList.remove('open');
 }
 
 function abyssShowTooltip(obj, tapX, tapY) {
   abyssCloseSheet();
   var tt = document.getElementById('abyss-tooltip');
+  if (!tt) return;
   var content = '';
 
   if (obj.kind === 'guardian-node') {
@@ -6657,6 +6659,9 @@ function abyssGetRect() {
 function abyssStop() {
   abyssRunning = false;
   if (abyssAnimFrame) { cancelAnimationFrame(abyssAnimFrame); abyssAnimFrame = null; }
+  if (window.__nqAbyssRO) {
+    try { window.__nqAbyssRO.disconnect(); } catch (roErr) {}
+  }
 }
 
 var abyssTouchStartX = -9999;
@@ -6752,7 +6757,8 @@ function abyssTouchEndCore() {
 
   if (movedX > 10 || movedY > 10) return;
 
-  document.getElementById('abyss-tooltip').style.display = 'none';
+  var abyssTt = document.getElementById('abyss-tooltip');
+  if (abyssTt) abyssTt.style.display = 'none';
 
   var closest = null;
   var minD = 34;
@@ -6856,12 +6862,13 @@ abyssCanvas.addEventListener('mousedown', abyssMouseDown);
   // Seed background neural noise
   abyssSparks = [];
   for (var s = 0; s < 40; s++) {
+    var smax = 80 + Math.random() * 400;
     abyssSparks.push({
       x: Math.random(),
       y: Math.random(),
-      life: 0,
-      maxLife: 80 + Math.random() * 400,  // ms
-      cooldown: Math.random() * 3000,
+      life: 30 + Math.random() * (smax * 0.5),
+      maxLife: smax,
+      cooldown: 0,
       opacity: 0.02 + Math.random() * 0.04
     });
   }
@@ -6869,6 +6876,18 @@ abyssCanvas.addEventListener('mousedown', abyssMouseDown);
   abyssFiringDot = null;
   abyssFiringTimer = 30000 + Math.random() * 60000; // first fire in 30-90s
   abyssLastFrame = 0;
+  if (typeof ResizeObserver !== 'undefined') {
+    if (!window.__nqAbyssRO) {
+      window.__nqAbyssRO = new ResizeObserver(function() {
+        if (currentView !== 'abyss' || !abyssRunning || !abyssCanvas) return;
+        abyssResize();
+      });
+    } else {
+      try { window.__nqAbyssRO.disconnect(); } catch (e2) {}
+    }
+    var vab = document.getElementById('view-abyss');
+    if (vab) window.__nqAbyssRO.observe(vab);
+  }
   abyssTick();
 }
 
@@ -8927,6 +8946,6 @@ async function bootApp() {
   }
 }
 
-if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js?v=nq-v5');
+if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js?v=nq-v6');
 
 window.cosmOSPinDisc=async function({title,raw_text,source_link,backlink}){const disc=await createDiscourse({title,raw_text,source_link:JSON.stringify(source_link)});if(backlink){const blId="bl_"+Date.now();await dbPut("cosm_backlinks",{id:blId,discourse_id:disc.id,...backlink,created_at:Date.now()});}return disc.id;};
