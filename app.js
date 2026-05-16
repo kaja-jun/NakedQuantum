@@ -683,7 +683,13 @@ let _watcherHasLinks = false;
 let _watcherCurrentLinks = [];
 
 function isWatcherSoupContext() {
-  return currentView === 'soup';
+  return currentMode === 'soup' && currentView === 'soup';
+}
+
+/** Watcher user toasts only on the main Soup grid (not Sanctuary, sub-views, or forge). */
+function showWatcherSoupToast(msg) {
+  if (!isWatcherSoupContext()) return;
+  showToast(msg);
 }
 
 /** Soup-only LED strip + cluster button (resonance when links exist). */
@@ -853,30 +859,31 @@ async function initWatcher() {
       }
     });
     isWatcherReady = true;
-localStorage.removeItem('nq_watcher_offline_since');
-const firstAwakening = !localStorage.getItem('nq_watcher_awakened');
-if (firstAwakening) {
-  if (isWatcherSoupContext()) showToast('◈ The Watcher has awakened');
-  // One-time reindex of all existing content
-  setTimeout(async () => {
-    if (!isWatcherSoupContext()) return;
-    const discs = await getDiscourses();
-    let count = 0;
-    for (const d of discs) {
-      if (d.raw_text && d.raw_text.trim().length > 0) {
-        queueWatcherEmbed(d.id, d.title || 'Untitled', d.raw_text, d.item_type || 'discourse');
-        count++;
-      }
+    localStorage.removeItem('nq_watcher_offline_since');
+    const firstAwakening = !localStorage.getItem('nq_watcher_awakened');
+    if (firstAwakening) {
+      showWatcherSoupToast('◈ The Watcher has awakened');
+      // One-time reindex of all existing content
+      setTimeout(async () => {
+        if (!isWatcherSoupContext()) return;
+        const discs = await getDiscourses();
+        if (!isWatcherSoupContext()) return;
+        let count = 0;
+        for (const d of discs) {
+          if (d.raw_text && d.raw_text.trim().length > 0) {
+            queueWatcherEmbed(d.id, d.title || 'Untitled', d.raw_text, d.item_type || 'discourse');
+            count++;
+          }
+        }
+        if (count > 0) showWatcherSoupToast('◈ Indexing ' + count + ' engrams...');
+      }, 5000);
     }
-    if (count > 0 && isWatcherSoupContext()) showToast('◈ Indexing ' + count + ' engrams...');
-  }, 5000);
-}
-if (firstAwakening) localStorage.setItem('nq_watcher_awakened', '1');
-hideWatcherLoading();
-updateWatcherStatusUI();
-await refreshWatcherDot();
-if (isWatcherSoupContext()) scheduleWatcherPass();
-syncWatcherLedStrip();
+    if (firstAwakening) localStorage.setItem('nq_watcher_awakened', '1');
+    hideWatcherLoading();
+    updateWatcherStatusUI();
+    await refreshWatcherDot();
+    if (isWatcherSoupContext()) scheduleWatcherPass();
+    syncWatcherLedStrip();
   } catch (err) {
     watcherInitFailed = true;
     console.warn('[Watcher] Init Failed:', err);
@@ -1597,17 +1604,17 @@ async function deleteImmutableEntity(id) {
 
 /* DEV DOOR */
 async function devForcePass() {
-  if (!isWatcherReady) { showToast('Watcher not ready yet'); return; }
+  if (!isWatcherReady) { showWatcherSoupToast('Watcher not ready yet'); return; }
   localStorage.removeItem('nq_watcher_last_pass');
-  showToast('Running pass...');
+  showWatcherSoupToast('Running pass...');
   await runSimilarityPassMain();
   await updateWatcherStatusUI();
   await refreshWatcherDot();
-  showToast('Pass complete');
+  showWatcherSoupToast('Pass complete');
 }
 
 async function devClearWatcher() {
-  if (!watcherDB) { showToast('No watcher DB'); return; }
+  if (!watcherDB) { showWatcherSoupToast('No watcher DB'); return; }
   const embs = await wdb.getAll('embeddings');
   const links = await wdb.getAll('links');
   for (const e of embs) await wdb.delete('embeddings', e.id);
@@ -1618,7 +1625,7 @@ async function devClearWatcher() {
   _watcherCurrentLinks = [];
   hideWatcherDot();
   await updateWatcherStatusUI();
-  showToast('Watcher index cleared');
+  showWatcherSoupToast('Watcher index cleared');
 }
 
 async function devCreateIEDraft(){
