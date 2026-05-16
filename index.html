@@ -23,6 +23,12 @@
   --code-bg: #0d0d0b;
   --font-serif: Georgia, serif;
 }
+
+/* Realm skin mount: `document.documentElement.dataset.realm` is synced from `showPanel`
+   (soup | sanctuary | abyss | deep-soup | data | guardian | lighthouse). V1 sets the
+   attribute only; no token overrides here yet. Lighthouse editor chrome may read the
+   flag; editor body theming waits for the TipTap pass. */
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
 button { cursor: pointer; -webkit-appearance: none; appearance: none; touch-action: manipulation; }
@@ -5362,6 +5368,42 @@ function syncNqHeaderForCurrentPanel(activePanelId) {
   updateHeaderButtons();
 }
 
+/** Maps visible panel + `currentMode` to `<html data-realm="…">` for global hooks / future CSS. */
+function syncDataRealmFromPanel(activePanelId) {
+  let realm;
+  switch (activePanelId) {
+    case 'view-lighthouse':
+      realm = 'lighthouse';
+      break;
+    case 'view-abyss':
+      realm = 'abyss';
+      break;
+    case 'view-deep-soup':
+      realm = 'deep-soup';
+      break;
+    case 'view-data':
+      realm = 'data';
+      break;
+    case 'view-guardian':
+      realm = 'guardian';
+      break;
+    case 'view-soup':
+      realm = 'soup';
+      break;
+    case 'view-sanctuary':
+    case 'view-forge':
+    case 'view-chat':
+    case 'view-memory':
+    case 'view-persona':
+    case 'view-ie':
+      realm = currentMode === 'sanctuary' ? 'sanctuary' : 'soup';
+      break;
+    default:
+      realm = 'soup';
+  }
+  document.documentElement.dataset.realm = realm;
+}
+
 function showPanel(id){
     abyssStop();
   const wasSoup = (currentView === 'soup');
@@ -5409,6 +5451,7 @@ function showPanel(id){
   const active=document.getElementById(id);
   if(active)active.classList.remove('hidden');
   currentView=id.replace('view-','');
+  syncDataRealmFromPanel(id);
 
   if (id === 'view-soup' || wasSoup) {
     closeSoupDrawer();
