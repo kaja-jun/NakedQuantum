@@ -30,8 +30,10 @@ let deepMapperSuppressTimer = null;
 let sanctuaryAmbienceActive = false;
 let sanctuaryMyceliumRaf = null;
 let sanctuaryMyceliumResizeObs = null;
-const SANCTUARY_MYCEL_MAX = 10;
+const SANCTUARY_MYCEL_MAX = 80;
 let sanctuaryMyceliumParticles = [];
+let mycelWarm = '78, 180, 120';
+let mycelCool = '78, 203, 138';
 
 function closeSanctuaryDrawer(){
   const d = document.getElementById('sanctuary-drawer');
@@ -190,67 +192,76 @@ function tickSanctuaryMycelium(){
   const w = c.width / dpr;
   const h = c.height / dpr;
   if (sanctuaryMyceliumParticles.length < SANCTUARY_MYCEL_MAX) initSanctuaryMyceliumParticles(w, h);
-   // Instead of clearRect, we draw a highly transparent black box. 
+
   // This leaves a trail that slowly fades away, creating the "web" look.
  
-ctx.fillStyle = 'rgba(5, 6, 7, 0.015)';
+// Fade trail -- slightly faster fade so old threads don't muddy
+ctx.fillStyle = 'rgba(5, 6, 7, 0.018)';
+ctx.fillRect(0, 0, c.width, c.height);
 
-  ctx.fillRect(0, 0, c.width, c.height);
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  
-  ctx.lineWidth = 0.6;
-  ctx.strokeStyle = 'rgba(180, 200, 210, 0.12)';
+ctx.lineWidth = 1.1;
 
-  for (let i = 0; i < sanctuaryMyceliumParticles.length; i++) {
-    let p = sanctuaryMyceliumParticles[i];
-    
-    // Save old position
-    let oldX = p.x;
-    let oldY = p.y;
+for (let i = 0; i < sanctuaryMyceliumParticles.length; i++) {
+  let p = sanctuaryMyceliumParticles[i];
+  let oldX = p.x;
+  let oldY = p.y;
 
-    // Wander slightly (Mycelium doesn't grow perfectly straight)
-    p.angle += (Math.random() - 0.5) * 0.3;
-    p.x += Math.cos(p.angle) * p.speed;
-    p.y += Math.sin(p.angle) * p.speed;
-    p.life--;
+  p.angle += (Math.random() - 0.5) * 0.3;
+  p.x += Math.cos(p.angle) * p.speed;
+  p.y += Math.sin(p.angle) * p.speed;
+  p.life--;
 
-    // Draw the segment
-    ctx.beginPath();
-    ctx.moveTo(oldX, oldY);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
+  // Alternate warm/cool per particle for depth
+  const warm = i % 3 !== 0;
+    ctx.strokeStyle = warm
+    ? `rgba(${mycelWarm}, 0.22)`
+    : `rgba(${mycelCool}, 0.35)`;
 
-    // Occasional branching (spawns a temporary child)
-    if (Math.random() < 0.005 && sanctuaryMyceliumParticles.length < 15) {
-      sanctuaryMyceliumParticles.push({
-        x: p.x,
-        y: p.y,
-        angle: p.angle + (Math.random() > 0.5 ? 0.8 : -0.8), // Branch off at an angle
-        speed: p.speed * 0.8,
-        life: 200
-      });
-    }
+  // Occasional bright node pulse
+  if (Math.random() < 0.003) {
+    ctx.strokeStyle = `rgba(${mycelCool}, 0.65)`;
+    ctx.lineWidth = 1.6;
+  } else {
+    ctx.lineWidth = 1.1;
+  }
 
-    // Death and rebirth
-    if (p.life <= 0 || p.x < -10 || p.x > w + 10 || p.y < -10 || p.y > h + 10) {
-      if (i >= SANCTUARY_MYCEL_MAX) {
-        // If it's a child branch, let it die
-        sanctuaryMyceliumParticles.splice(i, 1);
-        i--;
-      } else {
-        // If it's a root spore, respawn it somewhere else
-        p.x = Math.random() * w;
-        p.y = Math.random() * h;
-        p.life = 500 + Math.random() * 1000;
-      }
+  ctx.beginPath();
+  ctx.moveTo(oldX, oldY);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+
+  // Branching -- raised cap from 15 to 40
+  if (Math.random() < 0.005 && sanctuaryMyceliumParticles.length < 40) {
+    sanctuaryMyceliumParticles.push({
+      x: p.x,
+      y: p.y,
+      angle: p.angle + (Math.random() > 0.5 ? 0.8 : -0.8),
+      speed: p.speed * 0.8,
+      life: 200
+    });
+  }
+
+  if (p.life <= 0 || p.x < -10 || p.x > w + 10 || p.y < -10 || p.y > h + 10) {
+    if (i >= SANCTUARY_MYCEL_MAX) {
+      sanctuaryMyceliumParticles.splice(i, 1);
+      i--;
+    } else {
+      p.x = Math.random() * w;
+      p.y = Math.random() * h;
+      p.life = 500 + Math.random() * 1000;
     }
   }
+}
 sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
 }
 
 function startSanctuaryRealm(){
   sanctuaryAmbienceActive = true;
+  const _ms = getComputedStyle(document.documentElement);
+mycelWarm = _ms.getPropertyValue('--mycel-warm').trim() || mycelWarm;
+mycelCool = _ms.getPropertyValue('--mycel-cool').trim() || mycelCool;
   const c = document.getElementById('sanctuary-mycelium-canvas');
   const panel = document.getElementById('view-sanctuary');
   if (c && panel && !sanctuaryPrefersReducedMotion()) {
