@@ -477,14 +477,10 @@ button {
   font-size: 10px; letter-spacing: 2px; font-weight: 800; color: var(--accent);
   text-transform: uppercase; pointer-events: none; text-align: center;
 }
-#view-abyss { padding-top: 48px; position: relative; }
+/* No position:relative here — same pitfall as Sanctuary: it becomes the abs canvas's
+   containing block and breaks % / calc height; canvas then paints a strip or nothing. */
+#view-abyss { padding-top: 48px; }
 #view-abyss #abyss-canvas {
-  top: 48px;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: auto;
   z-index: 1;
   touch-action: none;
 }

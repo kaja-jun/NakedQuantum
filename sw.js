@@ -2,8 +2,8 @@
 /* global caches */
 /* global self */
 /** Bump this string whenever app.js / app.css / index shell meaningfully change so old CacheStorage buckets are dropped on activate. */
-const CACHE = "nq-v6";
-const ASSET_Q = "?v=nq-v6";
+const CACHE = "nq-v7";
+const ASSET_Q = "?v=nq-v7";
 const FILES = [
   "/",
   "/index.html",
