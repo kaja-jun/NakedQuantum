@@ -676,6 +676,55 @@ let isWatcherReady = false;
 let watcherQueue = [];
 let isWatcherProcessing = false;
 let isRunningPass = false;
+let watcherModelLoading = false;
+let watcherInitFailed = false;
+let _watcherDotAnchor = -1;
+let _watcherHasLinks = false;
+let _watcherCurrentLinks = [];
+
+function isWatcherSoupContext() {
+  return currentView === 'soup';
+}
+
+/** Soup-only LED strip + cluster button (resonance when links exist). */
+function syncWatcherLedStrip() {
+  const strip = document.getElementById('watcher-led-strip');
+  const cluster = document.getElementById('watcher-led-cluster');
+  const ledA = document.getElementById('watcher-led-active');
+  const ledI = document.getElementById('watcher-led-idle');
+  const ledO = document.getElementById('watcher-led-offline');
+  if (!strip || !ledA || !ledI || !ledO) return;
+  ledA.classList.remove('is-lit', 'is-pulse');
+  ledI.classList.remove('is-lit', 'is-pulse');
+  ledO.classList.remove('is-lit', 'is-pulse');
+  if (!isWatcherSoupContext()) {
+    strip.classList.add('hidden');
+    if (cluster) cluster.disabled = true;
+    return;
+  }
+  strip.classList.remove('hidden');
+  const indexing = !!(watcherModelLoading || isWatcherProcessing || isRunningPass);
+  const onlineReady = !!(isWatcherReady && watcherEmbedder);
+  if (!watcherDB) {
+    ledO.classList.add('is-lit');
+  } else if (watcherInitFailed && !watcherModelLoading && !onlineReady) {
+    ledO.classList.add('is-lit');
+  } else if (indexing) {
+    ledA.classList.add('is-lit', 'is-pulse');
+  } else if (onlineReady) {
+    ledI.classList.add('is-lit');
+  } else {
+    ledO.classList.add('is-lit');
+  }
+  if (cluster) {
+    const canOpen = !!(_watcherHasLinks && !indexing);
+    cluster.disabled = !canOpen;
+  }
+}
+
+function hideWatcherDot() {
+  syncWatcherLedStrip();
+}
 
 function openWatcherDB() {
   return new Promise((resolve, reject) => {
@@ -724,18 +773,18 @@ function watcherCosine(a, b) {
 }
 
 function showWatcherLoading() {
-  const dot = document.getElementById('watcher-loading-dot');
-  if (dot) { dot.style.display = 'block'; void dot.offsetWidth; dot.classList.add('visible'); }
+  watcherModelLoading = true;
+  watcherInitFailed = false;
+  syncWatcherLedStrip();
 }
 
 function hideWatcherLoading() {
-  const dot = document.getElementById('watcher-loading-dot');
-  if (dot) { dot.classList.remove('visible'); setTimeout(() => { dot.style.display = 'none'; }, 1000); }
+  watcherModelLoading = false;
+  syncWatcherLedStrip();
 }
 
 function updateWatcherLoading(loaded, total) {
-  const dot = document.getElementById('watcher-loading-dot');
-  if (dot) dot.style.opacity = 0.3 + (loaded / Math.max(total, 1)) * 0.7;
+  syncWatcherLedStrip();
 }
 
 async function updateWatcherStatusUI() {
@@ -765,6 +814,7 @@ async function updateWatcherStatusUI() {
     text.textContent = 'Watching';
     if (detail) detail.textContent = embs.length + ' Engrams · ' + links.length + ' Connections · threshold met';
   }
+  syncWatcherLedStrip();
 }
 
 async function shouldWatcherShow() {
@@ -777,12 +827,15 @@ async function shouldWatcherShow() {
 
 async function initWatcher() {
   try {
+    watcherInitFailed = false;
     watcherDB = await openWatcherDB();
     // Fast path -- model already loaded, just reconnect
     if (watcherEmbedder) {
       isWatcherReady = true;
       updateWatcherStatusUI();
-      scheduleWatcherPass();
+      await refreshWatcherDot();
+      if (isWatcherSoupContext()) scheduleWatcherPass();
+      syncWatcherLedStrip();
       return;
     }
     showWatcherLoading();
@@ -803,9 +856,10 @@ async function initWatcher() {
 localStorage.removeItem('nq_watcher_offline_since');
 const firstAwakening = !localStorage.getItem('nq_watcher_awakened');
 if (firstAwakening) {
-  showToast('◈ The Watcher has awakened');
+  if (isWatcherSoupContext()) showToast('◈ The Watcher has awakened');
   // One-time reindex of all existing content
   setTimeout(async () => {
+    if (!isWatcherSoupContext()) return;
     const discs = await getDiscourses();
     let count = 0;
     for (const d of discs) {
@@ -814,30 +868,37 @@ if (firstAwakening) {
         count++;
       }
     }
-    if (count > 0) showToast('◈ Indexing ' + count + ' engrams...');
+    if (count > 0 && isWatcherSoupContext()) showToast('◈ Indexing ' + count + ' engrams...');
   }, 5000);
 }
+if (firstAwakening) localStorage.setItem('nq_watcher_awakened', '1');
 hideWatcherLoading();
 updateWatcherStatusUI();
-scheduleWatcherPass();
+await refreshWatcherDot();
+if (isWatcherSoupContext()) scheduleWatcherPass();
+syncWatcherLedStrip();
   } catch (err) {
+    watcherInitFailed = true;
     console.warn('[Watcher] Init Failed:', err);
     hideWatcherLoading();
+    syncWatcherLedStrip();
   }
 }
 
 function queueWatcherEmbed(id, title, body, itemType) {
   if (!isWatcherReady) return;
   watcherQueue.push({ id, title, body, itemType, lastSeenActive: Date.now() });
-  if (!isWatcherProcessing) processWatcherQueue();
+  if (!isWatcherProcessing && isWatcherSoupContext()) processWatcherQueue();
 }
 
 async function processWatcherQueue() {
   if (isWatcherProcessing || watcherQueue.length === 0) return;
+  if (!isWatcherSoupContext()) return;
   isWatcherProcessing = true;
   while (watcherQueue.length > 0) {
         // If Watcher was torn down mid-yield (e.g. Guardian view entry),
     // leave remaining items in queue so they are processed after reinit.
+    if (!isWatcherSoupContext()) break;
     if (!isWatcherReady || !watcherEmbedder) break;
     const item = watcherQueue.shift();
     try { await embedDiscourseMain(item.id, item.title, item.body, item.itemType, item.lastSeenActive); }
@@ -855,6 +916,7 @@ async function processWatcherQueue() {
   updateWatcherStatusUI();
   refreshWatcherDot(); // NEW
   isWatcherProcessing = false;
+  syncWatcherLedStrip();
 }
 
 async function embedDiscourseMain(id, title, body, itemType, lastSeenActive) {
@@ -882,6 +944,7 @@ async function embedDiscourseMain(id, title, body, itemType, lastSeenActive) {
 }
 
 async function runSimilarityPassMain() {
+  if (!isWatcherSoupContext()) return;
   if (isRunningPass) return;
   isRunningPass = true;
   try {
@@ -932,11 +995,13 @@ async function runSimilarityPassMain() {
   refreshWatcherDot();
     } finally {
     isRunningPass = false;
+    syncWatcherLedStrip();
   }
 }
 
 function scheduleWatcherPass() {
   if (!isWatcherReady) return;
+  if (!isWatcherSoupContext()) return;
   const lastRun = parseInt(localStorage.getItem('nq_watcher_last_pass') || '0');
   const hoursSince = (Date.now() - lastRun) / 3600000;
   if (hoursSince > W_PASS_COOLDOWN_HOURS) {
@@ -944,25 +1009,19 @@ function scheduleWatcherPass() {
   }
 }
 
-/* ── WATCHER GOLD DOT UI ───────────────────────────────────── */
-let _watcherDotAnchor = -1;
-let _watcherHasLinks = false;
-let _watcherCurrentLinks = [];
+/* ── WATCHER LED strip (Soup only) ─────────────────────────── */
 
 async function refreshWatcherDot() {
-  if (!watcherDB) return;
-  const dot = document.getElementById('watcher-dot');
-  if (!dot) return;
+  if (!watcherDB) {
+    _watcherCurrentLinks = [];
+    _watcherHasLinks = false;
+    syncWatcherLedStrip();
+    return;
+  }
   const allLinks = await wdb.getAll('links');
   _watcherCurrentLinks = allLinks;
   _watcherHasLinks = allLinks.length > 0;
-  
-  // It pulses if it has insights, OR if it's currently crunching tensors
-  if (_watcherHasLinks || isWatcherProcessing) {
-    dot.classList.add('pulsing');
-  } else {
-    dot.classList.remove('pulsing');
-  }
+  syncWatcherLedStrip();
 }
 
 async function openWatcherPanel() {
@@ -970,7 +1029,7 @@ async function openWatcherPanel() {
   const list = document.getElementById('watcher-links-list');
   if (!panel || !list) return;
   list.innerHTML = '';
-  if (!_watcherCurrentLinks.length) { hideWatcherDot(); return; }
+  if (!_watcherCurrentLinks.length) { syncWatcherLedStrip(); return; }
   const top5 = [..._watcherCurrentLinks].sort((a,b) => b.score - a.score).slice(0,5);
   for (const link of top5) {
     const discA = await getDiscourse(link.a);
@@ -985,8 +1044,9 @@ async function openWatcherPanel() {
     item.addEventListener('click', () => { closeWatcherPanel(); openDiscourse(link.a); });
     list.appendChild(item);
   }
-    const dot = document.getElementById('watcher-dot');
-  const dotRect = dot?.getBoundingClientRect();
+  if (!list.childElementCount) { syncWatcherLedStrip(); return; }
+    const anchor = document.getElementById('watcher-led-cluster');
+  const dotRect = anchor?.getBoundingClientRect();
   if (dotRect) {
     const panelW = 260;
     const panelH = 200;
@@ -2338,13 +2398,12 @@ function goHome(){
     showPanel('view-soup');
     renderTableView();
     mt.textContent='◈ HOME';
+    mt.style.opacity='1';
+    setTimeout(()=>{mt.style.opacity='0';},1200);
   } else {
     showPanel('view-sanctuary');
     renderSanctuaryView();
-    mt.textContent='◈ SANCTUARY';
   }
-  mt.style.opacity='1';
-  setTimeout(()=>{mt.style.opacity='0';},1200);
 }
 
 /* APP MODE */
@@ -2355,12 +2414,12 @@ function switchAppMode(mode){
     showPanel('view-soup');
     mt.textContent='◈ THE SOUP';
     void renderTableView();
+    mt.style.opacity='1';
+    setTimeout(()=>{mt.style.opacity='0';},1500);
   } else {
     showPanel('view-sanctuary');
     renderSanctuaryView();
-    mt.textContent='◈ THE SANCTUARY';
   }
-  mt.style.opacity='1';setTimeout(()=>{mt.style.opacity='0';},1500);
   renderDefaultBar(mode);
 }
 
@@ -2527,6 +2586,12 @@ function showPanel(id){
 
   if (id === 'view-sanctuary') startSanctuaryRealm();
   else stopSanctuaryRealm();
+
+  syncWatcherLedStrip();
+  if (id === 'view-soup' && isWatcherReady) {
+    processWatcherQueue();
+    scheduleWatcherPass();
+  }
 }
 
 /* HEADER BUTTONS */
@@ -2536,8 +2601,8 @@ function updateHeaderButtons(){
   c.className = 'header-actions';
   if (currentMode === 'soup') {
     c.innerHTML=
-      '<button class="hdr-btn" id="hdr-guardian" style="font-size:20px;">&#43065;</button>'+
       '<button class="hdr-btn" id="hdr-sanctuary" title="The Sanctuary">&#8962;</button>'+
+      '<button class="hdr-btn" id="hdr-guardian" style="font-size:20px;">&#43065;</button>'+
       '<button class="hdr-btn" id="hdr-abyss" title="Abyss">&#9689;</button>'+
       '<button class="hdr-btn" id="hdr-deep-soup" title="Deep Soup">꩜</button>'+
       '<button class="hdr-btn" id="hdr-soup-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Soup menu" aria-expanded="false" aria-controls="soup-drawer-panel">⋯</button>';
@@ -8034,11 +8099,11 @@ document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key==="s"){
 document.getElementById('view-soup').addEventListener('scroll',resetBottomBarTimer,{passive:true});
 document.getElementById('view-soup').addEventListener('touchstart',resetBottomBarTimer,{passive:true});
 
-document.getElementById('watcher-dot')?.addEventListener('click', openWatcherPanel);
+document.getElementById('watcher-led-cluster')?.addEventListener('click', openWatcherPanel);
 document.addEventListener('click', (e) => {
   const panel = document.getElementById('watcher-panel');
-  const dot = document.getElementById('watcher-dot');
-  if (panel?.classList.contains('visible') && !panel.contains(e.target) && e.target !== dot) {
+  const cluster = document.getElementById('watcher-led-cluster');
+  if (panel?.classList.contains('visible') && !panel.contains(e.target) && e.target !== cluster && !cluster?.contains(e.target)) {
     closeWatcherPanel();
   }
 });

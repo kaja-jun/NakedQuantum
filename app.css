@@ -74,7 +74,71 @@ button {
   background: var(--bg);
   border-bottom-color: var(--border);
 }
-#mode-toast { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent-dim); color: var(--accent); padding: 5px 14px; border-radius: 20px; font-size: 9px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+
+/* Watcher — Soup-only LED strip under header (gold = indexing, green = idle, dim = offline) */
+.nq-watcher-led-strip {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 16px 6px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  z-index: 999;
+}
+.nq-watcher-led-strip.hidden { display: none !important; }
+.nq-watcher-led-strip-inner { display: flex; align-items: center; }
+.nq-watcher-led-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+.nq-watcher-led-cluster:not(:disabled) {
+  cursor: pointer;
+  background: color-mix(in srgb, var(--surface2) 55%, transparent);
+}
+.nq-watcher-led-cluster:not(:disabled):active {
+  opacity: 0.85;
+}
+.nq-watcher-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease, box-shadow 0.25s ease, background 0.2s ease;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.nq-watcher-led--active.is-lit {
+  background: #c8a050;
+  box-shadow: 0 0 10px color-mix(in srgb, #c8a050 55%, transparent), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+.nq-watcher-led--active.is-pulse {
+  animation: watcherLedGoldPulse 1.8s ease-in-out infinite;
+}
+.nq-watcher-led--idle.is-lit {
+  background: #4a8f62;
+  box-shadow: 0 0 8px color-mix(in srgb, #4a8f62 45%, transparent), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+.nq-watcher-led--offline.is-lit {
+  background: #2a2a2c;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  opacity: 0.95;
+}
+@keyframes watcherLedGoldPulse {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.75; filter: brightness(1.15); }
+}
+
+#mode-toast { position: fixed; top: 88px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent-dim); color: var(--accent); padding: 5px 14px; border-radius: 20px; font-size: 9px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
 
 .view-host { flex: 1; position: relative; overflow: hidden; z-index: 1; }
 .view-panel { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; transition: transform 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease; will-change: transform, opacity; }
@@ -568,53 +632,6 @@ button {
 .card-fading .discourse-card-title,
 .card-fading .folder-card-name,
 .card-fading .char-card-name { color: var(--muted) !important; }
-
-/* WATCHER LOADING DOT */
-.watcher-loading-dot {
-  position: fixed;
-  top: 18px;
-  right: 18px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 50%, transparent);
-  z-index: 1010;
-  display: none;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-.watcher-loading-dot.visible {
-  opacity: 0.5;
-  animation: watcherLoadPulse 2s ease-in-out infinite;
-}
-@keyframes watcherLoadPulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
-}
-
-/* THE AMBIENT WATCHER */
-.watcher-dot {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  z-index: 600;
-  pointer-events: none; /* Unclickable now */
-  opacity: 0.15; /* Dim when resting */
-  transition: opacity 1s ease, box-shadow 1s ease;
-}
-.watcher-dot.pulsing {
-  opacity: 0.85;
-  animation: watcherAmbientPulse 4s ease-in-out infinite;
-}
-@keyframes watcherAmbientPulse {
-  0%, 100% { box-shadow: 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent); opacity: 0.4; }
-  50% { box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 80%, transparent), 0 0 4px var(--accent); opacity: 1; }
-}
 
 .watcher-panel {
   position: fixed;

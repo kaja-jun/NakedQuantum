@@ -32,6 +32,15 @@
   <div class="nq-wordmark" id="nq-wordmark">NakedQuantum</div>
   <div class="header-actions" id="header-actions"></div>
 </div>
+<div id="watcher-led-strip" class="nq-watcher-led-strip hidden" role="status" aria-live="polite">
+  <div class="nq-watcher-led-strip-inner">
+    <button type="button" class="nq-watcher-led-cluster" id="watcher-led-cluster" disabled aria-label="Watcher resonance" title="Resonance links">
+      <span class="nq-watcher-led nq-watcher-led--active" id="watcher-led-active" aria-hidden="true"></span>
+      <span class="nq-watcher-led nq-watcher-led--idle" id="watcher-led-idle" aria-hidden="true"></span>
+      <span class="nq-watcher-led nq-watcher-led--offline" id="watcher-led-offline" aria-hidden="true"></span>
+    </button>
+  </div>
+</div>
 <div id="mode-toast"></div>
 
 <div class="view-host">
@@ -642,8 +651,6 @@
 <div class="bottom-bar" id="bottom-bar">
 <div class="bottom-bar-scroll" id="bottom-bar-scroll"></div>
 </div>
-<div class="watcher-loading-dot" id="watcher-loading-dot"></div>
-<div class="watcher-dot" id="watcher-dot"></div>
 <div class="watcher-panel" id="watcher-panel">
 <div class="watcher-panel-title">◈ Resonance</div>
 <div id="watcher-links-list"></div>
