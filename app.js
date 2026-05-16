@@ -1993,7 +1993,7 @@ async function deleteMosaicTile(dId){const t=await getMosaicTile(dId);if(t)await
 
 async function getBacklink(dId){const l=await dbGetByIndex("cosm_backlinks","discourse_id",dId);return l.length>0?l[0]:null;}
 
-/* BURN DISC */
+/* ENGRAM — Sanctuary chats → Soup (modal: #burn-disc-modal; confirm: confirmBurnDisc) */
 async function openBurnDiscModal(){
   const chars=await getCharacters();
   const active=chars.filter(c=>!c.isDeleted);
@@ -2027,7 +2027,7 @@ async function confirmBurnDisc(){
   const lastBurn=parseInt(localStorage.getItem('lastBurn_'+charId)||'0');
   const newMessages=history.filter(h=>(h.created_at||0)>lastBurn);
   if(!newMessages.length){
-    showToast("No new chapters since last burn ◆");
+    showToast("No new chapters since last Engram ◆");
     closeOverlay();return;
   }
   const raw_text=newMessages.map(h=>
@@ -3362,6 +3362,7 @@ function openCreateMenu(card) {
     { glyph: '▤', label: 'Folder', action: () => openFolderModal() },
     { glyph: '◇', label: 'Spark', action: () => openQuickCapture() },
     { glyph: '○', label: 'Chronicle', action: () => handleNewChronicle() },
+    { glyph: '⌬', label: 'Engram', action: () => openBurnDiscModal() },
     { glyph: '◈', label: 'Discourse', action: () => handleNewDiscourse() },
   ];
 
@@ -3376,7 +3377,7 @@ function openCreateMenu(card) {
   let left = rect.left;
   let top = rect.bottom + 6;
   if(left + 180 > window.innerWidth - 10) left = window.innerWidth - 190;
-  if(top + 200 > window.innerHeight) top = rect.top - 210;
+  if(top + 260 > window.innerHeight) top = rect.top - 268;
   menu.style.left = left + 'px';
   menu.style.top = top + 'px';
 
