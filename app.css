@@ -12,6 +12,12 @@
   --code-bg: #0d0d0b;
   --font-serif: Georgia, serif;
 }
+
+/* Realm skin mount: `document.documentElement.dataset.realm` is synced from `showPanel`
+   in app.js (soup | sanctuary | abyss | deep-soup | data | guardian | lighthouse).
+   V1 sets the attribute only; add selectors under html[data-realm="…"] when theming.
+   Lighthouse editor body stays unthemed until the TipTap pass; the flag is for hooks. */
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
 button { cursor: pointer; -webkit-appearance: none; appearance: none; touch-action: manipulation; }
