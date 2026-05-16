@@ -4,7 +4,7 @@
 
 ### Overview
 
-NakedQuantum is a zero-dependency, single-file PWA. All application code lives in `index.html` (~9 300 lines of inline HTML/CSS/JS), with `cartographer.js` (NLP pipeline) and `sw.js` (service worker) as supporting files. There is no build system, no bundler, no package manager dependencies, and no backend — everything runs in the browser.
+NakedQuantum is a zero-dependency PWA with no build step. The **UI shell** is `index.html` (markup only); **styles** live in `app.css` and **application logic** in `app.js`, with `cartographer.js` (NLP pipeline) and `sw.js` (service worker) as supporting files. There is no bundler, no package manager dependencies, and no backend — everything runs in the browser.
 
 ### Running the dev server
 
@@ -35,7 +35,7 @@ if (typeof initializeApp === 'function') initializeApp();
 No linter is configured in the repo. To validate the standalone JS files:
 
 ```bash
-jshint --config <(echo '{"esversion":11,"browser":true}') cartographer.js sw.js
+jshint --config <(echo '{"esversion":11,"browser":true}') app.js cartographer.js sw.js
 ```
 
 `htmlhint index.html` reports one tag-pair warning that appears to be a false positive.
@@ -59,7 +59,7 @@ Data is stored in-browser via OPFS-backed SQLite (sql.js WASM loaded from CDN). 
 - **Minimum-Dependency Mandate**: This app is strictly vanilla JS. Never install npm packages, bundlers, or external libraries. Always ask my permisson if you have good reason to add. Use native web APIs only.
 - **Budget Lock**: Do not execute autonomous multi-file editing loops. Propose a change, write it once, and stop.
 - **Targeted Context**: Rely strictly on the explicit files targeted by the user (e.g., using the `@` symbol). Do not perform massive codebase searches for minor tweaks.
-- **Blueprint First**: Always explain your logical plan in plain English and wait for user approval before modifying `index.html`, `cartographer.js`, or `sw.js`.
+- **Blueprint First**: Always explain your logical plan in plain English and wait for user approval before modifying `index.html`, `app.css`, `app.js`, `cartographer.js`, or `sw.js`.
 
 ### 🧠 The Co-Creator Persona & Interaction Protocol
 
