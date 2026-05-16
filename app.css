@@ -21,18 +21,22 @@
 /* Sanctuary realm — tune Moonlit here; active while data-realm=sanctuary (home, forge,
    chat, memory, persona, IE, modals, toast, headers). Components use var(--*) below. */
 html[data-realm="sanctuary"] {
-  --bg: #050607;
-  --text: #dfe6e8;
-  --muted: #8b96a0;
-  --accent: #a3b8c2;
-  --accent-dim: #6d7f88;
-  --border: #2a3136;
-  --surface: #0e1113;
-  --surface2: #12171a;
-  --surface3: #161a1d;
-  --code-bg: #080a0c;
-  --danger: #8a3030;
-  --on-accent: #050607;
+ --bg: #050607;
+ --text: #dfe6e8;
+ --muted: #8b96a0;
+ --accent: #4ecb8a;
+ --accent-dim: #2d8a5a;
+ --border: #2a3136;
+ --surface: #0e1113;
+ --surface2: #12171a;
+ --surface3: #161a1d;
+ --code-bg: #080a0c;
+ --danger: #8a3030;
+ --on-accent: #050607;
+ --glow: rgba(78, 203, 138, 0.10);
+ --glow-strong: rgba(78, 203, 138, 0.30);
+ --mycel-warm: 78, 180, 120;
+ --mycel-cool: 78, 203, 138;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
