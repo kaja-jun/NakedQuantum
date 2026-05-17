@@ -54,7 +54,14 @@ button {
 
 .nq-wordmark { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; opacity: 0.8; cursor: pointer; user-select: none; -webkit-user-select: none; padding: 8px 0; transition: opacity 0.15s; }
 .nq-wordmark.pressing { opacity: 0.3; }
-.nq-wordmark.nq-wordmark--sanctuary-realm { color: var(--accent); letter-spacing: 2px; }
+.nq-wordmark.nq-wordmark--sanctuary-realm { 
+  position: absolute; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  color: var(--accent); 
+  letter-spacing: 2px; 
+  pointer-events: none; /* Makes it a title, not a button */
+}
 .header-actions.header-actions-sanctuary { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 #hdr-sanctuary-home.hdr-btn,
 #hdr-sanctuary-menu.hdr-btn {
@@ -67,7 +74,11 @@ button {
   background: var(--surface);
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
-.header-actions { display: flex; align-items: center; gap: 8px; }
+.header-left, .header-right { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+}
 .hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 .hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
 #nq-header.nq-header--sanctuary-realm {
