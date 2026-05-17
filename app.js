@@ -2849,19 +2849,15 @@ function updateHeaderButtons(){
       if (d && d.classList.contains('open')) closeSoupDrawer();
       else openSoupDrawer();
     };
-    } else if (currentMode === 'sanctuary' && currentView === 'sanctuary') {
+  } else if (currentMode === 'sanctuary' && currentView === 'sanctuary') {
     c.className = 'header-actions header-actions-sanctuary';
-    // Home button moves to wordmark position — title centres naturally
-    const wm = document.getElementById('nq-wordmark');
-    if (wm) {
-      wm.innerHTML = '<button type="button" class="hdr-btn" id="hdr-sanctuary-home" title="Back to Soup" aria-label="Back to Soup" style="font-size:18px;">⌂</button>';
-      document.getElementById('hdr-sanctuary-home').onclick = function () {
-        closeSanctuaryDrawer();
-        switchAppMode('soup');
-      };
-    }
     c.innerHTML =
+      '<button type="button" class="hdr-btn" id="hdr-sanctuary-home" title="Back to Soup" aria-label="Back to Soup">⌂</button>' +
       '<button type="button" class="hdr-btn" id="hdr-sanctuary-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer-panel">⋯</button>';
+    document.getElementById('hdr-sanctuary-home').onclick = function () {
+      closeSanctuaryDrawer();
+      switchAppMode('soup');
+    };
     document.getElementById('hdr-sanctuary-menu').onclick = function () {
       const d = document.getElementById('sanctuary-drawer');
       if (d && d.classList.contains('open')) closeSanctuaryDrawer();
