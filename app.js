@@ -423,7 +423,7 @@ class FF {
       });
     }
     if (this.p.length > this.d) this.p.splice(this.d);
-        var _gr = null;
+            var _gr = null;
     if (guardianInvokeActive) {
       var _gs = document.getElementById('guardian-invoke-strip');
       if (_gs && _gs.classList.contains('visible')) _gr = _gs.getBoundingClientRect();
@@ -432,8 +432,18 @@ class FF {
       p.x += p.vx;
       p.y += p.vy;
       if (_gr && _gr.width > 0) {
-        if (gStrip && gStrip.classList.contains('visible')) {
-          var gr = gStrip.getBoundingClientRect();
+        var tgx = _gr.left + _gr.width * 0.5;
+        var tgy = _gr.top + _gr.height * 0.5;
+        var gdx = tgx - p.x;
+        var gdy = tgy - p.y;
+        var glen = Math.sqrt(gdx * gdx + gdy * gdy);
+        if (glen > 60) {
+          p.x += (gdx / glen) * 0.3;
+          p.y += (gdy / glen) * 0.3;
+        } else {
+          p.vx *= 0.88;
+          p.vy *= 0.88;
+        }
           if (gr.width > 0 && gr.height > 0) {
             var tgx = gr.left + gr.width * 0.5;
             var tgy = gr.top + gr.height * 0.5;
