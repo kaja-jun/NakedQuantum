@@ -7241,7 +7241,7 @@ if(voidedDiscs.length > 0) {
   const vl = document.createElement('div'); 
   vl.className = 'cards-section-label'; 
   vl.style.color = '#ff6060';
-  vl.textContent = '◌ Scattered Entropy (The Void)'; 
+  vl.textContent = 'Decayed Memories - Void Entropy'; 
   surface.appendChild(vl);
   
   const vg = document.createElement('div'); 
