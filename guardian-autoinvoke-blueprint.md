@@ -39,7 +39,7 @@ Fireflies drift toward it naturally
         ↓
 User taps → enters Guardian realm (existing pipeline)
 User dismisses → logged, layout springs back
-User ignores → auto-dissolves after 6hrs, logged
+User ignores → auto-dissolves after 6 minutes, logged
         ↓
 guardian_logs entry created either way
 ```
@@ -410,7 +410,7 @@ async function checkAndShowGuardianInvoke() {
   // Log to guardian_logs
   await logGuardianAutoInvoke(observation, trigger.triggeredBy, 'surfaced');
 
-  // Auto-dissolve after 6 hours
+  // Auto-dissolve after 6 minutes (typo in earlier draft said hours)
   guardianInvokeTimer = setTimeout(() => {
     dismissGuardianInvoke('dissolved');
   }, 6 * 60 * 60 * 1000);
