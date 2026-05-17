@@ -2854,7 +2854,7 @@ function updateHeaderButtons(){
     // Home button moves to wordmark position — title centres naturally
     const wm = document.getElementById('nq-wordmark');
     if (wm) {
-      wm.innerHTML = '<button type="button" class="hdr-btn" id="hdr-sanctuary-home" title="Back to Soup" aria-label="Back to Soup" style="font-size:18px;">⌂</button>'<span style="position:absolute;left:0;right:0;text-align:center;pointer-events:none;letter-spacing:2px;font-size:11px;">THE SANCTUARY</span>';
+      wm.innerHTML = '<button type="button" class="hdr-btn" id="hdr-sanctuary-home" title="Back to Soup" aria-label="Back to Soup" style="font-size:18px;">⌂</button>';
       document.getElementById('hdr-sanctuary-home').onclick = function () {
         closeSanctuaryDrawer();
         switchAppMode('soup');
