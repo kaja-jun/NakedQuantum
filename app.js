@@ -43,7 +43,7 @@ let modeToastTimer = null;
 let deepMapperLoadSuppressed = false;
 let deepMapperSuppressTimer = null;
 
-/* SANCTUARY REALM — mycelium, organic branches, drawer */
+/* SANCTUARY REALM -- mycelium, organic branches, drawer */
 let sanctuaryAmbienceActive = false;
 let sanctuaryMyceliumRaf = null;
 let sanctuaryMyceliumResizeObs = null;
@@ -365,14 +365,14 @@ function savePersonaRoles(roles){
   localStorage.setItem('nq_persona_roles',JSON.stringify(roles));
 }
 
-/** Guardian Soup invoke strip — timer + active flag (declared before FF so RAF can read safely at boot). */
+/** Guardian Soup invoke strip -- timer + active flag (declared before FF so RAF can read safely at boot). */
 var guardianInvokeTimer = null;
 var guardianInvokeActive = false;
 var guardianInvokeLastTriggerType = null;
 /** Auto-dismiss strip after this many ms (Batch 3 typo: minutes, not hours). */
 var GUARDIAN_INVOKE_STRIP_DISSOLVE_MS = 6 * 60 * 1000;
 
-/* FIREFLY — Soup-only atmosphere (canvas is fixed; off-Soup we stop drawing so it never bleeds through) */
+/* FIREFLY -- Soup-only atmosphere (canvas is fixed; off-Soup we stop drawing so it never bleeds through) */
 class FF {
   constructor() {
     this.canvas = document.getElementById('firefly-canvas');
@@ -443,21 +443,8 @@ class FF {
         } else {
           p.vx *= 0.88;
           p.vy *= 0.88;
-        }
-          if (gr.width > 0 && gr.height > 0) {
-            var tgx = gr.left + gr.width * 0.5;
-            var tgy = gr.top + gr.height * 0.5;
-            var gdx = tgx - p.x;
-            var gdy = tgy - p.y;
-            var glen = Math.sqrt(gdx * gdx + gdy * gdy);
-              if (glen > 60) {
-              p.x += (gdx / glen) * 0.3;
-              p.y += (gdy / glen) * 0.3;
-            } else {
-              p.vx *= 0.88;
-              p.vy *= 0.88;
-            }
-          }
+        
+          
         }
       }
       p.a += p.p;
@@ -2064,7 +2051,7 @@ async function deleteMosaicTile(dId){const t=await getMosaicTile(dId);if(t)await
 
 async function getBacklink(dId){const l=await dbGetByIndex("cosm_backlinks","discourse_id",dId);return l.length>0?l[0]:null;}
 
-/* ENGRAM — Sanctuary chats → Soup (modal: #burn-disc-modal; confirm: confirmBurnDisc) */
+/* ENGRAM -- Sanctuary chats → Soup (modal: #burn-disc-modal; confirm: confirmBurnDisc) */
 async function openBurnDiscModal(){
   const chars=await getCharacters();
   const active=chars.filter(c=>!c.isDeleted);
@@ -2576,7 +2563,7 @@ function syncDataRealmFromPanel(activePanelId) {
 
 function showPanel(id){
     abyssStop();
-  /* Leaving (or re-entering) realms: always collapse Abyss sheet — a stale `.open` sheet
+  /* Leaving (or re-entering) realms: always collapse Abyss sheet -- a stale `.open` sheet
      kept pointer-events:auto and blocked the canvas on the next visit. */
   abyssCloseSheet();
   const wasSoup = (currentView === 'soup');
@@ -2641,7 +2628,7 @@ function showPanel(id){
   else if(id==='view-sanctuary'){renderDefaultBar('sanctuary');}
   else{hideBottomBar();}
   
-  // Realms that carry their own top chrome — hide global wordmark row
+  // Realms that carry their own top chrome -- hide global wordmark row
   const header = document.getElementById('nq-header') || document.querySelector('.nq-header');
   const edgeGlow = document.getElementById('guardian-edge-glow');
   const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-deep-soup'
@@ -3097,7 +3084,7 @@ function finalizeSoupMeshCreateLast() {
   mesh.appendChild(create);
 }
 
-/** True if mesh already has a folder card for this id (discourse cards also set data-folder-id — ignore those). */
+/** True if mesh already has a folder card for this id (discourse cards also set data-folder-id -- ignore those). */
 function meshAlreadyShowsFolderCard(mesh, folderId) {
   if (!mesh || !folderId) return false;
   return [...mesh.querySelectorAll('.nq-card')].some(
@@ -3256,7 +3243,7 @@ async function focusMeshCard(id, folderId, label) {
   if(createCard) mesh.appendChild(createCard);
   finalizeSoupMeshCreateLast();
 
-  // Haptic — single pulse per focus change
+  // Haptic -- single pulse per focus change
   try { window.webkit?.messageHandlers?.haptic?.postMessage('light'); } catch (e) {}
   if (navigator.vibrate) navigator.vibrate(12);
 
@@ -3741,7 +3728,7 @@ async function buildDiscourseCard(d){
   return card;
 }
 
-/* BREADCRUMB — flex chain: path + current label + descendant folder knots; native title tooltips */
+/* BREADCRUMB -- flex chain: path + current label + descendant folder knots; native title tooltips */
 function focusChainForFolder(targetFolderId, allFolders) {
   if (!targetFolderId) return [];
   const stack = [];
@@ -7014,7 +7001,7 @@ function openDeepSoupView(){
   renderDeepSoupView(); 
 }
 
-function renderDeepSoupBreadcrumb(){ /* removed — local nav + back stack only */ }
+function renderDeepSoupBreadcrumb(){ /* removed -- local nav + back stack only */ }
 
 async function renderDeepSoupView(){
   const surface = document.getElementById('deep-soup-surface');
@@ -7807,7 +7794,7 @@ function dismissGuardianInvoke(reason) {
   void logGuardianAutoInvoke(null, guardianInvokeLastTriggerType, reason);
 }
 
-/** Wire strip tap, dismiss, and timed dissolve. Must run after strip is visible — not blocked by guardian_logs I/O. */
+/** Wire strip tap, dismiss, and timed dissolve. Must run after strip is visible -- not blocked by guardian_logs I/O. */
 function attachGuardianInvokeStripHandlers() {
   if (guardianInvokeTimer) {
     clearTimeout(guardianInvokeTimer);
