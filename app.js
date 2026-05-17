@@ -423,11 +423,15 @@ class FF {
       });
     }
     if (this.p.length > this.d) this.p.splice(this.d);
+        var _gr = null;
+    if (guardianInvokeActive) {
+      var _gs = document.getElementById('guardian-invoke-strip');
+      if (_gs && _gs.classList.contains('visible')) _gr = _gs.getBoundingClientRect();
+    }
     this.p.forEach(p => {
       p.x += p.vx;
       p.y += p.vy;
-      if (guardianInvokeActive) {
-        var gStrip = document.getElementById('guardian-invoke-strip');
+      if (_gr && _gr.width > 0) {
         if (gStrip && gStrip.classList.contains('visible')) {
           var gr = gStrip.getBoundingClientRect();
           if (gr.width > 0 && gr.height > 0) {
@@ -436,9 +440,12 @@ class FF {
             var gdx = tgx - p.x;
             var gdy = tgy - p.y;
             var glen = Math.sqrt(gdx * gdx + gdy * gdy);
-            if (glen > 60) {
+              if (glen > 60) {
               p.x += (gdx / glen) * 0.3;
               p.y += (gdy / glen) * 0.3;
+            } else {
+              p.vx *= 0.88;
+              p.vy *= 0.88;
             }
           }
         }
