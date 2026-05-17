@@ -14,11 +14,7 @@
   --on-accent: #000000;
 }
 
-/* Realm: `data-realm` on <html> (app.js). Sanctuary Moonlit — edit only
-   html[data-realm="sanctuary"] { … }; shared UI uses var(--accent), var(--border), etc.
-   Lighthouse editor body: separate pass. */
-
-/* Sanctuary realm — tune Moonlit here; active while data-realm=sanctuary (home, forge,
+/* Sanctuary realm — active while data-realm=sanctuary (home, forge,
    chat, memory, persona, IE, modals, toast, headers). Components use var(--*) below. */
 html[data-realm="sanctuary"] {
  --bg: #050607;
@@ -37,6 +33,17 @@ html[data-realm="sanctuary"] {
  --glow-strong: rgba(78, 203, 138, 0.30);
  --mycel-warm: 78, 180, 120;
  --mycel-cool: 78, 203, 138;
+}
+
+html[data-realm="sanctuary"] #view-ie.ie-realm-view .btn-back-table,
+html[data-realm="sanctuary"] #view-ie.ie-realm-view #btn-ie-back {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+html[data-realm="sanctuary"] #view-ie.ie-realm-view .cosm-input {
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--text);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -1410,7 +1417,7 @@ button {
 }
 #view-ie.ie-realm-view .ie-card::before {
   background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 35%, transparent), transparent);
-  opacity: 0.35;
+  opacity: 0.55;
 }
 #view-ie.ie-realm-view .ie-card-name { color: var(--text); }
 #view-ie.ie-realm-view .ie-card-archetype,
