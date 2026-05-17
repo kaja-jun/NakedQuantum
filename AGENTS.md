@@ -55,7 +55,9 @@ The app functions fully offline without any of these.
 Data is stored in-browser via OPFS-backed SQLite (sql.js WASM loaded from CDN). No external database setup is needed.
 
 ### Token Protection & Collaboration Rules
-
+- **Always make sure to check the blueprint or kaja before move on to next batch.
+- **Always check what is done and what is plan or blueprint said
+- **Blueprint is not absolute, propose changes and inconsistencies to kaja.
 - **Minimum-Dependency Mandate**: This app is strictly vanilla JS. Never install npm packages, bundlers, or external libraries. Always ask my permisson if you have good reason to add. Use native web APIs only.
 - **Budget Lock**: Do not execute autonomous multi-file editing loops. Propose a change, write it once, and stop.
 - **Targeted Context**: Rely strictly on the explicit files targeted by the user (e.g., using the `@` symbol). Do not perform massive codebase searches for minor tweaks.
