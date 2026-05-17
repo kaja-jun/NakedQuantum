@@ -7761,15 +7761,61 @@ function dismissGuardianInvoke(reason) {
   void logGuardianAutoInvoke(null, guardianInvokeLastTriggerType, reason);
 }
 
+/** Wire strip tap, dismiss, and 6h dissolve. Must run after strip is visible — not blocked by guardian_logs I/O. */
+function attachGuardianInvokeStripHandlers() {
+  if (guardianInvokeTimer) {
+    clearTimeout(guardianInvokeTimer);
+    guardianInvokeTimer = null;
+  }
+  var strip = document.getElementById('guardian-invoke-strip');
+  if (!strip) return;
+  var dismissBtn = document.getElementById('guardian-invoke-dismiss');
+  strip.onclick = null;
+  if (dismissBtn) dismissBtn.onclick = null;
+
+  guardianInvokeTimer = setTimeout(function () {
+    dismissGuardianInvoke('dissolved');
+  }, 6 * 60 * 60 * 1000);
+
+  strip.onclick = function (e) {
+    if (e.target && e.target.closest && e.target.closest('#guardian-invoke-dismiss')) return;
+    strip.onclick = null;
+    var dismissBtn2 = document.getElementById('guardian-invoke-dismiss');
+    if (dismissBtn2) dismissBtn2.onclick = null;
+    dismissGuardianInvoke('entered');
+    void openGuardianView({});
+  };
+
+  if (dismissBtn) {
+    dismissBtn.onclick = function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      var count = parseInt(localStorage.getItem('nq_guardian_dismissed_count') || '0', 10) || 0;
+      try {
+        localStorage.setItem('nq_guardian_dismissed_count', String(count + 1));
+      } catch (e12) {}
+      strip.onclick = null;
+      dismissBtn.onclick = null;
+      dismissGuardianInvoke('dismissed');
+    };
+  }
+}
+
 async function checkAndShowGuardianInvoke() {
   if (NQ_DEV_MODE) {
-    const strip = document.getElementById('guardian-invoke-strip');
-    const textEl = document.getElementById('guardian-invoke-text');
+    if (currentView !== 'soup') return;
+    if (guardianInvokeActive) return;
+    var strip = document.getElementById('guardian-invoke-strip');
+    var textEl = document.getElementById('guardian-invoke-text');
     if (!strip || !textEl) return;
     textEl.textContent = "You have been circling the same thought for weeks. You have not named it yet.";
     strip.style.display = 'block';
-    requestAnimationFrame(() => strip.classList.add('visible'));
+    requestAnimationFrame(function () {
+      strip.classList.add('visible');
+    });
     guardianInvokeActive = true;
+    guardianInvokeLastTriggerType = 'dev_preview';
+    attachGuardianInvokeStripHandlers();
     return;
   }
   if (currentView !== 'soup') return;
@@ -7832,6 +7878,7 @@ async function checkAndShowGuardianInvoke() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fastMapSnapshot: fastMapSnapshot, triggeredBy: triggeredBy })
     });
+    if (!res.ok) return;
     var data = await res.json();
     observation = data.observation;
   } catch (e9) {
@@ -7863,34 +7910,9 @@ async function checkAndShowGuardianInvoke() {
     localStorage.setItem('nq_guardian_dismissed_count', '0');
   } catch (e11) {}
 
-  await logGuardianAutoInvoke(observation, triggeredBy, 'surfaced');
+  attachGuardianInvokeStripHandlers();
 
-  guardianInvokeTimer = setTimeout(function () {
-    dismissGuardianInvoke('dissolved');
-  }, 6 * 60 * 60 * 1000);
-
-  strip.onclick = function (e) {
-    if (e.target && e.target.closest && e.target.closest('#guardian-invoke-dismiss')) return;
-    strip.onclick = null;
-    var dismissBtn2 = document.getElementById('guardian-invoke-dismiss');
-    if (dismissBtn2) dismissBtn2.onclick = null;
-    dismissGuardianInvoke('entered');
-    void openGuardianView({});
-  };
-
-  var dismissBtn = document.getElementById('guardian-invoke-dismiss');
-  if (dismissBtn) {
-    dismissBtn.onclick = function (e) {
-      e.stopPropagation();
-      var count = parseInt(localStorage.getItem('nq_guardian_dismissed_count') || '0', 10) || 0;
-      try {
-        localStorage.setItem('nq_guardian_dismissed_count', String(count + 1));
-      } catch (e12) {}
-      strip.onclick = null;
-      dismissBtn.onclick = null;
-      dismissGuardianInvoke('dismissed');
-    };
-  }
+  void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced');
 }
 
 async function openGuardianView(entryOpts){

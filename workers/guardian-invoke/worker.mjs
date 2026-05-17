@@ -60,7 +60,10 @@ export default {
     }
 
     const url = new URL(request.url);
-    const pathOk = url.pathname === '/guardian-invoke' || url.pathname === '/guardian-invoke/';
+    const pathOk =
+      url.pathname === '/' ||
+      url.pathname === '/guardian-invoke' ||
+      url.pathname === '/guardian-invoke/';
     if (!pathOk) {
       return new Response('Not found', { status: 404 });
     }
