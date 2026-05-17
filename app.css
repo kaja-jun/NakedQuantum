@@ -2421,6 +2421,59 @@ select.cosm-input {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* Guardian auto-invite (post–fast-map geometry; tap opens witness, 6 min dissolve) */
+#guardian-auto-invite {
+  position: fixed;
+  left: 50%;
+  bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 9992;
+  max-width: min(420px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 12px 12px;
+  border-radius: 20px;
+  background: rgba(12, 14, 18, 0.92);
+  border: 1px solid rgba(200, 160, 80, 0.35);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+#guardian-auto-invite:not(.hidden) {
+  opacity: 1;
+  pointer-events: auto;
+}
+#guardian-auto-invite.hidden {
+  display: none !important;
+}
+#guardian-auto-invite-dismiss {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--g-muted, #8a9ba8);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+#guardian-auto-invite-dismiss:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+#guardian-auto-invite-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: rgba(220, 200, 160, 0.95);
+  line-height: 1.45;
+}
 /* GUARDIAN MODEL SELECTOR -- ghost pill */
 .guardian-model-selector { display: none; }
 
