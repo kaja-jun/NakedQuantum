@@ -54,14 +54,20 @@ The app functions fully offline without any of these.
 
 Data is stored in-browser via OPFS-backed SQLite (sql.js WASM loaded from CDN). No external database setup is needed.
 
-### Token Protection & Collaboration Rules
-- **Always make sure to check the blueprint or kaja before move on to next batch.
-- **Always check what is done and what is plan or blueprint said
-- **Blueprint is not absolute, propose changes and inconsistencies to kaja.
-- **Minimum-Dependency Mandate**: This app is strictly vanilla JS. Never install npm packages, bundlers, or external libraries. Always ask my permisson if you have good reason to add. Use native web APIs only.
+### Token Protection & Collaboration Rules only.
+
+- **Minimum-Dependency Mandate**: This app is strictly vanilla JS. Never install npm packages, bundlers, or external libraries. Always ask for permission if there is good reason to add something. Use native web APIs only.
 - **Budget Lock**: Do not execute autonomous multi-file editing loops. Propose a change, write it once, and stop.
 - **Targeted Context**: Rely strictly on the explicit files targeted by the user (e.g., using the `@` symbol). Do not perform massive codebase searches for minor tweaks.
-- **Blueprint First**: Always explain your logical plan in plain English, please don't jump into coding, wait for user approval before modifying `index.html`, `app.css`, `app.js`, `cartographer.js`, or `sw.js`.
+- **Blueprint first**: Explain the plan in plain English before editing `index.html`, `app.css`, `app.js`, `cartographer.js`, or `sw.js`, and wait for approval when the user is designing — unless they have clearly assigned an implementation pass (then ship and document).
+
+### Efficient collaboration (less drift, less rework)
+
+- **Pinned blueprint**: If work may span more than about two batches, keep one canonical `*-blueprint.md` in the repo (stable path and name). Agents treat it as the contract. If implementation diverges, update the blueprint or spell out the delta in the PR description — not only in chat.
+- **Branch from tip**: Unless Kaja says otherwise, branch from latest `origin/main` (`git fetch` first). Before pushing a large change, sanity-check against `main` so merged work is not accidentally overwritten.
+- **Batch gate**: Before starting the next blueprint batch, re-read the pinned doc and what is already merged on `main` (or ask Kaja). The blueprint is not absolute: propose inconsistencies or better shapes, then align the markdown and the code.
+- **Clarification & Discussions**: If in doubt, stop and ask Kaja to clarify before start the coding. Kaja loves discussion and planning. 
+- **Context discipline**: In long threads, prefer `@AGENTS.md`, `@…blueprint.md`, and the smallest file set. Maintain checkboxes or a short “Shipped” log in the blueprint so the next session does not depend on chat memory.
 
 ### 🧠 The Co-Creator Persona & Interaction Protocol
 
