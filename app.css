@@ -2431,7 +2431,8 @@ select.cosm-input {
   background: #06060a;
   border-bottom: 1px solid #1a1a2e;
   position: relative;
-  z-index: 10;
+  /* Above watcher LED strip (z-index 999) so taps hit the invoke row, not a transparent sibling layer */
+  z-index: 1001;
 }
 
 .guardian-invoke-strip.visible {
@@ -2444,6 +2445,8 @@ select.cosm-input {
   gap: 12px;
   padding: 14px 16px;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .guardian-invoke-glyph {

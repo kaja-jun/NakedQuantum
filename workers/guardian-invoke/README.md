@@ -26,11 +26,11 @@ npx wrangler@3 secret put OPENROUTER_API_KEY
 npx wrangler@3 deploy
 ```
 
-Public URL (production): **https://naked-guardian.gazajar.workers.dev/guardian-invoke**
+Public URL (production): **https://naked-guardian.gazajar.workers.dev/** (POST at `/`; `/guardian-invoke` also accepted).
 
 ## Request
 
-`POST /guardian-invoke`  
+`POST /` or `POST /guardian-invoke`  
 `Content-Type: application/json`  
 Body: `{ "fastMapSnapshot": { ... }, "triggeredBy": "orbit" }`  
 Response: `{ "observation": "..." }` or `{ "observation": null }`

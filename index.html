@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NakedQuantum v0.39</title>
   <!-- Bump ?v= with sw.js CACHE when app.js / app.css change materially (PWA CacheStorage + SW precache). -->
-  <link rel="stylesheet" href="app.css?v=nq-v11">
+  <link rel="stylesheet" href="app.css?v=nq-v12">
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js">
 </head>
 <body>
@@ -33,13 +33,6 @@
   <div class="nq-wordmark" id="nq-wordmark">NakedQuantum</div>
   <div class="header-actions" id="header-actions"></div>
 </div>
-<div id="guardian-invoke-strip" class="guardian-invoke-strip" style="display:none;" aria-live="polite">
-  <div class="guardian-invoke-inner">
-    <span class="guardian-invoke-glyph">◆</span>
-    <p class="guardian-invoke-text" id="guardian-invoke-text"></p>
-    <button type="button" class="guardian-invoke-dismiss" id="guardian-invoke-dismiss" aria-label="Dismiss">✕</button>
-  </div>
-</div>
 <div id="watcher-led-strip" class="nq-watcher-led-strip hidden" role="status" aria-live="polite">
   <div class="nq-watcher-led-strip-inner">
     <button type="button" class="nq-watcher-led-cluster" id="watcher-led-cluster" disabled aria-label="Watcher resonance" title="Resonance links">
@@ -47,6 +40,13 @@
       <span class="nq-watcher-led nq-watcher-led--idle" id="watcher-led-idle" aria-hidden="true"></span>
       <span class="nq-watcher-led nq-watcher-led--offline" id="watcher-led-offline" aria-hidden="true"></span>
     </button>
+  </div>
+</div>
+<div id="guardian-invoke-strip" class="guardian-invoke-strip" style="display:none;" aria-live="polite">
+  <div class="guardian-invoke-inner">
+    <span class="guardian-invoke-glyph">◆</span>
+    <p class="guardian-invoke-text" id="guardian-invoke-text"></p>
+    <button type="button" class="guardian-invoke-dismiss" id="guardian-invoke-dismiss" aria-label="Dismiss">✕</button>
   </div>
 </div>
 <div id="mode-toast"></div>
@@ -664,6 +664,6 @@
 <div id="watcher-links-list"></div>
 </div>
 
-  <script src="app.js?v=nq-v11"></script>
+  <script src="app.js?v=nq-v12"></script>
 </body>
 </html>

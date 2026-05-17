@@ -14,12 +14,12 @@ let checkGuardianTrigger = null;
 let db=null,currentMode='soup',currentDiscourseId=null,currentFolderId=null,
 breadcrumbPath=[{id:null,name:'◈  The soup'}],editorMode='write',currentView='table',mosaicCache={},searchQuery='',activeCharId=null,sanctuarySearchQuery='';
 const AKASHIC_URL='https://wandering-violet-964a.gazajar.workers.dev';
-/** Guardian auto-invoke micro-observation (server key). Must match deployed Worker + CORS allowlist. */
-const GUARDIAN_INVOKE_WORKER_URL = 'https://naked-guardian.gazajar.workers.dev/guardian-invoke';
+/** Guardian auto-invoke: POST JSON to worker root. Must match deployed Worker + CORS allowlist. */
+const GUARDIAN_INVOKE_WORKER_URL = 'https://naked-guardian.gazajar.workers.dev/';
 let cosmUserId=localStorage.getItem('cosm_user_id')||crypto.randomUUID();
 localStorage.setItem('cosm_user_id',cosmUserId);
 
-/** BYOK OpenRouter API base from Settings. Guardian micro-invoke uses `workers/guardian-invoke` (server key), not this URL. */
+/** BYOK OpenRouter API base from Settings. Guardian micro-invoke uses the Cloudflare worker URL above (server key), not this URL. */
 function openRouterChatBaseUrl() {
   try {
     return (localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1').trim().replace(/\/+$/, '');
@@ -7762,6 +7762,7 @@ async function checkAndShowGuardianInvoke() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fastMapSnapshot: fastMapSnapshot, triggeredBy: triggeredBy })
     });
+    if (!res.ok) return;
     var data = await res.json();
     observation = data.observation;
   } catch (e9) {
@@ -7793,8 +7794,6 @@ async function checkAndShowGuardianInvoke() {
     localStorage.setItem('nq_guardian_dismissed_count', '0');
   } catch (e11) {}
 
-  await logGuardianAutoInvoke(observation, triggeredBy, 'surfaced');
-
   guardianInvokeTimer = setTimeout(function () {
     dismissGuardianInvoke('dissolved');
   }, 6 * 60 * 60 * 1000);
@@ -7812,6 +7811,7 @@ async function checkAndShowGuardianInvoke() {
   if (dismissBtn) {
     dismissBtn.onclick = function (e) {
       e.stopPropagation();
+      e.preventDefault();
       var count = parseInt(localStorage.getItem('nq_guardian_dismissed_count') || '0', 10) || 0;
       try {
         localStorage.setItem('nq_guardian_dismissed_count', String(count + 1));
@@ -7821,6 +7821,8 @@ async function checkAndShowGuardianInvoke() {
       dismissGuardianInvoke('dismissed');
     };
   }
+
+  void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced');
 }
 
 async function openGuardianView(entryOpts){
