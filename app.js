@@ -528,10 +528,10 @@ function _spawnMoat(w, h) {
   return {
     x: Math.random() * w,
     y: Math.random() * h,
-    r: 1.5 + Math.random() * 2.5,
-    vx: (Math.random() - 0.5) * 0.08,
-    vy: (Math.random() - 0.5) * 0.08,
-    a: Math.random() * 0.15 + 0.03,
+        r: 2 + Math.random() * 3,
+    vx: (Math.random() - 0.5) * 0.25,
+    vy: (Math.random() - 0.5) * 0.25,
+    a: Math.random() * 0.28 + 0.08,
     life: maxL,
     maxLife: maxL
   };
@@ -574,8 +574,8 @@ function _tickMoats() {
     if (Math.random() < 0.01) {
       m.vx += (Math.random() - 0.5) * 0.02;
       m.vy += (Math.random() - 0.5) * 0.02;
-      m.vx = Math.max(-0.12, Math.min(0.12, m.vx));
-      m.vy = Math.max(-0.12, Math.min(0.12, m.vy));
+      m.vx = Math.max(-0.35, Math.min(0.35, m.vx));
+      m.vy = Math.max(-0.35, Math.min(0.35, m.vy));
     }
     if (m.x < 0) m.x = w;
     if (m.x > w) m.x = 0;
