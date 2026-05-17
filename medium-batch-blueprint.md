@@ -178,30 +178,10 @@ strip.onclick = function (e) {
 };
 ```
 
-### Find `openGuardianView` function
+### Find `openGuardianView`
 
-It currently builds the Guardian conversation from scratch. Add seed handling at the top:
-
-```javascript
-async function openGuardianView(opts) {
-  opts = opts || {};
-  var seedObservation = opts.seedObservation || null;
-  // ... rest of existing function unchanged until the part where
-  // the conversation UI is initialised / first message is shown
-```
-
-Then find where the Guardian chat UI is first rendered / where the input is shown. Before the user types anything, if `seedObservation` exists, inject it as the Guardian’s opening statement:
-
-```javascript
-  if (seedObservation) {
-    // Show the observation as Guardian's first message — already said, now continuing
-    appendGuardianMessage(seedObservation, 'guardian'); // use whatever your existing message append function is called
-    // Clear stored observation so next manual summon starts fresh
-    try { localStorage.removeItem('nq_guardian_invoke_observation'); } catch(e) {}
-  }
-```
-
-**Note for Cursor:** Find the exact name of the function that appends a Guardian message to the chat UI — it may be `appendGuardianMessage`, `addGuardianBubble`, or similar. Use that exact function name. Do not create a new one.
+After `resetGuardianUI()`, if a non-empty seed exists (from `opts.seedObservation` or `localStorage`), build the thread + UI as described in the note above, then clear `nq_guardian_invoke_observation`.
+**Shipped approach (no `appendGuardianMessage`):** `resetGuardianUI()` runs first, then `await buildGuardianContext(discs)` fills `guardianThread` as `[{ role: 'user', content: builtCtx }, { role: 'assistant', content: seedText }]` so the first user reply uses the existing `streamGuardianResponse` path with full archive context. The visible `#guardian-response` shows only the observation; `fromHeader: true` clears `nq_guardian_invoke_observation` so manual entry never picks up a stale seed.
 
 -----
 
@@ -225,18 +205,21 @@ When user enters Deep Soup, decayed/void content is counted. Ghostly particles (
 - Color: very dim cool green — `rgba(100, 140, 100, opacity)` — foxfire, not gold
 - They never cluster. They drift apart.
 
-### Step 1 — Count void content on Deep Soup entry
+### Step 1 — Count forgotten / gone discourses on Deep Soup entry
 
-Find `openDeepSoup()` or equivalent function that renders deep soup view. Add:
+Find `openDeepSoupView` (after `showPanel('view-deep-soup')` and `renderDeepSoupView`). There are **no** `decay_level` / `is_void` fields — decay is time-based via `decayPhase(updated_at || created_at)`:
 
 ```javascript
-// Count decayed/void items for moat density
 var allDiscs = (await getDiscourses()).filter(d => !d.deleted_at && !d.isDeleted);
-var decayedCount = allDiscs.filter(d => d.decay_level && d.decay_level > 0.5).length;
-var voidCount = allDiscs.filter(d => d.is_void || d.isVoid).length;
-var moatDensity = Math.min(25, 5 + decayedCount + voidCount); // 5 minimum, 25 maximum
+var moatCount = allDiscs.filter(d => {
+  var phase = decayPhase(d.updated_at || d.created_at || 0);
+  return phase === 'forgotten' || phase === 'gone';
+}).length;
+var moatDensity = Math.min(25, 5 + moatCount);
 startDeepSoupMoats(moatDensity);
 ```
+
+Also call `stopDeepSoupMoats()` when leaving `view-deep-soup` (e.g. in `showPanel` when `currentView === 'deep-soup'` and the next `id` is not Deep Soup). Call `setGuardianMode(false)` from **both** `hideGuardianInvokeStripOnly` and `dismissGuardianInvoke` (not only dismiss).
 
 ### Step 2 — Moat system (add to app.js after firefly class)
 

@@ -737,7 +737,7 @@ button {
 }
 
 /* DEEP SOUP VIEW */
-.deep-soup-view { background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.deep-soup-view { position: relative; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 /* THE LINEAGE NAVIGATOR */
 #lineage-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1500; display: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }

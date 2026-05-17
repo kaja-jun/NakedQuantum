@@ -395,6 +395,15 @@ class FF {
     if (!this.soupActive) return;
     this.d = Math.min(60, 15 + Math.floor(l / 200));
   }
+  setGuardianMode(on) {
+    if (on) {
+      this._preGuardianD = this.d;
+      this.d = 40;
+    } else {
+      this.d = this._preGuardianD != null ? this._preGuardianD : 15;
+      this._preGuardianD = null;
+    }
+  }
   setSoupActive(on) {
     const next = !!on;
     if (this.soupActive === next) return;
@@ -469,6 +478,120 @@ document.addEventListener('visibilitychange', () => {
     if (firefly.soupActive) firefly.a();
   }
 });
+
+/* FORGOTTEN MOATS -- Deep Soup only. Foxfire drift; spawn on enter, die on leave. */
+var _moatRaf = null;
+var _moatParticles = [];
+var _moatCanvas = null;
+var _moatCtx = null;
+var _moatActive = false;
+
+function startDeepSoupMoats(count) {
+  stopDeepSoupMoats();
+  _moatCanvas = document.getElementById('deep-soup-moat-canvas');
+  if (!_moatCanvas) return;
+  _moatCtx = _moatCanvas.getContext('2d');
+  var wrap = document.getElementById('view-deep-soup');
+  if (wrap) {
+    var rr = wrap.getBoundingClientRect();
+    _moatCanvas.width = Math.max(1, Math.floor(rr.width));
+    _moatCanvas.height = Math.max(1, Math.floor(rr.height));
+  } else {
+    _moatCanvas.width = innerWidth;
+    _moatCanvas.height = innerHeight;
+  }
+  _moatActive = true;
+  _moatParticles = [];
+  var n = Math.max(0, Math.min(25, count | 0));
+  for (var i = 0; i < n; i++) {
+    _moatParticles.push(_spawnMoat(_moatCanvas.width, _moatCanvas.height));
+  }
+  _tickMoats();
+}
+
+function stopDeepSoupMoats() {
+  _moatActive = false;
+  if (_moatRaf) {
+    cancelAnimationFrame(_moatRaf);
+    _moatRaf = null;
+  }
+  _moatParticles = [];
+  if (_moatCtx && _moatCanvas) {
+    _moatCtx.clearRect(0, 0, _moatCanvas.width, _moatCanvas.height);
+  }
+  _moatCtx = null;
+  _moatCanvas = null;
+}
+
+function _spawnMoat(w, h) {
+  var maxL = 400 + Math.random() * 500;
+  return {
+    x: Math.random() * w,
+    y: Math.random() * h,
+    r: 1.5 + Math.random() * 2.5,
+    vx: (Math.random() - 0.5) * 0.08,
+    vy: (Math.random() - 0.5) * 0.08,
+    a: Math.random() * 0.15 + 0.03,
+    life: maxL,
+    maxLife: maxL
+  };
+}
+
+function _tickMoats() {
+  if (!_moatActive) {
+    _moatRaf = null;
+    return;
+  }
+  if (!_moatCtx || !_moatCanvas) {
+    _moatRaf = null;
+    return;
+  }
+  if (document.hidden) {
+    _moatRaf = requestAnimationFrame(_tickMoats);
+    return;
+  }
+  var wrap = document.getElementById('view-deep-soup');
+  if (wrap) {
+    var rr = wrap.getBoundingClientRect();
+    var nw = Math.max(1, Math.floor(rr.width));
+    var nh = Math.max(1, Math.floor(rr.height));
+    if (_moatCanvas.width !== nw || _moatCanvas.height !== nh) {
+      _moatCanvas.width = nw;
+      _moatCanvas.height = nh;
+    }
+  }
+  var w = _moatCanvas.width;
+  var h = _moatCanvas.height;
+  _moatCtx.clearRect(0, 0, w, h);
+
+  for (var i = _moatParticles.length - 1; i >= 0; i--) {
+    var m = _moatParticles[i];
+    m.x += m.vx;
+    m.y += m.vy;
+    m.life--;
+    var lifeRatio = m.maxLife > 0 ? m.life / m.maxLife : 0;
+    var alpha = m.a * lifeRatio;
+    if (Math.random() < 0.01) {
+      m.vx += (Math.random() - 0.5) * 0.02;
+      m.vy += (Math.random() - 0.5) * 0.02;
+      m.vx = Math.max(-0.12, Math.min(0.12, m.vx));
+      m.vy = Math.max(-0.12, Math.min(0.12, m.vy));
+    }
+    if (m.x < 0) m.x = w;
+    if (m.x > w) m.x = 0;
+    if (m.y < 0) m.y = h;
+    if (m.y > h) m.y = 0;
+    if (m.life <= 0) {
+      _moatParticles[i] = _spawnMoat(w, h);
+      continue;
+    }
+    _moatCtx.beginPath();
+    _moatCtx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+    _moatCtx.fillStyle = 'rgba(100, 140, 100, ' + alpha + ')';
+    _moatCtx.fill();
+  }
+  _moatRaf = requestAnimationFrame(_tickMoats);
+}
 
 /* DB -- ABYSS-PROOF WORKER (NULL FIXED)- Nuclear fix 
 Auto increment Time-bomb & PUT code endless echo */
@@ -2566,6 +2689,9 @@ function showPanel(id){
   /* Leaving (or re-entering) realms: always collapse Abyss sheet -- a stale `.open` sheet
      kept pointer-events:auto and blocked the canvas on the next visit. */
   abyssCloseSheet();
+  if (currentView === 'deep-soup' && id !== 'view-deep-soup') {
+    stopDeepSoupMoats();
+  }
   const wasSoup = (currentView === 'soup');
   const wasSanctuary = (currentView === 'sanctuary');
   const panels = [
@@ -6994,11 +7120,21 @@ function buildForgottenCard(d){
 }
 
 /* DEEP SOUP */
-function openDeepSoupView(){ 
+async function openDeepSoupView(){
+  stopDeepSoupMoats();
   deepSoupFolderId=null;
   deepSoupPath=[{id:null,name:'Deep Soup'}];
-  showPanel('view-deep-soup'); 
-  renderDeepSoupView(); 
+  showPanel('view-deep-soup');
+  await renderDeepSoupView();
+  try {
+    var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+    var moatCount = allDiscs.filter(function (d) {
+      var phase = decayPhase(d.updated_at || d.created_at || 0);
+      return phase === 'forgotten' || phase === 'gone';
+    }).length;
+    var density = Math.min(25, 5 + moatCount);
+    startDeepSoupMoats(density);
+  } catch (eMo) {}
 }
 
 function renderDeepSoupBreadcrumb(){ /* removed -- local nav + back stack only */ }
@@ -7766,6 +7902,7 @@ function hideGuardianInvokeStripOnly() {
     guardianInvokeTimer = null;
   }
   guardianInvokeActive = false;
+  if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(false);
   var strip = document.getElementById('guardian-invoke-strip');
   if (!strip) return;
   strip.classList.remove('visible');
@@ -7781,6 +7918,7 @@ function dismissGuardianInvoke(reason) {
     guardianInvokeTimer = null;
   }
   guardianInvokeActive = false;
+  if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(false);
   var strip = document.getElementById('guardian-invoke-strip');
   if (strip) {
     strip.classList.remove('visible');
@@ -7815,8 +7953,10 @@ function attachGuardianInvokeStripHandlers() {
     strip.onclick = null;
     var dismissBtn2 = document.getElementById('guardian-invoke-dismiss');
     if (dismissBtn2) dismissBtn2.onclick = null;
+    var seedObservation = null;
+    try { seedObservation = localStorage.getItem('nq_guardian_invoke_observation'); } catch (eSeed) {}
     dismissGuardianInvoke('entered');
-    void openGuardianView({});
+    void openGuardianView({ seedObservation: seedObservation || null });
   };
 
   if (dismissBtn) {
@@ -7841,13 +7981,17 @@ async function checkAndShowGuardianInvoke() {
     var strip = document.getElementById('guardian-invoke-strip');
     var textEl = document.getElementById('guardian-invoke-text');
     if (!strip || !textEl) return;
-    textEl.textContent = "You have been circling the same thought for weeks. You have not named it yet.";
+    var devObservation = "You have been circling the same thought for weeks. You have not named it yet.";
+    textEl.textContent = devObservation;
     strip.style.display = 'block';
     requestAnimationFrame(function () {
       strip.classList.add('visible');
     });
     guardianInvokeActive = true;
     guardianInvokeLastTriggerType = 'dev_preview';
+    try { localStorage.setItem('nq_guardian_invoke_observation', devObservation); } catch (e) {}
+    void logGuardianAutoInvoke(devObservation, 'dev_preview', 'surfaced');
+    if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(true);
     attachGuardianInvokeStripHandlers();
     return;
   }
@@ -7943,6 +8087,9 @@ async function checkAndShowGuardianInvoke() {
     localStorage.setItem('nq_guardian_dismissed_count', '0');
   } catch (e11) {}
 
+  try { localStorage.setItem('nq_guardian_invoke_observation', observation); } catch (eObs) {}
+  if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(true);
+
   attachGuardianInvokeStripHandlers();
 
   void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced');
@@ -7953,12 +8100,56 @@ async function openGuardianView(entryOpts){
   hideGuardianInvokeStripOnly();
   if (entryOpts.fromHeader) {
     try { localStorage.removeItem('nq_guardian_dismissed_count'); } catch (e) {}
+    try { localStorage.removeItem('nq_guardian_invoke_observation'); } catch (e) {}
   }
   try { localStorage.setItem('nq_guardian_last_interaction', String(Date.now())); } catch (e) {}
   showPanel('view-guardian');
   document.getElementById('guardian-footer').classList.add('visible');
   guardianState = 'resting';
   resetGuardianUI();
+
+  var seedRaw = null;
+  if (!entryOpts.fromHeader) {
+    if (entryOpts.seedObservation != null && String(entryOpts.seedObservation).trim() !== '') {
+      seedRaw = entryOpts.seedObservation;
+    } else {
+      try { seedRaw = localStorage.getItem('nq_guardian_invoke_observation'); } catch (e0) {}
+    }
+  }
+  var seedText = seedRaw ? String(seedRaw).trim() : '';
+  if (seedText) {
+    try { localStorage.removeItem('nq_guardian_invoke_observation'); } catch (e1) {}
+    var discs0 = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+    var builtCtx = await buildGuardianContext(discs0);
+    if (builtCtx) {
+      guardianThread = [
+        { role: 'user', content: builtCtx },
+        { role: 'assistant', content: seedText }
+      ];
+      guardianContextBlock = builtCtx;
+    } else {
+      guardianThread = [{ role: 'assistant', content: seedText }];
+      guardianContextBlock = '';
+    }
+    var responseEl = document.getElementById('guardian-response');
+    var glyph2 = document.getElementById('guardian-glyph');
+    var realm2 = document.getElementById('guardian-realm');
+    var inputArea2 = document.getElementById('guardian-input-area');
+    var btn2 = document.getElementById('btn-summon-guardian');
+    if (responseEl) {
+      responseEl.textContent = seedText;
+      responseEl.className = 'guardian-response visible';
+    }
+    if (glyph2) glyph2.className = 'guardian-glyph watching';
+    if (realm2) realm2.classList.remove('dimming');
+    guardianState = 'speaking';
+    if (inputArea2) inputArea2.className = 'guardian-input-area visible';
+    if (btn2) {
+      btn2.textContent = 'Summon Again';
+      btn2.disabled = false;
+    }
+  }
+
   initMappingModeUI();
   await renderGuardianLogs();
 }
