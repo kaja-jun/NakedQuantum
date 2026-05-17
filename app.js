@@ -1,9 +1,11 @@
 let generateFastMapData = null;
+let checkGuardianTrigger = null;
 (async () => {
   const btn = document.getElementById('btn-run-cartographer');
   if (btn) btn.disabled = true;
   const mod = await import('./cartographer.js');
   generateFastMapData = mod.generateFastMapData;
+  checkGuardianTrigger = mod.checkGuardianTrigger;
   if (btn) btn.disabled = false;
 })();
 
@@ -2602,6 +2604,10 @@ function showPanel(id){
     syncNqHeaderForCurrentPanel(id);
   }
 
+  if (id !== 'view-lighthouse' && id !== 'view-guardian') {
+    dismissGuardianAutoInvite(false);
+  }
+
   if (typeof firefly !== 'undefined' && firefly.setSoupActive) {
     firefly.setSoupActive(id === 'view-soup');
     if (id === 'view-soup') {
@@ -4248,14 +4254,16 @@ async function saveCurrentDiscourse(silent=false){
   
     await updateDiscourse(currentDiscourseId, {title, raw_text});
   if(currentDiscourseId) updateGravity(currentDiscourseId, 2); // +2 on edit
+
+  try { localStorage.setItem('nq_last_entry_timestamp', String(Date.now())); } catch (e) {}
   
   if(ind){ ind.textContent='◆ saved'; ind.className='lh-save-indicator visible'; setTimeout(()=>{ ind.className='lh-save-indicator'; },2000); }
   if(!silent)showToast("Saved ◆");
   setTimeout(()=>backupToAkashic(),0);
   
-  if (isWatcherReady && currentDiscourseId) {
+  if (currentDiscourseId) {
     const disc = await getDiscourse(currentDiscourseId);
-    if (disc && disc.item_type) queueWatcherEmbed(currentDiscourseId, title, raw_text, disc.item_type);
+    if (isWatcherReady && disc && disc.item_type) queueWatcherEmbed(currentDiscourseId, title, raw_text, disc.item_type);
     generateFastMap(currentDiscourseId);
   }
 }
@@ -4832,7 +4840,8 @@ for(const s of similarities.filter(s => s.score > 0.65)){
   return fastMap;
 }
 
-async function generateFastMap(discourseId) {
+async function generateFastMap(discourseId, mapOpts) {
+    mapOpts = mapOpts || {};
     try {
     const d = await getDiscourse(discourseId);
     if (!d || !d.raw_text) return;
@@ -4865,6 +4874,13 @@ let fastMap = {
 
     await dbPut('guardian_summaries', fastMap);
     console.log(`◈ Sovereign Fast Map generated for ${discourseId}`);
+
+    if (!mapOpts.skipAutoInvite && checkGuardianTrigger) {
+      try {
+        const trig = checkGuardianTrigger(fastMap);
+        if (trig.shouldInvoke) offerGuardianAutoInvite(trig);
+      } catch (autoErr) { console.warn('[Guardian auto]', autoErr); }
+    }
   } catch (err) {
     console.error('Fast Map error:', err);
   }
@@ -5101,7 +5117,7 @@ async function runCartographer() {
     // Fast maps for all discourses
     setStatus('loading', 'fast mapping...');
     for (const d of allDiscs) {
-      await generateFastMap(d.id);
+      await generateFastMap(d.id, { skipAutoInvite: true });
     }
 
     // Deep maps via distilbart
@@ -7581,7 +7597,71 @@ var guardianContextBlock = ''; // preserved from summon so follow-ups have memor
 var guardianExchangeCount = 0; // how many back-and-forths since summon
 var GUARDIAN_MAX_EXCHANGES = 4;
 
+var guardianPendingTriggerType = null;
+var guardianAutoInviteTimer = null;
+/** OpenRouter id for auto-invoked Guardian passes (fast, cheap). */
+var GUARDIAN_AUTO_MODEL = 'deepseek/deepseek-v4-flash';
+var GUARDIAN_AUTO_INVITE_MS = 6 * 60 * 1000;
+
+function dismissGuardianAutoInvite(incDismissCount) {
+  if (guardianAutoInviteTimer) {
+    clearTimeout(guardianAutoInviteTimer);
+    guardianAutoInviteTimer = null;
+  }
+  var strip = document.getElementById('guardian-auto-invite');
+  var glow = document.getElementById('guardian-edge-glow');
+  if (strip) {
+    strip.classList.add('hidden');
+    strip.onclick = null;
+    strip.style.pointerEvents = 'none';
+  }
+  var dismissBtn = document.getElementById('guardian-auto-invite-dismiss');
+  if (dismissBtn) dismissBtn.onclick = null;
+  if (glow) glow.classList.remove('active');
+  if (incDismissCount) {
+    try {
+      var cur = parseInt(localStorage.getItem('nq_guardian_dismissed_count') || '0', 10) || 0;
+      localStorage.setItem('nq_guardian_dismissed_count', String(cur + 1));
+    } catch (e) {}
+  }
+}
+
+function offerGuardianAutoInvite(trig) {
+  if (!trig || !trig.shouldInvoke) return;
+  if (currentView === 'guardian') return;
+  if (currentView !== 'lighthouse') return;
+  dismissGuardianAutoInvite(false);
+  var strip = document.getElementById('guardian-auto-invite');
+  var label = document.getElementById('guardian-auto-invite-label');
+  var glow = document.getElementById('guardian-edge-glow');
+  if (!strip || !label) return;
+  label.textContent = 'The archive stirs — witness';
+  strip.classList.remove('hidden');
+  strip.style.pointerEvents = 'auto';
+  if (glow) glow.classList.add('active');
+  guardianAutoInviteTimer = setTimeout(function () {
+    guardianAutoInviteTimer = null;
+    dismissGuardianAutoInvite(false);
+  }, GUARDIAN_AUTO_INVITE_MS);
+  strip.onclick = function (e) {
+    if (e.target && e.target.id === 'guardian-auto-invite-dismiss') return;
+    dismissGuardianAutoInvite(false);
+    openGuardianView().then(function () {
+      return summonGuardian(null, { modelOverride: GUARDIAN_AUTO_MODEL, pendingTriggerType: trig.primaryQualifier });
+    }).catch(function (err) { console.error(err); });
+  };
+  var dismissBtn = document.getElementById('guardian-auto-invite-dismiss');
+  if (dismissBtn) {
+    dismissBtn.onclick = function (e) {
+      e.stopPropagation();
+      dismissGuardianAutoInvite(true);
+    };
+  }
+}
+
 async function openGuardianView(){
+  dismissGuardianAutoInvite(false);
+  try { localStorage.setItem('nq_guardian_last_interaction', String(Date.now())); } catch (e) {}
   showPanel('view-guardian');
   document.getElementById('guardian-footer').classList.add('visible');
   guardianState = 'resting';
@@ -7693,10 +7773,13 @@ function initGuardianModel() {
     if(modeLabel) modeLabel.textContent = 'Sovereign';
 }
 
-async function summonGuardian(userAddition){
+async function summonGuardian(userAddition, summonOpts){
+  summonOpts = summonOpts || {};
+  if (summonOpts.pendingTriggerType) guardianPendingTriggerType = summonOpts.pendingTriggerType;
+  else guardianPendingTriggerType = null;
   var apiKey = await readSecureKey('nq_api_key');
-  if(!apiKey){ showToast('No API key in Settings'); return; }
-  var guardianModel = localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || 'deepseek/deepseek-v3.2';
+  if(!apiKey){ showToast('No API key in Settings'); guardianPendingTriggerType = null; return; }
+  var guardianModel = summonOpts.modelOverride || localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || 'deepseek/deepseek-v3.2';
   var baseUrl = localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1';
   guardianState = 'processing';
   var btn = document.getElementById('btn-summon-guardian');
@@ -7761,6 +7844,8 @@ if (recentLogs.length) {
     await streamGuardianResponse(contextBlock, apiKey, baseUrl, guardianModel);
   } catch(err){
     console.error('Guardian failed:', err);
+    try { localStorage.setItem('nq_guardian_last_attempt', String(Date.now())); } catch (lsE) {}
+    guardianPendingTriggerType = null;
     showToast('The Abyss did not respond');
     glyph.className = 'guardian-glyph';
     realm.classList.remove('dimming');
@@ -8058,15 +8143,23 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
     inputArea.className = 'guardian-input-area visible';
     btn.textContent = 'Summon Again';
     btn.disabled = false;
-    await saveGuardianLog('', true);
+    await saveGuardianLog('', true, model);
   } else {
     guardianState = 'speaking';
     glyph.className = 'guardian-glyph watching';
     inputArea.className = 'guardian-input-area visible';
     btn.textContent = 'Summon Again';
     btn.disabled = false;
-    await saveGuardianLog(fullText, false);
+    await saveGuardianLog(fullText, false, model);
   }
+  try {
+    localStorage.setItem('nq_guardian_last_invoke', String(Date.now()));
+    if (guardianPendingTriggerType) {
+      localStorage.setItem('nq_guardian_last_trigger_type', guardianPendingTriggerType);
+      guardianPendingTriggerType = null;
+    }
+    localStorage.removeItem('nq_guardian_last_attempt');
+  } catch (lsErr) {}
     // Add Guardian response to thread memory
   if (fullText && !isSilent) {
     guardianThread.push({ role: 'assistant', content: fullText });
@@ -8081,12 +8174,12 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
 }
 
 
-async function saveGuardianLog(text, wasSilent){
+async function saveGuardianLog(text, wasSilent, modelUsed){
   var allDiscs = (await getDiscourses()).filter(function(d){ return !d.deleted_at && !d.isDeleted; });
   var log = {
     id: 'gl_' + Date.now(),
     invoked_at: Date.now(),
-    model_used: localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || '',
+    model_used: (modelUsed != null && modelUsed !== '') ? modelUsed : (localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || ''),
     soup_snapshot_count: allDiscs.length,
     response_text: text,
     was_silent: wasSilent ? 1 : 0,
@@ -8149,7 +8242,14 @@ async function handleGuardianOffer(){
   document.getElementById('guardian-response').className = 'guardian-response';
   document.getElementById('guardian-silence').className = 'guardian-silence';
   document.getElementById('guardian-glyph').className = 'guardian-glyph watching';
-  await streamGuardianResponse(guardianContextBlock, apiKey, baseUrl, guardianModel);
+  try {
+    await streamGuardianResponse(guardianContextBlock, apiKey, baseUrl, guardianModel);
+  } catch (err) {
+    console.error('Guardian follow-up failed:', err);
+    try { localStorage.setItem('nq_guardian_last_attempt', String(Date.now())); } catch (e2) {}
+    guardianPendingTriggerType = null;
+    showToast('The Abyss did not respond');
+  }
 }
 
 /* EVENT BINDING */
