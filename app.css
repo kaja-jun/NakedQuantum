@@ -2422,7 +2422,7 @@ select.cosm-input {
   100% { transform: rotate(360deg); }
 }
 
-/* Guardian worker invoke strip (Soup under-header; 6h dissolve) */
+/* Guardian worker invoke strip (Soup under-header; 6 min auto-dissolve) */
 .guardian-invoke-strip {
   width: 100%;
   overflow: hidden;

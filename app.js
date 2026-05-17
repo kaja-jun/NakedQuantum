@@ -365,6 +365,13 @@ function savePersonaRoles(roles){
   localStorage.setItem('nq_persona_roles',JSON.stringify(roles));
 }
 
+/** Guardian Soup invoke strip — timer + active flag (declared before FF so RAF can read safely at boot). */
+var guardianInvokeTimer = null;
+var guardianInvokeActive = false;
+var guardianInvokeLastTriggerType = null;
+/** Auto-dismiss strip after this many ms (Batch 3 typo: minutes, not hours). */
+var GUARDIAN_INVOKE_STRIP_DISSOLVE_MS = 6 * 60 * 1000;
+
 /* FIREFLY — Soup-only atmosphere (canvas is fixed; off-Soup we stop drawing so it never bleeds through) */
 class FF {
   constructor() {
@@ -419,6 +426,23 @@ class FF {
     this.p.forEach(p => {
       p.x += p.vx;
       p.y += p.vy;
+      if (guardianInvokeActive) {
+        var gStrip = document.getElementById('guardian-invoke-strip');
+        if (gStrip && gStrip.classList.contains('visible')) {
+          var gr = gStrip.getBoundingClientRect();
+          if (gr.width > 0 && gr.height > 0) {
+            var tgx = gr.left + gr.width * 0.5;
+            var tgy = gr.top + gr.height * 0.5;
+            var gdx = tgx - p.x;
+            var gdy = tgy - p.y;
+            var glen = Math.sqrt(gdx * gdx + gdy * gdy);
+            if (glen > 60) {
+              p.x += (gdx / glen) * 0.3;
+              p.y += (gdy / glen) * 0.3;
+            }
+          }
+        }
+      }
       p.a += p.p;
       if (p.a > 0.6 || p.a < 0.1) p.p *= -1;
       if (p.x < 0) p.x = this.canvas.width;
@@ -489,6 +513,11 @@ db.run("CREATE TABLE IF NOT EXISTS cosm_discourses(id TEXT PRIMARY KEY, title TE
   db.run("CREATE TABLE IF NOT EXISTS guardian_logs(id TEXT PRIMARY KEY, invoked_at INTEGER, model_used TEXT, soup_snapshot_count INTEGER, response_text TEXT, was_silent INTEGER DEFAULT 0, thread TEXT, emotional_weight REAL DEFAULT 1.0)");
 db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoked_at INTEGER, model_used TEXT, soup_snapshot_count INTEGER, ciphertext TEXT, iv TEXT, was_silent INTEGER DEFAULT 0, thread TEXT, emotional_weight REAL DEFAULT 1.0)");
   db.run("CREATE TABLE IF NOT EXISTS guardian_summaries_enc(id TEXT PRIMARY KEY, enc TEXT)");
+
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN auto_invoked INTEGER DEFAULT 0"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN triggered_by TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN user_action TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN log_type TEXT"); } catch (e) {}
 
   ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'].forEach
 (t => {
@@ -7687,10 +7716,6 @@ var GUARDIAN_MAX_EXCHANGES = 4;
 
 var guardianPendingTriggerType = null;
 
-var guardianInvokeTimer = null;
-var guardianInvokeActive = false;
-var guardianInvokeLastTriggerType = null;
-
 function buildFastMapSnapshotForWorker(fastMap) {
   var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting ? fastMap.signature.orbits.orbiting : [];
   var orbitingTerms = orbits.map(function (o) { return o.term; });
@@ -7719,8 +7744,12 @@ async function logGuardianAutoInvoke(observation, triggeredBy, userAction) {
       soup_snapshot_count: allDiscs.length,
       response_text: observation || '',
       was_silent: observation ? 0 : 1,
-      thread: JSON.stringify({ auto_invoke: true, triggered_by: triggeredBy || '', user_action: userAction || '' }),
-      emotional_weight: 1.0
+      thread: JSON.stringify({ auto_invoke: true }),
+      emotional_weight: 1.0,
+      auto_invoked: 1,
+      triggered_by: triggeredBy != null && triggeredBy !== '' ? triggeredBy : null,
+      user_action: userAction != null && userAction !== '' ? userAction : null,
+      log_type: 'auto_invoke'
     });
   } catch (e) {
     console.warn('Guardian auto log failed:', e);
@@ -7761,7 +7790,7 @@ function dismissGuardianInvoke(reason) {
   void logGuardianAutoInvoke(null, guardianInvokeLastTriggerType, reason);
 }
 
-/** Wire strip tap, dismiss, and 6h dissolve. Must run after strip is visible — not blocked by guardian_logs I/O. */
+/** Wire strip tap, dismiss, and timed dissolve. Must run after strip is visible — not blocked by guardian_logs I/O. */
 function attachGuardianInvokeStripHandlers() {
   if (guardianInvokeTimer) {
     clearTimeout(guardianInvokeTimer);
@@ -7775,7 +7804,7 @@ function attachGuardianInvokeStripHandlers() {
 
   guardianInvokeTimer = setTimeout(function () {
     dismissGuardianInvoke('dissolved');
-  }, 6 * 60 * 60 * 1000);
+  }, GUARDIAN_INVOKE_STRIP_DISSOLVE_MS);
 
   strip.onclick = function (e) {
     if (e.target && e.target.closest && e.target.closest('#guardian-invoke-dismiss')) return;
@@ -8444,7 +8473,9 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
     response_text: text,
     was_silent: wasSilent ? 1 : 0,
     thread: JSON.stringify(guardianThread),
-    emotional_weight: 1.0
+    emotional_weight: 1.0,
+    auto_invoked: 0,
+    log_type: 'summon'
   };
   await dbPut('guardian_logs', log);
 }
