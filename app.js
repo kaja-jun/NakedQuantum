@@ -17,13 +17,13 @@ const AKASHIC_URL='https://wandering-violet-964a.gazajar.workers.dev';
 let cosmUserId=localStorage.getItem('cosm_user_id')||crypto.randomUUID();
 localStorage.setItem('cosm_user_id',cosmUserId);
 
-/** When `nq_openrouter_proxy_url` is an https URL (no trailing slash), chat/Guardian/extract use it as the API base instead of `nq_base_url`. Deploy `workers/openrouter-proxy` to Cloudflare and paste e.g. https://your-worker.workers.dev/v1 */
-function getEffectiveOpenRouterBase() {
+/** BYOK OpenRouter API base from Settings. Guardian micro-invoke uses `workers/guardian-invoke` (server key), not this URL. */
+function openRouterChatBaseUrl() {
   try {
-    var raw = (localStorage.getItem('nq_openrouter_proxy_url') || '').trim().replace(/\/+$/, '');
-    if (raw && /^https:\/\//i.test(raw)) return raw;
-  } catch (e) {}
-  return (localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1').trim().replace(/\/+$/, '');
+    return (localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1').trim().replace(/\/+$/, '');
+  } catch (e) {
+    return 'https://openrouter.ai/api/v1';
+  }
 }
 let activeIE = null;
 let longPressTimer=null,isLongPress=false,longPressConsumed=false,touchStartPos={x:0,y:0};
@@ -5207,7 +5207,7 @@ async function summariseHistory(charId,messages){
   const key=await readSecureKey('nq_api_key')||"";
   if(!key||messages.length<6)return null;
   try{
-    const res=await fetch(getEffectiveOpenRouterBase() + '/chat/completions',{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model:localStorage.getItem("nq_model")||"deepseek/deepseek-v4-flash",max_tokens:300,messages:[{role:"system",content:"Compress this conversation into 5-8 bullet points. Capture emotional tone, key decisions, unresolved tensions, named facts. Ruthlessly concise. No preamble."},{role:"user",content:messages.map(m=>`${m.role}: ${m.content}`).join("\n")}]})});
+    const res=await fetch(openRouterChatBaseUrl() + '/chat/completions',{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model:localStorage.getItem("nq_model")||"deepseek/deepseek-v4-flash",max_tokens:300,messages:[{role:"system",content:"Compress this conversation into 5-8 bullet points. Capture emotional tone, key decisions, unresolved tensions, named facts. Ruthlessly concise. No preamble."},{role:"user",content:messages.map(m=>`${m.role}: ${m.content}`).join("\n")}]})});
     const data=await res.json();
     const summary=data.choices?.[0]?.message?.content||null;
     if(summary){
@@ -5451,7 +5451,7 @@ const model = (activeIE && chip && chip.style.display !== 'none')
   const msgs=[ {role:'system', content:sys}, ...safeMsgs ];
 
   try{
-    const res=await fetch(getEffectiveOpenRouterBase() + '/chat/completions',{
+    const res=await fetch(openRouterChatBaseUrl() + '/chat/completions',{
       method:"POST",
       headers:{
         "Authorization":`Bearer ${key}`,
@@ -5546,7 +5546,7 @@ Respond in character, concise and evocative.${personaBlock}${memoryBlock}`;
   let fullText = '';
 
   try {
-    const res = await fetch(getEffectiveOpenRouterBase() + '/chat/completions', {
+    const res = await fetch(openRouterChatBaseUrl() + '/chat/completions', {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${key}`,
@@ -7407,7 +7407,7 @@ async function extractMemory(){
   if(!key){showToast("Add OpenRouter key in Settings");
   return;}
   document.getElementById("extract-loading").classList.add("visible");
-  try{const res=await fetch(getEffectiveOpenRouterBase() + '/chat/completions',{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model: localStorage.getItem("nq_model") || "deepseek/deepseek-v4-flash",max_tokens:350,messages:[{role:"system",content:`You are a conceptual anchor extractor. Read the text and return exactly 4-6 anchor phrases. Format: one per line, \"Category: brief anchor phrase\". Categories: Core tension, Open question, Key concept, Hidden assumption, Named force, Recurring image. Reply with ONLY the list.`},{role:"user",content:rawText.slice(0,3000)}]})});
+  try{const res=await fetch(openRouterChatBaseUrl() + '/chat/completions',{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model: localStorage.getItem("nq_model") || "deepseek/deepseek-v4-flash",max_tokens:350,messages:[{role:"system",content:`You are a conceptual anchor extractor. Read the text and return exactly 4-6 anchor phrases. Format: one per line, \"Category: brief anchor phrase\". Categories: Core tension, Open question, Key concept, Hidden assumption, Named force, Recurring image. Reply with ONLY the list.`},{role:"user",content:rawText.slice(0,3000)}]})});
   const data=await res.json();const raw=data.choices?.[0]?.message?.content||"";if(!raw.trim()){showToast("Nothing extracted ◆");return;}
   const anchors=raw.split("\n").map(l=>l.trim()).filter(l=>l.length>3&&!l.startsWith("#"));
   await saveMosaicTile(currentDiscourseId,anchors);await renderMosaicDisplay(currentDiscourseId);showToast("Mosaic anchored ◆");
@@ -7423,8 +7423,6 @@ async function openDataPage(){
   document.getElementById('data-supa-key').value = (await readSecureKey('nq_supa_key')) || '';
   document.getElementById('input-api-key').value = (await readSecureKey('nq_api_key')) || '';
   document.getElementById('input-base-url').value = localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1';
-  var proxyInput = document.getElementById('input-openrouter-proxy-url');
-  if (proxyInput) proxyInput.value = localStorage.getItem('nq_openrouter_proxy_url') || '';
   renderModelSelect();
   updateWatcherStatusUI();
   showPanel('view-data');
@@ -7795,7 +7793,7 @@ async function summonGuardian(userAddition, summonOpts){
   var apiKey = await readSecureKey('nq_api_key');
   if(!apiKey){ showToast('No API key in Settings'); guardianPendingTriggerType = null; return; }
   var guardianModel = summonOpts.modelOverride || localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || 'deepseek/deepseek-v3.2';
-  var baseUrl = getEffectiveOpenRouterBase();
+  var baseUrl = openRouterChatBaseUrl();
   guardianState = 'processing';
   var btn = document.getElementById('btn-summon-guardian');
   var realm = document.getElementById('guardian-realm');
@@ -8247,7 +8245,7 @@ async function handleGuardianOffer(){
   var apiKey = await readSecureKey('nq_api_key');
   if(!apiKey){ showToast('No API key'); return; }
   var guardianModel = localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || 'deepseek/deepseek-r1';
-  var baseUrl = getEffectiveOpenRouterBase();
+  var baseUrl = openRouterChatBaseUrl();
   input.value = '';
   guardianExchangeCount++;
   // Add user message to thread
@@ -8490,12 +8488,6 @@ document.getElementById('btn-ie-dev-forge').addEventListener('click', devCreateI
     const apiKey = document.getElementById('input-api-key').value.trim();
     if (apiKey) await storeSecureKey('nq_api_key', apiKey);
     localStorage.setItem('nq_base_url', document.getElementById('input-base-url').value.trim());
-    var proxyEl = document.getElementById('input-openrouter-proxy-url');
-    if (proxyEl) {
-      var pv = proxyEl.value.trim().replace(/\/+$/, '');
-      if (pv && /^https:\/\//i.test(pv)) localStorage.setItem('nq_openrouter_proxy_url', pv);
-      else localStorage.removeItem('nq_openrouter_proxy_url');
-    }
     localStorage.setItem('nq_model', document.getElementById('input-model').value);
     showToast("Gateway solidified ◆");
   });
@@ -8949,8 +8941,6 @@ async function init(){
   renderModelSelect();
   document.getElementById('input-api-key').value=await readSecureKey('nq_api_key')||'';
   document.getElementById('input-base-url').value=localStorage.getItem('nq_base_url')||'https://openrouter.ai/api/v1';
-  var proxyInit = document.getElementById('input-openrouter-proxy-url');
-  if (proxyInit) proxyInit.value = localStorage.getItem('nq_openrouter_proxy_url') || '';
   document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
   initWatcher();
   initGuardianModel();
