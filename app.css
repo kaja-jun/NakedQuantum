@@ -52,7 +52,7 @@ button {
 
 .nq-header { height: 56px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);}
 
-.nq-wordmark { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; opacity: 0.8; cursor: pointer; user-select: none; -webkit-user-select: none; padding: 8px 0; transition: opacity 0.15s; display: flex; align-items: center; position: relative; }
+.nq-wordmark { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; opacity: 0.8; cursor: pointer; user-select: none; -webkit-user-select: none; padding: 8px 0; transition: opacity 0.15s; }
 .nq-wordmark.pressing { opacity: 0.3; }
 .nq-wordmark.nq-wordmark--sanctuary-realm { color: var(--accent); letter-spacing: 2px; }
 .header-actions.header-actions-sanctuary { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
