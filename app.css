@@ -2422,57 +2422,62 @@ select.cosm-input {
   100% { transform: rotate(360deg); }
 }
 
-/* Guardian auto-invite (post–fast-map geometry; tap opens witness, 6 min dissolve) */
-#guardian-auto-invite {
-  position: fixed;
-  left: 50%;
-  bottom: max(20px, env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  z-index: 9992;
-  max-width: min(420px, calc(100vw - 32px));
+/* Guardian worker invoke strip (Soup under-header; 6h dissolve) */
+.guardian-invoke-strip {
+  width: 100%;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #06060a;
+  border-bottom: 1px solid #1a1a2e;
+  position: relative;
+  z-index: 10;
+}
+
+.guardian-invoke-strip.visible {
+  max-height: 140px;
+}
+
+.guardian-invoke-inner {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  padding: 12px 16px 12px 12px;
-  border-radius: 20px;
-  background: rgba(12, 14, 18, 0.92);
-  border: 1px solid rgba(200, 160, 80, 0.35);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  padding: 14px 16px;
   cursor: pointer;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.35s ease, transform 0.35s ease;
 }
-#guardian-auto-invite:not(.hidden) {
-  opacity: 1;
-  pointer-events: auto;
-}
-#guardian-auto-invite.hidden {
-  display: none !important;
-}
-#guardian-auto-invite-dismiss {
+
+.guardian-invoke-glyph {
+  color: var(--accent);
+  font-size: 10px;
+  margin-top: 3px;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.guardian-invoke-text {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #a0aab4;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+.guardian-invoke-dismiss {
+  background: none;
   border: none;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--g-muted, #8a9ba8);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0;
-}
-#guardian-auto-invite-dismiss:active {
-  background: rgba(255, 255, 255, 0.12);
-}
-#guardian-auto-invite-label {
+  color: #3a3a4a;
   font-size: 11px;
-  letter-spacing: 2px;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: rgba(220, 200, 160, 0.95);
-  line-height: 1.45;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: color 0.2s;
+}
+
+.guardian-invoke-dismiss:hover {
+  color: #6a6a7a;
 }
 /* GUARDIAN MODEL SELECTOR -- ghost pill */
 .guardian-model-selector { display: none; }

@@ -14,6 +14,8 @@ let checkGuardianTrigger = null;
 let db=null,currentMode='soup',currentDiscourseId=null,currentFolderId=null,
 breadcrumbPath=[{id:null,name:'◈  The soup'}],editorMode='write',currentView='table',mosaicCache={},searchQuery='',activeCharId=null,sanctuarySearchQuery='';
 const AKASHIC_URL='https://wandering-violet-964a.gazajar.workers.dev';
+/** Guardian auto-invoke micro-observation (server key). Must match deployed Worker + CORS allowlist. */
+const GUARDIAN_INVOKE_WORKER_URL = 'https://naked-guardian.gazajar.workers.dev/guardian-invoke';
 let cosmUserId=localStorage.getItem('cosm_user_id')||crypto.randomUUID();
 localStorage.setItem('cosm_user_id',cosmUserId);
 
@@ -33,6 +35,7 @@ let selectMode=false, selectedItems=new Set();
 let deepSoupFolderId = null;
 let deepSoupPath = [{id: null, name: 'Deep Soup'}];
 let soupLocalSearchOpen = false;
+var guardianSoupInvokeScheduleTimer = null;
 let sanctuaryLocalSearchOpen = false;
 let chatReturnPanel = 'view-soup';
 /** Clears THE SOUP / HOME pill when leaving the Soup grid or cancelling a pending hide. */
@@ -2613,8 +2616,12 @@ function showPanel(id){
     syncNqHeaderForCurrentPanel(id);
   }
 
-  if (id !== 'view-lighthouse' && id !== 'view-guardian') {
-    dismissGuardianAutoInvite(false);
+  if (id !== 'view-soup') {
+    if (guardianSoupInvokeScheduleTimer) {
+      clearTimeout(guardianSoupInvokeScheduleTimer);
+      guardianSoupInvokeScheduleTimer = null;
+    }
+    hideGuardianInvokeStripOnly();
   }
 
   if (typeof firefly !== 'undefined' && firefly.setSoupActive) {
@@ -2651,6 +2658,14 @@ function showPanel(id){
   if (id === 'view-soup' && isWatcherReady) {
     processWatcherQueue();
     scheduleWatcherPass();
+  }
+
+  if (id === 'view-soup') {
+    if (guardianSoupInvokeScheduleTimer) clearTimeout(guardianSoupInvokeScheduleTimer);
+    guardianSoupInvokeScheduleTimer = setTimeout(function () {
+      guardianSoupInvokeScheduleTimer = null;
+      void checkAndShowGuardianInvoke();
+    }, 3000);
   }
 }
 
@@ -4886,8 +4901,12 @@ let fastMap = {
 
     if (!mapOpts.skipAutoInvite && checkGuardianTrigger) {
       try {
-        const trig = checkGuardianTrigger(fastMap);
-        if (trig.shouldInvoke) offerGuardianAutoInvite(trig);
+        const trig2 = checkGuardianTrigger(fastMap);
+        if (trig2.shouldInvoke) {
+          try {
+            localStorage.setItem('nq_guardian_invoke_pending', JSON.stringify({ discourseId: discourseId, at: Date.now() }));
+          } catch (pe) {}
+        }
       } catch (autoErr) { console.warn('[Guardian auto]', autoErr); }
     }
   } catch (err) {
@@ -7607,70 +7626,206 @@ var guardianExchangeCount = 0; // how many back-and-forths since summon
 var GUARDIAN_MAX_EXCHANGES = 4;
 
 var guardianPendingTriggerType = null;
-var guardianAutoInviteTimer = null;
-/** OpenRouter id for auto-invoked Guardian passes (fast, cheap). */
-var GUARDIAN_AUTO_MODEL = 'deepseek/deepseek-v4-flash';
-var GUARDIAN_AUTO_INVITE_MS = 6 * 60 * 1000;
 
-function dismissGuardianAutoInvite(incDismissCount) {
-  if (guardianAutoInviteTimer) {
-    clearTimeout(guardianAutoInviteTimer);
-    guardianAutoInviteTimer = null;
-  }
-  var strip = document.getElementById('guardian-auto-invite');
-  var glow = document.getElementById('guardian-edge-glow');
-  if (strip) {
-    strip.classList.add('hidden');
-    strip.onclick = null;
-    strip.style.pointerEvents = 'none';
-  }
-  var dismissBtn = document.getElementById('guardian-auto-invite-dismiss');
-  if (dismissBtn) dismissBtn.onclick = null;
-  if (glow) glow.classList.remove('active');
-  if (incDismissCount) {
-    try {
-      var cur = parseInt(localStorage.getItem('nq_guardian_dismissed_count') || '0', 10) || 0;
-      localStorage.setItem('nq_guardian_dismissed_count', String(cur + 1));
-    } catch (e) {}
+var guardianInvokeTimer = null;
+var guardianInvokeActive = false;
+var guardianInvokeLastTriggerType = null;
+
+function buildFastMapSnapshotForWorker(fastMap) {
+  var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting ? fastMap.signature.orbits.orbiting : [];
+  var orbitingTerms = orbits.map(function (o) { return o.term; });
+  var writingSignature = fastMap.signature && fastMap.signature.summary ? fastMap.signature.summary : '';
+  var silenceDays = fastMap.silence_weight && typeof fastMap.silence_weight.count === 'number' ? fastMap.silence_weight.count : 0;
+  var paradoxFlag = !!(fastMap.signature && fastMap.signature.paradox && (fastMap.signature.paradox.label === 'Paradox-dominant' || fastMap.signature.paradox.label === 'Charged'));
+  var contradictionFlag = !!(fastMap.watcher && fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length);
+  var dominantTheme = (fastMap.emotional_arc && fastMap.emotional_arc.direction) ? fastMap.emotional_arc.direction : ((fastMap.key_terms && fastMap.key_terms[0] && fastMap.key_terms[0].term) ? fastMap.key_terms[0].term : 'none');
+  return {
+    orbitingTerms: orbitingTerms,
+    writingSignature: writingSignature,
+    silenceDays: silenceDays,
+    paradoxFlag: paradoxFlag,
+    contradictionFlag: contradictionFlag,
+    dominantTheme: dominantTheme
+  };
+}
+
+async function logGuardianAutoInvoke(observation, triggeredBy, userAction) {
+  try {
+    var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+    await dbPut('guardian_logs', {
+      id: 'gl_auto_' + Date.now(),
+      invoked_at: Date.now(),
+      model_used: 'naked-guardian-worker',
+      soup_snapshot_count: allDiscs.length,
+      response_text: observation || '',
+      was_silent: observation ? 0 : 1,
+      thread: JSON.stringify({ auto_invoke: true, triggered_by: triggeredBy || '', user_action: userAction || '' }),
+      emotional_weight: 1.0
+    });
+  } catch (e) {
+    console.warn('Guardian auto log failed:', e);
   }
 }
 
-function offerGuardianAutoInvite(trig) {
-  if (!trig || !trig.shouldInvoke) return;
-  if (currentView === 'guardian') return;
-  if (currentView !== 'lighthouse') return;
-  dismissGuardianAutoInvite(false);
-  var strip = document.getElementById('guardian-auto-invite');
-  var label = document.getElementById('guardian-auto-invite-label');
-  var glow = document.getElementById('guardian-edge-glow');
-  if (!strip || !label) return;
-  label.textContent = 'The archive stirs — witness';
-  strip.classList.remove('hidden');
-  strip.style.pointerEvents = 'auto';
-  if (glow) glow.classList.add('active');
-  guardianAutoInviteTimer = setTimeout(function () {
-    guardianAutoInviteTimer = null;
-    dismissGuardianAutoInvite(false);
-  }, GUARDIAN_AUTO_INVITE_MS);
+function hideGuardianInvokeStripOnly() {
+  if (guardianInvokeTimer) {
+    clearTimeout(guardianInvokeTimer);
+    guardianInvokeTimer = null;
+  }
+  guardianInvokeActive = false;
+  var strip = document.getElementById('guardian-invoke-strip');
+  if (!strip) return;
+  strip.classList.remove('visible');
+  strip.style.display = 'none';
+  strip.onclick = null;
+  var dismissBtn = document.getElementById('guardian-invoke-dismiss');
+  if (dismissBtn) dismissBtn.onclick = null;
+}
+
+function dismissGuardianInvoke(reason) {
+  if (guardianInvokeTimer) {
+    clearTimeout(guardianInvokeTimer);
+    guardianInvokeTimer = null;
+  }
+  guardianInvokeActive = false;
+  var strip = document.getElementById('guardian-invoke-strip');
+  if (strip) {
+    strip.classList.remove('visible');
+    strip.onclick = null;
+    var dismissBtn = document.getElementById('guardian-invoke-dismiss');
+    if (dismissBtn) dismissBtn.onclick = null;
+    setTimeout(function () {
+      if (strip) strip.style.display = 'none';
+    }, 500);
+  }
+  void logGuardianAutoInvoke(null, guardianInvokeLastTriggerType, reason);
+}
+
+async function checkAndShowGuardianInvoke() {
+  if (currentView !== 'soup') return;
+  if (guardianInvokeActive) return;
+  if (!checkGuardianTrigger) return;
+
+  var rawPending = null;
+  try {
+    rawPending = localStorage.getItem('nq_guardian_invoke_pending');
+  } catch (e0) {}
+  if (!rawPending) return;
+
+  var pending = null;
+  try {
+    pending = JSON.parse(rawPending);
+  } catch (e1) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e1b) {}
+    return;
+  }
+  if (!pending || !pending.discourseId || !pending.at) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e2) {}
+    return;
+  }
+  if (Date.now() - pending.at > 7 * 24 * 3600000) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e3) {}
+    return;
+  }
+
+  var fastMap = null;
+  try {
+    fastMap = await dbGet('guardian_summaries', pending.discourseId);
+  } catch (e4) {}
+  if (!fastMap || fastMap.map_type !== 'fast') {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e5) {}
+    return;
+  }
+
+  var trig;
+  try {
+    trig = checkGuardianTrigger(fastMap);
+  } catch (e6) {
+    return;
+  }
+  if (!trig || !trig.shouldInvoke) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e7) {}
+    return;
+  }
+
+  var triggeredBy = trig.primaryQualifier || 'signal';
+  var fastMapSnapshot = buildFastMapSnapshotForWorker(fastMap);
+
+  try {
+    localStorage.setItem('nq_guardian_last_attempt', String(Date.now()));
+  } catch (e8) {}
+
+  var observation = null;
+  try {
+    var res = await fetch(GUARDIAN_INVOKE_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fastMapSnapshot: fastMapSnapshot, triggeredBy: triggeredBy })
+    });
+    var data = await res.json();
+    observation = data.observation;
+  } catch (e9) {
+    return;
+  }
+
+  if (!observation) return;
+
+  try {
+    localStorage.removeItem('nq_guardian_invoke_pending');
+  } catch (e10) {}
+
+  var strip = document.getElementById('guardian-invoke-strip');
+  var textEl = document.getElementById('guardian-invoke-text');
+  if (!strip || !textEl) return;
+
+  textEl.textContent = observation;
+  strip.style.display = 'block';
+  requestAnimationFrame(function () {
+    strip.classList.add('visible');
+  });
+
+  guardianInvokeActive = true;
+  guardianInvokeLastTriggerType = triggeredBy;
+
+  try {
+    localStorage.setItem('nq_guardian_last_invoke', String(Date.now()));
+    localStorage.setItem('nq_guardian_last_trigger_type', triggeredBy);
+    localStorage.setItem('nq_guardian_dismissed_count', '0');
+  } catch (e11) {}
+
+  await logGuardianAutoInvoke(observation, triggeredBy, 'surfaced');
+
+  guardianInvokeTimer = setTimeout(function () {
+    dismissGuardianInvoke('dissolved');
+  }, 6 * 60 * 60 * 1000);
+
   strip.onclick = function (e) {
-    if (e.target && e.target.id === 'guardian-auto-invite-dismiss') return;
-    dismissGuardianAutoInvite(false);
-    openGuardianView({}).then(function () {
-      return summonGuardian(null, { modelOverride: GUARDIAN_AUTO_MODEL, pendingTriggerType: trig.primaryQualifier });
-    }).catch(function (err) { console.error(err); });
+    if (e.target && e.target.closest && e.target.closest('#guardian-invoke-dismiss')) return;
+    strip.onclick = null;
+    var dismissBtn2 = document.getElementById('guardian-invoke-dismiss');
+    if (dismissBtn2) dismissBtn2.onclick = null;
+    dismissGuardianInvoke('entered');
+    void openGuardianView({});
   };
-  var dismissBtn = document.getElementById('guardian-auto-invite-dismiss');
+
+  var dismissBtn = document.getElementById('guardian-invoke-dismiss');
   if (dismissBtn) {
     dismissBtn.onclick = function (e) {
       e.stopPropagation();
-      dismissGuardianAutoInvite(true);
+      var count = parseInt(localStorage.getItem('nq_guardian_dismissed_count') || '0', 10) || 0;
+      try {
+        localStorage.setItem('nq_guardian_dismissed_count', String(count + 1));
+      } catch (e12) {}
+      strip.onclick = null;
+      dismissBtn.onclick = null;
+      dismissGuardianInvoke('dismissed');
     };
   }
 }
 
 async function openGuardianView(entryOpts){
   entryOpts = entryOpts || {};
-  dismissGuardianAutoInvite(false);
+  hideGuardianInvokeStripOnly();
   if (entryOpts.fromHeader) {
     try { localStorage.removeItem('nq_guardian_dismissed_count'); } catch (e) {}
   }
