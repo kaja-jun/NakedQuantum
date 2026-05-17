@@ -2830,16 +2830,24 @@ function showPanel(id){
 
 /* HEADER BUTTONS */
 function updateHeaderButtons(){
-  const c=document.getElementById('header-actions');
-  if(!c) return;
-  c.className = 'header-actions';
+  const left = document.getElementById('header-left');
+  const right = document.getElementById('header-right');
+  if(!left || !right) return;
+  
+  // Clear the territories on every realm switch
+  left.innerHTML = '';
+  right.innerHTML = '';
+
   if (currentMode === 'soup') {
-    c.innerHTML=
+    // In Soup, NAKEDQUANTUM sits naturally on the left (left div is empty).
+    // All 5 buttons go to the right territory.
+    right.innerHTML =
       '<button class="hdr-btn" id="hdr-sanctuary" title="The Sanctuary">&#8962;</button>'+
       '<button class="hdr-btn" id="hdr-guardian" style="font-size:20px;">&#43065;</button>'+
       '<button class="hdr-btn" id="hdr-abyss" title="Abyss">&#9689;</button>'+
       '<button class="hdr-btn" id="hdr-deep-soup" title="Deep Soup">꩜</button>'+
       '<button class="hdr-btn" id="hdr-soup-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Soup menu" aria-expanded="false" aria-controls="soup-drawer-panel">⋯</button>';
+    
     document.getElementById('hdr-guardian').onclick=function(){ openGuardianView({ fromHeader: true }); };
     document.getElementById('hdr-sanctuary').onclick=function(){ switchAppMode('sanctuary'); };
     document.getElementById('hdr-abyss').onclick=function(){ openAbyssView(); };
@@ -2849,11 +2857,14 @@ function updateHeaderButtons(){
       if (d && d.classList.contains('open')) closeSoupDrawer();
       else openSoupDrawer();
     };
+
   } else if (currentMode === 'sanctuary' && currentView === 'sanctuary') {
-    c.className = 'header-actions header-actions-sanctuary';
-    c.innerHTML =
-      '<button type="button" class="hdr-btn" id="hdr-sanctuary-home" title="Back to Soup" aria-label="Back to Soup">⌂</button>' +
-      '<button type="button" class="hdr-btn" id="hdr-sanctuary-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer-panel">⋯</button>';
+    // In Sanctuary, "THE SANCTUARY" is absolute-centered by CSS.
+    // Home goes Left. Menu goes Right.
+    left.innerHTML = '<button type="button" class="hdr-btn" id="hdr-sanctuary-home" title="Back to Soup" aria-label="Back to Soup">⌂</button>';
+    
+    right.innerHTML = '<button type="button" class="hdr-btn" id="hdr-sanctuary-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer-panel">⋯</button>';
+    
     document.getElementById('hdr-sanctuary-home').onclick = function () {
       closeSanctuaryDrawer();
       switchAppMode('soup');
@@ -2863,10 +2874,9 @@ function updateHeaderButtons(){
       if (d && d.classList.contains('open')) closeSanctuaryDrawer();
       else openSanctuaryDrawer();
     };
-  } else {
-    c.innerHTML = '';
   }
 }
+
 
 async function goBack() {
 const hdr = document.querySelector('.nq-header');
