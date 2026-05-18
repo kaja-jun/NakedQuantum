@@ -3450,8 +3450,16 @@ function drawLineageThread(id, folderId) {
   if (knotEl) {
     const kr = knotEl.getBoundingClientRect();
     anchorX = kr.left + kr.width / 2;
-    anchorY = kr.bottom;
-  } else {
+    // Find the actual dot element inside the knot wrap
+    const dotEl = knotEl.querySelector('.bc-knot');
+    if (dotEl) {
+        const dr = dotEl.getBoundingClientRect();
+        anchorX = dr.left + dr.width / 2;
+        anchorY = dr.top + dr.height / 2;
+    } else {
+        anchorY = kr.top + 9; // fallback: dot top + half dot size
+    }
+} else {
     const bcRect = breadcrumb.getBoundingClientRect();
     const KNOT_SPACING = 56;
     const SIDE_PAD = 28;
@@ -3462,7 +3470,7 @@ function drawLineageThread(id, folderId) {
   }
 
   const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  line.setAttribute('d', `M ${anchorX} ${anchorY} C ${anchorX} ${anchorY + (cardTopY - anchorY) * 0.6} ${cardCX} ${cardTopY - 20} ${cardCX} ${cardMidY}`);
+  line.setAttribute('d', `M ${anchorX} ${anchorY} C ${anchorX} ${anchorY + (cardTopY - anchorY) * 0.5} ${cardCX} ${cardTopY - 10} ${cardCX} ${cardTopY + 4}`);
   line.setAttribute('stroke', 'rgba(200,160,80,0.4)');
   line.setAttribute('stroke-width', '1');
   line.setAttribute('fill', 'none');
@@ -7932,7 +7940,13 @@ function dismissGuardianInvoke(reason) {
   var strip = document.getElementById('guardian-invoke-strip');
   if (strip) {
     strip.classList.remove('visible');
-    strip.onclick = null;
+strip.onclick = null;
+// Redraw tether after strip collapses
+requestAnimationFrame(function () {
+  requestAnimationFrame(function () {
+    if (currentFocusId) drawLineageThread(currentFocusId, focusChain.length ? focusChain[focusChain.length - 1].folderId : null);
+  });
+});
     var dismissBtn = document.getElementById('guardian-invoke-dismiss');
     if (dismissBtn) dismissBtn.onclick = null;
     setTimeout(function () {
@@ -7994,10 +8008,14 @@ async function checkAndShowGuardianInvoke() {
     var devObservation = "You have been circling the same thought for weeks. You have not named it yet.";
     textEl.textContent = devObservation;
     strip.style.display = 'block';
-    requestAnimationFrame(function () {
-      strip.classList.add('visible');
-    });
-    guardianInvokeActive = true;
+requestAnimationFrame(function () {
+  strip.classList.add('visible');
+  // Redraw tether after strip shifts layout
+  requestAnimationFrame(function () {
+    if (currentFocusId) drawLineageThread(currentFocusId, focusChain.length ? focusChain[focusChain.length - 1].folderId : null);
+  });
+});
+guardianInvokeActive = true;
     guardianInvokeLastTriggerType = 'dev_preview';
     try { localStorage.setItem('nq_guardian_invoke_observation', devObservation); } catch (e) {}
     void logGuardianAutoInvoke(devObservation, 'dev_preview', 'surfaced');
