@@ -109,11 +109,6 @@ button {
   padding: 0 4px;
   gap: 0;
 }
-.header-right > .hdr-btn {
-  width: 20%;
-  box-sizing: border-box;
-  flex: 0 0 20%;
-}
 .header-left:empty {
   display: none;
 }
@@ -137,6 +132,14 @@ button {
 #nq-header.nq-header--sanctuary-realm {
   background: var(--bg);
   border-bottom: none;
+}
+#nq-header.nq-header--sanctuary-realm .header-left,
+#nq-header.nq-header--sanctuary-realm .header-right {
+  flex: 0 0 auto;
+  width: auto;
+}
+#nq-header.nq-header--sanctuary-realm .header-right {
+  justify-content: flex-end;
 }
 
 /* Watcher — Soup-only LED strip under header (gold = indexing, green = idle, dim = offline) */
@@ -518,8 +521,13 @@ button {
 #view-soup .soup-drawer-panel {
   position: absolute; top: 52px; right: 10px; min-width: 200px;
   max-height: min(72vh, 360px); overflow-y: auto; -webkit-overflow-scrolling: touch;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-  padding: 8px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 12px 40px rgba(0, 0, 0, 0.5);
   display: flex; flex-direction: column; gap: 4px;
 }
 #view-soup .soup-drawer-item {

@@ -31,6 +31,17 @@ let activeIE = null;
 let longPressTimer=null,isLongPress=false,longPressConsumed=false,touchStartPos={x:0,y:0};
 const LONG_PRESS_DURATION=1000,MOVE_THRESHOLD=10;
 const SPARK_MAX_CHARS=300;
+
+function deriveSparkTitle(titleInput, bodyText) {
+  const manual = String(titleInput || '').trim();
+  if (manual) return manual.slice(0, 120);
+  const line = (String(bodyText || '').split('\n').find((l) => l.trim().length > 0) || '').trim();
+  if (line) {
+    const words = line.split(/\s+/).filter(Boolean).slice(0, 8).join(' ');
+    if (words) return words.slice(0, 120);
+  }
+  return 'Untitled Capture';
+}
 let selectMode=false, selectedItems=new Set();
 let subconsciousFolderId = null;
 let subconsciousPath = [{id: null, name: 'Subconscious'}];
@@ -2738,7 +2749,8 @@ function showPanel(id){
   const header = document.getElementById('nq-header') || document.querySelector('.nq-header');
   const edgeGlow = document.getElementById('guardian-edge-glow');
   const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-subconscious'
-    || id === 'view-ie' || id === 'view-forge' || id === 'view-persona' || id === 'view-memory');
+    || id === 'view-ie' || id === 'view-forge' || id === 'view-persona' || id === 'view-memory'
+    || id === 'view-lighthouse' || id === 'view-data');
   if (hideGlobalHeader) {
     if (header) {
       header.style.display = 'none';
@@ -2824,7 +2836,7 @@ function updateHeaderButtons(){
       '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-guardian" style="font-size:20px;">&#43065;</button><span class="hdr-btn-label">Guardian</span></div>' +
       '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-abyss" title="Abyss">&#9689;</button><span class="hdr-btn-label">Abyss</span></div>' +
       '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-subconscious" title="Subconscious">꩜</button><span class="hdr-btn-label">Subconscious</span></div>' +
-      '<button class="hdr-btn" id="hdr-soup-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Soup menu" aria-expanded="false" aria-controls="soup-drawer-panel">⋯</button>';
+      '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-soup-menu" style="font-size:18px;line-height:1;" aria-label="Menu" aria-expanded="false" aria-controls="soup-drawer-panel">&#9776;</button><span class="hdr-btn-label">Menu</span></div>';
     
     document.getElementById('hdr-guardian').onclick=function(){ openGuardianView({ fromHeader: true }); };
     document.getElementById('hdr-sanctuary').onclick=function(){ switchAppMode('sanctuary'); };
@@ -3696,7 +3708,6 @@ async function openSparkEditSheet(opts) {
     busy = true;
     btnSave.disabled = true;
     try {
-      const title = titleInp.value.trim() || 'Untitled Capture';
       let raw = ta.value;
       if (isCreate && !raw.trim()) {
         showToast('Nothing to Spark ◆');
@@ -3706,6 +3717,7 @@ async function openSparkEditSheet(opts) {
         raw = raw.slice(0, SPARK_MAX_CHARS);
         showToast('Body capped at ' + SPARK_MAX_CHARS + ' ◆');
       }
+      const title = deriveSparkTitle(titleInp.value, raw);
       if (isCreate) {
         const fv = folderSel.value || null;
         const sid = await persistNewSpark(title, raw, fv, newFoldInp);
@@ -4366,11 +4378,7 @@ async function openDiscourse(id){
 }
   
   setEditorMode('write');
-const hdr = document.querySelector('.nq-header');
-hdr.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
-hdr.style.transform = 'translateY(-100%)';
-hdr.style.marginBottom = '-56px';
-showPanel('view-lighthouse');
+  showPanel('view-lighthouse');
   
     currentFolderId = null;
   breadcrumbPath = [{id: null, name: '◈ The Soup'}];
@@ -7373,8 +7381,8 @@ function closeQuickCapture(){document.getElementById('capture-modal').classList.
 async function confirmQuickCapture(){
   if(_cs)return;_cs=true;
   try{
-    const title=document.getElementById('capture-title').value.trim()||'Untitled Capture';
     const raw_text=document.getElementById('capture-body').value.trim();if(!raw_text){showToast('Nothing to Spark ◆');return;}
+    const title=deriveSparkTitle(document.getElementById('capture-title').value, raw_text);
     const fId=document.getElementById('capture-folder').value||null;
     const sid=await persistNewSpark(title,raw_text,fId,document.getElementById('capture-new-folder-input'));
     if(!sid)return;
