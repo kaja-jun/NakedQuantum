@@ -195,9 +195,9 @@ button {
 }
 .bc-spine-line {
   position: absolute;
-  left: max(22px, calc(12px + env(safe-area-inset-left, 0px)));
+  left: max(14px, env(safe-area-inset-left, 0px));
   right: max(14px, env(safe-area-inset-right, 0px));
-  top: 17px;
+  top: 15px;
   height: 1px;
   background: linear-gradient(
     90deg,
@@ -236,6 +236,7 @@ button {
 .bc-knot-wrap.bc-knot-wrap--compact { padding: 6px 2px 0; }
 .bc-knot-wrap.bc-knot-wrap--current { min-width: 0; max-width: min(260px, 58vw); }
 .bc-knot-wrap.bc-knot-wrap--soup { margin-right: 4px; }
+.bc-knot-wrap.bc-knot-wrap--soup .bc-knot {width: 10px; height: 10px; box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 50%, transparent); }
 .bc-knot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; transition: transform 0.2s, opacity 0.2s; }
 .bc-knot.bc-knot-dot { width: 5px; height: 5px; opacity: 0.8; }
 .bc-knot.current { width: 10px; height: 10px; background: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 50%, transparent); }
