@@ -117,11 +117,9 @@ button {
 .header-left:empty {
   display: none;
 }
-.header-actions.header-actions-sanctuary { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.header-actions.header-actions-sanctuary { display: flex; align-items: center; justify-content: flex-end; gap: 8px; width: 100%; }
 #hdr-sanctuary-home.hdr-btn,
 #hdr-sanctuary-menu.hdr-btn {
-  background: var(--surface2);
-  border: 1px solid var(--border);
   color: var(--accent);
 }
 #hdr-sanctuary-home.hdr-btn:active,
