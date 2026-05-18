@@ -1,9 +1,10 @@
-# NakedQunatum Roadmap 16/04/26
+# NakedQuantum Roadmap 16/04/26
 
 - Type - PWA ✅
 - Cloudflare deployment ✅
-- IndexedDB ✅ ❌
+- IndexedDB ✅
 - Foundation - Merge Quantum sanctuary & cosmiOS in one shell -      Discourse engine - Folders - R2 sync ✅
+- Zero dependency ✅
 - Exports - json, md, pdf, .docx ✅
 - Data - Cloudflare R2 ✅
 - Character page ✅
@@ -25,10 +26,19 @@
 - UI refinements (Discourse editor, Pill navigation bars, glyph buttons) ✅
 - Decaying memories/discourses to forgotten, buried in the Deep-soup (can bring it back intentionally) “Nothing is destroys in the abyss, it may forgotten” ✅
 - Delta sync - E2EE- Supabase ✅
-- Pre made characters - immutable (complex continue creative process)
-- Guardian of archives (Highly intelligent reasoning model) - A cold honest Ai lives separately from containers, summoned deliberately.
-- Watcher - Ai watches the patterns of discourses, thoughts, notes - Local Vector embeddings - silent observer - Ego/performance/contradiction/incomsistencies detection - Gold pulsing dot surfacing connections/patterns ✅
-- Potential - move away from vanilla html5 if pwa limit hits
+- Pre made characters - immutable (complex continue creative process) ✅
+- Guardian of archives (Highly intelligent reasoning model) - A cold honest Ai lives separately from containers, summoned deliberately. ✅
+- Local cartographer uses both nlp js and distil bart cnn sumariser model to feed guardian. ✅
+- Fast maps and deep maps ✅
+- Local js aka cartographer uses plenty of word markers - NLP ✅
+- Watcher - Ai watches the patterns of discourses, thoughts, notes - Local Vector embeddings - silent observer - Ego/performance/contradiction/incomsistencies detection - Gold pulsing dot surfacing connections/patterns - Xenova/bge-base-en-v1.5 109mb ✅
+- Removing motes after decay - no functions except philosophy. ✅
+- Merging void into Deepsoup page.✅
+- Abyss page - holds everything watcher collects, guardian logs etc.. drifts like in dark space if universe.✅
+- Security audit ✅
+- Drawing custom glyphs
+- Onboarding tutorial, Navigation blueprint behind tiny ❓
+- Work on UI to make intuitive not easy
 - Vite
 - Nope ❌ - no AppStore or play store, no under some corporate, no ads, no wellness app, no benevolent app, no edgy app, no give away 30% cut
 
@@ -88,7 +98,7 @@ Phase 5, cold backup
 Way into future, like when the NQ get stabilised and officially enter the polishing stage before we think of monetising. It's just an option of map in the lighthouse table that could either we change or pick it up along the path. Question is.. they align with our life long personal project of myself that live as a metacognition uncomfortable personal space of mine for years if I survive lol then it survives years of digital and world transformation too.
 
 - Tauri
-- P2P Syncing (GunDB/Waku), web assembly? Rust?Rust’s `ring` or `rust-crypto` libraries
+- web assembly? Rust?Rust’s `ring` or `rust-crypto` libraries
 - Open to evolving without bending the honest compass.
 
 ---
@@ -96,9 +106,17 @@ Way into future, like when the NQ get stabilised and officially enter the polish
 Optional no pressure monetisation:
 
 1. **The Vessel Fee:** Subscription for the interface (your income/time).
-2. **BYOK:** Users power their own discourse (their sovereignty).
-3. Free monthly renewable access for users who can't afford. BYOK. Simple form No proof asked. If someone hesitate to ask me access then this uncomfortable platform not for them. 
-4. **The Communal Well:** A proxy key for the "keyless" funded by your "Sanctuary Fund" and user donations.
-5. **The Exit:** Data is never a hostage; `.md` and `.pdf` belong to the user.
+2. Third party subscription platform with key 🔑. No tokens, no payment processors tied to the app.
+3. **BYOK:** Users power their own discourse (their sovereignty).
+4. No pro, no ultra premium plan gimmicks. No one off licenses.  One subscription plan one app. 
+5. Free monthly renewable access for users who can't afford. BYOK. Simple form No proof asked. If someone hesitate to ask me access then this uncomfortable platform not for them. 
+6. **The Exit:** Data is never a hostage: Export all button and  `.pdf .html .md`
+7. End of subscription: Read only app with always available options to export all data. 
 
-I’ve built a system that mirrors the "is-ness" you're exploring—it doesn't demand, it doesn't coddle, and it doesn't lie. It just exists for whoever has the fuel or the nerve to ask for it.
+Everyone recommends me different marketing method, which I refused not going to do any performance, download the Reddit again or reading trends or SEO. Finally someone said, a tiny blog, I replied am not good at English writing they said it's even better.. It is true, I need to put a tiny firefly in the abyss otherwise nobody can notice. Monetisation or no users doesn't stop the app. I don't need lots of money not interested tho it is another noise. But some as energy exchange tokens in my path would be nice, even if this helps me work 20 hours instead of selling the Most precious thing in the world ‘Time’ for mindless grind. 
+
+so my crude writing style… 🤔 like fragments and post what I am doing in the app and how it works, my dev story.. if it resonates with someone, they might find the mirror in the abyss. 
+
+---
+
+“I’ve built a system that mirrors the "is-ness" you're exploring—it doesn't demand, it doesn't coddle, and it doesn't lie. It just exists for whoever has the fuel or the nerve to ask for it.”
