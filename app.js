@@ -2902,7 +2902,16 @@ activeIE = null;
   }
 }
 
+let _isRenderingTable = false;
+let _queuedTableRender = false;
 async function renderTableView() {
+  if (_isRenderingTable) { _queuedTableRender = true; return; }
+  _isRenderingTable = true;
+  try { await _executeRenderTableView(); } 
+  finally { _isRenderingTable = false; if (_queuedTableRender) { _queuedTableRender = false; renderTableView(); } }
+}
+
+async function _executeRenderTableView() {
   const surface = document.getElementById('table-surface');
   if (!surface) return;
   surface.onclick = (e) => { if(e.target===surface && selectMode) exitSelectMode(); };
@@ -4526,7 +4535,16 @@ async function deleteCurrentDiscourse() {
 }
 
 /* SANCTUARY */
-async function renderSanctuaryView(){
+let _isRenderingSanctuary = false;
+let _queuedSanctuaryRender = false;
+async function renderSanctuaryView() {
+  if (_isRenderingSanctuary) { _queuedSanctuaryRender = true; return; }
+  _isRenderingSanctuary = true;
+  try { await _executeRenderSanctuaryView(); } 
+  finally { _isRenderingSanctuary = false; if (_queuedSanctuaryRender) { _queuedSanctuaryRender = false; renderSanctuaryView(); } }
+}
+
+async function _executeRenderSanctuaryView() {
   const surface = document.getElementById('sanctuary-surface');
   if (!surface) return;
   const ssw = document.getElementById('sanctuary-search-bar-wrap');
@@ -7157,7 +7175,16 @@ async function openDeepSoupView(){
 
 function renderDeepSoupBreadcrumb(){ /* removed -- local nav + back stack only */ }
 
-async function renderDeepSoupView(){
+let _isRenderingDeepSoup = false;
+let _queuedDeepSoupRender = false;
+async function renderDeepSoupView() {
+  if (_isRenderingDeepSoup) { _queuedDeepSoupRender = true; return; }
+  _isRenderingDeepSoup = true;
+  try { await _executeRenderDeepSoupView(); } 
+  finally { _isRenderingDeepSoup = false; if (_queuedDeepSoupRender) { _queuedDeepSoupRender = false; renderDeepSoupView(); } }
+}
+
+async function _executeRenderDeepSoupView() {
   const surface = document.getElementById('deep-soup-surface');
   surface.innerHTML = '';
   const allF = await getFolders();
@@ -7940,17 +7967,12 @@ function dismissGuardianInvoke(reason) {
   var strip = document.getElementById('guardian-invoke-strip');
   if (strip) {
     strip.classList.remove('visible');
-strip.onclick = null;
-// Redraw tether after strip collapses
-requestAnimationFrame(function () {
-  requestAnimationFrame(function () {
-    if (currentFocusId) drawLineageThread(currentFocusId, focusChain.length ? focusChain[focusChain.length - 1].folderId : null);
-  });
-});
+    strip.onclick = null;
     var dismissBtn = document.getElementById('guardian-invoke-dismiss');
     if (dismissBtn) dismissBtn.onclick = null;
     setTimeout(function () {
       if (strip) strip.style.display = 'none';
+      if (currentFocusId) drawLineageThread(currentFocusId, focusChain.length ? focusChain[focusChain.length - 1].folderId : null);
     }, 500);
   }
   void logGuardianAutoInvoke(null, guardianInvokeLastTriggerType, reason);
@@ -9086,7 +9108,23 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   // Close Lineage when tapping the background overlay
   document.getElementById('lineage-overlay').addEventListener('click', closeLineage);
   // Initial draw
+    // Initial draw
   renderGoldTicks();
+  
+  if (window.ResizeObserver) {
+    const soupRo = new ResizeObserver(() => {
+      if (currentMode === 'soup' && currentFocusId) {
+        requestAnimationFrame(() => {
+          drawLineageThread(currentFocusId, focusChain.length ? focusChain[focusChain.length - 1].folderId : null);
+        });
+      }
+    });
+    const invokeStrip = document.getElementById('guardian-invoke-strip');
+    const tableSurface = document.getElementById('table-surface');
+    if (invokeStrip) soupRo.observe(invokeStrip);
+    if (tableSurface) soupRo.observe(tableSurface);
+  }
+  
 bootApp();
 });
 /* NQ ABYSS GATEKEEPER */
