@@ -57,7 +57,7 @@ button {
 
 #firefly-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
-.nq-header { position: relative; height: 56px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);}
+.nq-header { position: relative; height: 56px; background: var(--bg); border-bottom: none; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);}
 
 .nq-header-title {
   position: absolute;
@@ -82,6 +82,8 @@ button {
   align-items: center;
   gap: 1px;
   cursor: pointer;
+  width: 20%;
+  box-sizing: border-box;
 }
 .hdr-btn-wrap .hdr-btn {
   font-size: 20px;
@@ -89,15 +91,31 @@ button {
 }
 .hdr-btn-label {
   font-size: 7px;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--accent);
   opacity: 0.6;
   pointer-events: none;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
+.header-actions,
 .header-right {
-  gap: 4px;
+  flex: 1;
+  width: 100%;
+  justify-content: space-between;
+  padding: 0 4px;
+  gap: 0;
+}
+.header-right > .hdr-btn {
+  width: 20%;
+  box-sizing: border-box;
+  flex: 0 0 20%;
+}
+.header-left:empty {
+  display: none;
 }
 .header-actions.header-actions-sanctuary { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 #hdr-sanctuary-home.hdr-btn,
@@ -116,11 +134,11 @@ button {
   align-items: center; 
 }
 .header-left { gap: 8px; }
-.hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
-.hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
+.hdr-btn { width: 36px; height: 36px; background: none; border: none; box-shadow: none; border-radius: 0; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
+.hdr-btn:active { background: none; border: none; }
 #nq-header.nq-header--sanctuary-realm {
   background: var(--bg);
-  border-bottom-color: var(--border);
+  border-bottom: none;
 }
 
 /* Watcher — Soup-only LED strip under header (gold = indexing, green = idle, dim = offline) */
@@ -516,7 +534,7 @@ button {
   flex-shrink: 0; display: flex; align-items: center; justify-content: center;
   position: relative; min-height: 48px; padding: 8px 52px;
   background: color-mix(in srgb, var(--bg) 88%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
+  border-bottom: none;
   z-index: 25;
 }
 .realm-local-nav .btn-back-table {
@@ -795,7 +813,7 @@ button {
 .lineage-panel { position: fixed; top: 0; bottom: 0; left: 0; width: 85vw; max-width: 320px; background: rgba(10,10,10,0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-right: 1px solid var(--border); z-index: 1600; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
 .lineage-panel.open { transform: translateX(0); }
 
-.lineage-header { padding: 20px 16px; font-size: 10px; letter-spacing: 3px; color: var(--accent); font-weight: 900; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+.lineage-header { padding: 20px 16px; font-size: 10px; letter-spacing: 3px; color: var(--accent); font-weight: 900; display: flex; justify-content: space-between; align-items: center; border-bottom: none; }
 .lineage-content { flex: 1; overflow-y: auto; padding: 24px 0 100px 0; }
 
 /* Tree leaf rows */
@@ -1454,7 +1472,7 @@ button {
 #view-ie.ie-realm-view .ie-card-archetype,
 #view-ie.ie-realm-view .ie-card-function,
 #view-ie.ie-realm-view .ie-card-meta { color: var(--muted); }
-#view-ie.ie-realm-view .ie-lh-nav { border-bottom: 1px solid var(--border); background: var(--bg); }
+#view-ie.ie-realm-view .ie-lh-nav { border-bottom: none; background: var(--bg); }
 #view-ie.ie-realm-view .ie-page-title {
   font-size: 10px;
   letter-spacing: 2px;
@@ -1494,7 +1512,7 @@ button {
 #view-persona.realm-sub-view .lighthouse-nav,
 #view-memory.realm-sub-view .lighthouse-nav {
   background: var(--bg);
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
 }
 #view-persona.realm-sub-view .realm-local-title,
 #view-memory.realm-sub-view .realm-local-title {
@@ -2175,7 +2193,7 @@ button {
 }
 #view-chat .chat-header {
   background: var(--surface);
-  border-bottom-color: var(--border);
+  border-bottom: none;
 }
 #view-chat #btn-chat-back {
   flex-shrink: 0;
@@ -2274,7 +2292,7 @@ button {
 .btn-forge-close { flex: 1; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-weight: 700; font-size: 14px; }
 
 .chat-view { background: var(--bg); display: flex; flex-direction: column; }
-.chat-header { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 14px; gap: 12px; background: var(--surface); }
+.chat-header { height: 56px; border-bottom: none; display: flex; align-items: center; padding: 0 14px; gap: 12px; background: var(--surface); }
 .chat-char-info { flex: 1; min-width: 0; overflow: hidden; }
 .chat-char-name { font-size: 14px; font-weight: 700; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .chat-messages { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; -webkit-overflow-scrolling: touch; }
@@ -2425,7 +2443,7 @@ select.cosm-input {
 .guardian-log-silent { font-size: 11px; color: var(--g-muted); opacity: 0.4; letter-spacing: 2px; text-transform: uppercase; }
 .guardian-log-detail { position: fixed; inset: 0; background: var(--g-bg); z-index: 2000; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
 .guardian-log-detail.open { transform: translateY(0); }
-.guardian-log-detail-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--g-border); flex-shrink: 0; }
+.guardian-log-detail-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: none; flex-shrink: 0; }
 .guardian-log-detail-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 24px 80px; font-family: var(--font-serif); font-size: 15px; line-height: 1.9; color: var(--g-text); white-space: pre-wrap; }
 /* GUARDIAN EDGE GLOW -- Ethereal Aura (Razor Thin) */
 #guardian-edge-glow {
