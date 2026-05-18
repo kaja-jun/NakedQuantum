@@ -32,8 +32,8 @@ let longPressTimer=null,isLongPress=false,longPressConsumed=false,touchStartPos=
 const LONG_PRESS_DURATION=1000,MOVE_THRESHOLD=10;
 const SPARK_MAX_CHARS=300;
 let selectMode=false, selectedItems=new Set();
-let deepSoupFolderId = null;
-let deepSoupPath = [{id: null, name: 'Deep Soup'}];
+let subconsciousFolderId = null;
+let subconsciousPath = [{id: null, name: 'Subconscious'}];
 let soupLocalSearchOpen = false;
 var guardianSoupInvokeScheduleTimer = null;
 let sanctuaryLocalSearchOpen = false;
@@ -479,19 +479,19 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-/* FORGOTTEN MOATS -- Deep Soup only. Foxfire drift; spawn on enter, die on leave. */
+/* FORGOTTEN MOATS -- Subconscious only. Foxfire drift; spawn on enter, die on leave. */
 var _moatRaf = null;
 var _moatParticles = [];
 var _moatCanvas = null;
 var _moatCtx = null;
 var _moatActive = false;
 
-function startDeepSoupMoats(count) {
-  stopDeepSoupMoats();
-  _moatCanvas = document.getElementById('deep-soup-moat-canvas');
+function startSubconsciousMoats(count) {
+  stopSubconsciousMoats();
+  _moatCanvas = document.getElementById('subconscious-moat-canvas');
   if (!_moatCanvas) return;
   _moatCtx = _moatCanvas.getContext('2d');
-  var wrap = document.getElementById('view-deep-soup');
+  var wrap = document.getElementById('view-subconscious');
   if (wrap) {
     var rr = wrap.getBoundingClientRect();
     _moatCanvas.width = Math.max(1, Math.floor(rr.width));
@@ -509,7 +509,7 @@ function startDeepSoupMoats(count) {
   _tickMoats();
 }
 
-function stopDeepSoupMoats() {
+function stopSubconsciousMoats() {
   _moatActive = false;
   if (_moatRaf) {
     cancelAnimationFrame(_moatRaf);
@@ -550,7 +550,7 @@ function _tickMoats() {
     _moatRaf = requestAnimationFrame(_tickMoats);
     return;
   }
-  var wrap = document.getElementById('view-deep-soup');
+  var wrap = document.getElementById('view-subconscious');
   if (wrap) {
     var rr = wrap.getBoundingClientRect();
     var nw = Math.max(1, Math.floor(rr.width));
@@ -2557,26 +2557,6 @@ async function batchBurn(){
   await openBurnDiscModal();
 }
 
-let wTapTimer=null;
-const wEl=document.getElementById('nq-wordmark');
-
-wEl.addEventListener('touchstart',()=>{
-  wEl.classList.add('pressing');
-},{passive:true});
-
-wEl.addEventListener('touchend',()=>{
-  wEl.classList.remove('pressing');
-  wTapTimer=setTimeout(()=>{
-    goHome();
-  },50);
-});
-
-wEl.addEventListener('touchmove',()=>{
-  wEl.classList.remove('pressing');
-  clearTimeout(wTapTimer);
-  wTapTimer=null;
-});
-
 function dismissModeToast() {
   if (modeToastTimer) {
     clearTimeout(modeToastTimer);
@@ -2608,7 +2588,7 @@ function goHome(){
     if(currentMode==='soup'){
     breadcrumbPath=[{id:null,name:'◈ The Soup'}];
     currentFolderId=null;
-    deepSoupFolderId=null;
+    subconsciousFolderId=null;
     showPanel('view-soup');
     renderTableView();
     flashModeToastForSoupGrid('◈ HOME', 1200);
@@ -2640,10 +2620,10 @@ function syncNqHeaderForCurrentPanel(activePanelId) {
   const onSanctuaryPanel = activePanelId === 'view-sanctuary';
   const realmSanctuary = onSanctuaryPanel && currentMode === 'sanctuary';
   if (hdr) hdr.classList.toggle('nq-header--sanctuary-realm', onSanctuaryPanel);
-  const wm = document.getElementById('nq-wordmark');
-  if (wm) {
-    wm.classList.toggle('nq-wordmark--sanctuary-realm', realmSanctuary);
-    wm.textContent = realmSanctuary ? 'The Sanctuary' : 'NakedQuantum';
+  const title = document.getElementById('nq-header-title');
+  if (title) {
+    title.hidden = !realmSanctuary;
+    title.setAttribute('aria-hidden', realmSanctuary ? 'false' : 'true');
   }
   updateHeaderButtons();
 }
@@ -2658,8 +2638,8 @@ function syncDataRealmFromPanel(activePanelId) {
     case 'view-abyss':
       realm = 'abyss';
       break;
-    case 'view-deep-soup':
-      realm = 'deep-soup';
+    case 'view-subconscious':
+      realm = 'subconscious';
       break;
     case 'view-data':
       realm = 'data';
@@ -2689,13 +2669,13 @@ function showPanel(id){
   /* Leaving (or re-entering) realms: always collapse Abyss sheet -- a stale `.open` sheet
      kept pointer-events:auto and blocked the canvas on the next visit. */
   abyssCloseSheet();
-  if (currentView === 'deep-soup' && id !== 'view-deep-soup') {
-    stopDeepSoupMoats();
+  if (currentView === 'subconscious' && id !== 'view-subconscious') {
+    stopSubconsciousMoats();
   }
   const wasSoup = (currentView === 'soup');
   const wasSanctuary = (currentView === 'sanctuary');
   const panels = [
-   'view-soup', 'view-sanctuary', 'view-abyss', 'view-deep-soup', 'view-data',
+   'view-soup', 'view-sanctuary', 'view-abyss', 'view-subconscious', 'view-data',
   'view-lighthouse', 'view-forge', 'view-chat', 'view-memory', 
   'view-persona', 'view-guardian', 'view-ie'
 ];
@@ -2757,7 +2737,7 @@ function showPanel(id){
   // Realms that carry their own top chrome -- hide global wordmark row
   const header = document.getElementById('nq-header') || document.querySelector('.nq-header');
   const edgeGlow = document.getElementById('guardian-edge-glow');
-  const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-deep-soup'
+  const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-subconscious'
     || id === 'view-ie' || id === 'view-forge' || id === 'view-persona' || id === 'view-memory');
   if (hideGlobalHeader) {
     if (header) {
@@ -2839,19 +2819,17 @@ function updateHeaderButtons(){
   right.innerHTML = '';
 
   if (currentMode === 'soup') {
-    // In Soup, NAKEDQUANTUM sits naturally on the left (left div is empty).
-    // All 5 buttons go to the right territory.
     right.innerHTML =
-      '<button class="hdr-btn" id="hdr-sanctuary" title="The Sanctuary">&#8962;</button>'+
-      '<button class="hdr-btn" id="hdr-guardian" style="font-size:20px;">&#43065;</button>'+
-      '<button class="hdr-btn" id="hdr-abyss" title="Abyss">&#9689;</button>'+
-      '<button class="hdr-btn" id="hdr-deep-soup" title="Deep Soup">꩜</button>'+
+      '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-sanctuary" title="Sanctuary">&#8962;</button><span class="hdr-btn-label">Sanctuary</span></div>' +
+      '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-guardian" style="font-size:20px;">&#43065;</button><span class="hdr-btn-label">Guardian</span></div>' +
+      '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-abyss" title="Abyss">&#9689;</button><span class="hdr-btn-label">Abyss</span></div>' +
+      '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-subconscious" title="Subconscious">꩜</button><span class="hdr-btn-label">Subconscious</span></div>' +
       '<button class="hdr-btn" id="hdr-soup-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Soup menu" aria-expanded="false" aria-controls="soup-drawer-panel">⋯</button>';
     
     document.getElementById('hdr-guardian').onclick=function(){ openGuardianView({ fromHeader: true }); };
     document.getElementById('hdr-sanctuary').onclick=function(){ switchAppMode('sanctuary'); };
     document.getElementById('hdr-abyss').onclick=function(){ openAbyssView(); };
-    document.getElementById('hdr-deep-soup').onclick=function(){ openDeepSoupView(); };
+    document.getElementById('hdr-subconscious').onclick=function(){ openSubconsciousView(); };
     document.getElementById('hdr-soup-menu').onclick=function(){
       const d = document.getElementById('soup-drawer');
       if (d && d.classList.contains('open')) closeSoupDrawer();
@@ -2861,7 +2839,7 @@ function updateHeaderButtons(){
   } else if (currentMode === 'sanctuary' && currentView === 'sanctuary') {
     // In Sanctuary, "THE SANCTUARY" is absolute-centered by CSS.
     // Home goes Left. Menu goes Right.
-    left.innerHTML = '<button type="button" class="hdr-btn" id="hdr-sanctuary-home" title="Back to Soup" aria-label="Back to Soup">⌂</button>';
+    left.innerHTML = '<button type="button" class="hdr-btn" id="hdr-sanctuary-home" title="Back" aria-label="Back" style="font-size:18px;">←</button>';
     
     right.innerHTML = '<button type="button" class="hdr-btn" id="hdr-sanctuary-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer-panel">⋯</button>';
     
@@ -3937,8 +3915,8 @@ async function renderChainKnots(showGhost = false) {
     kind: 'soup',
     id: null,
     folderId: null,
-    label: 'The Soup',
-    tooltip: 'The Soup'
+    label: '',
+    tooltip: ''
   });
 
   if (focusChain.length) {
@@ -4016,12 +3994,7 @@ async function renderChainKnots(showGhost = false) {
     if (isGhost) dot.style.opacity = '0.25';
     wrap.appendChild(dot);
 
-    if (isSoup && !isGhost) {
-      const soupLab = document.createElement('div');
-      soupLab.className = 'bc-knot-label bc-knot-label--soup';
-      soupLab.textContent = 'The Soup';
-      wrap.appendChild(soupLab);
-    } else if (isCurrent && !isGhost) {
+    if (isCurrent && !isGhost) {
       const label = document.createElement('div');
       label.className = 'bc-knot-label current';
       label.textContent = seg.label;
@@ -6605,7 +6578,7 @@ function abyssShowTooltip(obj, tapX, tapY) {
   if (obj.kind === 'guardian-node') {
     var date = new Date(obj.logData.invoked_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     var preview = (obj.logData.response_text || '').slice(0, 90).trim();
-    content = '<div style="color:#8ab4cc;font-size:8px;letter-spacing:2px;font-weight:900;text-transform:uppercase;margin-bottom:5px;">&#9689; Guardian &middot; ' + date + '</div>' +
+    content = '<div style="color:#8ab4cc;font-size:8px;letter-spacing:2px;font-weight:900;text-transform:uppercase;margin-bottom:5px;">&#43065; Guardian &middot; ' + date + '</div>' +
               '<div style="color:var(--muted);font-size:11px;font-family:Georgia,serif;font-style:italic;line-height:1.5;">' + escHtml(preview) + '&hellip;</div>';
   } else if (obj.kind === 'cluster-dot') {
     var parentTitle = '';
@@ -7150,18 +7123,18 @@ function buildForgottenCard(d){
     e.stopPropagation();
     await updateDiscourse(d.id,{updated_at:Date.now()});
     showToast('Surfaced ◆');
-    await renderDeepSoupView();
+    await renderSubconsciousView();
   });
   return card;
 }
 
-/* DEEP SOUP */
-async function openDeepSoupView(){
-  stopDeepSoupMoats();
-  deepSoupFolderId=null;
-  deepSoupPath=[{id:null,name:'Deep Soup'}];
-  showPanel('view-deep-soup');
-  await renderDeepSoupView();
+/* SUBCONSCIOUS */
+async function openSubconsciousView(){
+  stopSubconsciousMoats();
+  subconsciousFolderId=null;
+  subconsciousPath=[{id:null,name:'Subconscious'}];
+  showPanel('view-subconscious');
+  await renderSubconsciousView();
   try {
     var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
     var moatCount = allDiscs.filter(function (d) {
@@ -7169,23 +7142,23 @@ async function openDeepSoupView(){
       return phase === 'forgotten' || phase === 'gone';
     }).length;
     var density = Math.min(25, 5 + moatCount);
-    startDeepSoupMoats(density);
+    startSubconsciousMoats(density);
   } catch (eMo) {}
 }
 
-function renderDeepSoupBreadcrumb(){ /* removed -- local nav + back stack only */ }
+function renderSubconsciousBreadcrumb(){ /* removed -- local nav + back stack only */ }
 
-let _isRenderingDeepSoup = false;
-let _queuedDeepSoupRender = false;
-async function renderDeepSoupView() {
-  if (_isRenderingDeepSoup) { _queuedDeepSoupRender = true; return; }
-  _isRenderingDeepSoup = true;
-  try { await _executeRenderDeepSoupView(); } 
-  finally { _isRenderingDeepSoup = false; if (_queuedDeepSoupRender) { _queuedDeepSoupRender = false; renderDeepSoupView(); } }
+let _isRenderingSubconscious = false;
+let _queuedSubconsciousRender = false;
+async function renderSubconsciousView() {
+  if (_isRenderingSubconscious) { _queuedSubconsciousRender = true; return; }
+  _isRenderingSubconscious = true;
+  try { await _executeRenderSubconsciousView(); } 
+  finally { _isRenderingSubconscious = false; if (_queuedSubconsciousRender) { _queuedSubconsciousRender = false; renderSubconsciousView(); } }
 }
 
-async function _executeRenderDeepSoupView() {
-  const surface = document.getElementById('deep-soup-surface');
+async function _executeRenderSubconsciousView() {
+  const surface = document.getElementById('subconscious-surface');
   surface.innerHTML = '';
   const allF = await getFolders();
   const allD = await dbGetAll("cosm_discourses");
@@ -7199,14 +7172,14 @@ async function _executeRenderDeepSoupView() {
   // Forgotten discourses and sparks at current folder level
         const forgottenItems = allD.filter(d=>{
     if(d.isDeleted) return false; // handled exclusively by void section below
-    if(!safeMatch(d.folder_id, deepSoupFolderId !== null ? deepSoupFolderId : currentFolderId)) return false;
+    if(!safeMatch(d.folder_id, subconsciousFolderId !== null ? subconsciousFolderId : currentFolderId)) return false;
     const phase = decayPhase(d.updated_at||d.created_at||0);
     return phase==='forgotten'||phase==='gone';
   });
 
   // Forgotten folders at current level
   const forgottenFolders = [];
-    const rootFolders = allF.filter(f=>safeMatch(f.parent_id, deepSoupFolderId !== null ? deepSoupFolderId : currentFolderId));
+    const rootFolders = allF.filter(f=>safeMatch(f.parent_id, subconsciousFolderId !== null ? subconsciousFolderId : currentFolderId));
   for(const f of rootFolders){
     const vitality = await getFolderVitality(f.id, allF, allD);
     const phase = vitality ? decayPhase(vitality) : decayPhase(f.created_at||0);
@@ -7215,7 +7188,7 @@ async function _executeRenderDeepSoupView() {
 
   if(!forgottenItems.length && !forgottenFolders.length){
   // If we're inside a forgotten folder, show surface option
-  if(deepSoupFolderId!==null){
+  if(subconsciousFolderId!==null){
     surface.innerHTML=`
       <div class="table-empty">
         <div class="table-empty-glyph">⊹</div>
@@ -7223,12 +7196,12 @@ async function _executeRenderDeepSoupView() {
         <button style="margin-top:16px;background:none;border:1px solid var(--accent-dim);color:var(--accent);font-size:11px;padding:8px 18px;border-radius:8px;font-weight:700;" id="btn-surface-folder">◆ Surface this folder</button>
       </div>`;
     document.getElementById('btn-surface-folder').addEventListener('click',async()=>{
-      const f=await dbGet('cosm_folders',deepSoupFolderId);
+      const f=await dbGet('cosm_folders',subconsciousFolderId);
       if(f){
         await dbPut('cosm_folders',{...f,updated_at:Date.now()});
         showToast('Folder surfaced ◆');
-        deepSoupFolderId=null;
-        renderDeepSoupView();
+        subconsciousFolderId=null;
+        renderSubconsciousView();
       }
     });
     return;
@@ -7248,9 +7221,9 @@ async function _executeRenderDeepSoupView() {
       card.className='folder-card card card-fading';
       card.innerHTML=`<div class="folder-card-top"><span class="folder-icon-glyph">▤</span></div><div class="folder-card-name">${escHtml(f.name)}</div><div class="folder-card-meta">Forgotten</div>`;
       card.onclick=()=>{
-  deepSoupFolderId=f.id;
-  deepSoupPath.push({id:f.id, name:f.name});
-  renderDeepSoupView();
+  subconsciousFolderId=f.id;
+  subconsciousPath.push({id:f.id, name:f.name});
+  renderSubconsciousView();
 };
 
       g.appendChild(card);
@@ -7318,14 +7291,14 @@ if(voidedDiscs.length > 0) {
       e.stopPropagation();
       await restoreDiscourse(d.id);
       showToast('Restored ◆');
-      await renderDeepSoupView();
+      await renderSubconsciousView();
     });
     card.querySelector('.purge-btn').addEventListener('click', async(e) => {
       e.stopPropagation();
       if(!confirm("Permanently delete?")) return;
       await purgeDiscourse(d.id);
       showToast('Purged ◌');
-      await renderDeepSoupView();
+      await renderSubconsciousView();
     });
     
     vg.appendChild(card);
@@ -8738,7 +8711,7 @@ async function renderGuardianLogs(){
     item.className = 'guardian-log-item';
     var date = new Date(log.invoked_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
     if(log.was_silent){
-      item.innerHTML = '<div class="guardian-log-date">' + date + '</div><div class="guardian-log-silent">&#9689; &mdash; silence</div>';
+      item.innerHTML = '<div class="guardian-log-date">' + date + '</div><div class="guardian-log-silent">&#43065; &mdash; silence</div>';
     } else {
       var preview = (log.response_text || '').slice(0,120).trim();
       item.innerHTML = '<div class="guardian-log-date">' + date + ' &middot; ' + log.soup_snapshot_count + ' discourses</div><div class="guardian-log-preview">' + escHtml(preview) + '...</div>';
@@ -8752,7 +8725,7 @@ function openGuardianLogDetail(log){
   var detail = document.getElementById('guardian-log-detail');
   var content = document.getElementById('guardian-log-detail-content');
   var date = new Date(log.invoked_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
-  content.textContent = '&#9689; ' + date + '\n\n' + log.response_text;
+  content.textContent = String.fromCodePoint(43065) + ' ' + date + '\n\n' + log.response_text;
   detail.classList.add('open');
 }
 
@@ -8990,12 +8963,12 @@ document.getElementById('btn-abyss-back').addEventListener('click', () => {
   showPanel('view-soup');
   void renderTableView();
 });
-document.getElementById('btn-deep-soup-back').addEventListener('click', () => {
-  if (Array.isArray(deepSoupPath) && deepSoupPath.length > 1) {
-    deepSoupPath = deepSoupPath.slice(0, -1);
-    const last = deepSoupPath[deepSoupPath.length - 1];
-    deepSoupFolderId = last.id;
-    void renderDeepSoupView();
+document.getElementById('btn-subconscious-back').addEventListener('click', () => {
+  if (Array.isArray(subconsciousPath) && subconsciousPath.length > 1) {
+    subconsciousPath = subconsciousPath.slice(0, -1);
+    const last = subconsciousPath[subconsciousPath.length - 1];
+    subconsciousFolderId = last.id;
+    void renderSubconsciousView();
     return;
   }
   showPanel('view-soup');

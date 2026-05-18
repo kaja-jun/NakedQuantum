@@ -150,12 +150,20 @@ Search for: `The Soup` and `'Soup'` inside the breadcrumb/tether render function
 
 ## Verify After
 
-- [ ] No `nq-wordmark` element or references remain
-- [ ] Header shows 4 labelled buttons + menu in soup view
-- [ ] Sanctuary header shows ← not ⌂
-- [ ] Guardian page and logs use guardian glyph not abyss glyph
-- [ ] No instance of “Deep Soup”, “deep-soup”, “deepSoup” visible to user
-- [ ] Gold tether line has no root text label
-- [ ] App loads without console errors
-- [ ] Navigating to Subconscious view works
-- [ ] Subconscious moats still spawn on entry
+- [x] No `nq-wordmark` element or references remain (replaced by `#nq-header-title` for Sanctuary only)
+- [x] Header shows 4 labelled buttons + menu in soup view (`#header-right`)
+- [x] Sanctuary header shows ← not ⌂
+- [x] Guardian page and logs use guardian glyph not abyss glyph
+- [x] No instance of “Deep Soup”, “deep-soup”, “deepSoup” visible to user
+- [x] Gold tether line has no root text label
+- [ ] App loads without console errors (manual)
+- [ ] Navigating to Subconscious view works (manual)
+- [ ] Subconscious moats still spawn on entry (manual)
+
+## Shipped (cursor/header-naming-refactor-b53a)
+
+- Removed NakedQuantum wordmark; centered **The Sanctuary** via `#nq-header-title` (HTML + `syncNqHeaderForCurrentPanel`).
+- Soup header: labeled `hdr-btn-wrap` buttons on `#header-right`.
+- Full Deep Soup → Subconscious rename (IDs, views, functions, CSS class).
+- Guardian glyphs fixed in `index.html` + log/detail paths in `app.js`.
+- Gold tether: root knot dot kept, “The Soup” label removed.
