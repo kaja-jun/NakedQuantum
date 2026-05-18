@@ -57,17 +57,47 @@ button {
 
 #firefly-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
-.nq-header { height: 56px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);}
+.nq-header { position: relative; height: 56px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);}
 
-.nq-wordmark { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; opacity: 0.8; cursor: pointer; user-select: none; -webkit-user-select: none; padding: 8px 0; transition: opacity 0.15s; }
-.nq-wordmark.pressing { opacity: 0.3; }
-.nq-wordmark.nq-wordmark--sanctuary-realm { 
-  position: absolute; 
-  left: 50%; 
-  transform: translateX(-50%); 
-  color: var(--accent); 
-  letter-spacing: 2px; 
-  pointer-events: none; /* Makes it a title, not a button */
+.nq-header-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  font-weight: 900;
+  text-transform: uppercase;
+  opacity: 0.8;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  white-space: nowrap;
+}
+.nq-header-title[hidden] { display: none !important; }
+
+.hdr-btn-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  cursor: pointer;
+}
+.hdr-btn-wrap .hdr-btn {
+  font-size: 20px;
+  padding: 6px 8px;
+}
+.hdr-btn-label {
+  font-size: 7px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.6;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.header-right {
+  gap: 4px;
 }
 .header-actions.header-actions-sanctuary { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 #hdr-sanctuary-home.hdr-btn,
@@ -84,8 +114,8 @@ button {
 .header-left, .header-right { 
   display: flex; 
   align-items: center; 
-  gap: 8px; 
 }
+.header-left { gap: 8px; }
 .hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 .hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
 #nq-header.nq-header--sanctuary-realm {
@@ -755,8 +785,8 @@ button {
   font-size: 9px; color: var(--accent-dim); letter-spacing: 1px; margin-top: 2px;
 }
 
-/* DEEP SOUP VIEW */
-.deep-soup-view { position: relative; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+/* SUBCONSCIOUS VIEW */
+.subconscious-view { position: relative; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 /* THE LINEAGE NAVIGATOR */
 #lineage-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1500; display: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
@@ -2543,7 +2573,7 @@ select.cosm-input {
 
 .folder-card, .discourse-card, .character-card, .ie-row, .ie-deck-card,
 .hdr-btn, .bar-pill, .breadcrumb-btn, .tbtn, .btn-back-table,
-.nq-wordmark, .bottom-bar, .lighthouse-nav, .soup-drawer-item {
+.nq-header-title, .bottom-bar, .lighthouse-nav, .soup-drawer-item {
   user-select: none;
   -webkit-user-select: none;
 }
