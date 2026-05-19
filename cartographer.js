@@ -1,7 +1,7 @@
 /**
 
 - NakedQuantum -- Sovereign NLP Pipeline
-- cartographer.js v0.3
+- cartographer.js v0.4 (C1 stemmer, C2 negation, carto_version 4)
 - 
 - Pure functions. No DOM. No DB. No globals.
 - Takes text in, returns rich shape data out.
@@ -42,7 +42,8 @@ negative: new Set([
 'silence','never','nothing','hollow','bitter','ache','weight',
 'numb','exhausted','stuck','suffocating','invisible','worthless',
 'ashamed','rage','frozen','collapse','despair','haunt','scream',
-'blind','deaf','cruel','stripped','torn','melting','dissolve'
+'blind','deaf','cruel','stripped','torn','melting','dissolve',
+'gutted','devastated','shattered','crushed','hopeless','brokenness'
 ]),
 tentative: new Set([
 'perhaps','maybe','sometimes','could','might','seems','almost',
@@ -142,23 +143,116 @@ const LEMMA_MAP = new Map([
   ['breathing','breath'], ['breathed','breath']
 ]);
 
+const CONTRACTION_FORMS = {
+  "don't": 'dont', "doesn't": 'doesnt', "didn't": 'didnt', "won't": 'wont',
+  "wouldn't": 'wouldnt', "couldn't": 'couldnt', "shouldn't": 'shouldnt',
+  "can't": 'cant', "isn't": 'isnt', "aren't": 'arent', "wasn't": 'wasnt',
+  "weren't": 'werent', "hasn't": 'hasnt', "haven't": 'havent', "hadn't": 'hadnt',
+  "mustn't": 'mustnt', "needn't": 'neednt', "ain't": 'aint'
+};
+
+const NEGATORS = new Set([
+  'not', 'never', 'no', 'nor', 'neither', 'none', 'without', 'hardly', 'barely',
+  'cannot', 'cant', 'dont', 'doesnt', 'didnt', 'wont', 'wouldnt', 'couldnt',
+  'shouldnt', 'isnt', 'arent', 'wasnt', 'werent', 'hasnt', 'havent', 'hadnt',
+  'mustnt', 'neednt', 'aint'
+]);
+
+function buildLexiconWords() {
+  const s = new Set();
+  for (const key of Object.keys(SENTIMENT)) {
+    for (const w of SENTIMENT[key]) s.add(w);
+  }
+  for (const w of INVERSION_MARKERS) s.add(w);
+  for (const w of ABSOLUTES) s.add(w);
+  return s;
+}
+
+const LEXICON_WORDS = buildLexiconWords();
+
+const VALID_STEMS = (function () {
+  const s = new Set(LEXICON_WORDS);
+  for (const [k, v] of LEMMA_MAP) { s.add(k); s.add(v); }
+  return s;
+})();
+
+function normalizeContractions(w) {
+  if (CONTRACTION_FORMS[w]) return CONTRACTION_FORMS[w];
+  if (w.endsWith("n't") && w.length > 3) return w.slice(0, -3) + 'nt';
+  if (w.endsWith("'re")) return w.slice(0, -3);
+  if (w.endsWith("'ve")) return w.slice(0, -3);
+  if (w.endsWith("'ll")) return w.slice(0, -3);
+  if (w.endsWith("'d") && w.length > 2) return w.slice(0, -2);
+  if (w.endsWith("'m")) return w.slice(0, -2);
+  if (w.endsWith("'s") && w.length > 2) return w.slice(0, -2);
+  return w;
+}
+
+function safeSuffixStem(w) {
+  if (LEXICON_WORDS.has(w)) return w;
+  if (w.length > 4 && w.endsWith('ing')) {
+    const stem = w.slice(0, -3);
+    if (stem.length >= 3 && VALID_STEMS.has(stem)) return stem;
+  }
+  if (w.length > 3 && w.endsWith('ed')) {
+    const stem = w.slice(0, -2);
+    if (stem.length >= 2 && VALID_STEMS.has(stem)) return stem;
+  }
+  if (w.length > 3 && w.endsWith('es')) {
+    const stem = w.slice(0, -2);
+    if (stem.length >= 2 && VALID_STEMS.has(stem)) return stem;
+  }
+  if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) {
+    const stem = w.slice(0, -1);
+    if (stem.length >= 2 && VALID_STEMS.has(stem)) return stem;
+  }
+  return w;
+}
+
 function normalizeToken(raw) {
   if (!raw) return '';
   let w = raw.toLowerCase();
-  // normalize quotes and dashes
   w = w.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
-  // strip leading/trailing non-letters/numbers, keep internal apostrophe
   w = w.replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/gu, '');
   if (!w) return '';
+  w = normalizeContractions(w);
   if (STOPWORDS.has(w)) return w;
-  // lemma lookup first
   if (LEMMA_MAP.has(w)) return LEMMA_MAP.get(w);
-  // very light stemming fallback, safe and reversible
-  if (w.length > 4 && w.endsWith('ing')) return w.slice(0, -3);
-  if (w.length > 3 && w.endsWith('ed')) return w.slice(0, -2);
-  if (w.length > 3 && w.endsWith('es')) return w.slice(0, -2);
-  if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1);
-  return w;
+  return safeSuffixStem(w);
+}
+
+function isNegated(words, index) {
+  for (let k = Math.max(0, index - 2); k < index; k++) {
+    if (NEGATORS.has(words[k])) return true;
+  }
+  return false;
+}
+
+/** Count lexicon hits; negated hits are excluded (e.g. "not happy" → no positive hit). */
+function lexiconHitRate(textOrWords, lexicon) {
+  const words = Array.isArray(textOrWords) ? textOrWords : tokenize(textOrWords);
+  if (!words.length) return 0;
+  let hits = 0;
+  for (let i = 0; i < words.length; i++) {
+    if (lexicon.has(words[i]) && !isNegated(words, i)) hits++;
+  }
+  return hits / words.length;
+}
+
+/** Polarity for paradox / tension: pos | neg | null */
+function wordSentimentPolarity(words, index) {
+  const w = words[index];
+  const negated = isNegated(words, index);
+  const pos = SENTIMENT.positive.has(w) || SENTIMENT.existence.has(w);
+  const neg = SENTIMENT.negative.has(w) || SENTIMENT.dissolution.has(w);
+  if (pos && !neg) return negated ? 'neg' : 'pos';
+  if (neg && !pos) return negated ? 'pos' : 'neg';
+  if (pos && neg) return negated ? null : 'pos';
+  return null;
+}
+
+function lexiconHitNegated(words, index, lexicon) {
+  return lexicon.has(words[index]) && !isNegated(words, index);
 }
 
 function tokenize(text) {
@@ -227,15 +321,13 @@ const WINDOW = 6;
 let paradoxCount = 0;
 const paradoxPairs = [];
 for (let i = 0; i < words.length; i++) {
-const w = words[i];
-const inPos = SENTIMENT.positive.has(w) || SENTIMENT.existence.has(w);
-const inNeg = SENTIMENT.negative.has(w) || SENTIMENT.dissolution.has(w);
-if (!inPos && !inNeg) continue;
+const polA = wordSentimentPolarity(words, i);
+if (!polA) continue;
 for (let j = i + 1; j < Math.min(i + WINDOW, words.length); j++) {
+const polB = wordSentimentPolarity(words, j);
+if ((polA === 'pos' && polB === 'neg') || (polA === 'neg' && polB === 'pos')) {
+const w = words[i];
 const w2 = words[j];
-const w2Pos = SENTIMENT.positive.has(w2) || SENTIMENT.existence.has(w2);
-const w2Neg = SENTIMENT.negative.has(w2) || SENTIMENT.dissolution.has(w2);
-if ((inPos && w2Neg) || (inNeg && w2Pos)) {
 paradoxCount++;
 if (paradoxPairs.length < 5) paradoxPairs.push(w + '/' + w2);
 break;
@@ -351,10 +443,7 @@ function detectEmotionalArc(text) {
   const lastThird = lines.slice(-Math.ceil(lines.length / 3)).join(' ');
 
   function score(t, lexicon) {
-    const words = tokenize(t);
-    let hits = 0;
-    for (const w of words) { if (lexicon.has(w)) hits++; }
-    return hits / Math.max(words.length, 1);
+    return lexiconHitRate(t, lexicon);
   }
 
   const openingTones = [
@@ -594,9 +683,7 @@ const opening = lines.slice(0, Math.ceil(lines.length / 3)).join(' ');
 const closing = lines.slice(-Math.ceil(lines.length / 3)).join(' ');
 
 function densityScore(chunk, lexicon) {
-const words = tokenize(chunk);
-const hits  = words.filter(w => lexicon.has(w)).length;
-return hits / Math.max(words.length, 1);
+return lexiconHitRate(chunk, lexicon);
 }
 
 const openSensory  = densityScore(opening, SENTIMENT.sensory);
@@ -665,8 +752,13 @@ const endsOnQuestion    = finalLine.endsWith('?');
 const endsOnFragment    = finalLen <= 5;
 const endsOnEllipsis    = finalLine.endsWith('...') || finalLine.endsWith('\u2026');
 const endsOnDash        = /[—–-]$/.test(finalLine);
-const endsOnDissolution = SENTIMENT.dissolution.has(lastWord) || SENTIMENT.existence.has(lastWord);
-const endsOnResolved    = SENTIMENT.resolved.has(lastWord) || SENTIMENT.positive.has(lastWord);
+const lastIdx = finalLen - 1;
+const endsOnDissolution = lastIdx >= 0 && (
+  lexiconHitNegated(finalWords, lastIdx, SENTIMENT.dissolution) ||
+  lexiconHitNegated(finalWords, lastIdx, SENTIMENT.existence));
+const endsOnResolved = lastIdx >= 0 && (
+  lexiconHitNegated(finalWords, lastIdx, SENTIMENT.resolved) ||
+  lexiconHitNegated(finalWords, lastIdx, SENTIMENT.positive));
 const isFullSentence    = finalLen > 10 && !endsOnQuestion;
 
 // Score intentional incompleteness
@@ -717,6 +809,9 @@ ends_on_resolved:    endsOnResolved
 
 // ── MAIN EXPORT ───────────────────────────────────────────────────────────────
 
+/** Bump when stemmer, lexicon, or fast-map schema changes (triggers re-map in app.js). */
+export const CARTO_VERSION = 4;
+
 /**
 
 - generateFastMapData(text)
@@ -747,6 +842,7 @@ const depersonalisation  = detectDepersonalization(text);
 
 return {
 // Core
+carto_version: CARTO_VERSION,
 word_count: wordCount,
 first_line: edges.first_line,
 last_line:  edges.last_line,

@@ -5051,12 +5051,14 @@ async function generateFastMap(discourseId, mapOpts) {
     if (wordCount < 30) return;
 
     const existing = await dbGet('guardian_summaries', discourseId);
-    // Skip if already mapped and word count is unchanged
-    if (existing && existing.map_type === 'fast' && existing.word_count === wordCount) return;
 
 // Run your sovereign local heuristics
 if (!generateFastMapData) { console.warn('Cartographer not loaded yet'); return; }
 const mapData = generateFastMapData(d.raw_text);
+    const cartoVer = mapData.carto_version || 0;
+    const existingVer = existing && existing.carto_version != null ? existing.carto_version : 0;
+    // Skip if fast map is current (word count + cartographer version)
+    if (existing && existing.map_type === 'fast' && existing.word_count === wordCount && existingVer >= cartoVer) return;
 
 let fastMap = {
   id: discourseId,

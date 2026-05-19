@@ -143,13 +143,13 @@ flowchart TB
 
 *Cartographer is the nervous system for Guardian, auto-invoke, and Abyss dots. Fix sensing before more Guardian prose.*
 
-- [ ] **C1 — Stemmer safety** — Never emit broken stems (`nothing`→`noth`, `thing`→`th`). Prefer: expand `LEMMA_MAP`, or only strip `-ing` when result is in a lexicon / min length.
-- [ ] **C2 — Negation flipper** — `not|never|no|n't` within 2 tokens flips sentiment hit for scoring functions (not full NLP).
+- [x] **C1 — Stemmer safety** — Never emit broken stems (`nothing`→`noth`, `thing`→`th`). `LEXICON_WORDS` guard + `VALID_STEMS` suffix strip only. *(Shipped v0.4)*
+- [x] **C2 — Negation flipper** — `NEGATORS` + `lexiconHitRate` / `wordSentimentPolarity`; contractions → `dont`, `cant`, etc. *(Shipped v0.4)*
 - [ ] **C3 — Lexicon expansion** — Target ~10× coverage per category (~300–400 terms each). **Shipped app stays zero-deps.** Expansion workflow:
   - **Now:** Kaja adds curated batches manually on iPhone when time allows.
   - **When laptop exists:** one-time Python script (GloVe or word2vec — whichever is convenient) → neighbor candidates → **Kaja curates** → paste into `cartographer.js`. Not shipped, not runtime.
   - Include contractions (`don't` → negation + stem).
-- [ ] **C3b — `carto_version` tagged re-map** — **Decision: tagged, not lazy-only or eager-only.** Store `carto_version` on each fast map row (e.g. `3` after C1–C3 ship). On read/save, if `carto_version < CARTO_VERSION_CURRENT`, queue `generateFastMap` for that discourse. Avoids stale archive after lexicon/stemmer fixes without blocking iPhone with one eager batch. *(Optional: `tools/expand_lexicon.py` + `tools/README` when laptop exists — never bundled in Pages deploy.)*
+- [x] **C3b — `carto_version` tagged re-map** — `export const CARTO_VERSION = 4` on fast maps; `generateFastMap` re-runs when `existingVer < cartoVer`. *(Shipped v0.4)*
 - [ ] **C4 — Detector confidence** — Each detector returns `confidence: 0–1` from signal strength; `checkGuardianTrigger` ignores low-confidence qualifiers.
 - [ ] **C5 — Label softening** — e.g. depersonalisation: “Suggests detachment…” not “Completely detached”; require 2+ detectors for auto-invoke “strong” claims (policy).
 - [ ] **C6 — extractiveSummary** — Score all sentences; don’t pre-drop &lt;20 char lines before pick; split on `/[.!?]+/` cleanly.
@@ -408,7 +408,7 @@ function divergenceNote(link, mapA, mapB) {
 
 ### Still open
 
-1. **`CARTO_VERSION_CURRENT`** — bump on each cartographer schema/lexicon breaking change?
+1. **`CARTO_VERSION`** — currently **4**; bump on each cartographer schema/lexicon breaking change.
 2. **Onboarding default** — strip enabled after onboarding unless user opted out, vs disabled until opt-in? *(Implement A2 with clear copy either way.)*
 
 ```
@@ -436,6 +436,7 @@ function divergenceNote(link, mapA, mapB) {
 | Kimi blueprint review merged | 2026-05-19 | G2 elevated, caps, theory_one_line, carto_version, divergenceNote sketch |
 | Kaja decisions merged | 2026-05-19 | Keep urgent deep maps; manual lexicons; PWA onboarding/settings auto-invoke; desktop → lighthouse cockpit |
 | PR #31 + #32 on main | 2026-05 | Cartographer v0.3 + roadmap pinned |
+| **C1–C2 + C3b** | 2026-05-19 | cartographer v0.4: safe stemmer, negation, `CARTO_VERSION` 4, remaps on save |
 
 ---
 
