@@ -193,7 +193,7 @@ flowchart TB
 
 ### Phase C — Tension heuristics + dock blocks
 
-- [ ] Rule-based tension lines in strip (questions).
+- [ ] Rule-based tension lines in strip (questions).Caution: only used my highly capable model, never answers by cartographer.js 
 - [ ] Click strip item → dock read-only block beside draft (desktop).
 - [ ] Blocks are **context**, not edits to source engrams.
 
@@ -230,14 +230,13 @@ flowchart TB
 | `NakedQuantum story.md` | Vision, ethics, why uncomfortable |
 | `NQ blueprint.md` | Realms, Engram, Watcher, Guardian (pre-cockpit) |
 | `NakedQuantum Roadmap.md` | Shipped history; Tauri/Vite futures |
-| `header-naming-refactor-blueprint.md` | Shell/labels batch (done) |
 | `AGENTS.md` | Agent collaboration rules |
 
 ---
 
 ## 12. Open questions (resolve before Phase D)
 
-1. **Debounce ms** — 800 vs 1200 for Cartographer on mobile-class CPU in desktop shell?
+1. **Debounce ms** — 2000ms vs 2500ms for Cartographer on mobile-class CPU in desktop shell?
 2. **Whisper model** — fixed small model vs user picks in Ollama?
 3. **Block dock** — side panel vs bottom sheet on narrow desktop windows?
 4. **PWA strip** — ever, or desktop-only forever for live strip?
