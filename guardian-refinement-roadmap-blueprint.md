@@ -60,6 +60,7 @@
 | Dismiss backoff | 5+ with &lt;2 qualifiers; cap 10 | Keep ethics; raise qualifier **confidence** bar |
 | Auto-invoke surface | **Strip under header only** — never modal, never other realms | Unchanged |
 | Summon context | All discourses’ fast maps + all deep maps + watcher aggregates | **Tiered** (§7) |
+| Auto-invoke default | Dev: easy to trigger for testing | **OFF** until user enables “Guardian may interrupt” (§10) |
 
 ---
 
@@ -143,7 +144,11 @@ flowchart TB
 
 - [ ] **C1 — Stemmer safety** — Never emit broken stems (`nothing`→`noth`, `thing`→`th`). Prefer: expand `LEMMA_MAP`, or only strip `-ing` when result is in a lexicon / min length.
 - [ ] **C2 — Negation flipper** — `not|never|no|n't` within 2 tokens flips sentiment hit for scoring functions (not full NLP).
-- [ ] **C3 — Lexicon expansion** — Manual curated batches per category (aim ~10× coverage); include contractions (`don't` → treat as negation + stem). **No** runtime GloVe unless offline bundle approved.
+- [ ] **C3 — Lexicon expansion** — Target ~10× coverage per category (~300–400 terms each). **Shipped app stays zero-deps.** Expansion workflow:
+  - **One-time assist (not in PWA):** optional Python script on any machine (laptop once available): seed sets → nearest neighbors via GloVe 50d or word2vec → **Kaja curates** keep/discard → paste into `cartographer.js`. Not runtime lookup; human-in-the-loop mechanical assist.
+  - **In-app:** manual batches on iPhone still valid for small adds.
+  - Include contractions (`don't` → negation + stem).
+- [ ] **C3b — `carto_version` tagged re-map** — **Decision: tagged, not lazy-only or eager-only.** Store `carto_version` on each fast map row (e.g. `3` after C1–C3 ship). On read/save, if `carto_version < CARTO_VERSION_CURRENT`, queue `generateFastMap` for that discourse. Avoids stale archive after lexicon/stemmer fixes without blocking iPhone with one eager batch. *(Optional: `tools/expand_lexicon.py` + `tools/README` when laptop exists — never bundled in Pages deploy.)*
 - [ ] **C4 — Detector confidence** — Each detector returns `confidence: 0–1` from signal strength; `checkGuardianTrigger` ignores low-confidence qualifiers.
 - [ ] **C5 — Label softening** — e.g. depersonalisation: “Suggests detachment…” not “Completely detached”; require 2+ detectors for auto-invoke “strong” claims (policy).
 - [ ] **C6 — extractiveSummary** — Score all sentences; don’t pre-drop &lt;20 char lines before pick; split on `/[.!?]+/` cleanly.
@@ -162,23 +167,86 @@ flowchart TB
 
 ### G1 — Witness ledger (local, no new LLM)
 
-- [ ] Extend `guardian_logs` (or companion store) with structured fields: `primary_discourse_id`, `qualifiers[]`, `theory_one_line` (optional extract post-response), `fast_map_snapshot_hash` or key terms at invoke time.
-- [ ] On summon: feed **last N structured theories** (not only raw `response_text`).
+- [ ] Extend `guardian_logs` with structured fields: `primary_discourse_id`, `qualifiers[]`, `theory_one_line`, `geometry_snapshot` (see G2), `log_type`, `auto_invoked`, `triggered_by`.
+- [ ] On summon: feed **last N structured theories** — **default N = 3** (override in decisions log if Kaja wants 5).
 - [ ] Include `log_type` / `auto_invoked` / `triggered_by` in context so Guardian can separate strip vs summon voice.
 
-### G2 — Self-diff on summon (Cartographer-only)
+**`theory_one_line` — decided (Kimi review, pending Kaja ack):** **Rule-based first**, not LLM-extracted.
 
-- [ ] Before LLM: compute **geometry delta** since last invoke on same discourse / shared orbit terms.
-- [ ] Inject block: `GEOMETRY SINCE LAST WITNESS` (facts, not performative doubt).
-- [ ] Optional: “I said X when orbit was high; orbit still high but terms shifted.”
+| Approach | Use |
+|----------|-----|
+| LLM-extracted | Defer — extra cost, drift from actual claim |
+| Rule-based | **Ship** — deterministic, inspectable |
+
+Template from primary qualifier + terms, then append first substantive sentence from `response_text` (first non-empty line after any greeting):
+
+| Qualifier | Template |
+|-----------|----------|
+| `orbit` | `I noted you were orbiting [terms] without resolution.` |
+| `paradox` | `I saw tension between [pairs].` |
+| `escalating_arc` | `I read the arc as escalating.` |
+| `silence` | `I read deliberate silence as structure.` |
+| `inversion_loop` | `I read perpetual self-argument in the phrasing.` |
+| (summon, no qualifier) | First substantive sentence only |
+
+### G2 — Geometry snapshot & self-diff (heart of witness — **elevated priority**)
+
+*Mirror: “You are anxious.” Witness: “You were anxious then; geometry still shows the same orbit terms.” That requires **temporal comparison**, not only last-2 prose logs.*
+
+- [ ] On every invoke (strip + summon): persist `geometry_snapshot` on `guardian_logs`:
+
+```js
+// geometry_snapshot (JSON on guardian_logs)
+{
+  discourse_id: "d_...",
+  orbit_terms: ["fear", "void"],
+  arc_direction: "tentative → escalating",
+  silence_ratio: 0.12,
+  pronoun_dominant: "I",
+  depersonalization_label: "Balanced perspective",
+  word_count: 340,
+  carto_version: 3
+}
+```
+
+- [ ] On summon: `geometryDelta(priorSnapshot, currentMap)` → inject `GEOMETRY SINCE LAST WITNESS` (facts only):
+
+```js
+// geometryDelta — illustrative; implement in app.js at context-build time
+function geometryDelta(prior, currentMap) {
+  const changes = [];
+  const currentTerms = new Set((currentMap.key_terms || []).map(k => k.term));
+  const stillOrbiting = (prior.orbit_terms || []).filter(t => currentTerms.has(t));
+  if (stillOrbiting.length) changes.push('still orbiting ' + stillOrbiting.join(', '));
+  if (prior.arc_direction && currentMap.emotional_arc &&
+      prior.arc_direction !== currentMap.emotional_arc.direction) {
+    changes.push('arc shifted from ' + prior.arc_direction + ' to ' + currentMap.emotional_arc.direction);
+  }
+  return changes.length ? changes.join('; ') : null;
+}
+```
+
+- [ ] Compare against **last invoke on same `discourse_id`** when present; else last global invoke snapshot.
+- [ ] Makes G1 ledger useful; feeds G4 strip with one prior theory line.
 
 ### G3 — Tiered summon context (fix “memory bomb”)
 
-- [ ] **Tier 1 (always):** Last 3 discourses — full fast maps + edges + depersonalisation + new dimensions.
-- [ ] **Tier 2:** Top 5 watcher echoes/contradictions **with synthesis line** (§8).
-- [ ] **Tier 3:** Deep maps only for “urgent” discourses (existing urgent logic), not all `*_deep` every summon.
-- [ ] **Tier 4:** Archive rollup — counts, date span, arc aggregates (one paragraph stats).
-- [ ] Cap total context budget (chars/tokens) with deterministic truncation order.
+- [ ] **Tier 1 (sacred):** Last **3** discourses by **`updated_at`** (fallback `created_at`) — full fast maps + edges + depersonalisation + new dimensions.
+- [ ] **Tier 2:** Top **5** watcher links — **one `divergenceNote` line per link** (§8), not raw pair lists.
+- [ ] **Tier 3:** Deep maps only for “urgent” discourses (existing urgent heuristic until amended).
+- [ ] **Tier 4:** Archive rollup — counts, date span, arc aggregates (one short paragraph).
+
+**Context budget — decided caps (Kimi review):**
+
+| Block | Budget | Notes |
+|-------|--------|-------|
+| Archive material (Tiers 1–4) | **~2,500 tokens** (~10,000 chars) | Truncate Tier 4 first, then 3, then 2. **Never drop Tier 1.** |
+| Prior witness (ledger + G2 diff + last prose) | **~500 tokens** (~2,000 chars) | Structured theories before long raw `response_text` |
+| System + instruction | remainder | `GUARDIAN_SYSTEM_PROMPT` + summon instructions |
+
+Rough rule in code: `chars / 4 ≈ tokens`. DistilBART ~80 tokens × many discs is why Tier 3 must stay urgent-only.
+
+- [ ] Implement `estimateContextTokens(block)` + deterministic truncation in `buildGuardianContext`.
 
 ### G4 — Worker strip upgrade (optional, cheap)
 
@@ -202,9 +270,32 @@ flowchart TB
 
 ## 8. Phase X — Cross-modal synthesis (Watcher × Cartographer)
 
-- [ ] `divergenceNote(link, mapA, mapB, embeddingScore)` — one line for Guardian context, e.g. “High semantic echo (87%) but opposing emotional arc (escalating vs resolving).”
-- [ ] Feed in **Tier 2** summon block, not separate orphan lists.
-- [ ] Do **not** merge Watcher into Cartographer code — keep modules separate, synthesize at context-build time in `app.js` (or future `guardian.js`).
+*Highest-leverage single line in summon context. Implement in `buildGuardianContext` when resolving Tier 2 links.*
+
+- [ ] `divergenceNote(link, mapA, mapB)` — return one line or `null`:
+
+```js
+function divergenceNote(link, mapA, mapB) {
+  const simScore = Math.round((link.score || 0) * 100);
+  const arcA = mapA?.emotional_arc?.tension_shift || 0;
+  const arcB = mapB?.emotional_arc?.tension_shift || 0;
+  const arcDiff = Math.abs(arcA - arcB);
+  if (arcDiff > 0.03) {
+    const labelA = arcA > 0.01 ? 'escalating' : arcA < -0.01 ? 'resolving' : 'flat';
+    const labelB = arcB > 0.01 ? 'escalating' : arcB < -0.01 ? 'resolving' : 'flat';
+    return `Echo at ${simScore}% but emotional arcs diverge (${labelA} vs ${labelB}).`;
+  }
+  const domA = mapA?.pronoun_trajectory?.dominant;
+  const domB = mapB?.pronoun_trajectory?.dominant;
+  if (domA && domB && domA !== domB) {
+    return `Echo at ${simScore}% but pronoun register shifted (${domA} → ${domB}).`;
+  }
+  return null;
+}
+```
+
+- [ ] Feed into **Tier 2** only; skip link if `null` (no interesting divergence).
+- [ ] Do **not** merge Watcher into Cartographer — synthesize at context-build time in `app.js` (or future `guardian.js`).
 
 ---
 
@@ -223,8 +314,8 @@ flowchart TB
 ## 10. Phase A — Auto-invoke production ethics
 
 - [ ] **A1 — Production thresholds** — Apply §3 (72h, higher watcher, confidence-gated qualifiers).
-- [ ] **A2 — Opt-in** — Settings: master off / per trigger type (orbit, paradox, silence, escalating arc).
-- [ ] **A3 — Consensus** — Auto-invoke requires 2+ **high-confidence** qualifiers OR single “strong” signal (define in C4/C5).
+- [ ] **A2 — Opt-in (default posture decided)** — **Default: all auto-invoke OFF.** User must explicitly enable **“Guardian may interrupt”** in Settings; then per-trigger toggles (orbit, paradox, silence, escalating arc). Sovereignty: watching is allowed; speaking requires permission.
+- [ ] **A3 — Consensus** — When enabled: 2+ **high-confidence** qualifiers OR single “strong” signal (define in C4/C5).
 
 *Strip under header remains the only auto surface.*
 
@@ -247,16 +338,18 @@ flowchart TB
 
 | Order | Phase | Why |
 |-------|-------|-----|
-| 1 | **C1–C2** | Stop wrong geometry (stemmer, negation) |
-| 2 | **C3–C5** | Coverage + confidence + label ethics |
-| 3 | **G3** | Summon usable at scale (tiered context) |
-| 4 | **G1–G2** | Meta-memory + self-diff |
-| 5 | **X1** | Cross-modal truth in one line |
-| 6 | **G4–G5** | Strip upgrade + prompt/UI interaction |
-| 7 | **A1–A3** | Flip dev → production auto-invoke |
+| 1 | **C1–C2** | Stop lying at sensory layer — *feel Guardian voice change here* |
+| 2 | **C3b** + **C3–C5** | `carto_version` + lexicons + confidence + soft labels (ship C1–C2 with version bump) |
+| 3 | **G2 + G3** | **Parallel or G2 first** — snapshot/diff + tiered diet; witness needs time, not dump |
+| 4 | **G1** | Ledger templates; needs G2 snapshots to matter |
+| 5 | **X1** | `divergenceNote` into Tier 2 |
+| 6 | **G4–G5** | Strip prior theory + prompt/UI interaction |
+| 7 | **A1–A3** | Production thresholds + default-off opt-in |
 | 8 | **C6–C8** | Summary/paradox/perf polish |
 | 9 | **AB1–AB3** | Abyss honesty alongside 3D work |
 | 10 | **G6, ARCH** | Desktop / refactor when laptop ready |
+
+*Kimi review (May 2026): agreed C1–C2 first; elevate G2; default auto-invoke OFF; tagged re-map.*
 
 ---
 
@@ -282,17 +375,40 @@ flowchart TB
 
 ---
 
-## 15. Open questions (resolve before implementing G1/G3)
+## 15. Decisions log & remaining open questions
 
-1. **N for witness ledger** — 3 vs 5 structured theories on summon?
-2. **theory_one_line** — LLM-extracted after response vs rule-based from qualifiers?
-3. **Tier 1 “last 3 discourses”** — by `updated_at` or `created_at`?
-4. **Deep map tier** — keep “urgent” heuristic as-is or tie to word count + arc delta?
-5. **Re-map policy** — force Cartographer refresh on all discs after C1–C3 lexicon change?
+### Decided (Kimi blueprint review — incorporate unless Kaja overrides)
+
+| Topic | Decision |
+|-------|----------|
+| `theory_one_line` | Rule-based templates + first substantive response line |
+| Witness count N | **3** on summon |
+| Tier 1 sort | **`updated_at`** (fallback `created_at`) |
+| Summon context cap | **~2,500** archive + **~500** prior witness tokens |
+| Truncation order | Drop Tier 4 → 3 → 2; Tier 1 sacred |
+| Re-map after Cartographer changes | **Tagged `carto_version`** (C3b) |
+| Lexicon expansion assist | One-time Python script, not shipped — Kaja curates output |
+| Auto-invoke default | **OFF** until explicit opt-in |
+| Batch order | **G2 alongside / before G3** |
+
+### Still open (Kaja decides before implement)
+
+1. **Deep map tier** — keep “urgent” heuristic vs tie to word count + arc delta?
+2. **GloVe vs word2vec** for one-time lexicon script (when laptop exists)?
+3. **`CARTO_VERSION_CURRENT`** numbering — bump on each cartographer schema/lexicon breaking change?
 
 ```
-(decisions log — Kaja fills when decided)
+(Kaja overrides / notes)
 ```
+
+---
+
+## 16. External review log
+
+| Reviewer | Date | Summary |
+|----------|------|---------|
+| Kimi 2.6 | 2026-05 | Honest app review → epistemological gaps |
+| Kimi 2.6 | 2026-05 | Blueprint review: tighten C3 workflow, G1/G2/G3 caps, X1 sketch, default-off auto-invoke, elevate G2, `carto_version` — merged into §6–§12, §15 |
 
 ---
 
@@ -303,6 +419,7 @@ flowchart TB
 | G0 | 2026-05 | Three-path architecture documented (co-creator session) |
 | Cartographer PR #31 | 2026-05 | Blockers, tokenize consistency, depersonalisation in summon context, silenceMarkers |
 | This blueprint pinned | 2026-05-18 | Roadmap consolidates Guardian + Kimi + production intent |
+| Kimi blueprint review merged | 2026-05-19 | G2 elevated, caps, theory_one_line, carto_version, default-off auto-invoke, divergenceNote sketch |
 
 ---
 
