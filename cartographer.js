@@ -671,6 +671,7 @@ const pronoun_trajectory = detectPronounTrajectory(text);
 const silence_weight     = detectSilenceWeight(text);
 const entry_exit_delta   = detectEntryExitDelta(text);
 const incompleteness     = detectIncompleteness(text);
+const depersonalisation  = detectDepersonalization(text);
 
 return {
 // Core
@@ -689,7 +690,8 @@ signature,
 pronoun_trajectory,
 silence_weight,
 entry_exit_delta,
-incompleteness
+incompleteness,
+depersonalisation
 };
 }
 
