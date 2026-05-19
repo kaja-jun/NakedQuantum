@@ -656,6 +656,8 @@ db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoke
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN triggered_by TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN user_action TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN log_type TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN geometry_snapshot TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN primary_discourse_id TEXT"); } catch (e) {}
 
   ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'].forEach
 (t => {
@@ -7892,6 +7894,137 @@ var GUARDIAN_MAX_EXCHANGES = 4;
 
 var guardianPendingTriggerType = null;
 
+var GUARDIAN_ARCHIVE_CHAR_BUDGET = 10000;
+var GUARDIAN_PRIOR_WITNESS_CHAR_BUDGET = 2000;
+
+function buildGeometrySnapshot(discourseId, fastMap) {
+  if (!fastMap || fastMap.map_type !== 'fast') return null;
+  var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting;
+  return {
+    discourse_id: discourseId || null,
+    orbit_terms: orbits ? orbits.map(function (o) { return o.term; }).slice(0, 5) : [],
+    arc_direction: (fastMap.emotional_arc && fastMap.emotional_arc.direction) ? fastMap.emotional_arc.direction : '',
+    silence_ratio: (fastMap.silence_weight && typeof fastMap.silence_weight.ratio === 'number') ? fastMap.silence_weight.ratio : 0,
+    pronoun_dominant: (fastMap.pronoun_trajectory && fastMap.pronoun_trajectory.dominant) ? fastMap.pronoun_trajectory.dominant : 'none',
+    depersonalization_label: (fastMap.depersonalisation && fastMap.depersonalisation.label) ? fastMap.depersonalisation.label : '',
+    word_count: fastMap.word_count || 0,
+    carto_version: fastMap.carto_version || 0
+  };
+}
+
+function parseGeometrySnapshot(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+function geometryDelta(prior, currentMap) {
+  if (!prior || !currentMap) return null;
+  var changes = [];
+  var currentTerms = new Set((currentMap.key_terms || []).map(function (k) { return k.term; }));
+  var stillOrbiting = (prior.orbit_terms || []).filter(function (t) { return currentTerms.has(t); });
+  if (stillOrbiting.length) changes.push('still orbiting ' + stillOrbiting.join(', '));
+  if (prior.arc_direction && currentMap.emotional_arc &&
+      prior.arc_direction !== currentMap.emotional_arc.direction) {
+    changes.push('arc shifted from ' + prior.arc_direction + ' to ' + currentMap.emotional_arc.direction);
+  }
+  if (prior.pronoun_dominant && currentMap.pronoun_trajectory &&
+      prior.pronoun_dominant !== currentMap.pronoun_trajectory.dominant) {
+    changes.push('pronoun register ' + prior.pronoun_dominant + ' → ' + currentMap.pronoun_trajectory.dominant);
+  }
+  if (typeof prior.silence_ratio === 'number' && currentMap.silence_weight &&
+      Math.abs(prior.silence_ratio - (currentMap.silence_weight.ratio || 0)) > 0.05) {
+    changes.push('silence ratio moved (' + prior.silence_ratio.toFixed(2) + ' → ' + (currentMap.silence_weight.ratio || 0).toFixed(2) + ')');
+  }
+  return changes.length ? changes.join('; ') : null;
+}
+
+function divergenceNote(link, mapA, mapB) {
+  if (!link || !mapA || !mapB) return null;
+  var simScore = Math.round((link.score || 0) * 100);
+  var arcA = mapA.emotional_arc && mapA.emotional_arc.tension_shift || 0;
+  var arcB = mapB.emotional_arc && mapB.emotional_arc.tension_shift || 0;
+  var arcDiff = Math.abs(arcA - arcB);
+  if (arcDiff > 0.03) {
+    var labelA = arcA > 0.01 ? 'escalating' : arcA < -0.01 ? 'resolving' : 'flat';
+    var labelB = arcB > 0.01 ? 'escalating' : arcB < -0.01 ? 'resolving' : 'flat';
+    return 'Echo at ' + simScore + '% but emotional arcs diverge (' + labelA + ' vs ' + labelB + ').';
+  }
+  var domA = mapA.pronoun_trajectory && mapA.pronoun_trajectory.dominant;
+  var domB = mapB.pronoun_trajectory && mapB.pronoun_trajectory.dominant;
+  if (domA && domB && domA !== domB) {
+    return 'Echo at ' + simScore + '% but pronoun register shifted (' + domA + ' → ' + domB + ').';
+  }
+  return null;
+}
+
+function formatDiscourseWitnessBlock(d, fastMap, mapNum) {
+  var wordCount = (d.raw_text || '').trim().split(/\s+/).filter(Boolean).length;
+  var date = new Date(d.updated_at || d.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  var block = '[DISCOURSE ' + mapNum + '] "' + (d.title || 'Untitled') + '"\n';
+  block += 'Words: ' + wordCount.toLocaleString() + ' · ' + date + '\n';
+  if (!fastMap || fastMap.map_type !== 'fast') {
+    var rawText = (d.raw_text || '').trim();
+    if (rawText.length > 0) {
+      block += 'First: "' + (rawText.split('\n').find(function (l) { return l.trim().length > 0; }) || '').trim().slice(0, 150) + '"\n';
+      block += '[Note: Unmapped terrain -- Fast Map on next save]\n\n';
+    }
+    return block;
+  }
+  if (fastMap.first_line) block += 'First: "' + fastMap.first_line.slice(0, 150) + '"\n';
+  if (fastMap.last_line) block += 'Last: "' + fastMap.last_line.slice(0, 150) + '"\n';
+  if (fastMap.key_terms && fastMap.key_terms.length) {
+    block += 'Key terms: ' + fastMap.key_terms.slice(0, 5).map(function (t) { return t.term + '(' + t.count + ')'; }).join(', ') + '\n';
+  }
+  if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
+    block += 'Emotional arc: ' + fastMap.emotional_arc.direction + '\n';
+  }
+  if (fastMap.pacing) block += 'Pacing: ' + fastMap.pacing.label + ' (avg ' + fastMap.pacing.avg_words_per_sentence + ' words/sentence)\n';
+  if (fastMap.rigidity) block += 'Cognitive state: ' + fastMap.rigidity.label + ' (' + fastMap.rigidity.absolute_count + ' absolutes)\n';
+  if (fastMap.questioning) block += 'Questioning: ' + fastMap.questioning.label + ' (' + fastMap.questioning.question_count + ' questions)\n';
+  if (fastMap.signature) {
+    block += 'Writing signature: ' + fastMap.signature.summary + '\n';
+    if (fastMap.signature.paradox && fastMap.signature.paradox.pairs && fastMap.signature.paradox.pairs.length) {
+      block += 'Paradox pairs: ' + fastMap.signature.paradox.pairs.join(' | ') + '\n';
+    }
+  }
+  if (fastMap.extractive_summary) block += 'Excerpt: "' + fastMap.extractive_summary.slice(0, 300) + '"\n';
+  if (fastMap.watcher) {
+    if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
+      block += 'Watcher echoes: ' + fastMap.watcher.top_similar.map(function (s) { return 'd_' + s.id.slice(-4) + ' (' + s.score + ')'; }).join(', ') + '\n';
+    }
+    if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
+      block += 'Watcher contradicts: ' + fastMap.watcher.top_contradictory.map(function (s) { return 'd_' + s.id.slice(-4) + ' (' + s.score + ')'; }).join(', ') + '\n';
+    }
+  }
+  if (fastMap.pronoun_trajectory) {
+    block += 'Pronoun trajectory: ' + fastMap.pronoun_trajectory.label + ' (dominant: ' + fastMap.pronoun_trajectory.dominant + ')\n';
+  }
+  if (fastMap.silence_weight) block += 'Silence weight: ' + fastMap.silence_weight.label + ' (' + fastMap.silence_weight.count + ' markers)\n';
+  if (fastMap.entry_exit_delta) block += 'Entry/exit register: ' + fastMap.entry_exit_delta.delta + '\n';
+  if (fastMap.incompleteness) block += 'Ending: ' + fastMap.incompleteness.label + '\n';
+  if (fastMap.depersonalisation) block += 'Perspective: ' + fastMap.depersonalisation.label + '\n';
+  block += '\n';
+  return block;
+}
+
+function applyGuardianArchiveBudget(header, tier1, tier2, tier3, tier4, budget) {
+  var t1 = tier1 || '';
+  var t2 = tier2 || '';
+  var t3 = tier3 || '';
+  var t4 = tier4 || '';
+  var h = header || '';
+  function len() { return h.length + t1.length + t2.length + t3.length + t4.length; }
+  if (len() > budget) { t4 = ''; }
+  if (len() > budget) { t3 = ''; }
+  if (len() > budget) { t2 = ''; }
+  if (len() > budget) {
+    var room = Math.max(400, budget - h.length - t2.length - t3.length - t4.length);
+    t1 = t1.slice(0, room) + '\n…[recent discourses truncated]\n';
+  }
+  return h + t1 + t2 + t3 + t4;
+}
+
 function buildFastMapSnapshotForWorker(fastMap) {
   var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting ? fastMap.signature.orbits.orbiting : [];
   var orbitingTerms = orbits.map(function (o) { return o.term; });
@@ -7910,9 +8043,14 @@ function buildFastMapSnapshotForWorker(fastMap) {
   };
 }
 
-async function logGuardianAutoInvoke(observation, triggeredBy, userAction) {
+async function logGuardianAutoInvoke(observation, triggeredBy, userAction, discourseId) {
   try {
     var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+    var snap = null;
+    if (discourseId) {
+      var fm = await dbGet('guardian_summaries', discourseId);
+      snap = buildGeometrySnapshot(discourseId, fm);
+    }
     await dbPut('guardian_logs', {
       id: 'gl_auto_' + Date.now(),
       invoked_at: Date.now(),
@@ -7925,7 +8063,9 @@ async function logGuardianAutoInvoke(observation, triggeredBy, userAction) {
       auto_invoked: 1,
       triggered_by: triggeredBy != null && triggeredBy !== '' ? triggeredBy : null,
       user_action: userAction != null && userAction !== '' ? userAction : null,
-      log_type: 'auto_invoke'
+      log_type: 'auto_invoke',
+      primary_discourse_id: discourseId || null,
+      geometry_snapshot: snap
     });
   } catch (e) {
     console.warn('Guardian auto log failed:', e);
@@ -8133,7 +8273,7 @@ guardianInvokeActive = true;
 
   attachGuardianInvokeStripHandlers();
 
-  void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced');
+  void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced', pending.discourseId);
 }
 
 async function openGuardianView(entryOpts){
@@ -8333,33 +8473,11 @@ async function summonGuardian(userAddition, summonOpts){
       throw new Error('buildGuardianContext returned empty');
     }
     
-    var allLogs = await dbGetAll('guardian_logs');
-    var recentLogs = allLogs.filter(function(l){ return !l.was_silent; }).sort(function(a,b){ return b.invoked_at - a.invoked_at; }).slice(0,2);
+    var priorWitness = await buildGuardianPriorWitnessBlock(allDiscs);
     var contextBlock = 'ARCHIVE SUMMARIES (' + allDiscs.length + ' discourses):\n\n' + summaries;
-    
-if (recentLogs.length) {
-  var timeSinceLast = Math.floor((Date.now() - recentLogs[0].invoked_at) / 86400000);
-  
-  contextBlock += '\n═══════════════════════════════════\n';
-  contextBlock += 'GUARDIAN INSTRUCTION\n';
-  contextBlock += '═══════════════════════════════════\n\n';
-  contextBlock += `You last spoke to them ${timeSinceLast} days ago.\n\n`;
-  contextBlock += 'Review your Previous Witness Records below. Compare them to the Witness Records above.\n\n';
-  contextBlock += 'Look for:\n';
-  contextBlock += '· Are they circling the exact same narrative?\n';
-  contextBlock += '· Have they moved? Where? By how much?\n';
-  contextBlock += '· What did you tell them last time, and did they act on it or resist it?\n';
-  contextBlock += '· What appears in the records that they haven\'t named directly?\n';
-  contextBlock += '· Where do the emotional arcs tell a different story than the words?\n\n';
-  contextBlock += 'If they have stagnated, be ruthless about the repetition.\n';
-  contextBlock += 'If they have genuinely shifted, acknowledge the movement -- but don\'t congratulate. Just witness it.\n\n';
-  
-  contextBlock += '── PREVIOUS WITNESS RECORDS ──\n\n';
-  for (const log of recentLogs) {
-    contextBlock += `[${new Date(log.invoked_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}]\n`;
-    contextBlock += log.response_text + '\n\n---\n\n';
-  }
-}
+    if (priorWitness) {
+      contextBlock += '\n' + priorWitness;
+    }
     if(userAddition){ contextBlock += '\n\n---\n\nThe person has offered this after silence:\n' + userAddition; }
     realm.classList.remove('dimming');
     glyph.className = 'guardian-glyph watching';
@@ -8381,234 +8499,191 @@ if (recentLogs.length) {
   }
 }
 
+async function buildGuardianPriorWitnessBlock(discs) {
+  var block = '';
+  var budget = GUARDIAN_PRIOR_WITNESS_CHAR_BUDGET;
+  var allLogs = await dbGetAll('guardian_logs');
+  if (!allLogs.length) return '';
+
+  var sortedLogs = allLogs.slice().sort(function (a, b) { return (b.invoked_at || 0) - (a.invoked_at || 0); });
+  var recentLogs = sortedLogs.filter(function (l) { return !l.was_silent && l.response_text; }).slice(0, 2);
+  var snapLog = sortedLogs.find(function (l) { return parseGeometrySnapshot(l.geometry_snapshot); });
+
+  var sortedDiscs = discs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+
+  if (snapLog) {
+    var prior = parseGeometrySnapshot(snapLog.geometry_snapshot);
+    var targetId = prior.discourse_id || snapLog.primary_discourse_id;
+    var currentMap = null;
+    if (targetId) currentMap = await dbGet('guardian_summaries', targetId);
+    if (!currentMap && sortedDiscs[0]) currentMap = await dbGet('guardian_summaries', sortedDiscs[0].id);
+    if (prior && currentMap) {
+      var delta = geometryDelta(prior, currentMap);
+      if (delta) {
+        block += '── GEOMETRY SINCE LAST WITNESS ──\n';
+        block += delta + '\n';
+        if (prior.discourse_id && targetId) {
+          var tTitle = discTitleMap(discs, targetId);
+          block += '(compared to prior snapshot on "' + tTitle + '")\n';
+        }
+        block += '\n';
+      }
+    }
+  }
+
+  if (recentLogs.length) {
+    var timeSinceLast = Math.floor((Date.now() - recentLogs[0].invoked_at) / 86400000);
+    block += '═══════════════════════════════════\n';
+    block += 'GUARDIAN INSTRUCTION\n';
+    block += '═══════════════════════════════════\n\n';
+    block += 'You last spoke to them ' + timeSinceLast + ' days ago.\n\n';
+    block += 'Review your Previous Witness Records below. Compare them to the Witness Records above.\n\n';
+    block += 'Look for:\n';
+    block += '· Are they circling the exact same narrative?\n';
+    block += '· Have they moved? Where? By how much?\n';
+    block += '· What did you tell them last time, and did they act on it or resist it?\n';
+    block += '· What appears in the records that they have not named directly?\n';
+    block += '· Where do the emotional arcs tell a different story than the words?\n\n';
+    block += 'If they have stagnated, be ruthless about the repetition.\n';
+    block += 'If they have genuinely shifted, acknowledge the movement -- but do not congratulate. Just witness it.\n\n';
+    block += '── PREVIOUS WITNESS RECORDS ──\n\n';
+    for (var i = 0; i < recentLogs.length; i++) {
+      var log = recentLogs[i];
+      var logHdr = '[' + new Date(log.invoked_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + ']';
+      if (log.log_type === 'auto_invoke' || log.auto_invoked) logHdr += ' (strip)';
+      block += logHdr + '\n';
+      var prose = (log.response_text || '').trim();
+      if (block.length + prose.length > budget) {
+        prose = prose.slice(0, Math.max(120, budget - block.length - 40)) + '…';
+      }
+      block += prose + '\n\n---\n\n';
+      if (block.length >= budget) break;
+    }
+  }
+
+  if (block.length > budget) block = block.slice(0, budget) + '\n…[prior witness truncated]\n';
+  return block;
+}
+
 async function buildGuardianContext(discs) {
-  const now = Date.now();
-  let contextBlock = '';
-  // ── ARCHIVE OVERVIEW ────────────────────────────────────
-  const totalWords = discs.reduce((sum, d) => 
-    sum + ((d.raw_text || '').trim().split(/\s+/).filter(Boolean).length), 0
-  );
-  
-  const dates = discs
-    .filter(d => d.created_at)
-    .map(d => d.created_at)
-    .sort((a, b) => a - b);
-  
+  const totalWords = discs.reduce(function (sum, d) {
+    return sum + ((d.raw_text || '').trim().split(/\s+/).filter(Boolean).length);
+  }, 0);
+
+  const dates = discs.filter(function (d) { return d.created_at; }).map(function (d) { return d.created_at; }).sort(function (a, b) { return a - b; });
   const firstDate = dates.length ? new Date(dates[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'unknown';
   const lastDate = dates.length ? new Date(dates[dates.length - 1]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'unknown';
-  
-  contextBlock += '═══════════════════════════════════\n';
-  contextBlock += 'ARCHIVE WITNESS RECORDS\n';
-  contextBlock += '═══════════════════════════════════\n\n';
-  contextBlock += `Total discourses in the Soup: ${discs.length}\n`;
-  contextBlock += `Time span: ${firstDate} – ${lastDate}\n`;
-  contextBlock += `Total words: ${totalWords.toLocaleString()}\n\n`;
-  
-  // ── FAST MAPS ───────────────────────────────────────────
-  contextBlock += '── FAST MAPS (structured metadata for all discourses) ──\n\n';
-  
-  // Sort by date, newest first
-  const sorted = [...discs].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-  
-  let mapNum = 0;
-  for (const d of sorted) {
-    mapNum++;
-    const fastMap = await dbGet('guardian_summaries', d.id);
-    const wordCount = (d.raw_text || '').trim().split(/\s+/).filter(Boolean).length;
-    const date = new Date(d.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    
-    contextBlock += `[DISCOURSE ${mapNum}] "${d.title || 'Untitled'}"\n`;
-    contextBlock += `Words: ${wordCount.toLocaleString()} · ${date}\n`;
-    
-    if (fastMap && fastMap.map_type === 'fast') {
-      // Use the Fast Map
-      if (fastMap.first_line) {
-        contextBlock += `First: "${fastMap.first_line.slice(0, 150)}"\n`;
-      }
-      if (fastMap.last_line) {
-        contextBlock += `Last: "${fastMap.last_line.slice(0, 150)}"\n`;
-      }
-      if (fastMap.key_terms && fastMap.key_terms.length) {
-        const termStr = fastMap.key_terms
-          .slice(0, 5)
-          .map(t => `${t.term}(${t.count})`)
-          .join(', ');
-        contextBlock += `Key terms: ${termStr}\n`;
-      }
-            if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
-        contextBlock += `Emotional arc: ${fastMap.emotional_arc.direction}\n`;
-      }
-      if (fastMap.pacing) {
-        contextBlock += `Pacing: ${fastMap.pacing.label} (avg ${fastMap.pacing.avg_words_per_sentence} words/sentence)\n`;
-      }
-      if (fastMap.rigidity) {
-        contextBlock += `Cognitive state: ${fastMap.rigidity.label} (${fastMap.rigidity.absolute_count} absolutes)\n`;
-      }
-            if (fastMap.questioning) {
-        contextBlock += `Questioning: ${fastMap.questioning.label} (${fastMap.questioning.question_count} questions)\n`;
-      }
-      if (fastMap.signature) {
-        contextBlock += `Writing signature: ${fastMap.signature.summary}\n`;
-        if (fastMap.signature.paradox && fastMap.signature.paradox.pairs && fastMap.signature.paradox.pairs.length) {
-          contextBlock += `Paradox pairs: ${fastMap.signature.paradox.pairs.join(' | ')}\n`;
-        }
-      }
-        if (fastMap.extractive_summary) {
-        contextBlock += `Excerpt: "${fastMap.extractive_summary.slice(0, 300)}"\n`;
-      }
-       if (fastMap.watcher) {
-       if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
-          const echoes = fastMap.watcher.top_similar
-            .map(s => `d_${s.id.slice(-4)} (${s.score})`)
-            .join(', ');
-          contextBlock += `Watcher: echoes ${echoes}\n`;
-        }
-    if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
-          const contradicts = fastMap.watcher.top_contradictory
-            .map(s => `d_${s.id.slice(-4)} (${s.score})`)
-            .join(', ');
-          contextBlock += `Watcher: contradicts ${contradicts}\n`;
-        }
-      }
 
-      // ── NEW SHAPE DIMENSIONS (GUARDED) ──
-      if (fastMap.pronoun_trajectory) {
-        contextBlock += `Pronoun trajectory: ${fastMap.pronoun_trajectory.label} (dominant: ${fastMap.pronoun_trajectory.dominant})\n`;
-      }
-      if (fastMap.silence_weight) {
-        contextBlock += `Silence weight: ${fastMap.silence_weight.label} (${fastMap.silence_weight.count} silence markers)\n`;
-      }
-      if (fastMap.entry_exit_delta) {
-        contextBlock += `Entry/exit register: ${fastMap.entry_exit_delta.delta}\n`;
-      }
-      if (fastMap.incompleteness) {
-        contextBlock += `Ending: ${fastMap.incompleteness.label}\n`;
-      }
-      if (fastMap.depersonalisation) {
-        contextBlock += `Perspective: ${fastMap.depersonalisation.label}\n`;
-      }
-    } else {
-      // Fallback: no Fast Map yet -- use raw text snippet
-      const rawText = (d.raw_text || '').trim();
-      if (rawText.length > 0) {
-        contextBlock += `First: "${rawText.split('\n').find(l => l.trim().length > 0)?.trim().slice(0, 150) || '...'}"\n`;
-        if (wordCount <= 300) {
-          contextBlock += `Full text: "${rawText.slice(0, 400)}"\n`;
-        } else {
-          contextBlock += `Excerpt: "${rawText.slice(0, 300)}..."\n`;
-        }
-        contextBlock += `[Note: Unmapped terrain -- Fast Map will be generated on next save]\n`;
-      }
-    }
-    
-    contextBlock += '\n';
+  const sorted = discs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+
+  const fastMapById = new Map();
+  for (var fi = 0; fi < sorted.length; fi++) {
+    var fm = await dbGet('guardian_summaries', sorted[fi].id);
+    if (fm && fm.map_type === 'fast') fastMapById.set(sorted[fi].id, fm);
   }
 
-  // ── DEEP MAPS (local or API) ──────────────────────────────
-  const deepMaps = [];
-  for (const d of sorted) {
-    const deepMap = await dbGet('guardian_summaries', d.id + '_deep');
-    if (deepMap && deepMap.summary) {
-      deepMaps.push({
-        title: d.title || 'Untitled',
-        summary: deepMap.summary,
-        model: deepMap.model || 'unknown'
-      });
-    }
+  var header = '═══════════════════════════════════\n';
+  header += 'ARCHIVE WITNESS RECORDS\n';
+  header += '═══════════════════════════════════\n\n';
+  header += 'Total discourses in the Soup: ' + discs.length + '\n';
+  header += 'Time span: ' + firstDate + ' – ' + lastDate + '\n';
+  header += 'Total words: ' + totalWords.toLocaleString() + '\n\n';
+
+  // Tier 1 — last 3 by updated_at (sacred)
+  var tier1 = '── RECENT DISCOURSES (full fast maps) ──\n\n';
+  var tier1Count = Math.min(3, sorted.length);
+  for (var t1 = 0; t1 < tier1Count; t1++) {
+    tier1 += formatDiscourseWitnessBlock(sorted[t1], fastMapById.get(sorted[t1].id), t1 + 1);
   }
 
-  if (deepMaps.length > 0) {
-    contextBlock += '\n── DEEP MAPS (rich local summaries for urgent discourses) ──\n\n';
-    for (const dm of deepMaps) {
-      contextBlock += `"${dm.title}": ${dm.summary}\n\n`;
-    }
-    contextBlock += `Generated by: ${deepMaps[0].model} (${deepMaps.length} discourses mapped)\n\n`;
-  }
- 
-  if (isWatcherReady && watcherDB && watcherEmbedder) {
-  
-    const allLinks = await wdb.getAll('links');
-    const allEmbs = await wdb.getAll('embeddings');
-    
-    if (allLinks.length > 0) {
-      contextBlock += '── WATCHER PATTERN FLAGS ──\n\n';
-      
-      // Top echoes (high similarity pairs)
-      const topLinks = [...allLinks]
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10);
-      
-      if (topLinks.length) {
-        contextBlock += 'High-similarity pairs (potential echoes):\n';
-        for (const link of topLinks) {
-          const discA = discTitleMap(discs, link.a);
-          const discB = discTitleMap(discs, link.b);
-          contextBlock += `· "${discA}" ↔ "${discB}" (${Math.round(link.score * 100)}%)\n`;
-        }
-        contextBlock += '\n';
-      }
-      
-      // Recurring terms across 3+ discourses
-      const allTerms = {};
-      for (const d of sorted) {
-        const fastMap = await dbGet('guardian_summaries', d.id);
-        if (fastMap && fastMap.key_terms) {
-          for (const term of fastMap.key_terms.slice(0, 5)) {
-            if (!allTerms[term.term]) allTerms[term.term] = [];
-            allTerms[term.term].push(d.title || 'Untitled');
+  // Tier 2 — top 5 watcher links with divergence notes
+  var tier2 = '';
+  if (isWatcherReady && watcherDB) {
+    try {
+      var allLinks = await wdb.getAll('links');
+      if (allLinks.length) {
+        var topLinks = allLinks.slice().sort(function (a, b) { return b.score - a.score; }).slice(0, 5);
+        var tier2Lines = [];
+        for (var li = 0; li < topLinks.length; li++) {
+          var link = topLinks[li];
+          var mapA = fastMapById.get(link.a);
+          var mapB = fastMapById.get(link.b);
+          if (!mapA || !mapB) continue;
+          var note = divergenceNote(link, mapA, mapB);
+          if (note) {
+            tier2Lines.push('· "' + discTitleMap(discs, link.a) + '" ↔ "' + discTitleMap(discs, link.b) + '": ' + note);
           }
         }
-      }
-      
-      const recurringTerms = Object.entries(allTerms)
-        .filter(([, titles]) => titles.length >= 3)
-        .sort((a, b) => b[1].length - a[1].length)
-        .slice(0, 10);
-      
-      if (recurringTerms.length) {
-        contextBlock += 'Recurring terms across 3+ discourses:\n';
-        for (const [term, titles] of recurringTerms) {
-          contextBlock += `· "${term}" -- ${titles.length} discourses: ${titles.slice(0, 3).map(t => `"${t}"`).join(', ')}${titles.length > 3 ? `, +${titles.length - 3} more` : ''}\n`;
-        }
-        contextBlock += '\n';
-      }
-      
-      // Emotional arc patterns
-      const arcs = [];
-      for (const d of sorted) {
-        const fastMap = await dbGet('guardian_summaries', d.id);
-        if (fastMap && fastMap.emotional_arc && fastMap.emotional_arc.direction) {
-          arcs.push(fastMap.emotional_arc);
+        if (tier2Lines.length) {
+          tier2 = '── CROSS-MODAL TENSION (Watcher × Cartographer) ──\n\n' + tier2Lines.join('\n') + '\n\n';
         }
       }
-      
-      if (arcs.length >= 3) {
-        const resolved = arcs.filter(a => a.tension_shift < -0.01).length;
-        const escalated = arcs.filter(a => a.tension_shift > 0.01).length;
-        const flat = arcs.filter(a => Math.abs(a.tension_shift) <= 0.01).length;
-        
-        // Most common arc
-        const arcCounts = {};
-        for (const a of arcs) {
-          const key = a.direction.split('→')[0]?.trim() || a.direction;
-          arcCounts[key] = (arcCounts[key] || 0) + 1;
-        }
-        const topArc = Object.entries(arcCounts).sort((a, b) => b[1] - a[1])[0];
-        
-        contextBlock += 'Emotional arc patterns across all discourses:\n';
-        contextBlock += `· ${resolved} resolved · ${escalated} escalated · ${flat} flat\n`;
-        if (topArc) {
-          contextBlock += `· Most common opening tone: "${topArc[0]}" (${topArc[1]} discourses)\n`;
-        }
-        contextBlock += '\n';
-      }
-    } else {
-      contextBlock += '── WATCHER PATTERN FLAGS ──\n\n';
-      contextBlock += 'No resonance links detected yet. The Watcher needs more material.\n\n';
+    } catch (wErr) {
+      console.warn('[Guardian] Watcher tier-2 skipped:', wErr);
     }
   }
-  
-  return contextBlock;
+
+  // Tier 3 — urgent deep maps only
+  var tier3 = '';
+  try {
+    var urgent = await selectUrgentDiscourses(discs, 5);
+    var deepParts = [];
+    for (var ui = 0; ui < urgent.length; ui++) {
+      var deepMap = await dbGet('guardian_summaries', urgent[ui].id + '_deep');
+      if (deepMap && deepMap.summary) {
+        deepParts.push('"' + (urgent[ui].title || 'Untitled') + '": ' + deepMap.summary);
+      }
+    }
+    if (deepParts.length) {
+      tier3 = '── DEEP MAPS (urgent discourses only) ──\n\n' + deepParts.join('\n\n') + '\n\n';
+    }
+  } catch (dErr) {
+    console.warn('[Guardian] Deep map tier skipped:', dErr);
+  }
+
+  // Tier 4 — archive rollup
+  var tier4 = '── ARCHIVE ROLLUP ──\n\n';
+  var mappedCount = 0;
+  fastMapById.forEach(function () { mappedCount++; });
+  tier4 += 'Fast-mapped discourses: ' + mappedCount + ' / ' + discs.length + '\n';
+
+  var allTerms = {};
+  for (var ri = 0; ri < sorted.length; ri++) {
+    var rfm = fastMapById.get(sorted[ri].id);
+    if (rfm && rfm.key_terms) {
+      for (var ti = 0; ti < Math.min(5, rfm.key_terms.length); ti++) {
+        var term = rfm.key_terms[ti].term;
+        if (!allTerms[term]) allTerms[term] = 0;
+        allTerms[term]++;
+      }
+    }
+  }
+  var recurring = Object.keys(allTerms).filter(function (t) { return allTerms[t] >= 3; }).sort(function (a, b) { return allTerms[b] - allTerms[a]; }).slice(0, 8);
+  if (recurring.length) {
+    tier4 += 'Recurring terms (3+ discourses): ' + recurring.map(function (t) { return '"' + t + '" (' + allTerms[t] + ')'; }).join(', ') + '\n';
+  }
+
+  var arcs = [];
+  fastMapById.forEach(function (fm) {
+    if (fm.emotional_arc && fm.emotional_arc.direction) arcs.push(fm.emotional_arc);
+  });
+  if (arcs.length >= 3) {
+    var resolved = arcs.filter(function (a) { return a.tension_shift < -0.01; }).length;
+    var escalated = arcs.filter(function (a) { return a.tension_shift > 0.01; }).length;
+    var flat = arcs.filter(function (a) { return Math.abs(a.tension_shift) <= 0.01; }).length;
+    tier4 += 'Arc patterns: ' + resolved + ' resolving · ' + escalated + ' escalating · ' + flat + ' flat\n';
+  }
+  tier4 += '\n';
+
+  if (discs.length > tier1Count) {
+    tier4 += 'Older discourses (' + (discs.length - tier1Count) + ') omitted from detail; see rollup + recent three above.\n\n';
+  }
+
+  return applyGuardianArchiveBudget(header, tier1, tier2, tier3, tier4, GUARDIAN_ARCHIVE_CHAR_BUDGET);
 }
 
 // Helper: resolve discourse title from ID
@@ -8704,6 +8779,20 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
 
 async function saveGuardianLog(text, wasSilent, modelUsed){
   var allDiscs = (await getDiscourses()).filter(function(d){ return !d.deleted_at && !d.isDeleted; });
+  var sortedDiscs = allDiscs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+  var primaryId = null;
+  try {
+    var pending = JSON.parse(localStorage.getItem('nq_guardian_invoke_pending') || '{}');
+    if (pending && pending.discourseId) primaryId = pending.discourseId;
+  } catch (pe) {}
+  if (!primaryId && sortedDiscs[0]) primaryId = sortedDiscs[0].id;
+  var snap = null;
+  if (primaryId) {
+    var fm = await dbGet('guardian_summaries', primaryId);
+    snap = buildGeometrySnapshot(primaryId, fm);
+  }
   var log = {
     id: 'gl_' + Date.now(),
     invoked_at: Date.now(),
@@ -8714,7 +8803,10 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
     thread: JSON.stringify(guardianThread),
     emotional_weight: 1.0,
     auto_invoked: 0,
-    log_type: 'summon'
+    log_type: 'summon',
+    primary_discourse_id: primaryId,
+    geometry_snapshot: snap,
+    triggered_by: guardianPendingTriggerType || null
   };
   await dbPut('guardian_logs', log);
 }

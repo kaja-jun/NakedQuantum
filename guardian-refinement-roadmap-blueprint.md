@@ -187,11 +187,11 @@ Template from primary qualifier + terms, then append first substantive sentence 
 | `inversion_loop` | `I read perpetual self-argument in the phrasing.` |
 | (summon, no qualifier) | First substantive sentence only |
 
-### G2 — Geometry snapshot & self-diff (heart of witness — **elevated priority**)
+### G2 — Geometry snapshot & self-diff (heart of witness — **elevated priority**) ✅ shipped
 
 *Mirror: “You are anxious.” Witness: “You were anxious then; geometry still shows the same orbit terms.” That requires **temporal comparison**, not only last-2 prose logs.*
 
-- [ ] On every invoke (strip + summon): persist `geometry_snapshot` on `guardian_logs`:
+- [x] On every invoke (strip + summon): persist `geometry_snapshot` on `guardian_logs`:
 
 ```js
 // geometry_snapshot (JSON on guardian_logs)
@@ -207,7 +207,7 @@ Template from primary qualifier + terms, then append first substantive sentence 
 }
 ```
 
-- [ ] On summon: `geometryDelta(priorSnapshot, currentMap)` → inject `GEOMETRY SINCE LAST WITNESS` (facts only):
+- [x] On summon: `geometryDelta(priorSnapshot, currentMap)` → inject `GEOMETRY SINCE LAST WITNESS` (facts only):
 
 ```js
 // geometryDelta — illustrative; implement in app.js at context-build time
@@ -224,15 +224,15 @@ function geometryDelta(prior, currentMap) {
 }
 ```
 
-- [ ] Compare against **last invoke on same `discourse_id`** when present; else last global invoke snapshot.
+- [x] Compare against **last invoke on same `discourse_id`** when present; else last global invoke snapshot.
 - [ ] Makes G1 ledger useful; feeds G4 strip with one prior theory line.
 
-### G3 — Tiered summon context (fix “memory bomb”)
+### G3 — Tiered summon context (fix “memory bomb”) ✅ shipped
 
-- [ ] **Tier 1 (sacred):** Last **3** discourses by **`updated_at`** (fallback `created_at`) — full fast maps + edges + depersonalisation + new dimensions.
-- [ ] **Tier 2:** Top **5** watcher links — **one `divergenceNote` line per link** (§8), not raw pair lists.
-- [ ] **Tier 3:** Deep maps only for discourses returned by **`selectUrgentDiscourses`** (max 5) — see §15. Do not dump every `*_deep` row on summon.
-- [ ] **Tier 4:** Archive rollup — counts, date span, arc aggregates (one short paragraph).
+- [x] **Tier 1 (sacred):** Last **3** discourses by **`updated_at`** (fallback `created_at`) — full fast maps + edges + depersonalisation + new dimensions.
+- [x] **Tier 2:** Top **5** watcher links — **one `divergenceNote` line per link** (§8), not raw pair lists.
+- [x] **Tier 3:** Deep maps only for discourses returned by **`selectUrgentDiscourses`** (max 5) — see §15. Do not dump every `*_deep` row on summon.
+- [x] **Tier 4:** Archive rollup — counts, date span, arc aggregates (one short paragraph).
 
 **Context budget — decided caps (Kimi review):**
 
@@ -244,7 +244,7 @@ function geometryDelta(prior, currentMap) {
 
 Rough rule in code: `chars / 4 ≈ tokens`. DistilBART ~80 tokens × many discs is why Tier 3 must stay urgent-only.
 
-- [ ] Implement `estimateContextTokens(block)` + deterministic truncation in `buildGuardianContext`.
+- [x] Implement `applyGuardianArchiveBudget` (~10k chars) + prior witness cap (~2k) in `buildGuardianPriorWitnessBlock`.
 
 ### G4 — Worker strip upgrade (optional, cheap)
 
@@ -270,7 +270,7 @@ Rough rule in code: `chars / 4 ≈ tokens`. DistilBART ~80 tokens × many discs 
 
 *Highest-leverage single line in summon context. Implement in `buildGuardianContext` when resolving Tier 2 links.*
 
-- [ ] `divergenceNote(link, mapA, mapB)` — return one line or `null`:
+- [x] `divergenceNote(link, mapA, mapB)` — return one line or `null` *(in Tier 2 summon block)*:
 
 ```js
 function divergenceNote(link, mapA, mapB) {
@@ -435,6 +435,7 @@ function divergenceNote(link, mapA, mapB) {
 | PR #31 + #32 on main | 2026-05 | Cartographer v0.3 + roadmap pinned |
 | **C1–C2 + C3b** | 2026-05-19 | cartographer v0.4: safe stemmer, negation, `CARTO_VERSION` 4, remaps on save |
 | **C3–C8** | 2026-05-19 | v0.5: lexicon expansion, confidence, soft labels, summary, paradox, tokenize-once; `CARTO_VERSION` 5 |
+| **G2 + G3 + X1** | 2026-05-19 | Tiered summon, geometry snapshot/delta, divergenceNote in context |
 
 ---
 
