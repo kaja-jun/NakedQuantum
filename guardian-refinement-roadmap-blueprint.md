@@ -60,7 +60,8 @@
 | Dismiss backoff | 5+ with &lt;2 qualifiers; cap 10 | Keep ethics; raise qualifier **confidence** bar |
 | Auto-invoke surface | **Strip under header only** — never modal, never other realms | Unchanged |
 | Summon context | All discourses’ fast maps + all deep maps + watcher aggregates | **Tiered** (§7) |
-| Auto-invoke default | Dev: easy to trigger for testing | **OFF** until user enables “Guardian may interrupt” (§10) |
+| Auto-invoke default (PWA) | Dev: low thresholds for testing | **Onboarding explains strip** + user can turn off; **Settings** master toggle; long-press strip off (later). Production cadence §3 still applies when on. |
+| Auto-invoke (desktop) | N/A on PWA | Real-time Guardian whisper in **Lighthouse cockpit** — `lighthouse-cockpit-blueprint.md`; separate channel, not Soup strip spam |
 
 ---
 
@@ -145,8 +146,8 @@ flowchart TB
 - [ ] **C1 — Stemmer safety** — Never emit broken stems (`nothing`→`noth`, `thing`→`th`). Prefer: expand `LEMMA_MAP`, or only strip `-ing` when result is in a lexicon / min length.
 - [ ] **C2 — Negation flipper** — `not|never|no|n't` within 2 tokens flips sentiment hit for scoring functions (not full NLP).
 - [ ] **C3 — Lexicon expansion** — Target ~10× coverage per category (~300–400 terms each). **Shipped app stays zero-deps.** Expansion workflow:
-  - **One-time assist (not in PWA):** optional Python script on any machine (laptop once available): seed sets → nearest neighbors via GloVe 50d or word2vec → **Kaja curates** keep/discard → paste into `cartographer.js`. Not runtime lookup; human-in-the-loop mechanical assist.
-  - **In-app:** manual batches on iPhone still valid for small adds.
+  - **Now:** Kaja adds curated batches manually on iPhone when time allows.
+  - **When laptop exists:** one-time Python script (GloVe or word2vec — whichever is convenient) → neighbor candidates → **Kaja curates** → paste into `cartographer.js`. Not shipped, not runtime.
   - Include contractions (`don't` → negation + stem).
 - [ ] **C3b — `carto_version` tagged re-map** — **Decision: tagged, not lazy-only or eager-only.** Store `carto_version` on each fast map row (e.g. `3` after C1–C3 ship). On read/save, if `carto_version < CARTO_VERSION_CURRENT`, queue `generateFastMap` for that discourse. Avoids stale archive after lexicon/stemmer fixes without blocking iPhone with one eager batch. *(Optional: `tools/expand_lexicon.py` + `tools/README` when laptop exists — never bundled in Pages deploy.)*
 - [ ] **C4 — Detector confidence** — Each detector returns `confidence: 0–1` from signal strength; `checkGuardianTrigger` ignores low-confidence qualifiers.
@@ -233,7 +234,7 @@ function geometryDelta(prior, currentMap) {
 
 - [ ] **Tier 1 (sacred):** Last **3** discourses by **`updated_at`** (fallback `created_at`) — full fast maps + edges + depersonalisation + new dimensions.
 - [ ] **Tier 2:** Top **5** watcher links — **one `divergenceNote` line per link** (§8), not raw pair lists.
-- [ ] **Tier 3:** Deep maps only for “urgent” discourses (existing urgent heuristic until amended).
+- [ ] **Tier 3:** Deep maps only for discourses returned by **`selectUrgentDiscourses`** (max 5) — see §15. Do not dump every `*_deep` row on summon.
 - [ ] **Tier 4:** Archive rollup — counts, date span, arc aggregates (one short paragraph).
 
 **Context budget — decided caps (Kimi review):**
@@ -311,13 +312,16 @@ function divergenceNote(link, mapA, mapB) {
 
 ---
 
-## 10. Phase A — Auto-invoke production ethics
+## 10. Phase A — Auto-invoke production ethics (PWA)
 
-- [ ] **A1 — Production thresholds** — Apply §3 (72h, higher watcher, confidence-gated qualifiers).
-- [ ] **A2 — Opt-in (default posture decided)** — **Default: all auto-invoke OFF.** User must explicitly enable **“Guardian may interrupt”** in Settings; then per-trigger toggles (orbit, paradox, silence, escalating arc). Sovereignty: watching is allowed; speaking requires permission.
+*PWA cannot host real-time Lighthouse Guardian (memory/CPU) — that lives on desktop per `lighthouse-cockpit-blueprint.md`. PWA = Soup strip only.*
+
+- [ ] **A1 — Production thresholds** — When auto-invoke is on: §3 (72h, 0.72+ watcher, confidence-gated qualifiers). Dev knobs stay for Kaja testing until flip.
+- [ ] **A2 — Onboarding + Settings (Kaja decision)** — On first run (or Guardian onboarding step): explain the **strip under header**, what it does, offer **turn off now**. Persist `nq_guardian_auto_invoke_enabled` (or equivalent). **Settings:** master “Guardian may interrupt” + optional per-trigger toggles later.
+- [ ] **A2b — Strip UX (later)** — Long-press strip → disable auto-invoke or dismiss session (quick sovereignty exit).
 - [ ] **A3 — Consensus** — When enabled: 2+ **high-confidence** qualifiers OR single “strong” signal (define in C4/C5).
 
-*Strip under header remains the only auto surface.*
+*Strip under header remains the **only** PWA auto surface — never modal, never Sanctuary, never Lighthouse write column.*
 
 ---
 
@@ -388,14 +392,24 @@ function divergenceNote(link, mapA, mapB) {
 | Truncation order | Drop Tier 4 → 3 → 2; Tier 1 sacred |
 | Re-map after Cartographer changes | **Tagged `carto_version`** (C3b) |
 | Lexicon expansion assist | One-time Python script, not shipped — Kaja curates output |
-| Auto-invoke default | **OFF** until explicit opt-in |
+| Auto-invoke (Kimi) | OFF until opt-in — **PWA variant:** onboarding explain + opt-out + Settings (§10) |
 | Batch order | **G2 alongside / before G3** |
 
-### Still open (Kaja decides before implement)
+### Decided (Kaja, May 2026)
 
-1. **Deep map tier** — keep “urgent” heuristic vs tie to word count + arc delta?
-2. **GloVe vs word2vec** for one-time lexicon script (when laptop exists)?
-3. **`CARTO_VERSION_CURRENT`** numbering — bump on each cartographer schema/lexicon breaking change?
+| Topic | Decision |
+|-------|----------|
+| **Deep map Tier 3** | **Keep `selectUrgentDiscourses`** — already scores contradictions, high echoes, escalating arc (`tension_shift > 0.02`), length, recency, missing deep map. Top 5 only on summon. No separate “arc-only” rule needed. |
+| **Lexicon assist** | Manual curation now; laptop script later; GloVe vs word2vec **does not matter** — pick best tool when scripting. |
+| **PWA auto-invoke UX** | Onboarding explains + opt-out; Settings master off; long-press strip later. Not desktop-real-time on PWA. |
+| **Desktop Guardian** | Real-time in Lighthouse editor — `lighthouse-cockpit-blueprint.md` (G6), after Tauri. |
+
+**Why keep urgent heuristic (not replace):** Pure “all deep maps” blows the 2,500-token cap. Pure “arc delta only” misses watcher contradictions and recency. `selectUrgentDiscourses` is already a **tie** across geometry + watcher + time — extend scores in code if needed, don’t replace the function.
+
+### Still open
+
+1. **`CARTO_VERSION_CURRENT`** — bump on each cartographer schema/lexicon breaking change?
+2. **Onboarding default** — strip enabled after onboarding unless user opted out, vs disabled until opt-in? *(Implement A2 with clear copy either way.)*
 
 ```
 (Kaja overrides / notes)
@@ -419,7 +433,9 @@ function divergenceNote(link, mapA, mapB) {
 | G0 | 2026-05 | Three-path architecture documented (co-creator session) |
 | Cartographer PR #31 | 2026-05 | Blockers, tokenize consistency, depersonalisation in summon context, silenceMarkers |
 | This blueprint pinned | 2026-05-18 | Roadmap consolidates Guardian + Kimi + production intent |
-| Kimi blueprint review merged | 2026-05-19 | G2 elevated, caps, theory_one_line, carto_version, default-off auto-invoke, divergenceNote sketch |
+| Kimi blueprint review merged | 2026-05-19 | G2 elevated, caps, theory_one_line, carto_version, divergenceNote sketch |
+| Kaja decisions merged | 2026-05-19 | Keep urgent deep maps; manual lexicons; PWA onboarding/settings auto-invoke; desktop → lighthouse cockpit |
+| PR #31 + #32 on main | 2026-05 | Cartographer v0.3 + roadmap pinned |
 
 ---
 
