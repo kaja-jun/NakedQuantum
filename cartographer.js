@@ -75,6 +75,18 @@ sensory: new Set([
 'soft','sharp','bitter','sweet','smell','scent','weight',
 'body','blood','bone','heart','pulse','trembling','grazing'
 ]),
+avoidance: new Set([
+'perhaps', 'maybe', 'somehow', 'later', 'busy', 'distracted', 
+'forget', 'ignore', 'anyway', 'regardless', 'whatever', 'tired'
+]),
+surrender: new Set([
+'done', 'stop', 'yield', 'release', 'empty', 'pointless', 
+'useless', 'resigned', 'letting go', 'washed', 'carried'
+]),
+fixation: new Set([
+'must', 'cannot', 'have to', 'always', 'never', 'loop', 
+'stuck', 'again', 'circling', 'obsessed', 'bound', 'tied'
+]),
 abstract: new Set([
 'truth','meaning','concept','theory','idea','principle','logic',
 'reason','existence','consciousness','reality','perception',
@@ -273,6 +285,26 @@ opening_tone: 'neutral',
 closing_tone: 'neutral',
 tension_shift: 0
 };
+
+function detectDepersonalization(text) {
+const words = text.toLowerCase().split(/\s+/);
+if (words.length < 20) return { label: 'Too short', ratio: 0 };
+const personal = new Set(['i', 'me', 'my', 'mine']);
+const abstract = new Set(['one', 'it', 'they', 'people', 'society', 'nature', 'the mind']);
+let personalCount = 0;
+let abstractCount = 0;
+for (const w of words) {
+if (personal.has(w)) personalCount++;
+if (abstract.has(w)) abstractCount++;
+}
+const ratio = abstractCount / Math.max(personalCount, 1);
+let label;
+if (personalCount === 0 && abstractCount > 0) label = 'Completely detached (Observer state)';
+else if (ratio > 3) label = 'Highly depersonalized (Hiding in the abstract)';
+else if (ratio < 0.5) label = 'Deeply subjective (Anchored in the I)';
+else label = 'Balanced perspective';
+return { label, abstract_to_personal_ratio: parseFloat(ratio.toFixed(2)) };
+}
 
 const firstThird = lines.slice(0, Math.ceil(lines.length / 3)).join(' ').toLowerCase();
 const lastThird  = lines.slice(-Math.ceil(lines.length / 3)).join(' ').toLowerCase();
