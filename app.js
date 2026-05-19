@@ -7894,14 +7894,14 @@ function buildFastMapSnapshotForWorker(fastMap) {
   var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting ? fastMap.signature.orbits.orbiting : [];
   var orbitingTerms = orbits.map(function (o) { return o.term; });
   var writingSignature = fastMap.signature && fastMap.signature.summary ? fastMap.signature.summary : '';
-  var silenceDays = fastMap.silence_weight && typeof fastMap.silence_weight.count === 'number' ? fastMap.silence_weight.count : 0;
+  var silenceMarkers = fastMap.silence_weight && typeof fastMap.silence_weight.count === 'number' ? fastMap.silence_weight.count : 0;
   var paradoxFlag = !!(fastMap.signature && fastMap.signature.paradox && (fastMap.signature.paradox.label === 'Paradox-dominant' || fastMap.signature.paradox.label === 'Charged'));
   var contradictionFlag = !!(fastMap.watcher && fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length);
   var dominantTheme = (fastMap.emotional_arc && fastMap.emotional_arc.direction) ? fastMap.emotional_arc.direction : ((fastMap.key_terms && fastMap.key_terms[0] && fastMap.key_terms[0].term) ? fastMap.key_terms[0].term : 'none');
   return {
     orbitingTerms: orbitingTerms,
     writingSignature: writingSignature,
-    silenceDays: silenceDays,
+    silenceMarkers: silenceMarkers,
     paradoxFlag: paradoxFlag,
     contradictionFlag: contradictionFlag,
     dominantTheme: dominantTheme
@@ -8481,6 +8481,9 @@ async function buildGuardianContext(discs) {
       }
       if (fastMap.incompleteness) {
         contextBlock += `Ending: ${fastMap.incompleteness.label}\n`;
+      }
+      if (fastMap.depersonalisation) {
+        contextBlock += `Perspective: ${fastMap.depersonalisation.label}\n`;
       }
     } else {
       // Fallback: no Fast Map yet -- use raw text snippet

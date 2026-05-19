@@ -99,7 +99,7 @@ abstract: new Set([
 
 const INVERSION_MARKERS = new Set([
 'but','yet','unless','except','though','rather','instead',
-'however','still','only','while','despite','until','and yet'
+'however','still','only','while','despite','until'
 ]);
 
 const ABSOLUTES = new Set([
@@ -107,6 +107,70 @@ const ABSOLUTES = new Set([
 'impossible','must','ruined','completely','absolutely','totally',
 'forever','all','none','only','exactly','certain','definitely'
 ]);
+
+// ── NORMALIZATION ───────────────────────────────────────────────────────────
+
+const LEMMA_MAP = new Map([
+  // positive
+  ['loving','love'], ['loved','love'], ['loves','love'],
+  ['hoping','hope'], ['hoped','hope'], ['hopes','hope'],
+  ['healing','heal'], ['healed','heal'], ['heals','heal'],
+  ['growing','grow'], ['grew','grow'], ['grown','grow'],
+  ['blooming','bloom'], ['bloomed','bloom'],
+  ['rising','rise'], ['rose','rise'], ['risen','rise'],
+  // negative
+  ['feared','fear'], ['fearing','fear'], ['fears','fear'],
+  ['pained','pain'], ['paining','pain'],
+  ['trapped','trap'],
+  ['broken','break'], ['breaking','break'], ['breaks','break'],
+  ['falling','fall'], ['fell','fall'], ['fallen','fall'],
+  ['sinking','sink'], ['sank','sink'], ['sunk','sink'],
+  ['aching','ache'], ['ached','ache'], ['aches','ache'],
+  ['screaming','scream'], ['screamed','scream'],
+  // dissolution / existence
+  ['dissolving','dissolve'], ['dissolved','dissolve'],
+  ['melting','melt'], ['melted','melt'],
+  ['collapsing','collapse'], ['collapsed','collapse'],
+  ['forgetting','forget'], ['forgot','forget'], ['forgotten','forget'],
+  // sensory
+  ['touched','touch'], ['touching','touch'], ['touches','touch'],
+  ['smelling','smell'], ['smelled','smell'],
+  ['tasting','taste'], ['tasted','taste'],
+  ['hearing','hear'], ['heard','hear'],
+  ['seeing','see'], ['saw','see'], ['seen','see'],
+  ['feeling','feel'], ['felt','feel'],
+  ['breathing','breath'], ['breathed','breath']
+]);
+
+function normalizeToken(raw) {
+  if (!raw) return '';
+  let w = raw.toLowerCase();
+  // normalize quotes and dashes
+  w = w.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+  // strip leading/trailing non-letters/numbers, keep internal apostrophe
+  w = w.replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/gu, '');
+  if (!w) return '';
+  if (STOPWORDS.has(w)) return w;
+  // lemma lookup first
+  if (LEMMA_MAP.has(w)) return LEMMA_MAP.get(w);
+  // very light stemming fallback, safe and reversible
+  if (w.length > 4 && w.endsWith('ing')) return w.slice(0, -3);
+  if (w.length > 3 && w.endsWith('ed')) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith('es')) return w.slice(0, -2);
+  if (w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1);
+  return w;
+}
+
+function tokenize(text) {
+  if (!text) return [];
+  // split on whitespace, normalize each token, drop empties
+  return text
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .split(/\s+/)
+    .map(normalizeToken)
+    .filter(Boolean);
+}
 
 // ── EXISTING FUNCTIONS (unchanged) ───────────────────────────────────────────
 
@@ -120,10 +184,7 @@ last_line: lines[lines.length - 1].trim().slice(0, 200)
 }
 
 function extractKeyTerms(text, maxTerms = 10) {
-const words = text.toLowerCase()
-.replace(/[^\w\s']/g, '')
-.split(/\s+/)
-.filter(w => w.length > 2 && !STOPWORDS.has(w));
+const words = tokenize(text).filter(w => w.length > 2 && !STOPWORDS.has(w));
 
 const freq = {};
 for (const w of words) { freq[w] = (freq[w] || 0) + 1; }
@@ -135,33 +196,33 @@ term,
 count,
 keyness: (count / totalWords) * Math.log(totalWords / (1 + count))
 }))
-.sort((a, b) => b.tfidf - a.tfidf)
+.sort((a, b) => b.keyness - a.keyness)
 .slice(0, maxTerms);
 
 return terms;
 }
 
 function detectInversionDensity(text) {
-const sentences = text.split(/[.!?;]+/).filter(s => s.trim().length > 0);
-if (!sentences.length) return { label: 'No signal', ratio: 0, count: 0 };
-let count = 0;
-for (const s of sentences) {
-const words = s.toLowerCase().split(/\s+/);
-for (const w of words) {
-if (INVERSION_MARKERS.has(w)) { count++; break; }
-}
-}
-const ratio = count / sentences.length;
-let label;
-if (ratio === 0)      label = 'Asserting';
-else if (ratio < 0.2) label = 'Occasional inversion';
-else if (ratio < 0.4) label = 'Dialectical';
-else                  label = 'Perpetual self-argument';
-return { label, count, ratio: parseFloat(ratio.toFixed(3)) };
+  const sentences = text.split(/[.!?;]+/).filter(s => s.trim().length > 0);
+  if (!sentences.length) return { label: 'No signal', ratio: 0, count: 0 };
+  let count = 0;
+  for (const s of sentences) {
+    const words = tokenize(s);
+    for (const w of words) {
+      if (INVERSION_MARKERS.has(w)) { count++; break; }
+    }
+  }
+  const ratio = count / sentences.length;
+  let label;
+  if (ratio === 0)      label = 'Asserting';
+  else if (ratio < 0.2) label = 'Occasional inversion';
+  else if (ratio < 0.4) label = 'Dialectical';
+  else                  label = 'Perpetual self-argument';
+  return { label, count, ratio: parseFloat(ratio.toFixed(3)) };
 }
 
 function detectParadoxProximity(text) {
-const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+const words = tokenize(text);
 const WINDOW = 6;
 let paradoxCount = 0;
 const paradoxPairs = [];
@@ -191,7 +252,7 @@ return { label, count: paradoxCount, pairs: paradoxPairs };
 }
 
 function detectRepetitionOrbits(text) {
-const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(Boolean);
+const words = tokenize(text);
 const meaningful = words.filter(w => w.length > 3 && !STOPWORDS.has(w));
 const freq = {};
 for (const w of meaningful) { freq[w] = (freq[w] || 0) + 1; }
@@ -256,12 +317,12 @@ return { label, avg_words_per_sentence: parseFloat(avg.toFixed(1)) };
 }
 
 function detectRigidity(text) {
-const words = text.toLowerCase().match(/\b\w+\b/g) || [];
-let count = 0;
-for (const w of words) { if (ABSOLUTES.has(w)) count++; }
-const ratio = count / Math.max(words.length, 1);
-const label = ratio > 0.02 ? 'Rigid' : ratio > 0.01 ? 'Tense' : 'Fluid';
-return { label, absolute_count: count, ratio: parseFloat(ratio.toFixed(4)) };
+  const words = tokenize(text);
+  let count = 0;
+  for (const w of words) { if (ABSOLUTES.has(w)) count++; }
+  const ratio = count / Math.max(words.length, 1);
+  const label = ratio > 0.02 ? 'Rigid' : ratio > 0.01 ? 'Tense' : 'Fluid';
+  return { label, absolute_count: count, ratio: parseFloat(ratio.toFixed(4)) };
 }
 
 function detectQuestionDensity(text) {
@@ -278,75 +339,75 @@ return { label, question_count: questions, ratio: parseFloat(ratio.toFixed(3)) }
 }
 
 function detectEmotionalArc(text) {
-const lines = text.split('\n').filter(l => l.trim().length > 0);
-if (lines.length < 3) return {
-direction: 'too short',
-opening_tone: 'neutral',
-closing_tone: 'neutral',
-tension_shift: 0
-};
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
+  if (lines.length < 3) return {
+    direction: 'too short',
+    opening_tone: 'neutral',
+    closing_tone: 'neutral',
+    tension_shift: 0
+  };
+
+  const firstThird = lines.slice(0, Math.ceil(lines.length / 3)).join(' ');
+  const lastThird = lines.slice(-Math.ceil(lines.length / 3)).join(' ');
+
+  function score(t, lexicon) {
+    const words = tokenize(t);
+    let hits = 0;
+    for (const w of words) { if (lexicon.has(w)) hits++; }
+    return hits / Math.max(words.length, 1);
+  }
+
+  const openingTones = [
+    { name: 'tentative', score: score(firstThird, SENTIMENT.tentative) },
+    { name: 'confessional', score: score(firstThird, SENTIMENT.confessional) },
+    { name: 'negative', score: score(firstThird, SENTIMENT.negative) },
+    { name: 'positive', score: score(firstThird, SENTIMENT.positive) }
+  ].sort((a, b) => b.score - a.score);
+
+  const closingTones = [
+    { name: 'resolved', score: score(lastThird, SENTIMENT.resolved) + score(lastThird, SENTIMENT.positive) },
+    { name: 'confessional', score: score(lastThird, SENTIMENT.confessional) },
+    { name: 'negative', score: score(lastThird, SENTIMENT.negative) },
+    { name: 'tentative', score: score(lastThird, SENTIMENT.tentative) }
+  ].sort((a, b) => b.score - a.score);
+
+  const openingTone = openingTones[0].name;
+  const closingTone = closingTones[0].name;
+  const openNeg = score(firstThird, SENTIMENT.negative);
+  const closeNeg = score(lastThird, SENTIMENT.negative);
+  const tensionShift = openNeg - closeNeg;
+
+  let direction;
+  if (tensionShift > 0.02) direction = `${openingTone} → resolving`;
+  else if (tensionShift < -0.02) direction = `${openingTone} → escalating`;
+  else direction = `${openingTone} → ${closingTone}`;
+
+  return {
+    direction,
+    opening_tone: openingTone,
+    closing_tone: closingTone,
+    tension_shift: parseFloat(tensionShift.toFixed(3))
+  };
+}
 
 function detectDepersonalization(text) {
-const words = text.toLowerCase().split(/\s+/);
-if (words.length < 20) return { label: 'Too short', ratio: 0 };
-const personal = new Set(['i', 'me', 'my', 'mine']);
-const abstract = new Set(['one', 'it', 'they', 'people', 'society', 'nature', 'mind']);
-let personalCount = 0;
-let abstractCount = 0;
-for (const w of words) {
-if (personal.has(w)) personalCount++;
-if (abstract.has(w)) abstractCount++;
-}
-const ratio = abstractCount / Math.max(personalCount, 1);
-let label;
-if (personalCount === 0 && abstractCount > 0) label = 'Completely detached (Observer state)';
-else if (ratio > 3) label = 'Highly depersonalized (Hiding in the abstract)';
-else if (ratio < 0.5) label = 'Deeply subjective (Anchored in the I)';
-else label = 'Balanced perspective';
-return { label, abstract_to_personal_ratio: parseFloat(ratio.toFixed(2)) };
-}
-
-const firstThird = lines.slice(0, Math.ceil(lines.length / 3)).join(' ').toLowerCase();
-const lastThird  = lines.slice(-Math.ceil(lines.length / 3)).join(' ').toLowerCase();
-
-function score(t, lexicon) {
-const words = t.split(/\s+/);
-let hits = 0;
-for (const w of words) { if (lexicon.has(w)) hits++; }
-return hits / Math.max(words.length, 1);
-}
-
-const openingTones = [
-{ name: 'tentative',    score: score(firstThird, SENTIMENT.tentative) },
-{ name: 'confessional', score: score(firstThird, SENTIMENT.confessional) },
-{ name: 'negative',     score: score(firstThird, SENTIMENT.negative) },
-{ name: 'positive',     score: score(firstThird, SENTIMENT.positive) }
-].sort((a, b) => b.score - a.score);
-
-const closingTones = [
-{ name: 'resolved',     score: score(lastThird, SENTIMENT.resolved) + score(lastThird, SENTIMENT.positive) },
-{ name: 'confessional', score: score(lastThird, SENTIMENT.confessional) },
-{ name: 'negative',     score: score(lastThird, SENTIMENT.negative) },
-{ name: 'tentative',    score: score(lastThird, SENTIMENT.tentative) }
-].sort((a, b) => b.score - a.score);
-
-const openingTone  = openingTones[0].name;
-const closingTone  = closingTones[0].name;
-const openNeg      = score(firstThird, SENTIMENT.negative);
-const closeNeg     = score(lastThird, SENTIMENT.negative);
-const tensionShift = openNeg - closeNeg;
-
-let direction;
-if (tensionShift > 0.02)       direction = `${openingTone} → resolving`;
-else if (tensionShift < -0.02) direction = `${openingTone} → escalating`;
-else                           direction = `${openingTone} → ${closingTone}`;
-
-return {
-direction,
-opening_tone: openingTone,
-closing_tone: closingTone,
-tension_shift: parseFloat(tensionShift.toFixed(3))
-};
+  const words = tokenize(text);
+  if (words.length < 20) return { label: 'Too short', ratio: 0 };
+  const personal = new Set(['i', 'me', 'my', 'mine']);
+  const abstract = new Set(['one', 'it', 'they', 'people', 'society', 'nature', 'mind']);
+  let personalCount = 0;
+  let abstractCount = 0;
+  for (const w of words) {
+    if (personal.has(w)) personalCount++;
+    if (abstract.has(w)) abstractCount++;
+  }
+  const ratio = abstractCount / Math.max(personalCount, 1);
+  let label;
+  if (personalCount === 0 && abstractCount > 0) label = 'Completely detached (Observer state)';
+  else if (ratio > 3) label = 'Highly depersonalized (Hiding in the abstract)';
+  else if (ratio < 0.5) label = 'Deeply subjective (Anchored in the I)';
+  else label = 'Balanced perspective';
+  return { label, abstract_to_personal_ratio: parseFloat(ratio.toFixed(2)) };
 }
 
 function extractiveSummary(text, maxSentences = 5) {
@@ -361,7 +422,7 @@ const keyTerms   = extractKeyTerms(text, 15);
 const keyTermSet = new Set(keyTerms.map(t => t.term));
 
 const scored = sentences.map((s, i) => {
-const words = s.toLowerCase().split(/\s+/);
+const words = tokenize(s);
 let termScore = 0;
 for (const w of words) { if (keyTermSet.has(w)) termScore++; }
 const positionBonus = (i === 0 || i === sentences.length - 1) ? 0.5 :
@@ -404,8 +465,8 @@ const YOU_PRONOUNS = new Set(['you','your','yours','yourself']);
 const WE_PRONOUNS = new Set(['we','us','our','ours','ourselves']);
 
 function pronounScore(chunk, set) {
-const words = chunk.join(' ').toLowerCase().split(/\s+/);
-return words.filter(w => set.has(w)).length / Math.max(words.length, 1);
+  const words = tokenize(chunk.join(' '));
+  return words.filter(w => set.has(w)).length / Math.max(words.length, 1);
 }
 
 const trajectory = thirds.map((chunk, idx) => ({
@@ -438,7 +499,7 @@ else if (toI)     label = 'Returning to I -- self reasserting';
 else              label = 'Stable -- no significant shift';
 
 // Find overall dominant pronoun across full text
-const full = text.toLowerCase().split(/\s+/);
+const full = tokenize(text);
 const iCount   = full.filter(w => I_PRONOUNS.has(w)).length;
 const youCount = full.filter(w => YOU_PRONOUNS.has(w)).length;
 const weCount  = full.filter(w => WE_PRONOUNS.has(w)).length;
@@ -457,11 +518,13 @@ return { label, trajectory, dominant };
 - not truncated thoughts but held pauses.
 - High silence weight = writing that uses negative space as meaning.
   */
+  
   function detectSilenceWeight(text) {
+  const counted = new Set();
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   if (lines.length < 3) return { label: 'Too short', count: 0, ratio: 0, examples: [] };
 
-const lineLengths = lines.map(l => l.split(/\s+/).filter(Boolean).length);
+const lineLengths = lines.map(l => tokenize(l).length);
 let silenceCount  = 0;
 const examples    = [];
 
@@ -487,7 +550,7 @@ for (let i = 1; i < raw.length - 1; i++) {
 const prev = raw[i - 1].trim();
 const curr = raw[i].trim();
 const next = raw[i + 1].trim();
-const words = curr.split(/\s+/).filter(Boolean).length;
+const words = tokenize(curr).length;
 if (prev === '' && next === '' && words > 0 && words <= 4) {
   if (!counted.has(curr)) {
     counted.add(curr);
@@ -527,11 +590,11 @@ return { label, count: silenceCount, ratio: parseFloat(ratio.toFixed(3)), exampl
   delta: 'none'
   };
 
-const opening = lines.slice(0, Math.ceil(lines.length / 3)).join(' ').toLowerCase();
-const closing = lines.slice(-Math.ceil(lines.length / 3)).join(' ').toLowerCase();
+const opening = lines.slice(0, Math.ceil(lines.length / 3)).join(' ');
+const closing = lines.slice(-Math.ceil(lines.length / 3)).join(' ');
 
 function densityScore(chunk, lexicon) {
-const words = chunk.split(/\s+/).filter(Boolean);
+const words = tokenize(chunk);
 const hits  = words.filter(w => lexicon.has(w)).length;
 return hits / Math.max(words.length, 1);
 }
@@ -593,9 +656,9 @@ else label = entry === 'abstract' ? 'Grounding' : 'Transcending';
     if (lines.length === 0) return { label: 'Empty', type: 'unknown', final_line: '' };
 
 const finalLine  = lines[lines.length - 1].trim();
-const finalWords = finalLine.split(/\s+/).filter(Boolean);
+const finalWords = tokenize(finalLine);
 const finalLen   = finalWords.length;
-const lastWord   = (finalWords[finalWords.length - 1] || '').replace(/[^a-z]/gi, '').toLowerCase();
+const lastWord   = finalWords[finalWords.length - 1] || '';
 
 // Signals
 const endsOnQuestion    = finalLine.endsWith('?');
