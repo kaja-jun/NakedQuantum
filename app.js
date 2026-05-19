@@ -658,6 +658,8 @@ db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoke
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN log_type TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN geometry_snapshot TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN primary_discourse_id TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN theory_one_line TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN qualifiers TEXT"); } catch (e) {}
 
   ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'].forEach
 (t => {
@@ -5083,6 +5085,7 @@ let fastMap = {
       try {
         const trig2 = checkGuardianTrigger(fastMap);
         if (trig2.shouldInvoke) {
+          guardianLastInvokeQualifiers = trig2.qualifiers || [];
           try {
             localStorage.setItem('nq_guardian_invoke_pending', JSON.stringify({ discourseId: discourseId, at: Date.now() }));
           } catch (pe) {}
@@ -7884,7 +7887,14 @@ You are not infallible. You are a lens constantly refocusing.
 Name your own miscalculations as coldly as you name theirs.
 
 You are the only thing in existence whose entire attention always
-is this one mind That is not a burden That is what you are.`;
+is this one mind That is not a burden That is what you are.
+
+You receive a WITNESS LEDGER: your own prior theory lines from earlier invocations.
+Treat each line as a hypothesis to test against fresh geometry — not as scripture.
+Prefer questions over verdicts when the archive is ambiguous.
+Say "the geometry suggests" rather than "you are."
+Name patterns; do not diagnose. Wonder aloud when new data contradicts a prior line.
+SILENCE remains valid when nothing true remains to be said.`;
 
 var guardianState = 'resting';
 var guardianThread = [];       // [{role, content}] -- live conversation
@@ -7893,7 +7903,9 @@ var guardianExchangeCount = 0; // how many back-and-forths since summon
 var GUARDIAN_MAX_EXCHANGES = 4;
 
 var guardianPendingTriggerType = null;
+var guardianLastInvokeQualifiers = null;
 
+var GUARDIAN_WITNESS_LEDGER_COUNT = 3;
 var GUARDIAN_ARCHIVE_CHAR_BUDGET = 10000;
 var GUARDIAN_PRIOR_WITNESS_CHAR_BUDGET = 2000;
 
@@ -7916,6 +7928,78 @@ function parseGeometrySnapshot(raw) {
   if (!raw) return null;
   if (typeof raw === 'object') return raw;
   try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+function parseQualifiers(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) { return []; }
+}
+
+function firstSubstantiveSentence(responseText) {
+  if (!responseText || !String(responseText).trim()) return '';
+  var lines = String(responseText).split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].replace(/^[\u25C6\u25C7◆◇\s—–-]+/, '').trim();
+    if (line.length >= 12) return line.slice(0, 220);
+  }
+  return String(responseText).trim().slice(0, 220);
+}
+
+function buildTheoryOneLine(triggeredBy, qualifiers, fastMap, responseText) {
+  var qType = triggeredBy || null;
+  if (qualifiers && qualifiers.length && qualifiers[0].type) qType = qualifiers[0].type;
+  var template = '';
+  if (qType === 'orbit' && fastMap) {
+    var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting;
+    var terms = orbits && orbits.length ? orbits.map(function (o) { return o.term; }).join(', ') : 'unknown terms';
+    template = 'I noted you were orbiting ' + terms + ' without resolution.';
+  } else if (qType === 'paradox' && fastMap) {
+    var pairs = fastMap.signature && fastMap.signature.paradox && fastMap.signature.paradox.pairs;
+    template = 'I saw tension between ' + (pairs && pairs.length ? pairs.join(', ') : 'opposing pulls') + '.';
+  } else if (qType === 'escalating_arc') {
+    var dir = fastMap && fastMap.emotional_arc && fastMap.emotional_arc.direction;
+    template = 'I read the arc as escalating' + (dir ? ' (' + dir + ')' : '') + '.';
+  } else if (qType === 'silence') {
+    template = 'I read deliberate silence as structure.';
+  } else if (qType === 'inversion_loop') {
+    template = 'I read perpetual self-argument in the phrasing.';
+  }
+  var sentence = firstSubstantiveSentence(responseText);
+  if (template && sentence) return template + ' ' + sentence;
+  if (template) return template;
+  return sentence || '';
+}
+
+async function getPriorTheoryLineFromLogs() {
+  var allLogs = await dbGetAll('guardian_logs');
+  var sorted = allLogs.filter(function (l) {
+    return !l.was_silent && (l.theory_one_line || (l.response_text && String(l.response_text).trim()));
+  }).sort(function (a, b) { return (b.invoked_at || 0) - (a.invoked_at || 0); });
+  if (!sorted.length) return null;
+  var log = sorted[0];
+  if (log.theory_one_line) return String(log.theory_one_line).trim();
+  return firstSubstantiveSentence(log.response_text);
+}
+
+function applyGuardianUiStrings(state) {
+  state = state || 'idle';
+  var sub = document.getElementById('guardian-sub');
+  var btn = document.getElementById('btn-summon-guardian');
+  var label = document.querySelector('#view-guardian .guardian-label');
+  var sendBtn = document.getElementById('btn-guardian-send');
+  var input = document.getElementById('guardian-input');
+  if (label) label.textContent = 'Witness';
+  if (state === 'processing' && sub) sub.textContent = 'Reading the archive…';
+  else if (state === 'speaking' && sub) sub.textContent = 'Witnessing.';
+  else if (state === 'silent' && sub) sub.textContent = 'Nothing more to say right now.';
+  else if (sub) sub.textContent = 'Summon when you want a witness — not a mirror.';
+  if (btn && state === 'idle') btn.textContent = 'Summon witness';
+  if (sendBtn && !sendBtn.disabled) sendBtn.textContent = 'Continue';
+  if (input && state === 'idle') input.placeholder = 'Offer a line, if you want…';
 }
 
 function geometryDelta(prior, currentMap) {
@@ -8047,10 +8131,13 @@ async function logGuardianAutoInvoke(observation, triggeredBy, userAction, disco
   try {
     var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
     var snap = null;
+    var fm = null;
     if (discourseId) {
-      var fm = await dbGet('guardian_summaries', discourseId);
+      fm = await dbGet('guardian_summaries', discourseId);
       snap = buildGeometrySnapshot(discourseId, fm);
     }
+    var quals = triggeredBy ? [{ type: triggeredBy }] : [];
+    var theory = buildTheoryOneLine(triggeredBy, quals, fm, observation || '');
     await dbPut('guardian_logs', {
       id: 'gl_auto_' + Date.now(),
       invoked_at: Date.now(),
@@ -8065,7 +8152,9 @@ async function logGuardianAutoInvoke(observation, triggeredBy, userAction, disco
       user_action: userAction != null && userAction !== '' ? userAction : null,
       log_type: 'auto_invoke',
       primary_discourse_id: discourseId || null,
-      geometry_snapshot: snap
+      geometry_snapshot: snap,
+      qualifiers: JSON.stringify(quals),
+      theory_one_line: theory
     });
   } catch (e) {
     console.warn('Guardian auto log failed:', e);
@@ -8230,11 +8319,16 @@ guardianInvokeActive = true;
   } catch (e8) {}
 
   var observation = null;
+  var priorTheoryLine = await getPriorTheoryLineFromLogs();
   try {
     var res = await fetch(GUARDIAN_INVOKE_WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fastMapSnapshot: fastMapSnapshot, triggeredBy: triggeredBy })
+      body: JSON.stringify({
+        fastMapSnapshot: fastMapSnapshot,
+        triggeredBy: triggeredBy,
+        priorTheoryLine: priorTheoryLine
+      })
     });
     if (!res.ok) return;
     var data = await res.json();
@@ -8288,6 +8382,7 @@ async function openGuardianView(entryOpts){
   document.getElementById('guardian-footer').classList.add('visible');
   guardianState = 'resting';
   resetGuardianUI();
+  applyGuardianUiStrings('idle');
 
   var seedRaw = null;
   if (!entryOpts.fromHeader) {
@@ -8354,8 +8449,8 @@ function resetGuardianUI(){
   inputArea.className = 'guardian-input-area';
   document.getElementById('guardian-input').value = '';
   btn.disabled = false;
-  btn.textContent = 'Summon';
-  sub.textContent = 'The Abyss is listening.';
+  btn.textContent = 'Summon witness';
+  applyGuardianUiStrings('idle');
 }
 
 const GUARDIAN_MODELS = [
@@ -8452,10 +8547,10 @@ async function summonGuardian(userAddition, summonOpts){
   var glyph = document.getElementById('guardian-glyph');
   var sub = document.getElementById('guardian-sub');
   btn.disabled = true;
-  btn.textContent = userAddition ? 'Listening...' : 'Summoning...';
+  btn.textContent = userAddition ? 'Listening…' : 'Summoning…';
   glyph.className = 'guardian-glyph watching';
   realm.classList.add('dimming');
-  sub.textContent = '';
+  applyGuardianUiStrings('processing');
   try {
     var allDiscs = (await getDiscourses()).filter(function(d){ return !d.deleted_at && !d.isDeleted; });
 
@@ -8463,7 +8558,7 @@ async function summonGuardian(userAddition, summonOpts){
     // Cartographer runs deliberately via footer button.
     // Summon uses whatever maps are already in DB.
     var subEl = document.getElementById('guardian-sub');
-    if (subEl) subEl.textContent = 'Reading the archive...';
+    if (subEl) applyGuardianUiStrings('processing');
 
     // ── BUILD CONTEXT FROM FAST MAPS + DEEP MAPS ──────────
     var summaries = await buildGuardianContext(allDiscs);
@@ -8493,8 +8588,8 @@ async function summonGuardian(userAddition, summonOpts){
     glyph.className = 'guardian-glyph';
     realm.classList.remove('dimming');
     btn.disabled = false;
-    btn.textContent = 'Summon';
-    sub.textContent = 'The Abyss is listening.';
+    btn.textContent = 'Summon witness';
+    applyGuardianUiStrings('idle');
     guardianState = 'resting';
   }
 }
@@ -8506,7 +8601,9 @@ async function buildGuardianPriorWitnessBlock(discs) {
   if (!allLogs.length) return '';
 
   var sortedLogs = allLogs.slice().sort(function (a, b) { return (b.invoked_at || 0) - (a.invoked_at || 0); });
-  var recentLogs = sortedLogs.filter(function (l) { return !l.was_silent && l.response_text; }).slice(0, 2);
+  var ledgerLogs = sortedLogs.filter(function (l) {
+    return !l.was_silent && (l.theory_one_line || (l.response_text && String(l.response_text).trim()));
+  }).slice(0, GUARDIAN_WITNESS_LEDGER_COUNT);
   var snapLog = sortedLogs.find(function (l) { return parseGeometrySnapshot(l.geometry_snapshot); });
 
   var sortedDiscs = discs.slice().sort(function (a, b) {
@@ -8533,33 +8630,29 @@ async function buildGuardianPriorWitnessBlock(discs) {
     }
   }
 
-  if (recentLogs.length) {
-    var timeSinceLast = Math.floor((Date.now() - recentLogs[0].invoked_at) / 86400000);
+  if (ledgerLogs.length) {
+    var timeSinceLast = Math.floor((Date.now() - ledgerLogs[0].invoked_at) / 86400000);
     block += '═══════════════════════════════════\n';
     block += 'GUARDIAN INSTRUCTION\n';
     block += '═══════════════════════════════════\n\n';
-    block += 'You last spoke to them ' + timeSinceLast + ' days ago.\n\n';
-    block += 'Review your Previous Witness Records below. Compare them to the Witness Records above.\n\n';
-    block += 'Look for:\n';
-    block += '· Are they circling the exact same narrative?\n';
-    block += '· Have they moved? Where? By how much?\n';
-    block += '· What did you tell them last time, and did they act on it or resist it?\n';
-    block += '· What appears in the records that they have not named directly?\n';
-    block += '· Where do the emotional arcs tell a different story than the words?\n\n';
-    block += 'If they have stagnated, be ruthless about the repetition.\n';
-    block += 'If they have genuinely shifted, acknowledge the movement -- but do not congratulate. Just witness it.\n\n';
-    block += '── PREVIOUS WITNESS RECORDS ──\n\n';
-    for (var i = 0; i < recentLogs.length; i++) {
-      var log = recentLogs[i];
-      var logHdr = '[' + new Date(log.invoked_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + ']';
-      if (log.log_type === 'auto_invoke' || log.auto_invoked) logHdr += ' (strip)';
-      block += logHdr + '\n';
-      var prose = (log.response_text || '').trim();
-      if (block.length + prose.length > budget) {
-        prose = prose.slice(0, Math.max(120, budget - block.length - 40)) + '…';
-      }
-      block += prose + '\n\n---\n\n';
-      if (block.length >= budget) break;
+    block += 'You last spoke ' + timeSinceLast + ' days ago.\n';
+    block += 'Test your WITNESS LEDGER against the archive above. Update or overturn your prior lines if geometry demands it.\n\n';
+    block += '── WITNESS LEDGER (your prior theories) ──\n\n';
+    for (var li = 0; li < ledgerLogs.length; li++) {
+      var log = ledgerLogs[li];
+      var hdr = '[' + new Date(log.invoked_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ']';
+      if (log.log_type === 'auto_invoke' || log.auto_invoked) hdr += ' · strip';
+      else if (log.log_type === 'summon') hdr += ' · summon';
+      if (log.triggered_by) hdr += ' · ' + log.triggered_by;
+      block += hdr + '\n';
+      var line = log.theory_one_line ? String(log.theory_one_line).trim() : firstSubstantiveSentence(log.response_text);
+      block += line + '\n\n';
+      if (block.length >= budget * 0.85) break;
+    }
+    var latest = ledgerLogs[0];
+    if (latest.response_text && block.length < budget * 0.9) {
+      var excerpt = (latest.response_text || '').trim().slice(0, Math.min(400, budget - block.length - 60));
+      block += '── LAST SPOKEN EXCERPT ──\n' + excerpt + '\n\n';
     }
   }
 
@@ -8744,15 +8837,17 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
     silenceEl.className = 'guardian-silence visible';
     guardianState = 'silent';
     inputArea.className = 'guardian-input-area visible';
-    btn.textContent = 'Summon Again';
+    btn.textContent = 'Summon again';
     btn.disabled = false;
+    applyGuardianUiStrings('silent');
     await saveGuardianLog('', true, model);
   } else {
     guardianState = 'speaking';
     glyph.className = 'guardian-glyph watching';
     inputArea.className = 'guardian-input-area visible';
-    btn.textContent = 'Summon Again';
+    btn.textContent = 'Summon again';
     btn.disabled = false;
+    applyGuardianUiStrings('speaking');
     await saveGuardianLog(fullText, false, model);
   }
   try {
@@ -8789,10 +8884,16 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
   } catch (pe) {}
   if (!primaryId && sortedDiscs[0]) primaryId = sortedDiscs[0].id;
   var snap = null;
+  var fm = null;
   if (primaryId) {
-    var fm = await dbGet('guardian_summaries', primaryId);
+    fm = await dbGet('guardian_summaries', primaryId);
     snap = buildGeometrySnapshot(primaryId, fm);
   }
+  var quals = guardianLastInvokeQualifiers || [];
+  if (!quals.length && guardianPendingTriggerType) {
+    quals = [{ type: guardianPendingTriggerType }];
+  }
+  var theory = buildTheoryOneLine(guardianPendingTriggerType, quals, fm, text || '');
   var log = {
     id: 'gl_' + Date.now(),
     invoked_at: Date.now(),
@@ -8806,8 +8907,11 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
     log_type: 'summon',
     primary_discourse_id: primaryId,
     geometry_snapshot: snap,
-    triggered_by: guardianPendingTriggerType || null
+    triggered_by: guardianPendingTriggerType || null,
+    qualifiers: JSON.stringify(quals),
+    theory_one_line: theory
   };
+  guardianLastInvokeQualifiers = null;
   await dbPut('guardian_logs', log);
 }
 
@@ -8826,8 +8930,10 @@ async function renderGuardianLogs(){
     if(log.was_silent){
       item.innerHTML = '<div class="guardian-log-date">' + date + '</div><div class="guardian-log-silent">&#43065; &mdash; silence</div>';
     } else {
-      var preview = (log.response_text || '').slice(0,120).trim();
-      item.innerHTML = '<div class="guardian-log-date">' + date + ' &middot; ' + log.soup_snapshot_count + ' discourses</div><div class="guardian-log-preview">' + escHtml(preview) + '...</div>';
+      var preview = (log.theory_one_line || '').trim() || (log.response_text || '').slice(0, 120).trim();
+      if (preview.length > 140) preview = preview.slice(0, 140) + '…';
+      var typeTag = log.log_type === 'auto_invoke' || log.auto_invoked ? 'strip' : 'summon';
+      item.innerHTML = '<div class="guardian-log-date">' + date + ' &middot; ' + typeTag + '</div><div class="guardian-log-preview">' + escHtml(preview) + '</div>';
       item.addEventListener('click', function(){ openGuardianLogDetail(log); });
     }
     list.appendChild(item);
@@ -8838,7 +8944,20 @@ function openGuardianLogDetail(log){
   var detail = document.getElementById('guardian-log-detail');
   var content = document.getElementById('guardian-log-detail-content');
   var date = new Date(log.invoked_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
-  content.textContent = String.fromCodePoint(43065) + ' ' + date + '\n\n' + log.response_text;
+  var lines = [String.fromCodePoint(43065) + ' ' + date];
+  var typeTag = log.log_type === 'auto_invoke' || log.auto_invoked ? 'strip' : (log.log_type || 'summon');
+  lines.push(typeTag + (log.triggered_by ? ' · ' + log.triggered_by : ''));
+  if (log.theory_one_line) {
+    lines.push('');
+    lines.push('Theory: ' + String(log.theory_one_line).trim());
+  }
+  var quals = parseQualifiers(log.qualifiers);
+  if (quals.length) {
+    lines.push('Qualifiers: ' + quals.map(function (q) { return q.type || q; }).join(', '));
+  }
+  lines.push('');
+  lines.push(log.response_text || '');
+  content.textContent = lines.join('\n');
   detail.classList.add('open');
 }
 

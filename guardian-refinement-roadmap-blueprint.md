@@ -163,11 +163,11 @@ flowchart TB
 
 - [x] Document three paths, data layers, log behavior (this blueprint §4).
 
-### G1 — Witness ledger (local, no new LLM)
+### G1 — Witness ledger (local, no new LLM) ✅ shipped
 
-- [ ] Extend `guardian_logs` with structured fields: `primary_discourse_id`, `qualifiers[]`, `theory_one_line`, `geometry_snapshot` (see G2), `log_type`, `auto_invoked`, `triggered_by`.
-- [ ] On summon: feed **last N structured theories** — **default N = 3** (override in decisions log if Kaja wants 5).
-- [ ] Include `log_type` / `auto_invoked` / `triggered_by` in context so Guardian can separate strip vs summon voice.
+- [x] Extend `guardian_logs` with structured fields: `primary_discourse_id`, `qualifiers[]`, `theory_one_line`, `geometry_snapshot` (see G2), `log_type`, `auto_invoked`, `triggered_by`.
+- [x] On summon: feed **last N structured theories** — **default N = 3** (override in decisions log if Kaja wants 5).
+- [x] Include `log_type` / `auto_invoked` / `triggered_by` in context so Guardian can separate strip vs summon voice.
 
 **`theory_one_line` — decided (Kimi review, pending Kaja ack):** **Rule-based first**, not LLM-extracted.
 
@@ -225,7 +225,7 @@ function geometryDelta(prior, currentMap) {
 ```
 
 - [x] Compare against **last invoke on same `discourse_id`** when present; else last global invoke snapshot.
-- [ ] Makes G1 ledger useful; feeds G4 strip with one prior theory line.
+- [x] Makes G1 ledger useful; feeds G4 strip with one prior theory line.
 
 ### G3 — Tiered summon context (fix “memory bomb”) ✅ shipped
 
@@ -246,16 +246,16 @@ Rough rule in code: `chars / 4 ≈ tokens`. DistilBART ~80 tokens × many discs 
 
 - [x] Implement `applyGuardianArchiveBudget` (~10k chars) + prior witness cap (~2k) in `buildGuardianPriorWitnessBlock`.
 
-### G4 — Worker strip upgrade (optional, cheap)
+### G4 — Worker strip upgrade (optional, cheap) ✅ shipped
 
-- [ ] Auto-invoke worker receives **one prior theory line** + current snapshot (still no full archive).
-- [ ] Starts minimal “wondering” without summon cost.
+- [x] Auto-invoke worker receives **one prior theory line** + current snapshot (still no full archive).
+- [x] Starts minimal “wondering” without summon cost.
 
-### G5 — Guardian interaction (beyond mirror)
+### G5 — Guardian interaction (beyond mirror) ✅ shipped
 
-- [ ] Refine `GUARDIAN_SYSTEM_PROMPT` for meta-cognition: questions not verdicts; explicit uncertainty; SILENCE unchanged.
-- [ ] UI: less intimidating / more accurate — copy and rhythm in Guardian realm (design pass; no Sanctuary bleed).
-- [ ] Follow-up sessions: optional reload of **ledger summary** (not full thread JSON) on new summon.
+- [x] Refine `GUARDIAN_SYSTEM_PROMPT` for meta-cognition: questions not verdicts; explicit uncertainty; SILENCE unchanged.
+- [x] UI: less intimidating / more accurate — copy and rhythm in Guardian realm (design pass; no Sanctuary bleed).
+- [x] Follow-up sessions: optional reload of **ledger summary** (not full thread JSON) on new summon.
 
 ### G6 — Cockpit whisper (desktop — defer)
 
@@ -436,6 +436,7 @@ function divergenceNote(link, mapA, mapB) {
 | **C1–C2 + C3b** | 2026-05-19 | cartographer v0.4: safe stemmer, negation, `CARTO_VERSION` 4, remaps on save |
 | **C3–C8** | 2026-05-19 | v0.5: lexicon expansion, confidence, soft labels, summary, paradox, tokenize-once; `CARTO_VERSION` 5 |
 | **G2 + G3 + X1** | 2026-05-19 | Tiered summon, geometry snapshot/delta, divergenceNote in context |
+| **G1 + G4 + G5** | 2026-05-18 | Witness ledger (theory_one_line, qualifiers), strip prior theory, prompt + UI witness copy |
 
 ---
 
