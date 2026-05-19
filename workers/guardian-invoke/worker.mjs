@@ -104,7 +104,7 @@ export default {
       '- Triggered by: ' + triggeredBy + '\n' +
       '- Orbiting terms: ' + orbitStr + '\n' +
       '- Writing signature: ' + (fastMapSnapshot.writingSignature || 'unknown') + '\n' +
-      '- Days of silence: ' + (fastMapSnapshot.silenceDays != null ? fastMapSnapshot.silenceDays : 0) + '\n' +
+      '- Silence markers: ' + (fastMapSnapshot.silenceMarkers != null ? fastMapSnapshot.silenceMarkers : (fastMapSnapshot.silenceDays != null ? fastMapSnapshot.silenceDays : 0)) + '\n' +
       '- Dominant theme: ' + (fastMapSnapshot.dominantTheme || 'none') + '\n' +
       '- Paradox present: ' + (fastMapSnapshot.paradoxFlag ? 'true' : 'false') + '\n' +
       '- Contradiction present: ' + (fastMapSnapshot.contradictionFlag ? 'true' : 'false') + '\n\n' +
