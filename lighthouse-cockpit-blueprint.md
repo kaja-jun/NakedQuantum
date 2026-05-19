@@ -237,6 +237,7 @@ flowchart TB
 |-----|----------------|
 | `NakedQuantum story.md` | Vision, ethics, why uncomfortable |
 | `NQ blueprint.md` | Realms, Engram, Watcher, Guardian (pre-cockpit) |
+| `guardian-refinement-roadmap-blueprint.md` | Guardian meta-memory, Cartographer hardening, summon diet, batch order |
 | `NakedQuantum Roadmap.md` | Shipped history; Tauri/Vite futures |
 | `AGENTS.md` | Agent collaboration rules |
 
