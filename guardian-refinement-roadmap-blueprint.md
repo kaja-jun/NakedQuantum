@@ -145,16 +145,13 @@ flowchart TB
 
 - [x] **C1 — Stemmer safety** — Never emit broken stems (`nothing`→`noth`, `thing`→`th`). `LEXICON_WORDS` guard + `VALID_STEMS` suffix strip only. *(Shipped v0.4)*
 - [x] **C2 — Negation flipper** — `NEGATORS` + `lexiconHitRate` / `wordSentimentPolarity`; contractions → `dont`, `cant`, etc. *(Shipped v0.4)*
-- [ ] **C3 — Lexicon expansion** — Target ~10× coverage per category (~300–400 terms each). **Shipped app stays zero-deps.** Expansion workflow:
-  - **Now:** Kaja adds curated batches manually on iPhone when time allows.
-  - **When laptop exists:** one-time Python script (GloVe or word2vec — whichever is convenient) → neighbor candidates → **Kaja curates** → paste into `cartographer.js`. Not shipped, not runtime.
-  - Include contractions (`don't` → negation + stem).
-- [x] **C3b — `carto_version` tagged re-map** — `export const CARTO_VERSION = 4` on fast maps; `generateFastMap` re-runs when `existingVer < cartoVer`. *(Shipped v0.4)*
-- [ ] **C4 — Detector confidence** — Each detector returns `confidence: 0–1` from signal strength; `checkGuardianTrigger` ignores low-confidence qualifiers.
-- [ ] **C5 — Label softening** — e.g. depersonalisation: “Suggests detachment…” not “Completely detached”; require 2+ detectors for auto-invoke “strong” claims (policy).
-- [ ] **C6 — extractiveSummary** — Score all sentences; don’t pre-drop &lt;20 char lines before pick; split on `/[.!?]+/` cleanly.
-- [ ] **C7 — Paradox proximity** — Tighten or require clausal tension; reduce “I love this dark room” false positives (tune window / POS-free heuristics).
-- [ ] **C8 — Tokenize once** — Optional refactor: single `tokenize(text)` pass shared by detectors (perf; not required for correctness).
+- [x] **C3 — Lexicon expansion** — Major curated batch in `lex()` sets (~3–5× core categories); manual adds + laptop script still welcome. *(Shipped v0.5)*
+- [x] **C3b — `carto_version` tagged re-map** — `CARTO_VERSION` on fast maps; remaps when stale. *(v4 → v5)*
+- [x] **C4 — Detector confidence** — `confidence` on detectors; `collectFastMapQualifiers` gates at `MIN_QUALIFIER_CONFIDENCE` (0.4). *(Shipped v0.5)*
+- [x] **C5 — Label softening** — Depersonalisation uses “Suggests…” labels. *(Shipped v0.5)*
+- [x] **C6 — extractiveSummary** — `splitSentences`; score all sentences (short lines penalized, not dropped). *(Shipped v0.5)*
+- [x] **C7 — Paradox proximity** — Per-sentence + `wordParadoxPolarity` (excludes ambient dark/light); stricter density thresholds. *(Shipped v0.5)*
+- [x] **C8 — Tokenize once** — `generateFastMapData` tokenizes once; passes `tokens` to key detectors. *(Shipped v0.5)*
 
 **Shipped (main):** PR #31 — emotional arc fix, orphan block removed, `tokenize` in summary/incompleteness, `depersonalisation` in `buildGuardianContext`, `silenceMarkers` rename.
 
@@ -408,7 +405,7 @@ function divergenceNote(link, mapA, mapB) {
 
 ### Still open
 
-1. **`CARTO_VERSION`** — currently **4**; bump on each cartographer schema/lexicon breaking change.
+1. **`CARTO_VERSION`** — currently **5**; bump on each cartographer schema/lexicon breaking change.
 2. **Onboarding default** — strip enabled after onboarding unless user opted out, vs disabled until opt-in? *(Implement A2 with clear copy either way.)*
 
 ```
@@ -437,6 +434,7 @@ function divergenceNote(link, mapA, mapB) {
 | Kaja decisions merged | 2026-05-19 | Keep urgent deep maps; manual lexicons; PWA onboarding/settings auto-invoke; desktop → lighthouse cockpit |
 | PR #31 + #32 on main | 2026-05 | Cartographer v0.3 + roadmap pinned |
 | **C1–C2 + C3b** | 2026-05-19 | cartographer v0.4: safe stemmer, negation, `CARTO_VERSION` 4, remaps on save |
+| **C3–C8** | 2026-05-19 | v0.5: lexicon expansion, confidence, soft labels, summary, paradox, tokenize-once; `CARTO_VERSION` 5 |
 
 ---
 
