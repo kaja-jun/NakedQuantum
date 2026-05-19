@@ -81,10 +81,10 @@ avoidance: new Set([
 ]),
 surrender: new Set([
 'done', 'stop', 'yield', 'release', 'empty', 'pointless', 
-'useless', 'resigned', 'letting go', 'washed', 'carried'
+'useless', 'resigned', 'letting', 'washed', 'carried'
 ]),
 fixation: new Set([
-'must', 'cannot', 'have to', 'always', 'never', 'loop', 
+'must', 'cannot', 'always', 'never', 'loop', 
 'stuck', 'again', 'circling', 'obsessed', 'bound', 'tied'
 ]),
 abstract: new Set([
@@ -133,7 +133,7 @@ const terms = Object.entries(freq)
 .map(([term, count]) => ({
 term,
 count,
-tfidf: (count / totalWords) * Math.log(totalWords / (1 + count))
+keyness: (count / totalWords) * Math.log(totalWords / (1 + count))
 }))
 .sort((a, b) => b.tfidf - a.tfidf)
 .slice(0, maxTerms);
@@ -290,7 +290,7 @@ function detectDepersonalization(text) {
 const words = text.toLowerCase().split(/\s+/);
 if (words.length < 20) return { label: 'Too short', ratio: 0 };
 const personal = new Set(['i', 'me', 'my', 'mine']);
-const abstract = new Set(['one', 'it', 'they', 'people', 'society', 'nature', 'the mind']);
+const abstract = new Set(['one', 'it', 'they', 'people', 'society', 'nature', 'mind']);
 let personalCount = 0;
 let abstractCount = 0;
 for (const w of words) {
@@ -470,8 +470,12 @@ const prevLen = lineLengths[i - 1];
 const currLen = lineLengths[i];
 // A silence: short line (≤6 words) after a dense line (>20 words)
 if (prevLen > 20 && currLen <= 6) {
-silenceCount++;
-if (examples.length < 3) examples.push(lines[i]);
+  const key = lines[i];
+  if (!counted.has(key)) {
+    counted.add(key);
+    silenceCount++;
+    if (examples.length < 3) examples.push(lines[i]);
+  }
 }
 }
 
@@ -485,8 +489,11 @@ const curr = raw[i].trim();
 const next = raw[i + 1].trim();
 const words = curr.split(/\s+/).filter(Boolean).length;
 if (prev === '' && next === '' && words > 0 && words <= 4) {
-silenceCount++;
-if (examples.length < 3 && !examples.includes(curr)) examples.push(curr);
+  if (!counted.has(curr)) {
+    counted.add(curr);
+    silenceCount++;
+    if (examples.length < 3) examples.push(curr);
+  }
 }
 }
 
@@ -534,32 +541,34 @@ const openAbstract = densityScore(opening, SENTIMENT.abstract);
 const closeSensory = densityScore(closing, SENTIMENT.sensory);
 const closeAbstract= densityScore(closing, SENTIMENT.abstract);
 
-const entry = openSensory > openAbstract   ? 'sensory'   : 'abstract';
-const exit  = closeSensory > closeAbstract ? 'sensory'   : 'abstract';
+const entry = openSensory > openAbstract ? 'sensory' : openSensory === openAbstract ? 'balanced' : 'abstract';
+const exit  = closeSensory > closeAbstract ? 'sensory' : closeSensory === closeAbstract ? 'balanced' : 'abstract';
 
-let delta;
+  let delta;
 if (entry === 'abstract' && exit === 'sensory') delta = 'abstract → sensory (grounding)';
 else if (entry === 'sensory' && exit === 'abstract') delta = 'sensory → abstract (transcending)';
 else if (entry === 'abstract' && exit === 'abstract') delta = 'abstract throughout (intellectual)';
+else if (entry === 'balanced' || exit === 'balanced') delta = 'balanced -- no clear pull';
 else delta = 'sensory throughout (embodied)';
 
 let label;
-if (entry === exit) label = entry === 'abstract' ? 'Intellectual' : 'Embodied';
+if (entry === 'balanced' || exit === 'balanced') label = 'Balanced';
+else if (entry === exit) label = entry === 'abstract' ? 'Intellectual' : 'Embodied';
 else label = entry === 'abstract' ? 'Grounding' : 'Transcending';
 
-return {
-label,
-entry,
-exit,
-delta,
-scores: {
-open_sensory:   parseFloat(openSensory.toFixed(4)),
-open_abstract:  parseFloat(openAbstract.toFixed(4)),
-close_sensory:  parseFloat(closeSensory.toFixed(4)),
-close_abstract: parseFloat(closeAbstract.toFixed(4))
-}
-};
-}
+  return {
+  label,
+  entry,
+  exit,
+  delta,
+  scores: {
+  open_sensory:   parseFloat(openSensory.toFixed(4)),
+  open_abstract:  parseFloat(openAbstract.toFixed(4)),
+  close_sensory:  parseFloat(closeSensory.toFixed(4)),
+  close_abstract: parseFloat(closeAbstract.toFixed(4))
+  }
+  };
+  }
 
 /**
 
