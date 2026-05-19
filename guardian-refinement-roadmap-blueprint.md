@@ -368,6 +368,7 @@ function divergenceNote(link, mapA, mapB) {
 
 | Doc | Relationship |
 |-----|----------------|
+| `nq-review-checkpoint-2026-05.md` | **Code review checkpoint** — syntax, risks, what to do / not do / how (base for next sessions) |
 | `lighthouse-cockpit-blueprint.md` | Desktop write column + live strip; Guardian whisper channel; **wait for Tauri** |
 | `NQ blueprint.md` | Realms, Engram, core ethics |
 | `NakedQuantum story.md` | Vision and tone |
