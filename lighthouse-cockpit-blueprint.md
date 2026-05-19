@@ -110,10 +110,12 @@ flowchart TB
 
 ### 5.1 Cartographer (geometry — always on in cockpit)
 
-- **Trigger:** debounce after typing pause (start: **800ms**; tune in implementation).
+- **Trigger:** debounce after typing pause (start: **2000ms**; tune in implementation).
 - **Input:** current paragraph or selection, not whole vault every keystroke.
 - **Output:** labels, sentiment/tension signals, key terms — **no LLM required**.
 - **UI:** compact chips / lines; max **3** visible geometry lines before scroll.
+- - **Rule:** Cartographer never speaks. It computes and passes structured 
+  data only. Guardian speaks or nothing speaks.
 
 ### 5.2 Watcher (similarity — on ask)
 
@@ -122,11 +124,17 @@ flowchart TB
 - **Output:** 2–3 links with titles; optional strength indicator.
 - **Never:** auto-popup graph or pulsing web during typing.
 
-### 5.3 Tension / contradiction (questions, not verdicts)
+### 5.3 Tension / contradiction (data only — no copy)
 
-- **Phase B–C:** rule-based first (sentiment flip, negation, always/never vs prior line in *this* discourse or cited other id).
-- **Copy pattern:** question — *“You wrote X here and ¬X in [spark] — sit with it?”*
-- **Not:** “Contradiction detected”, red shame, or performance hostility.
+- **Phase B–C:** rule-based detection first (sentiment flip, negation, 
+  always/never vs prior line in this discourse or cited other id).
+- **Output:** structured signal passed to Guardian — discourse id, 
+  contradicting terms, confidence. Never rendered as text in the strip directly.
+- **Guardian decides** whether the tension is worth naming and finds 
+  the language. If Guardian is offline or rate-limited — strip stays empty. 
+  Silence is correct.
+- **Not:** “Contradiction detected”, question copy from Cartographer, 
+  red shame, or performance hostility.
 
 ### 5.4 Guardian (wonder — rare)
 
