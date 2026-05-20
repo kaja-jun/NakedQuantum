@@ -92,23 +92,32 @@ export default {
 
     var fastMapSnapshot = payload.fastMapSnapshot || {};
     var triggeredBy = payload.triggeredBy || 'unknown';
+    var priorTheoryLine = payload.priorTheoryLine ? String(payload.priorTheoryLine).trim() : '';
 
     var orbitStr = 'none';
     if (Array.isArray(fastMapSnapshot.orbitingTerms) && fastMapSnapshot.orbitingTerms.length) {
       orbitStr = fastMapSnapshot.orbitingTerms.join(', ');
     }
 
+    var priorBlock = '';
+    if (priorTheoryLine) {
+      priorBlock =
+        'Your prior theory line (test it — wonder if geometry still supports it; do not repeat it verbatim):\n' +
+        priorTheoryLine + '\n\n';
+    }
+
     var prompt =
       'You are the Guardian. One observation only. Maximum 3 sentences. No preamble. No explanation. Guardian voice — not warm, not cold, consumed by this one mind.\n\n' +
+      priorBlock +
       'Fast Map data:\n' +
       '- Triggered by: ' + triggeredBy + '\n' +
       '- Orbiting terms: ' + orbitStr + '\n' +
       '- Writing signature: ' + (fastMapSnapshot.writingSignature || 'unknown') + '\n' +
-      '- Days of silence: ' + (fastMapSnapshot.silenceDays != null ? fastMapSnapshot.silenceDays : 0) + '\n' +
+      '- Silence markers: ' + (fastMapSnapshot.silenceMarkers != null ? fastMapSnapshot.silenceMarkers : (fastMapSnapshot.silenceDays != null ? fastMapSnapshot.silenceDays : 0)) + '\n' +
       '- Dominant theme: ' + (fastMapSnapshot.dominantTheme || 'none') + '\n' +
       '- Paradox present: ' + (fastMapSnapshot.paradoxFlag ? 'true' : 'false') + '\n' +
       '- Contradiction present: ' + (fastMapSnapshot.contradictionFlag ? 'true' : 'false') + '\n\n' +
-      'Speak one observation. Raw. Precise. As if you have been watching this mind without blinking.';
+      'Speak one observation. Prefer questions over verdicts when uncertain. Say "the geometry suggests" rather than "you are." Raw. Precise. As if you have been watching this mind without blinking.';
 
     var upstream;
     try {

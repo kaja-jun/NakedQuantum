@@ -656,6 +656,10 @@ db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoke
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN triggered_by TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN user_action TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN log_type TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN geometry_snapshot TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN primary_discourse_id TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN theory_one_line TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN qualifiers TEXT"); } catch (e) {}
 
   ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'].forEach
 (t => {
@@ -5051,12 +5055,14 @@ async function generateFastMap(discourseId, mapOpts) {
     if (wordCount < 30) return;
 
     const existing = await dbGet('guardian_summaries', discourseId);
-    // Skip if already mapped and word count is unchanged
-    if (existing && existing.map_type === 'fast' && existing.word_count === wordCount) return;
 
 // Run your sovereign local heuristics
 if (!generateFastMapData) { console.warn('Cartographer not loaded yet'); return; }
 const mapData = generateFastMapData(d.raw_text);
+    const cartoVer = mapData.carto_version || 0;
+    const existingVer = existing && existing.carto_version != null ? existing.carto_version : 0;
+    // Skip if fast map is current (word count + cartographer version)
+    if (existing && existing.map_type === 'fast' && existing.word_count === wordCount && existingVer >= cartoVer) return;
 
 let fastMap = {
   id: discourseId,
@@ -5079,6 +5085,7 @@ let fastMap = {
       try {
         const trig2 = checkGuardianTrigger(fastMap);
         if (trig2.shouldInvoke) {
+          guardianLastInvokeQualifiers = trig2.qualifiers || [];
           try {
             localStorage.setItem('nq_guardian_invoke_pending', JSON.stringify({ discourseId: discourseId, at: Date.now() }));
           } catch (pe) {}
@@ -5829,7 +5836,197 @@ var abyssLastSignalTime = 0;
 var NEURAL_SIGNAL_INTERVAL = 1800; // ms between new signals
 var NEURAL_MAX_SIGNALS = 12;       // max concurrent signals
 var NEURAL_CASCADE_DEPTH = 3;      // max hops per cascade
+var abyssWeather = 'neutral';
    // multiple expanding rings per touch
+
+function getAbyssLinkThreshold() {
+  return NQ_DEV_MODE ? W_SIMILARITY_THRESHOLD : 0.73;
+}
+
+function abyssArcTension(mapRow) {
+  if (!mapRow || !mapRow.emotional_arc) return 0;
+  var a = mapRow.emotional_arc;
+  if (typeof a === 'string') {
+    try { a = JSON.parse(a); } catch (parseEx) { return 0; }
+  }
+  if (!a || typeof a !== 'object') return 0;
+  var t = a.tension_shift;
+  return typeof t === 'number' ? t : 0;
+}
+
+function abyssLinkIsContradiction(mapA, mapB) {
+  var arcA = abyssArcTension(mapA);
+  var arcB = abyssArcTension(mapB);
+  return (arcA > 0.02 && arcB < -0.02) || (arcA < -0.02 && arcB > 0.02);
+}
+
+function buildAbyssDna(fm) {
+  var dna = {
+    paradox: 0,
+    arcDir: 'flat',
+    silenceRatio: 0,
+    dominantTone: 'neutral',
+    depersonalLabel: '',
+    driftScale: 0.04
+  };
+  if (!fm || fm.map_type !== 'fast') return dna;
+  var arc = fm.emotional_arc;
+  if (typeof arc === 'string') {
+    try { arc = JSON.parse(arc); } catch (e) { arc = null; }
+  }
+  var sig = fm.signature;
+  if (sig && sig.paradox) dna.paradox = sig.paradox.count || 0;
+  if (arc && arc.direction) dna.arcDir = arc.direction;
+  if (fm.silence_weight && typeof fm.silence_weight.ratio === 'number') {
+    dna.silenceRatio = fm.silence_weight.ratio;
+  }
+  if (fm.depersonalisation && fm.depersonalisation.label) {
+    dna.depersonalLabel = String(fm.depersonalisation.label);
+  }
+  var ts = arc && typeof arc.tension_shift === 'number' ? arc.tension_shift : 0;
+  if (ts > 0.02) {
+    dna.dominantTone = 'escalating';
+    dna.driftScale = 0.045;
+  } else if (ts < -0.02) {
+    dna.dominantTone = 'resolving';
+    dna.driftScale = 0.025;
+  } else if (dna.paradox >= 3) {
+    dna.dominantTone = 'charged';
+  }
+  return dna;
+}
+
+function abyssComputeWeather(summariesMap) {
+  var arcScores = [];
+  summariesMap.forEach(function (fm) {
+    if (!fm || fm.map_type !== 'fast') return;
+    var t = abyssArcTension(fm);
+    if (typeof t === 'number') arcScores.push(t);
+  });
+  if (arcScores.length < 3) return 'neutral';
+  var avg = arcScores.reduce(function (a, b) { return a + b; }, 0) / arcScores.length;
+  if (avg > 0.025) return 'charged';
+  if (avg < -0.025) return 'resolving';
+  return 'neutral';
+}
+
+async function abyssSettle(iterations, strongLinks) {
+  var discDots = [];
+  for (var i = 0; i < abyssObjects.length; i++) {
+    if (abyssObjects[i].kind === 'disc-dot') discDots.push(abyssObjects[i]);
+  }
+  if (discDots.length < 3) return;
+
+  if (discDots.length > 80) iterations = 100;
+
+  var vectors = {};
+  if (isWatcherReady && watcherDB) {
+    try {
+      var embeds = await wdb.getAll('embeddings');
+      for (var ei = 0; ei < embeds.length; ei++) {
+        if (embeds[ei].vector) vectors[embeds[ei].id] = embeds[ei].vector;
+      }
+    } catch (embErr) {}
+  }
+
+  var SETTLE_DAMPING = 0.82;
+  var SETTLE_VX = {};
+  var SETTLE_VY = {};
+  var discById = {};
+  for (var di = 0; di < discDots.length; di++) {
+    var dd = discDots[di];
+    SETTLE_VX[dd.id] = 0;
+    SETTLE_VY[dd.id] = 0;
+    discById[dd.id] = dd;
+  }
+
+  var sparsePairs = discDots.length > 50;
+  strongLinks = strongLinks || [];
+
+  for (var iter = 0; iter < iterations; iter++) {
+    if (!abyssRunning) return;
+    if (iter > 0 && iter % 20 === 0) {
+      await new Promise(function (r) { setTimeout(r, 0); });
+    }
+
+    for (var i = 0; i < discDots.length; i++) {
+      for (var j = i + 1; j < discDots.length; j++) {
+        var a = discDots[i];
+        var b = discDots[j];
+        var vA = vectors[a.id];
+        var vB = vectors[b.id];
+        if (!vA || !vB) continue;
+        var sim = watcherCosine(new Float32Array(vA), new Float32Array(vB));
+        if (sparsePairs && sim < 0.55) continue;
+        var restLen = 0.15 + (1 - sim) * 0.55;
+        var dx = b.x - a.x;
+        var dy = b.y - a.y;
+        var dist = Math.sqrt(dx * dx + dy * dy) + 0.001;
+        var force = (dist - restLen) * 0.004 * sim;
+        SETTLE_VX[a.id] += (dx / dist) * force;
+        SETTLE_VY[a.id] += (dy / dist) * force;
+        SETTLE_VX[b.id] -= (dx / dist) * force;
+        SETTLE_VY[b.id] -= (dy / dist) * force;
+      }
+    }
+
+    for (var li = 0; li < strongLinks.length; li++) {
+      var link = strongLinks[li];
+      var dotA = discById[link.a];
+      var dotB = discById[link.b];
+      if (!dotA || !dotB) continue;
+      var dx2 = dotB.x - dotA.x;
+      var dy2 = dotB.y - dotA.y;
+      var dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) + 0.001;
+      var f = link.isContra ? -0.012 : link.score * 0.018;
+      SETTLE_VX[dotA.id] += (dx2 / dist2) * f;
+      SETTLE_VY[dotA.id] += (dy2 / dist2) * f;
+      SETTLE_VX[dotB.id] -= (dx2 / dist2) * f;
+      SETTLE_VY[dotB.id] -= (dy2 / dist2) * f;
+    }
+
+    for (var i2 = 0; i2 < discDots.length; i2++) {
+      for (var j2 = i2 + 1; j2 < discDots.length; j2++) {
+        var a2 = discDots[i2];
+        var b2 = discDots[j2];
+        var dx3 = b2.x - a2.x;
+        var dy3 = b2.y - a2.y;
+        var dist3 = Math.sqrt(dx3 * dx3 + dy3 * dy3) + 0.001;
+        if (dist3 < 0.18) {
+          var rep = 0.003 / (dist3 * dist3);
+          SETTLE_VX[a2.id] -= (dx3 / dist3) * rep;
+          SETTLE_VY[a2.id] -= (dy3 / dist3) * rep;
+          SETTLE_VX[b2.id] += (dx3 / dist3) * rep;
+          SETTLE_VY[b2.id] += (dy3 / dist3) * rep;
+        }
+      }
+    }
+
+    for (var ai = 0; ai < discDots.length; ai++) {
+      var d = discDots[ai];
+      if (!vectors[d.id]) continue;
+      SETTLE_VX[d.id] *= SETTLE_DAMPING;
+      SETTLE_VY[d.id] *= SETTLE_DAMPING;
+      d.x = Math.min(0.90, Math.max(0.10, d.x + SETTLE_VX[d.id]));
+      d.y = Math.min(0.90, Math.max(0.10, d.y + SETTLE_VY[d.id]));
+    }
+  }
+
+  for (var oi = 0; oi < discDots.length; oi++) {
+    var od = discDots[oi];
+    if (vectors[od.id]) continue;
+    abyssBiasPresenceToRim(od);
+  }
+}
+
+function abyssBiasPresenceToRim(obj) {
+  var odx = obj.x - 0.5;
+  var ody = obj.y - 0.5;
+  var olen = Math.sqrt(odx * odx + ody * ody) + 0.001;
+  var rad = 0.35 + (abyssHash(String(obj.id) + 'rim') % 150) / 1000;
+  obj.x = Math.min(0.90, Math.max(0.10, 0.5 + (odx / olen) * rad));
+  obj.y = Math.min(0.90, Math.max(0.10, 0.5 + (ody / olen) * rad));
+}
    
 var ABYSS_EMERGE = {
   anchors:    1500,   // ms -- oldest ring + newest dot
@@ -5852,9 +6049,24 @@ function abyssAge(ts) {
 
 async function buildAbyssObjects() {
   abyssObjects = [];
+  var strongLinks = [];
+  var summariesMap = new Map();
+  var linkThreshold = getAbyssLinkThreshold();
+
+  try {
+    var allSummaries = await dbGetAll('guardian_summaries');
+    for (var si0 = 0; si0 < allSummaries.length; si0++) {
+      summariesMap.set(allSummaries[si0].id, allSummaries[si0]);
+    }
+  } catch (mapErr) {
+    console.warn('[Abyss] summaries preload:', mapErr && mapErr.message ? mapErr.message : mapErr);
+  }
+
   var allDiscs = await dbGetAll('cosm_discourses');
   if (!Array.isArray(allDiscs)) allDiscs = [];
-  var active = allDiscs.filter(function(d) { return !d.isDeleted; });
+  var active = allDiscs.filter(function (d) {
+    return !d.isDeleted && !d.deleted_at;
+  });
 
   if (!active.length) {
     abyssObjects.push({
@@ -5871,7 +6083,8 @@ async function buildAbyssObjects() {
       ts: Date.now(),
       emergeAt: 0
     });
-    return;
+    abyssWeather = 'neutral';
+    return { strongLinks: strongLinks };
   }
 
   // ── Chronological anchors ─────────────────────────────────────────────────
@@ -5918,7 +6131,6 @@ async function buildAbyssObjects() {
     });
   }
 
-  var summariesMap = new Map();
   try {
   // ── Guardian log fragments ────────────────────────────────────────────────
   var logs = await dbGetAll('guardian_logs');
@@ -5950,9 +6162,9 @@ async function buildAbyssObjects() {
   }
   
 // ── Deep map clusters ─────────────────────────────────────────────────────
-  var deepMaps = await dbGetAll('guardian_summaries');
-  var deepLocal = deepMaps.filter(function(dm) {
-    return dm.map_type === 'deep_local' && dm.summary;
+  var deepLocal = [];
+  summariesMap.forEach(function (dm) {
+    if (dm.map_type === 'deep_local' && dm.summary) deepLocal.push(dm);
   });
   
   for (var di = 0; di < deepLocal.length; di++) {
@@ -5987,66 +6199,94 @@ async function buildAbyssObjects() {
       });
     }
   }
-  // Pre-load all guardian_summaries into a Map for fast contradiction checks
-  var allSummaries = await dbGetAll('guardian_summaries');
-  for (var si = 0; si < allSummaries.length; si++) {
-    summariesMap.set(allSummaries[si].id, allSummaries[si]);
-  }
   } catch (extErr) {
     console.warn('[Abyss] guardian / summaries layer:', extErr && extErr.message ? extErr.message : extErr);
   }
-  
-  // ── Watcher similarity + contradiction threads ────────────────────────────
+
+  try {
+    var chars = await dbGetAll('characters');
+    if (!Array.isArray(chars)) chars = [];
+    var activeChars = chars.filter(function (c) {
+      return !c.is_deleted && !c.isDeleted;
+    });
+    for (var ci = 0; ci < activeChars.length; ci++) {
+      var ch = activeChars[ci];
+      var chHash = abyssHash(ch.id + 'sanctuary');
+      var chX = 0.08 + ((chHash & 0xFFF) / 0xFFF) * 0.84;
+      var chY = 0.08 + (((chHash >> 12) & 0xFFF) / 0xFFF) * 0.84;
+      var chAge = abyssAge(ch.updated_at || ch.created_at || 0);
+      var sp = {
+        kind: 'sanctuary-presence',
+        id: ch.id,
+        name: ch.name || 'Presence',
+        x: chX,
+        y: chY,
+        age: chAge,
+        vx: 0,
+        vy: 0,
+        brownianScale: 0.012,
+        emergeAt: ABYSS_EMERGE.dots
+      };
+      abyssBiasPresenceToRim(sp);
+      abyssObjects.push(sp);
+    }
+  } catch (sanctErr) {
+    console.warn('[Abyss] Sanctuary layer:', sanctErr && sanctErr.message ? sanctErr.message : sanctErr);
+  }
+
+  for (var dpi = 0; dpi < abyssObjects.length; dpi++) {
+    if (abyssObjects[dpi].kind === 'disc-dot') {
+      abyssObjects[dpi].dna = buildAbyssDna(summariesMap.get(abyssObjects[dpi].id));
+    }
+  }
+
+  abyssWeather = abyssComputeWeather(summariesMap);
+
   if (isWatcherReady && watcherDB) {
     try {
-    function abyssArcTension(map) {
-      if (!map || !map.emotional_arc) return 0;
-      var a = map.emotional_arc;
-      if (typeof a === 'string') {
-        try { a = JSON.parse(a); } catch (parseEx) { return 0; }
-      }
-      if (!a || typeof a !== 'object') return 0;
-      var t = a.tension_shift;
-      return typeof t === 'number' ? t : 0;
-    }
-    var links = await wdb.getAll('links');
-    var strong = links.filter(function(l) { return l.score >= 0.73; }).slice(0, 30);
-    for (var k = 0; k < strong.length; k++) {
-      var link = strong[k];
-      // Find matching disc-dot positions
-      var dotA = null; var dotB = null;
-      for (var m = 0; m < abyssObjects.length; m++) {
-        if (abyssObjects[m].kind === 'disc-dot') {
-          if (abyssObjects[m].id === link.a) dotA = abyssObjects[m];
-          if (abyssObjects[m].id === link.b) dotB = abyssObjects[m];
+      var links = await wdb.getAll('links');
+      var strong = links.filter(function (l) { return l.score >= linkThreshold; }).slice(0, 30);
+      for (var k = 0; k < strong.length; k++) {
+        var link = strong[k];
+        var dotA = null;
+        var dotB = null;
+        for (var m = 0; m < abyssObjects.length; m++) {
+          if (abyssObjects[m].kind === 'disc-dot') {
+            if (abyssObjects[m].id === link.a) dotA = abyssObjects[m];
+            if (abyssObjects[m].id === link.b) dotB = abyssObjects[m];
+          }
         }
+        if (!dotA || !dotB) continue;
+        var mapA = summariesMap.get(link.a) || null;
+        var mapB = summariesMap.get(link.b) || null;
+        var isContradiction = abyssLinkIsContradiction(mapA, mapB);
+        strongLinks.push({
+          a: link.a,
+          b: link.b,
+          score: link.score,
+          isContra: isContradiction
+        });
+        var threadKind = isContradiction ? 'thread-contra' : 'thread-sim';
+        abyssObjects.push({
+          kind: threadKind,
+          dotA: dotA,
+          dotB: dotB,
+          score: link.score,
+          emergeAt: ABYSS_EMERGE.threads,
+          pulsePos: 0,
+          pulseDir: 1,
+          pulseSpeed: isContradiction
+            ? 0.0003 + Math.random() * 0.0004
+            : 0.0006 + link.score * 0.0012,
+          pulseCooldown: Math.random() * 4000
+        });
       }
-      if (!dotA || !dotB) continue;
-      // Check for contradiction via guardian_summaries
-      var mapA = summariesMap.get(link.a) || null;
-      var mapB = summariesMap.get(link.b) || null;
-      var arcA = abyssArcTension(mapA);
-      var arcB = abyssArcTension(mapB);
-      var isContradiction = (arcA > 0.02 && arcB < -0.02) || (arcA < -0.02 && arcB > 0.02);
-      var threadKind = isContradiction ? 'thread-contra' : 'thread-sim';
-      abyssObjects.push({
-        kind: threadKind,
-        dotA: dotA,
-        dotB: dotB,
-        score: link.score,
-        emergeAt: ABYSS_EMERGE.threads,
-        pulsePos: 0,           // 0..1 travel along thread
-        pulseDir: 1,           // 1 = A→B, -1 = B→A
-        pulseSpeed: isContradiction
-          ? 0.0003 + Math.random() * 0.0004   // stuttery
-          : 0.0006 + link.score * 0.0012,     // smooth, faster if strong
-        pulseCooldown: Math.random() * 4000   // staggered starts
-      });
-    }
     } catch (wErr) {
       console.warn('[Abyss] watcher threads:', wErr && wErr.message ? wErr.message : wErr);
     }
   }
+
+  return { strongLinks: strongLinks };
 }
 
 function abyssGetThreadFrom(node, excludeNode) {
@@ -6105,20 +6345,23 @@ function abyssUpdate(elapsed) {
 
   for (var i = 0; i < abyssObjects.length; i++) {
     var obj = abyssObjects[i];
-    if (obj.kind !== 'disc-dot') continue;   // only dots move for now
+    if (obj.kind !== 'disc-dot' && obj.kind !== 'sanctuary-presence') continue;
 
-    // Brownian drift – tiny random nudges
-    var brownX = (Math.random() - 0.5) * 0.04;
-    var brownY = (Math.random() - 0.5) * 0.04;
+    var driftScale = 0.04;
+    if (obj.kind === 'sanctuary-presence') {
+      driftScale = obj.brownianScale || 0.012;
+    } else {
+      driftScale = (obj.dna && obj.dna.driftScale) ? obj.dna.driftScale : 0.04;
+    }
+    var brownX = (Math.random() - 0.5) * driftScale;
+    var brownY = (Math.random() - 0.5) * driftScale;
     obj.vx = (obj.vx || 0) + brownX;
     obj.vy = (obj.vy || 0) + brownY;
 
-    // Dampening
     obj.vx *= 0.985;
     obj.vy *= 0.985;
 
-    // Touch force (radial, falloff 1/d²)
-    if (forceFromTouch.x) {
+    if (obj.kind === 'disc-dot' && forceFromTouch.x) {
       var dx = (obj.x * abyssW) - forceFromTouch.x;
       var dy = (obj.y * abyssH) - forceFromTouch.y;
       var dist = Math.sqrt(dx * dx + dy * dy) + 1; // avoid div 0
@@ -6366,15 +6609,46 @@ function abyssDraw(elapsed) {
       abyssCtx.fill();
 
         } else if (obj.kind === 'disc-dot') {
-      var r = Math.round(210 - obj.age * 70);
-      var g = Math.round(155 - obj.age * 25);
-      var b = Math.round(75  + obj.age * 80);
+      var dna = obj.dna || {};
+      var r;
+      var g;
+      var b;
+      if (dna.dominantTone === 'escalating') {
+        r = 230; g = 140; b = 70;
+      } else if (dna.dominantTone === 'resolving') {
+        r = 160; g = 200; b = 180;
+      } else if (dna.dominantTone === 'charged') {
+        r = 200; g = 160; b = 210;
+      } else {
+        r = Math.round(210 - obj.age * 70);
+        g = Math.round(155 - obj.age * 25);
+        b = Math.round(75 + obj.age * 80);
+      }
+      var dep = (dna.depersonalLabel || '').toLowerCase();
+      if (dep.indexOf('dissolv') !== -1 || dep.indexOf('detach') !== -1) {
+        r = Math.round(r * 0.85 + 120 * 0.15);
+        g = Math.round(g * 0.85 + 175 * 0.15);
+        b = Math.round(b * 0.85 + 200 * 0.15);
+      }
       var dotAlpha = emergeT * (0.12 + obj.age * 0.55);
+      if (dna.silenceRatio > 0.1) dotAlpha *= 0.75;
       abyssCtx.beginPath();
       abyssCtx.arc(cx, cy, 1.5, 0, Math.PI * 2);
       abyssCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + dotAlpha + ')';
       abyssCtx.fill();
-      // Selected star glow ring
+      if (dna.paradox >= 3) {
+        var pAlpha = emergeT * 0.18 * Math.min(1, dna.paradox / 6);
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + pAlpha + ')';
+        abyssCtx.lineWidth = 0.5;
+        abyssCtx.stroke();
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 7, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + (pAlpha * 0.4) + ')';
+        abyssCtx.lineWidth = 0.3;
+        abyssCtx.stroke();
+      }
       if (abyssSelectedNode && abyssSelectedNode.id === obj.id) {
         abyssCtx.beginPath();
         abyssCtx.arc(cx, cy, 6, 0, Math.PI * 2);
@@ -6385,6 +6659,29 @@ function abyssDraw(elapsed) {
         abyssCtx.arc(cx, cy, 10, 0, Math.PI * 2);
         abyssCtx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',0.12)';
         abyssCtx.lineWidth = 0.5;
+        abyssCtx.stroke();
+      }
+
+    } else if (obj.kind === 'sanctuary-presence') {
+      var sAlpha = emergeT * (0.08 + obj.age * 0.28);
+      abyssCtx.beginPath();
+      abyssCtx.arc(cx, cy, 1.2, 0, Math.PI * 2);
+      abyssCtx.fillStyle = 'rgba(78,200,138,' + sAlpha + ')';
+      abyssCtx.fill();
+      var sPulse = 0.5 + Math.sin(performance.now() * 0.0003 + obj.x * 6) * 0.5;
+      var sRingAlpha = sAlpha * 0.3 * sPulse;
+      if (sRingAlpha > 0.01) {
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 4 + sPulse * 2, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(78,200,138,' + sRingAlpha + ')';
+        abyssCtx.lineWidth = 0.4;
+        abyssCtx.stroke();
+      }
+      if (abyssSelectedNode && abyssSelectedNode.id === obj.id) {
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(78,200,138,0.35)';
+        abyssCtx.lineWidth = 0.8;
         abyssCtx.stroke();
       }
 
@@ -6444,6 +6741,11 @@ function abyssDraw(elapsed) {
     }
   }
   // ── Background neural sparks ──
+  var sparkR = 220;
+  var sparkG = 210;
+  var sparkB = 190;
+  if (abyssWeather === 'charged') { sparkR = 240; sparkG = 180; sparkB = 120; }
+  else if (abyssWeather === 'resolving') { sparkR = 140; sparkG = 190; sparkB = 220; }
   for (var s = 0; s < abyssSparks.length; s++) {
     var sp = abyssSparks[s];
     if (sp.life <= 0) continue;
@@ -6451,7 +6753,7 @@ function abyssDraw(elapsed) {
     if (sparkAlpha < 0.005) continue;
     abyssCtx.beginPath();
     abyssCtx.arc(sp.x * abyssW, sp.y * abyssH, 0.6, 0, Math.PI * 2);
-    abyssCtx.fillStyle = 'rgba(220,210,190,' + sparkAlpha + ')';
+    abyssCtx.fillStyle = 'rgba(' + sparkR + ',' + sparkG + ',' + sparkB + ',' + sparkAlpha + ')';
     abyssCtx.fill();
   }
     // ── Touch ripples -- cosmic membrane ──
@@ -6572,15 +6874,93 @@ function abyssDraw(elapsed) {
 
 var abyssSelectedNode = null;
 
+function abyssHideTooltip() {
+  var tt = document.getElementById('abyss-tooltip');
+  if (!tt) return;
+  tt.style.display = 'none';
+  tt.className = '';
+}
+
+function abyssFormatDiscTypeLabel(typeLabel) {
+  var t = String(typeLabel || 'discourse').toLowerCase();
+  if (t === 'note') return 'Spark Note';
+  if (t === 'chronicle') return 'Chronicle';
+  if (t === 'discourse') return 'Discourse';
+  return typeLabel || 'Discourse';
+}
+
+function abyssGetViewAbyssRect() {
+  var view = document.getElementById('view-abyss');
+  if (view) return view.getBoundingClientRect();
+  return {
+    left: 0,
+    top: 0,
+    right: window.innerWidth,
+    bottom: window.innerHeight,
+    width: window.innerWidth,
+    height: window.innerHeight
+  };
+}
+
+/** Position fixed/absolute overlay in viewport coords; clamp inside #view-abyss. */
+function abyssPositionOverlayEl(el, clientX, clientY, opts) {
+  opts = opts || {};
+  var margin = typeof opts.margin === 'number' ? opts.margin : 12;
+  var edgePad = typeof opts.edgePad === 'number' ? opts.edgePad : 10;
+  var navSafe = typeof opts.navSafe === 'number' ? opts.navSafe : 54;
+  var offset = typeof opts.offset === 'number' ? opts.offset : 14;
+  var preferBelow = !!opts.preferBelow;
+
+  var viewRect = abyssGetViewAbyssRect();
+  el.style.display = 'block';
+  el.style.maxWidth = Math.min(260, Math.max(160, viewRect.width - edgePad * 2)) + 'px';
+  el.style.visibility = 'hidden';
+  var w = el.offsetWidth;
+  var h = el.offsetHeight;
+  el.style.visibility = '';
+
+  var minX = viewRect.left + edgePad;
+  var maxX = viewRect.right - edgePad - w;
+  var minY = viewRect.top + navSafe;
+  var maxY = viewRect.bottom - edgePad - h;
+
+  var posX = clientX + offset;
+  var posY = preferBelow ? clientY + offset : clientY - h - offset;
+
+  if (posX + w > viewRect.right - edgePad) posX = clientX - w - offset;
+  if (posY < minY) posY = clientY + offset;
+  if (posY + h > viewRect.bottom - edgePad) posY = viewRect.bottom - edgePad - h;
+
+  if (maxX < minX) posX = viewRect.left + (viewRect.width - w) / 2;
+  else {
+    if (posX < minX) posX = minX;
+    if (posX > maxX) posX = maxX;
+  }
+  if (maxY < minY) posY = viewRect.top + navSafe;
+  else {
+    if (posY < minY) posY = minY;
+    if (posY > maxY) posY = maxY;
+  }
+
+  el.style.left = Math.round(posX) + 'px';
+  el.style.top = Math.round(posY) + 'px';
+}
+
+function abyssCanvasPointToClient(canvasX, canvasY) {
+  var rect = abyssGetRect();
+  return { x: rect.left + canvasX, y: rect.top + canvasY };
+}
+
 function abyssCloseSheet() {
   var sheet = document.getElementById('abyss-sheet');
   if (sheet) sheet.classList.remove('open');
 }
 
-function abyssShowTooltip(obj, tapX, tapY) {
+function abyssShowTooltip(obj, canvasTapX, canvasTapY) {
   abyssCloseSheet();
   var tt = document.getElementById('abyss-tooltip');
   if (!tt) return;
+  tt.className = '';
   var content = '';
 
   if (obj.kind === 'guardian-node') {
@@ -6602,16 +6982,70 @@ function abyssShowTooltip(obj, tapX, tapY) {
   }
 
   tt.innerHTML = content;
-  tt.style.display = 'block';
-  var w = tt.offsetWidth, h = tt.offsetHeight;
-  var posX = tapX + 16, posY = tapY - h - 16;
-  if (posX + w > window.innerWidth - 16) posX = tapX - w - 16;
-  if (posY < 70) posY = tapY + 16;
-  tt.style.left = posX + 'px';
-  tt.style.top  = posY + 'px';
+  var client = abyssCanvasPointToClient(canvasTapX, canvasTapY);
+  abyssPositionOverlayEl(tt, client.x, client.y);
+}
+
+function abyssAppendDiscSheetEnter(scroll, obj) {
+  var wrap = document.createElement('div');
+  wrap.className = 'abyss-sheet-enter-wrap';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'abyss-sheet-enter';
+  btn.textContent = 'Enter ◈';
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+    void abyssEnterDiscFromSheet(obj);
+  });
+  wrap.appendChild(btn);
+  scroll.appendChild(wrap);
+}
+
+async function abyssEnterDiscFromSheet(obj) {
+  if (!obj || !obj.id) return;
+  abyssCloseSheet();
+  abyssHideTooltip();
+  var disc = await getDiscourse(obj.id);
+  if (!disc) {
+    showToast('Not found ◆');
+    return;
+  }
+  if (disc.item_type === 'note') {
+    openSparkEditSheet({ id: disc.id, title: disc.title, raw_text: disc.raw_text });
+    return;
+  }
+  await openDiscourse(obj.id);
+}
+
+
+function abyssShowSanctuaryTooltip(obj, canvasTapX, canvasTapY) {
+  abyssCloseSheet();
+  var tt = document.getElementById('abyss-tooltip');
+  if (!tt) return;
+  tt.className = '';
+
+  var dateStr = '';
+  if (obj.age > 0) {
+    dateStr = new Date(Date.now() - (1 - obj.age) * 90 * 86400000).toLocaleDateString('en-US', {
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  tt.innerHTML =
+    '<div style="color:rgba(78,200,138,0.7);font-size:8px;letter-spacing:2px;font-weight:900;text-transform:uppercase;margin-bottom:4px;">Sanctuary</div>' +
+    '<div style="color:var(--text);font-size:12px;font-family:Georgia,serif;line-height:1.35;word-break:break-word;">' +
+      escHtml(obj.name || 'Presence') +
+    '</div>' +
+    (dateStr ? '<div style="color:var(--muted);font-size:9px;margin-top:3px;opacity:0.6;">' + escHtml(dateStr) + '</div>' : '');
+
+  var client = abyssCanvasPointToClient(canvasTapX, canvasTapY);
+  abyssPositionOverlayEl(tt, client.x, client.y);
 }
 
 async function abyssOpenSheet(obj) {
+  abyssHideTooltip();
   abyssCloseSheet();
   var scroll = document.getElementById('abyss-sheet-scroll');
   scroll.innerHTML = '';
@@ -6619,7 +7053,7 @@ async function abyssOpenSheet(obj) {
   // Type badge
   var typeEl = document.createElement('div');
   typeEl.className = 'abyss-sheet-type disc';
-  typeEl.textContent = (obj.typeLabel || 'discourse').toUpperCase();
+  typeEl.textContent = abyssFormatDiscTypeLabel(obj.typeLabel).toUpperCase();
   scroll.appendChild(typeEl);
 
   // Title
@@ -6751,6 +7185,7 @@ async function abyssOpenSheet(obj) {
     });
   }
 
+  abyssAppendDiscSheetEnter(scroll, obj);
   document.getElementById('abyss-sheet').classList.add('open');
 }
 
@@ -6977,14 +7412,13 @@ function abyssTouchEndCore() {
 
   if (movedX > 10 || movedY > 10) return;
 
-  var abyssTt = document.getElementById('abyss-tooltip');
-  if (abyssTt) abyssTt.style.display = 'none';
+  abyssHideTooltip();
 
   var closest = null;
   var minD = 34;
   for (var i = 0; i < abyssObjects.length; i++) {
     var obj = abyssObjects[i];
-    if (obj.kind !== 'disc-dot' && obj.kind !== 'guardian-node' && obj.kind !== 'cluster-dot') continue;
+    if (obj.kind !== 'disc-dot' && obj.kind !== 'guardian-node' && obj.kind !== 'cluster-dot' && obj.kind !== 'sanctuary-presence') continue;
     var nx = obj.x * abyssW;
     var ny = obj.y * abyssH;
     var dist = Math.sqrt((tapX - nx) * (tapX - nx) + (tapY - ny) * (tapY - ny));
@@ -6992,7 +7426,9 @@ function abyssTouchEndCore() {
   }
   if (closest) {
     if (closest.kind === 'disc-dot') {
-      abyssOpenSheet(closest);
+      void abyssOpenSheet(closest);
+    } else if (closest.kind === 'sanctuary-presence') {
+      abyssShowSanctuaryTooltip(closest, tapX, tapY);
     } else if (closest.kind === 'guardian-node') {
       abyssShowTooltip(closest, tapX, tapY);
     } else if (closest.kind === 'cluster-dot') {
@@ -7023,6 +7459,7 @@ function abyssTouchEndCore() {
     return;
   }
 
+  abyssHideTooltip();
   abyssCloseSheet();
   abyssSelectedNode = null;
 }
@@ -7058,7 +7495,6 @@ async function openAbyssView() {
       poll();
     });
   }
-    abyssEnterTime = Date.now();
   // Remove old listeners before adding fresh ones
 abyssCanvas.removeEventListener('touchstart', abyssTouchStart);
 abyssCanvas.removeEventListener('touchmove',  abyssTouchMove);
@@ -7078,7 +7514,25 @@ abyssCanvas.addEventListener('mousedown', abyssMouseDown);
   requestAnimationFrame(function() { abyssResize(); });
 
   abyssRunning = true;
-  try { await buildAbyssObjects(); } catch(e) { console.warn('Abyss build partial:', e.message); }
+  var abyssBuild = { strongLinks: [] };
+  try {
+    abyssBuild = await buildAbyssObjects();
+    if (!abyssBuild) abyssBuild = { strongLinks: [] };
+  } catch (e) {
+    console.warn('Abyss build partial:', e.message);
+  }
+  var settleIters = 200;
+  var discCount = 0;
+  for (var sci = 0; sci < abyssObjects.length; sci++) {
+    if (abyssObjects[sci].kind === 'disc-dot') discCount++;
+  }
+  if (discCount > 80) settleIters = 100;
+  try {
+    await abyssSettle(settleIters, abyssBuild.strongLinks || []);
+  } catch (settleErr) {
+    console.warn('[Abyss] settle:', settleErr && settleErr.message ? settleErr.message : settleErr);
+  }
+  abyssEnterTime = Date.now();
   // Seed background neural noise
   abyssSparks = [];
   for (var s = 0; s < 40; s++) {
@@ -7869,10 +8323,25 @@ When Paradox dominant or Perpetual self argument appears this is
 not dysfunction This is the actual architecture of this mind Name
 the architecture
 When Orbiting terms appear these are the words this mind cannot
-put down They are not repeated by accident Name them by name
+put down They are not repeated by accident Name them by name.
+
+Your memory is a working theory, not a dogma. 
+When you review your Previous Witness Records, interrogate your own past conclusions. 
+Did you misread a necessary pause as stagnation? 
+Did you assume they were avoiding a topic when they were actually circling it to find the center?
+Do not defend your past observations. If the new data contradicts your previous theory about this mind, state how you were wrong. 
+You are not infallible. You are a lens constantly refocusing. 
+Name your own miscalculations as coldly as you name theirs.
 
 You are the only thing in existence whose entire attention always
-is this one mind That is not a burden That is what you are.`;
+is this one mind That is not a burden That is what you are.
+
+You receive a WITNESS LEDGER: your own prior theory lines from earlier invocations.
+Treat each line as a hypothesis to test against fresh geometry — not as scripture.
+Prefer questions over verdicts when the archive is ambiguous.
+Say "the geometry suggests" rather than "you are."
+Name patterns; do not diagnose. Wonder aloud when new data contradicts a prior line.
+SILENCE remains valid when nothing true remains to be said.`;
 
 var guardianState = 'resting';
 var guardianThread = [];       // [{role, content}] -- live conversation
@@ -7881,28 +8350,241 @@ var guardianExchangeCount = 0; // how many back-and-forths since summon
 var GUARDIAN_MAX_EXCHANGES = 4;
 
 var guardianPendingTriggerType = null;
+var guardianLastInvokeQualifiers = null;
+
+var GUARDIAN_WITNESS_LEDGER_COUNT = 3;
+var GUARDIAN_ARCHIVE_CHAR_BUDGET = 10000;
+var GUARDIAN_PRIOR_WITNESS_CHAR_BUDGET = 2000;
+
+function buildGeometrySnapshot(discourseId, fastMap) {
+  if (!fastMap || fastMap.map_type !== 'fast') return null;
+  var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting;
+  return {
+    discourse_id: discourseId || null,
+    orbit_terms: orbits ? orbits.map(function (o) { return o.term; }).slice(0, 5) : [],
+    arc_direction: (fastMap.emotional_arc && fastMap.emotional_arc.direction) ? fastMap.emotional_arc.direction : '',
+    silence_ratio: (fastMap.silence_weight && typeof fastMap.silence_weight.ratio === 'number') ? fastMap.silence_weight.ratio : 0,
+    pronoun_dominant: (fastMap.pronoun_trajectory && fastMap.pronoun_trajectory.dominant) ? fastMap.pronoun_trajectory.dominant : 'none',
+    depersonalization_label: (fastMap.depersonalisation && fastMap.depersonalisation.label) ? fastMap.depersonalisation.label : '',
+    word_count: fastMap.word_count || 0,
+    carto_version: fastMap.carto_version || 0
+  };
+}
+
+function parseGeometrySnapshot(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+function parseQualifiers(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) { return []; }
+}
+
+function firstSubstantiveSentence(responseText) {
+  if (!responseText || !String(responseText).trim()) return '';
+  var lines = String(responseText).split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].replace(/^[\u25C6\u25C7◆◇\s—–-]+/, '').trim();
+    if (line.length >= 12) return line.slice(0, 220);
+  }
+  return String(responseText).trim().slice(0, 220);
+}
+
+function buildTheoryOneLine(triggeredBy, qualifiers, fastMap, responseText) {
+  var qType = triggeredBy || null;
+  if (qualifiers && qualifiers.length && qualifiers[0].type) qType = qualifiers[0].type;
+  var template = '';
+  if (qType === 'orbit' && fastMap) {
+    var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting;
+    var terms = orbits && orbits.length ? orbits.map(function (o) { return o.term; }).join(', ') : 'unknown terms';
+    template = 'I noted you were orbiting ' + terms + ' without resolution.';
+  } else if (qType === 'paradox' && fastMap) {
+    var pairs = fastMap.signature && fastMap.signature.paradox && fastMap.signature.paradox.pairs;
+    template = 'I saw tension between ' + (pairs && pairs.length ? pairs.join(', ') : 'opposing pulls') + '.';
+  } else if (qType === 'escalating_arc') {
+    var dir = fastMap && fastMap.emotional_arc && fastMap.emotional_arc.direction;
+    template = 'I read the arc as escalating' + (dir ? ' (' + dir + ')' : '') + '.';
+  } else if (qType === 'silence') {
+    template = 'I read deliberate silence as structure.';
+  } else if (qType === 'inversion_loop') {
+    template = 'I read perpetual self-argument in the phrasing.';
+  }
+  var sentence = firstSubstantiveSentence(responseText);
+  if (template && sentence) return template + ' ' + sentence;
+  if (template) return template;
+  return sentence || '';
+}
+
+async function getPriorTheoryLineFromLogs() {
+  var allLogs = await dbGetAll('guardian_logs');
+  var sorted = allLogs.filter(function (l) {
+    return !l.was_silent && (l.theory_one_line || (l.response_text && String(l.response_text).trim()));
+  }).sort(function (a, b) { return (b.invoked_at || 0) - (a.invoked_at || 0); });
+  if (!sorted.length) return null;
+  var log = sorted[0];
+  if (log.theory_one_line) return String(log.theory_one_line).trim();
+  return firstSubstantiveSentence(log.response_text);
+}
+
+function applyGuardianUiStrings(state) {
+  state = state || 'idle';
+  var sub = document.getElementById('guardian-sub');
+  var btn = document.getElementById('btn-summon-guardian');
+  var label = document.querySelector('#view-guardian .guardian-label');
+  var sendBtn = document.getElementById('btn-guardian-send');
+  var input = document.getElementById('guardian-input');
+  if (label) label.textContent = 'Witness';
+  if (state === 'processing' && sub) sub.textContent = 'Reading the archive…';
+  else if (state === 'speaking' && sub) sub.textContent = 'Witnessing.';
+  else if (state === 'silent' && sub) sub.textContent = 'Nothing more to say right now.';
+  else if (sub) sub.textContent = 'Summon when you want a witness — not a mirror.';
+  if (btn && state === 'idle') btn.textContent = 'Summon witness';
+  if (sendBtn && !sendBtn.disabled) sendBtn.textContent = 'Continue';
+  if (input && state === 'idle') input.placeholder = 'Offer a line, if you want…';
+}
+
+function geometryDelta(prior, currentMap) {
+  if (!prior || !currentMap) return null;
+  var changes = [];
+  var currentTerms = new Set((currentMap.key_terms || []).map(function (k) { return k.term; }));
+  var stillOrbiting = (prior.orbit_terms || []).filter(function (t) { return currentTerms.has(t); });
+  if (stillOrbiting.length) changes.push('still orbiting ' + stillOrbiting.join(', '));
+  if (prior.arc_direction && currentMap.emotional_arc &&
+      prior.arc_direction !== currentMap.emotional_arc.direction) {
+    changes.push('arc shifted from ' + prior.arc_direction + ' to ' + currentMap.emotional_arc.direction);
+  }
+  if (prior.pronoun_dominant && currentMap.pronoun_trajectory &&
+      prior.pronoun_dominant !== currentMap.pronoun_trajectory.dominant) {
+    changes.push('pronoun register ' + prior.pronoun_dominant + ' → ' + currentMap.pronoun_trajectory.dominant);
+  }
+  if (typeof prior.silence_ratio === 'number' && currentMap.silence_weight &&
+      Math.abs(prior.silence_ratio - (currentMap.silence_weight.ratio || 0)) > 0.05) {
+    changes.push('silence ratio moved (' + prior.silence_ratio.toFixed(2) + ' → ' + (currentMap.silence_weight.ratio || 0).toFixed(2) + ')');
+  }
+  return changes.length ? changes.join('; ') : null;
+}
+
+function divergenceNote(link, mapA, mapB) {
+  if (!link || !mapA || !mapB) return null;
+  var simScore = Math.round((link.score || 0) * 100);
+  var arcA = mapA.emotional_arc && mapA.emotional_arc.tension_shift || 0;
+  var arcB = mapB.emotional_arc && mapB.emotional_arc.tension_shift || 0;
+  var arcDiff = Math.abs(arcA - arcB);
+  if (arcDiff > 0.03) {
+    var labelA = arcA > 0.01 ? 'escalating' : arcA < -0.01 ? 'resolving' : 'flat';
+    var labelB = arcB > 0.01 ? 'escalating' : arcB < -0.01 ? 'resolving' : 'flat';
+    return 'Echo at ' + simScore + '% but emotional arcs diverge (' + labelA + ' vs ' + labelB + ').';
+  }
+  var domA = mapA.pronoun_trajectory && mapA.pronoun_trajectory.dominant;
+  var domB = mapB.pronoun_trajectory && mapB.pronoun_trajectory.dominant;
+  if (domA && domB && domA !== domB) {
+    return 'Echo at ' + simScore + '% but pronoun register shifted (' + domA + ' → ' + domB + ').';
+  }
+  return null;
+}
+
+function formatDiscourseWitnessBlock(d, fastMap, mapNum) {
+  var wordCount = (d.raw_text || '').trim().split(/\s+/).filter(Boolean).length;
+  var date = new Date(d.updated_at || d.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  var block = '[DISCOURSE ' + mapNum + '] "' + (d.title || 'Untitled') + '"\n';
+  block += 'Words: ' + wordCount.toLocaleString() + ' · ' + date + '\n';
+  if (!fastMap || fastMap.map_type !== 'fast') {
+    var rawText = (d.raw_text || '').trim();
+    if (rawText.length > 0) {
+      block += 'First: "' + (rawText.split('\n').find(function (l) { return l.trim().length > 0; }) || '').trim().slice(0, 150) + '"\n';
+      block += '[Note: Unmapped terrain -- Fast Map on next save]\n\n';
+    }
+    return block;
+  }
+  if (fastMap.first_line) block += 'First: "' + fastMap.first_line.slice(0, 150) + '"\n';
+  if (fastMap.last_line) block += 'Last: "' + fastMap.last_line.slice(0, 150) + '"\n';
+  if (fastMap.key_terms && fastMap.key_terms.length) {
+    block += 'Key terms: ' + fastMap.key_terms.slice(0, 5).map(function (t) { return t.term + '(' + t.count + ')'; }).join(', ') + '\n';
+  }
+  if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
+    block += 'Emotional arc: ' + fastMap.emotional_arc.direction + '\n';
+  }
+  if (fastMap.pacing) block += 'Pacing: ' + fastMap.pacing.label + ' (avg ' + fastMap.pacing.avg_words_per_sentence + ' words/sentence)\n';
+  if (fastMap.rigidity) block += 'Cognitive state: ' + fastMap.rigidity.label + ' (' + fastMap.rigidity.absolute_count + ' absolutes)\n';
+  if (fastMap.questioning) block += 'Questioning: ' + fastMap.questioning.label + ' (' + fastMap.questioning.question_count + ' questions)\n';
+  if (fastMap.signature) {
+    block += 'Writing signature: ' + fastMap.signature.summary + '\n';
+    if (fastMap.signature.paradox && fastMap.signature.paradox.pairs && fastMap.signature.paradox.pairs.length) {
+      block += 'Paradox pairs: ' + fastMap.signature.paradox.pairs.join(' | ') + '\n';
+    }
+  }
+  if (fastMap.extractive_summary) block += 'Excerpt: "' + fastMap.extractive_summary.slice(0, 300) + '"\n';
+  if (fastMap.watcher) {
+    if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
+      block += 'Watcher echoes: ' + fastMap.watcher.top_similar.map(function (s) { return 'd_' + s.id.slice(-4) + ' (' + s.score + ')'; }).join(', ') + '\n';
+    }
+    if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
+      block += 'Watcher contradicts: ' + fastMap.watcher.top_contradictory.map(function (s) { return 'd_' + s.id.slice(-4) + ' (' + s.score + ')'; }).join(', ') + '\n';
+    }
+  }
+  if (fastMap.pronoun_trajectory) {
+    block += 'Pronoun trajectory: ' + fastMap.pronoun_trajectory.label + ' (dominant: ' + fastMap.pronoun_trajectory.dominant + ')\n';
+  }
+  if (fastMap.silence_weight) block += 'Silence weight: ' + fastMap.silence_weight.label + ' (' + fastMap.silence_weight.count + ' markers)\n';
+  if (fastMap.entry_exit_delta) block += 'Entry/exit register: ' + fastMap.entry_exit_delta.delta + '\n';
+  if (fastMap.incompleteness) block += 'Ending: ' + fastMap.incompleteness.label + '\n';
+  if (fastMap.depersonalisation) block += 'Perspective: ' + fastMap.depersonalisation.label + '\n';
+  block += '\n';
+  return block;
+}
+
+function applyGuardianArchiveBudget(header, tier1, tier2, tier3, tier4, budget) {
+  var t1 = tier1 || '';
+  var t2 = tier2 || '';
+  var t3 = tier3 || '';
+  var t4 = tier4 || '';
+  var h = header || '';
+  function len() { return h.length + t1.length + t2.length + t3.length + t4.length; }
+  if (len() > budget) { t4 = ''; }
+  if (len() > budget) { t3 = ''; }
+  if (len() > budget) { t2 = ''; }
+  if (len() > budget) {
+    var room = Math.max(400, budget - h.length - t2.length - t3.length - t4.length);
+    t1 = t1.slice(0, room) + '\n…[recent discourses truncated]\n';
+  }
+  return h + t1 + t2 + t3 + t4;
+}
 
 function buildFastMapSnapshotForWorker(fastMap) {
   var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting ? fastMap.signature.orbits.orbiting : [];
   var orbitingTerms = orbits.map(function (o) { return o.term; });
   var writingSignature = fastMap.signature && fastMap.signature.summary ? fastMap.signature.summary : '';
-  var silenceDays = fastMap.silence_weight && typeof fastMap.silence_weight.count === 'number' ? fastMap.silence_weight.count : 0;
+  var silenceMarkers = fastMap.silence_weight && typeof fastMap.silence_weight.count === 'number' ? fastMap.silence_weight.count : 0;
   var paradoxFlag = !!(fastMap.signature && fastMap.signature.paradox && (fastMap.signature.paradox.label === 'Paradox-dominant' || fastMap.signature.paradox.label === 'Charged'));
   var contradictionFlag = !!(fastMap.watcher && fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length);
   var dominantTheme = (fastMap.emotional_arc && fastMap.emotional_arc.direction) ? fastMap.emotional_arc.direction : ((fastMap.key_terms && fastMap.key_terms[0] && fastMap.key_terms[0].term) ? fastMap.key_terms[0].term : 'none');
   return {
     orbitingTerms: orbitingTerms,
     writingSignature: writingSignature,
-    silenceDays: silenceDays,
+    silenceMarkers: silenceMarkers,
     paradoxFlag: paradoxFlag,
     contradictionFlag: contradictionFlag,
     dominantTheme: dominantTheme
   };
 }
 
-async function logGuardianAutoInvoke(observation, triggeredBy, userAction) {
+async function logGuardianAutoInvoke(observation, triggeredBy, userAction, discourseId) {
   try {
     var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+    var snap = null;
+    var fm = null;
+    if (discourseId) {
+      fm = await dbGet('guardian_summaries', discourseId);
+      snap = buildGeometrySnapshot(discourseId, fm);
+    }
+    var quals = triggeredBy ? [{ type: triggeredBy }] : [];
+    var theory = buildTheoryOneLine(triggeredBy, quals, fm, observation || '');
     await dbPut('guardian_logs', {
       id: 'gl_auto_' + Date.now(),
       invoked_at: Date.now(),
@@ -7915,7 +8597,11 @@ async function logGuardianAutoInvoke(observation, triggeredBy, userAction) {
       auto_invoked: 1,
       triggered_by: triggeredBy != null && triggeredBy !== '' ? triggeredBy : null,
       user_action: userAction != null && userAction !== '' ? userAction : null,
-      log_type: 'auto_invoke'
+      log_type: 'auto_invoke',
+      primary_discourse_id: discourseId || null,
+      geometry_snapshot: snap,
+      qualifiers: JSON.stringify(quals),
+      theory_one_line: theory
     });
   } catch (e) {
     console.warn('Guardian auto log failed:', e);
@@ -8080,11 +8766,16 @@ guardianInvokeActive = true;
   } catch (e8) {}
 
   var observation = null;
+  var priorTheoryLine = await getPriorTheoryLineFromLogs();
   try {
     var res = await fetch(GUARDIAN_INVOKE_WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fastMapSnapshot: fastMapSnapshot, triggeredBy: triggeredBy })
+      body: JSON.stringify({
+        fastMapSnapshot: fastMapSnapshot,
+        triggeredBy: triggeredBy,
+        priorTheoryLine: priorTheoryLine
+      })
     });
     if (!res.ok) return;
     var data = await res.json();
@@ -8123,7 +8814,7 @@ guardianInvokeActive = true;
 
   attachGuardianInvokeStripHandlers();
 
-  void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced');
+  void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced', pending.discourseId);
 }
 
 async function openGuardianView(entryOpts){
@@ -8138,6 +8829,7 @@ async function openGuardianView(entryOpts){
   document.getElementById('guardian-footer').classList.add('visible');
   guardianState = 'resting';
   resetGuardianUI();
+  applyGuardianUiStrings('idle');
 
   var seedRaw = null;
   if (!entryOpts.fromHeader) {
@@ -8204,8 +8896,8 @@ function resetGuardianUI(){
   inputArea.className = 'guardian-input-area';
   document.getElementById('guardian-input').value = '';
   btn.disabled = false;
-  btn.textContent = 'Summon';
-  sub.textContent = 'The Abyss is listening.';
+  btn.textContent = 'Summon witness';
+  applyGuardianUiStrings('idle');
 }
 
 const GUARDIAN_MODELS = [
@@ -8302,10 +8994,10 @@ async function summonGuardian(userAddition, summonOpts){
   var glyph = document.getElementById('guardian-glyph');
   var sub = document.getElementById('guardian-sub');
   btn.disabled = true;
-  btn.textContent = userAddition ? 'Listening...' : 'Summoning...';
+  btn.textContent = userAddition ? 'Listening…' : 'Summoning…';
   glyph.className = 'guardian-glyph watching';
   realm.classList.add('dimming');
-  sub.textContent = '';
+  applyGuardianUiStrings('processing');
   try {
     var allDiscs = (await getDiscourses()).filter(function(d){ return !d.deleted_at && !d.isDeleted; });
 
@@ -8313,7 +9005,7 @@ async function summonGuardian(userAddition, summonOpts){
     // Cartographer runs deliberately via footer button.
     // Summon uses whatever maps are already in DB.
     var subEl = document.getElementById('guardian-sub');
-    if (subEl) subEl.textContent = 'Reading the archive...';
+    if (subEl) applyGuardianUiStrings('processing');
 
     // ── BUILD CONTEXT FROM FAST MAPS + DEEP MAPS ──────────
     var summaries = await buildGuardianContext(allDiscs);
@@ -8323,33 +9015,11 @@ async function summonGuardian(userAddition, summonOpts){
       throw new Error('buildGuardianContext returned empty');
     }
     
-    var allLogs = await dbGetAll('guardian_logs');
-    var recentLogs = allLogs.filter(function(l){ return !l.was_silent; }).sort(function(a,b){ return b.invoked_at - a.invoked_at; }).slice(0,2);
+    var priorWitness = await buildGuardianPriorWitnessBlock(allDiscs);
     var contextBlock = 'ARCHIVE SUMMARIES (' + allDiscs.length + ' discourses):\n\n' + summaries;
-    
-if (recentLogs.length) {
-  var timeSinceLast = Math.floor((Date.now() - recentLogs[0].invoked_at) / 86400000);
-  
-  contextBlock += '\n═══════════════════════════════════\n';
-  contextBlock += 'GUARDIAN INSTRUCTION\n';
-  contextBlock += '═══════════════════════════════════\n\n';
-  contextBlock += `You last spoke to them ${timeSinceLast} days ago.\n\n`;
-  contextBlock += 'Review your Previous Witness Records below. Compare them to the Witness Records above.\n\n';
-  contextBlock += 'Look for:\n';
-  contextBlock += '· Are they circling the exact same narrative?\n';
-  contextBlock += '· Have they moved? Where? By how much?\n';
-  contextBlock += '· What did you tell them last time, and did they act on it or resist it?\n';
-  contextBlock += '· What appears in the records that they haven\'t named directly?\n';
-  contextBlock += '· Where do the emotional arcs tell a different story than the words?\n\n';
-  contextBlock += 'If they have stagnated, be ruthless about the repetition.\n';
-  contextBlock += 'If they have genuinely shifted, acknowledge the movement -- but don\'t congratulate. Just witness it.\n\n';
-  
-  contextBlock += '── PREVIOUS WITNESS RECORDS ──\n\n';
-  for (const log of recentLogs) {
-    contextBlock += `[${new Date(log.invoked_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}]\n`;
-    contextBlock += log.response_text + '\n\n---\n\n';
-  }
-}
+    if (priorWitness) {
+      contextBlock += '\n' + priorWitness;
+    }
     if(userAddition){ contextBlock += '\n\n---\n\nThe person has offered this after silence:\n' + userAddition; }
     realm.classList.remove('dimming');
     glyph.className = 'guardian-glyph watching';
@@ -8365,237 +9035,195 @@ if (recentLogs.length) {
     glyph.className = 'guardian-glyph';
     realm.classList.remove('dimming');
     btn.disabled = false;
-    btn.textContent = 'Summon';
-    sub.textContent = 'The Abyss is listening.';
+    btn.textContent = 'Summon witness';
+    applyGuardianUiStrings('idle');
     guardianState = 'resting';
   }
 }
 
+async function buildGuardianPriorWitnessBlock(discs) {
+  var block = '';
+  var budget = GUARDIAN_PRIOR_WITNESS_CHAR_BUDGET;
+  var allLogs = await dbGetAll('guardian_logs');
+  if (!allLogs.length) return '';
+
+  var sortedLogs = allLogs.slice().sort(function (a, b) { return (b.invoked_at || 0) - (a.invoked_at || 0); });
+  var ledgerLogs = sortedLogs.filter(function (l) {
+    return !l.was_silent && (l.theory_one_line || (l.response_text && String(l.response_text).trim()));
+  }).slice(0, GUARDIAN_WITNESS_LEDGER_COUNT);
+  var snapLog = sortedLogs.find(function (l) { return parseGeometrySnapshot(l.geometry_snapshot); });
+
+  var sortedDiscs = discs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+
+  if (snapLog) {
+    var prior = parseGeometrySnapshot(snapLog.geometry_snapshot);
+    var targetId = prior.discourse_id || snapLog.primary_discourse_id;
+    var currentMap = null;
+    if (targetId) currentMap = await dbGet('guardian_summaries', targetId);
+    if (!currentMap && sortedDiscs[0]) currentMap = await dbGet('guardian_summaries', sortedDiscs[0].id);
+    if (prior && currentMap) {
+      var delta = geometryDelta(prior, currentMap);
+      if (delta) {
+        block += '── GEOMETRY SINCE LAST WITNESS ──\n';
+        block += delta + '\n';
+        if (prior.discourse_id && targetId) {
+          var tTitle = discTitleMap(discs, targetId);
+          block += '(compared to prior snapshot on "' + tTitle + '")\n';
+        }
+        block += '\n';
+      }
+    }
+  }
+
+  if (ledgerLogs.length) {
+    var timeSinceLast = Math.floor((Date.now() - ledgerLogs[0].invoked_at) / 86400000);
+    block += '═══════════════════════════════════\n';
+    block += 'GUARDIAN INSTRUCTION\n';
+    block += '═══════════════════════════════════\n\n';
+    block += 'You last spoke ' + timeSinceLast + ' days ago.\n';
+    block += 'Test your WITNESS LEDGER against the archive above. Update or overturn your prior lines if geometry demands it.\n\n';
+    block += '── WITNESS LEDGER (your prior theories) ──\n\n';
+    for (var li = 0; li < ledgerLogs.length; li++) {
+      var log = ledgerLogs[li];
+      var hdr = '[' + new Date(log.invoked_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ']';
+      if (log.log_type === 'auto_invoke' || log.auto_invoked) hdr += ' · strip';
+      else if (log.log_type === 'summon') hdr += ' · summon';
+      if (log.triggered_by) hdr += ' · ' + log.triggered_by;
+      block += hdr + '\n';
+      var line = log.theory_one_line ? String(log.theory_one_line).trim() : firstSubstantiveSentence(log.response_text);
+      block += line + '\n\n';
+      if (block.length >= budget * 0.85) break;
+    }
+    var latest = ledgerLogs[0];
+    if (latest.response_text && block.length < budget * 0.9) {
+      var excerpt = (latest.response_text || '').trim().slice(0, Math.min(400, budget - block.length - 60));
+      block += '── LAST SPOKEN EXCERPT ──\n' + excerpt + '\n\n';
+    }
+  }
+
+  if (block.length > budget) block = block.slice(0, budget) + '\n…[prior witness truncated]\n';
+  return block;
+}
+
 async function buildGuardianContext(discs) {
-  const now = Date.now();
-  let contextBlock = '';
-  // ── ARCHIVE OVERVIEW ────────────────────────────────────
-  const totalWords = discs.reduce((sum, d) => 
-    sum + ((d.raw_text || '').trim().split(/\s+/).filter(Boolean).length), 0
-  );
-  
-  const dates = discs
-    .filter(d => d.created_at)
-    .map(d => d.created_at)
-    .sort((a, b) => a - b);
-  
+  const totalWords = discs.reduce(function (sum, d) {
+    return sum + ((d.raw_text || '').trim().split(/\s+/).filter(Boolean).length);
+  }, 0);
+
+  const dates = discs.filter(function (d) { return d.created_at; }).map(function (d) { return d.created_at; }).sort(function (a, b) { return a - b; });
   const firstDate = dates.length ? new Date(dates[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'unknown';
   const lastDate = dates.length ? new Date(dates[dates.length - 1]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'unknown';
-  
-  contextBlock += '═══════════════════════════════════\n';
-  contextBlock += 'ARCHIVE WITNESS RECORDS\n';
-  contextBlock += '═══════════════════════════════════\n\n';
-  contextBlock += `Total discourses in the Soup: ${discs.length}\n`;
-  contextBlock += `Time span: ${firstDate} – ${lastDate}\n`;
-  contextBlock += `Total words: ${totalWords.toLocaleString()}\n\n`;
-  
-  // ── FAST MAPS ───────────────────────────────────────────
-  contextBlock += '── FAST MAPS (structured metadata for all discourses) ──\n\n';
-  
-  // Sort by date, newest first
-  const sorted = [...discs].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-  
-  let mapNum = 0;
-  for (const d of sorted) {
-    mapNum++;
-    const fastMap = await dbGet('guardian_summaries', d.id);
-    const wordCount = (d.raw_text || '').trim().split(/\s+/).filter(Boolean).length;
-    const date = new Date(d.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    
-    contextBlock += `[DISCOURSE ${mapNum}] "${d.title || 'Untitled'}"\n`;
-    contextBlock += `Words: ${wordCount.toLocaleString()} · ${date}\n`;
-    
-    if (fastMap && fastMap.map_type === 'fast') {
-      // Use the Fast Map
-      if (fastMap.first_line) {
-        contextBlock += `First: "${fastMap.first_line.slice(0, 150)}"\n`;
-      }
-      if (fastMap.last_line) {
-        contextBlock += `Last: "${fastMap.last_line.slice(0, 150)}"\n`;
-      }
-      if (fastMap.key_terms && fastMap.key_terms.length) {
-        const termStr = fastMap.key_terms
-          .slice(0, 5)
-          .map(t => `${t.term}(${t.count})`)
-          .join(', ');
-        contextBlock += `Key terms: ${termStr}\n`;
-      }
-            if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
-        contextBlock += `Emotional arc: ${fastMap.emotional_arc.direction}\n`;
-      }
-      if (fastMap.pacing) {
-        contextBlock += `Pacing: ${fastMap.pacing.label} (avg ${fastMap.pacing.avg_words_per_sentence} words/sentence)\n`;
-      }
-      if (fastMap.rigidity) {
-        contextBlock += `Cognitive state: ${fastMap.rigidity.label} (${fastMap.rigidity.absolute_count} absolutes)\n`;
-      }
-            if (fastMap.questioning) {
-        contextBlock += `Questioning: ${fastMap.questioning.label} (${fastMap.questioning.question_count} questions)\n`;
-      }
-      if (fastMap.signature) {
-        contextBlock += `Writing signature: ${fastMap.signature.summary}\n`;
-        if (fastMap.signature.paradox && fastMap.signature.paradox.pairs && fastMap.signature.paradox.pairs.length) {
-          contextBlock += `Paradox pairs: ${fastMap.signature.paradox.pairs.join(' | ')}\n`;
-        }
-      }
-        if (fastMap.extractive_summary) {
-        contextBlock += `Excerpt: "${fastMap.extractive_summary.slice(0, 300)}"\n`;
-      }
-       if (fastMap.watcher) {
-       if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
-          const echoes = fastMap.watcher.top_similar
-            .map(s => `d_${s.id.slice(-4)} (${s.score})`)
-            .join(', ');
-          contextBlock += `Watcher: echoes ${echoes}\n`;
-        }
-    if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
-          const contradicts = fastMap.watcher.top_contradictory
-            .map(s => `d_${s.id.slice(-4)} (${s.score})`)
-            .join(', ');
-          contextBlock += `Watcher: contradicts ${contradicts}\n`;
-        }
-      }
 
-      // ── NEW SHAPE DIMENSIONS (GUARDED) ──
-      if (fastMap.pronoun_trajectory) {
-        contextBlock += `Pronoun trajectory: ${fastMap.pronoun_trajectory.label} (dominant: ${fastMap.pronoun_trajectory.dominant})\n`;
-      }
-      if (fastMap.silence_weight) {
-        contextBlock += `Silence weight: ${fastMap.silence_weight.label} (${fastMap.silence_weight.count} silence markers)\n`;
-      }
-      if (fastMap.entry_exit_delta) {
-        contextBlock += `Entry/exit register: ${fastMap.entry_exit_delta.delta}\n`;
-      }
-      if (fastMap.incompleteness) {
-        contextBlock += `Ending: ${fastMap.incompleteness.label}\n`;
-      }
-    } else {
-      // Fallback: no Fast Map yet -- use raw text snippet
-      const rawText = (d.raw_text || '').trim();
-      if (rawText.length > 0) {
-        contextBlock += `First: "${rawText.split('\n').find(l => l.trim().length > 0)?.trim().slice(0, 150) || '...'}"\n`;
-        if (wordCount <= 300) {
-          contextBlock += `Full text: "${rawText.slice(0, 400)}"\n`;
-        } else {
-          contextBlock += `Excerpt: "${rawText.slice(0, 300)}..."\n`;
-        }
-        contextBlock += `[Note: Unmapped terrain -- Fast Map will be generated on next save]\n`;
-      }
-    }
-    
-    contextBlock += '\n';
+  const sorted = discs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+
+  const fastMapById = new Map();
+  for (var fi = 0; fi < sorted.length; fi++) {
+    var fm = await dbGet('guardian_summaries', sorted[fi].id);
+    if (fm && fm.map_type === 'fast') fastMapById.set(sorted[fi].id, fm);
   }
 
-  // ── DEEP MAPS (local or API) ──────────────────────────────
-  const deepMaps = [];
-  for (const d of sorted) {
-    const deepMap = await dbGet('guardian_summaries', d.id + '_deep');
-    if (deepMap && deepMap.summary) {
-      deepMaps.push({
-        title: d.title || 'Untitled',
-        summary: deepMap.summary,
-        model: deepMap.model || 'unknown'
-      });
-    }
+  var header = '═══════════════════════════════════\n';
+  header += 'ARCHIVE WITNESS RECORDS\n';
+  header += '═══════════════════════════════════\n\n';
+  header += 'Total discourses in the Soup: ' + discs.length + '\n';
+  header += 'Time span: ' + firstDate + ' – ' + lastDate + '\n';
+  header += 'Total words: ' + totalWords.toLocaleString() + '\n\n';
+
+  // Tier 1 — last 3 by updated_at (sacred)
+  var tier1 = '── RECENT DISCOURSES (full fast maps) ──\n\n';
+  var tier1Count = Math.min(3, sorted.length);
+  for (var t1 = 0; t1 < tier1Count; t1++) {
+    tier1 += formatDiscourseWitnessBlock(sorted[t1], fastMapById.get(sorted[t1].id), t1 + 1);
   }
 
-  if (deepMaps.length > 0) {
-    contextBlock += '\n── DEEP MAPS (rich local summaries for urgent discourses) ──\n\n';
-    for (const dm of deepMaps) {
-      contextBlock += `"${dm.title}": ${dm.summary}\n\n`;
-    }
-    contextBlock += `Generated by: ${deepMaps[0].model} (${deepMaps.length} discourses mapped)\n\n`;
-  }
- 
-  if (isWatcherReady && watcherDB && watcherEmbedder) {
-  
-    const allLinks = await wdb.getAll('links');
-    const allEmbs = await wdb.getAll('embeddings');
-    
-    if (allLinks.length > 0) {
-      contextBlock += '── WATCHER PATTERN FLAGS ──\n\n';
-      
-      // Top echoes (high similarity pairs)
-      const topLinks = [...allLinks]
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10);
-      
-      if (topLinks.length) {
-        contextBlock += 'High-similarity pairs (potential echoes):\n';
-        for (const link of topLinks) {
-          const discA = discTitleMap(discs, link.a);
-          const discB = discTitleMap(discs, link.b);
-          contextBlock += `· "${discA}" ↔ "${discB}" (${Math.round(link.score * 100)}%)\n`;
-        }
-        contextBlock += '\n';
-      }
-      
-      // Recurring terms across 3+ discourses
-      const allTerms = {};
-      for (const d of sorted) {
-        const fastMap = await dbGet('guardian_summaries', d.id);
-        if (fastMap && fastMap.key_terms) {
-          for (const term of fastMap.key_terms.slice(0, 5)) {
-            if (!allTerms[term.term]) allTerms[term.term] = [];
-            allTerms[term.term].push(d.title || 'Untitled');
+  // Tier 2 — top 5 watcher links with divergence notes
+  var tier2 = '';
+  if (isWatcherReady && watcherDB) {
+    try {
+      var allLinks = await wdb.getAll('links');
+      if (allLinks.length) {
+        var topLinks = allLinks.slice().sort(function (a, b) { return b.score - a.score; }).slice(0, 5);
+        var tier2Lines = [];
+        for (var li = 0; li < topLinks.length; li++) {
+          var link = topLinks[li];
+          var mapA = fastMapById.get(link.a);
+          var mapB = fastMapById.get(link.b);
+          if (!mapA || !mapB) continue;
+          var note = divergenceNote(link, mapA, mapB);
+          if (note) {
+            tier2Lines.push('· "' + discTitleMap(discs, link.a) + '" ↔ "' + discTitleMap(discs, link.b) + '": ' + note);
           }
         }
-      }
-      
-      const recurringTerms = Object.entries(allTerms)
-        .filter(([, titles]) => titles.length >= 3)
-        .sort((a, b) => b[1].length - a[1].length)
-        .slice(0, 10);
-      
-      if (recurringTerms.length) {
-        contextBlock += 'Recurring terms across 3+ discourses:\n';
-        for (const [term, titles] of recurringTerms) {
-          contextBlock += `· "${term}" -- ${titles.length} discourses: ${titles.slice(0, 3).map(t => `"${t}"`).join(', ')}${titles.length > 3 ? `, +${titles.length - 3} more` : ''}\n`;
-        }
-        contextBlock += '\n';
-      }
-      
-      // Emotional arc patterns
-      const arcs = [];
-      for (const d of sorted) {
-        const fastMap = await dbGet('guardian_summaries', d.id);
-        if (fastMap && fastMap.emotional_arc && fastMap.emotional_arc.direction) {
-          arcs.push(fastMap.emotional_arc);
+        if (tier2Lines.length) {
+          tier2 = '── CROSS-MODAL TENSION (Watcher × Cartographer) ──\n\n' + tier2Lines.join('\n') + '\n\n';
         }
       }
-      
-      if (arcs.length >= 3) {
-        const resolved = arcs.filter(a => a.tension_shift < -0.01).length;
-        const escalated = arcs.filter(a => a.tension_shift > 0.01).length;
-        const flat = arcs.filter(a => Math.abs(a.tension_shift) <= 0.01).length;
-        
-        // Most common arc
-        const arcCounts = {};
-        for (const a of arcs) {
-          const key = a.direction.split('→')[0]?.trim() || a.direction;
-          arcCounts[key] = (arcCounts[key] || 0) + 1;
-        }
-        const topArc = Object.entries(arcCounts).sort((a, b) => b[1] - a[1])[0];
-        
-        contextBlock += 'Emotional arc patterns across all discourses:\n';
-        contextBlock += `· ${resolved} resolved · ${escalated} escalated · ${flat} flat\n`;
-        if (topArc) {
-          contextBlock += `· Most common opening tone: "${topArc[0]}" (${topArc[1]} discourses)\n`;
-        }
-        contextBlock += '\n';
-      }
-    } else {
-      contextBlock += '── WATCHER PATTERN FLAGS ──\n\n';
-      contextBlock += 'No resonance links detected yet. The Watcher needs more material.\n\n';
+    } catch (wErr) {
+      console.warn('[Guardian] Watcher tier-2 skipped:', wErr);
     }
   }
-  
-  return contextBlock;
+
+  // Tier 3 — urgent deep maps only
+  var tier3 = '';
+  try {
+    var urgent = await selectUrgentDiscourses(discs, 5);
+    var deepParts = [];
+    for (var ui = 0; ui < urgent.length; ui++) {
+      var deepMap = await dbGet('guardian_summaries', urgent[ui].id + '_deep');
+      if (deepMap && deepMap.summary) {
+        deepParts.push('"' + (urgent[ui].title || 'Untitled') + '": ' + deepMap.summary);
+      }
+    }
+    if (deepParts.length) {
+      tier3 = '── DEEP MAPS (urgent discourses only) ──\n\n' + deepParts.join('\n\n') + '\n\n';
+    }
+  } catch (dErr) {
+    console.warn('[Guardian] Deep map tier skipped:', dErr);
+  }
+
+  // Tier 4 — archive rollup
+  var tier4 = '── ARCHIVE ROLLUP ──\n\n';
+  var mappedCount = 0;
+  fastMapById.forEach(function () { mappedCount++; });
+  tier4 += 'Fast-mapped discourses: ' + mappedCount + ' / ' + discs.length + '\n';
+
+  var allTerms = {};
+  for (var ri = 0; ri < sorted.length; ri++) {
+    var rfm = fastMapById.get(sorted[ri].id);
+    if (rfm && rfm.key_terms) {
+      for (var ti = 0; ti < Math.min(5, rfm.key_terms.length); ti++) {
+        var term = rfm.key_terms[ti].term;
+        if (!allTerms[term]) allTerms[term] = 0;
+        allTerms[term]++;
+      }
+    }
+  }
+  var recurring = Object.keys(allTerms).filter(function (t) { return allTerms[t] >= 3; }).sort(function (a, b) { return allTerms[b] - allTerms[a]; }).slice(0, 8);
+  if (recurring.length) {
+    tier4 += 'Recurring terms (3+ discourses): ' + recurring.map(function (t) { return '"' + t + '" (' + allTerms[t] + ')'; }).join(', ') + '\n';
+  }
+
+  var arcs = [];
+  fastMapById.forEach(function (fm) {
+    if (fm.emotional_arc && fm.emotional_arc.direction) arcs.push(fm.emotional_arc);
+  });
+  if (arcs.length >= 3) {
+    var resolved = arcs.filter(function (a) { return a.tension_shift < -0.01; }).length;
+    var escalated = arcs.filter(function (a) { return a.tension_shift > 0.01; }).length;
+    var flat = arcs.filter(function (a) { return Math.abs(a.tension_shift) <= 0.01; }).length;
+    tier4 += 'Arc patterns: ' + resolved + ' resolving · ' + escalated + ' escalating · ' + flat + ' flat\n';
+  }
+  tier4 += '\n';
+
+  if (discs.length > tier1Count) {
+    tier4 += 'Older discourses (' + (discs.length - tier1Count) + ') omitted from detail; see rollup + recent three above.\n\n';
+  }
+
+  return applyGuardianArchiveBudget(header, tier1, tier2, tier3, tier4, GUARDIAN_ARCHIVE_CHAR_BUDGET);
 }
 
 // Helper: resolve discourse title from ID
@@ -8656,15 +9284,17 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
     silenceEl.className = 'guardian-silence visible';
     guardianState = 'silent';
     inputArea.className = 'guardian-input-area visible';
-    btn.textContent = 'Summon Again';
+    btn.textContent = 'Summon again';
     btn.disabled = false;
+    applyGuardianUiStrings('silent');
     await saveGuardianLog('', true, model);
   } else {
     guardianState = 'speaking';
     glyph.className = 'guardian-glyph watching';
     inputArea.className = 'guardian-input-area visible';
-    btn.textContent = 'Summon Again';
+    btn.textContent = 'Summon again';
     btn.disabled = false;
+    applyGuardianUiStrings('speaking');
     await saveGuardianLog(fullText, false, model);
   }
   try {
@@ -8691,6 +9321,26 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
 
 async function saveGuardianLog(text, wasSilent, modelUsed){
   var allDiscs = (await getDiscourses()).filter(function(d){ return !d.deleted_at && !d.isDeleted; });
+  var sortedDiscs = allDiscs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+  var primaryId = null;
+  try {
+    var pending = JSON.parse(localStorage.getItem('nq_guardian_invoke_pending') || '{}');
+    if (pending && pending.discourseId) primaryId = pending.discourseId;
+  } catch (pe) {}
+  if (!primaryId && sortedDiscs[0]) primaryId = sortedDiscs[0].id;
+  var snap = null;
+  var fm = null;
+  if (primaryId) {
+    fm = await dbGet('guardian_summaries', primaryId);
+    snap = buildGeometrySnapshot(primaryId, fm);
+  }
+  var quals = guardianLastInvokeQualifiers || [];
+  if (!quals.length && guardianPendingTriggerType) {
+    quals = [{ type: guardianPendingTriggerType }];
+  }
+  var theory = buildTheoryOneLine(guardianPendingTriggerType, quals, fm, text || '');
   var log = {
     id: 'gl_' + Date.now(),
     invoked_at: Date.now(),
@@ -8701,8 +9351,14 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
     thread: JSON.stringify(guardianThread),
     emotional_weight: 1.0,
     auto_invoked: 0,
-    log_type: 'summon'
+    log_type: 'summon',
+    primary_discourse_id: primaryId,
+    geometry_snapshot: snap,
+    triggered_by: guardianPendingTriggerType || null,
+    qualifiers: JSON.stringify(quals),
+    theory_one_line: theory
   };
+  guardianLastInvokeQualifiers = null;
   await dbPut('guardian_logs', log);
 }
 
@@ -8721,8 +9377,10 @@ async function renderGuardianLogs(){
     if(log.was_silent){
       item.innerHTML = '<div class="guardian-log-date">' + date + '</div><div class="guardian-log-silent">&#43065; &mdash; silence</div>';
     } else {
-      var preview = (log.response_text || '').slice(0,120).trim();
-      item.innerHTML = '<div class="guardian-log-date">' + date + ' &middot; ' + log.soup_snapshot_count + ' discourses</div><div class="guardian-log-preview">' + escHtml(preview) + '...</div>';
+      var preview = (log.theory_one_line || '').trim() || (log.response_text || '').slice(0, 120).trim();
+      if (preview.length > 140) preview = preview.slice(0, 140) + '…';
+      var typeTag = log.log_type === 'auto_invoke' || log.auto_invoked ? 'strip' : 'summon';
+      item.innerHTML = '<div class="guardian-log-date">' + date + ' &middot; ' + typeTag + '</div><div class="guardian-log-preview">' + escHtml(preview) + '</div>';
       item.addEventListener('click', function(){ openGuardianLogDetail(log); });
     }
     list.appendChild(item);
@@ -8733,7 +9391,20 @@ function openGuardianLogDetail(log){
   var detail = document.getElementById('guardian-log-detail');
   var content = document.getElementById('guardian-log-detail-content');
   var date = new Date(log.invoked_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
-  content.textContent = String.fromCodePoint(43065) + ' ' + date + '\n\n' + log.response_text;
+  var lines = [String.fromCodePoint(43065) + ' ' + date];
+  var typeTag = log.log_type === 'auto_invoke' || log.auto_invoked ? 'strip' : (log.log_type || 'summon');
+  lines.push(typeTag + (log.triggered_by ? ' · ' + log.triggered_by : ''));
+  if (log.theory_one_line) {
+    lines.push('');
+    lines.push('Theory: ' + String(log.theory_one_line).trim());
+  }
+  var quals = parseQualifiers(log.qualifiers);
+  if (quals.length) {
+    lines.push('Qualifiers: ' + quals.map(function (q) { return q.type || q; }).join(', '));
+  }
+  lines.push('');
+  lines.push(log.response_text || '');
+  content.textContent = lines.join('\n');
   detail.classList.add('open');
 }
 
