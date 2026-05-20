@@ -215,23 +215,31 @@ if (obj.kind === 'disc-dot' || obj.kind === 'sanctuary-presence') {
 
 #### B2.4 — M4: Two-step interaction
 
-- [ ] Add `abyssShowDiscTooltip(obj, tapX, tapY)` — title, type, optional `dna.arcDir`, **Enter ◈** button.
-- [ ] `enterBtn.onclick = function …` (single handler; **no** duplicate `addEventListener` per tap).
-- [ ] Enter → `abyssOpenSheet(obj)` (v0.21 keeps sheet; direct Lighthouse optional later).
-- [ ] Add `abyssShowSanctuaryTooltip` — name, Sanctuary label, optional date; **no Enter button**.
-- [ ] `abyssTouchEndCore`: `disc-dot` → disc tooltip; `sanctuary-presence` → sanctuary tooltip; guardian/cluster unchanged.
-- [ ] Tap canvas void / another node → hide `#abyss-tooltip`.
-- [ ] `abyssCloseSheet()` still on tooltip show (sheet not open until Enter).
+- [x] Add `abyssShowDiscTooltip(obj, tapX, tapY)` — title, type, optional `dna.arcDir`, **Enter ◈** button.
+- [x] `enterBtn.onclick` (single handler; no duplicate listeners).
+- [x] Enter → `abyssOpenSheet(obj)`.
+- [x] Add `abyssShowSanctuaryTooltip` — name, Sanctuary label, optional date; **no Enter button**.
+- [x] `abyssTouchEndCore`: `disc-dot` → disc tooltip; `sanctuary-presence` → sanctuary tooltip; guardian/cluster unchanged.
+- [x] Tap canvas void → `abyssHideTooltip()`.
+- [x] `abyssCloseSheet()` on tooltip show (sheet not open until Enter).
 
 #### B2.5 — Hit testing
 
-- [ ] Include `sanctuary-presence` in closest-dot loop (~6992) with same radius threshold.
+- [x] Include `sanctuary-presence` in closest-dot loop with same radius threshold.
+
+#### B2.5b — Edge-safe overlays (Kaja)
+
+- [x] `abyssPositionOverlayEl` — viewport coords, clamp inside `#view-abyss` (fixes canvas-local vs screen bug).
+- [x] Tooltips `position: fixed`; interactive class for Enter button.
+- [x] Sheet scroll `overflow-x: hidden`; title/excerpt word-wrap.
 
 #### B2.6 — Validation (Batch 2)
 
+- [x] `node --check app.js`
 - [ ] Sanctuary character appears, stiller, green; no threads to Soup.
 - [ ] Disc-dot tap shows tooltip; cosmos keeps animating; Enter opens sheet.
 - [ ] Guardian node tap still lightweight tooltip only.
+- [ ] Tooltip/sheet not clipped at left/right/top on edge dots.
 
 ---
 

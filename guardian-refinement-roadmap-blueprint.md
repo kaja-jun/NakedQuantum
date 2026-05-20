@@ -304,7 +304,7 @@ function divergenceNote(link, mapA, mapB) {
 **Implementation contract:** [`abyss-v021-blueprint.md`](abyss-v021-blueprint.md) — two batches (honest sky → Sanctuary + interaction).
 
 - [x] **AB v0.21 Batch 1** — M1/M1b settle, M2 DNA, M5 weather, AB1 label, Watcher threshold alignment
-- [ ] **AB v0.21 Batch 2** — M3 Sanctuary presence, M4 tooltip + Enter ◈
+- [x] **AB v0.21 Batch 2** — M3 Sanctuary presence, M4 tooltip + Enter ◈, edge-safe overlays
 - [ ] **AB2 — 3D cosmos / offline UMAP** — Deferred; laptop snapshot when Tauri (`lighthouse-cockpit-blueprint.md`). Vectors already in IDB; in-browser UMAP not required for v0.21.
 
 *Does not block Guardian G phases (shipped). Blocks marketing Abyss as a semantic “mind map” until Batch 1 lands.*
