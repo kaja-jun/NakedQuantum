@@ -64,7 +64,7 @@
 | Guardian G0–G5, X1 (divergence in Tier 2) | Shipped on main |
 | Guardian G6 (desktop cockpit) | Deferred → `lighthouse-cockpit-blueprint.md` |
 | Auto-invoke A1–A3, onboarding A2 | **Not shipped** (intentionally waiting) |
-| Abyss AB1–AB3 | Not shipped |
+| Abyss v0.21 (AB1, M1–M5, sheet Enter UX) | **Shipped** — see `abyss-v021-blueprint.md` |
 | `app.js` module split (ARCH) | Deferred |
 
 ---
@@ -207,7 +207,7 @@ Use this as the **default queue**; override only with explicit Kaja decision.
 | 2 | **A1 — Production thresholds** | Prevents strip spam before wider use | Centralize knobs: cooldown, `MIN_QUALIFIER_CONFIDENCE`, watcher threshold; keep dev override flag |
 | 3 | **A2 — Settings + onboarding** | Ethics + sovereignty | `nq_guardian_auto_invoke_enabled`; explain strip; master toggle |
 | 4 | **A3 — Qualifier consensus** | Reduces false invokes | 2+ qualifiers or one “strong” signal in `checkGuardianTrigger` |
-| 5 | **Abyss v0.21** | Active | See `abyss-v021-blueprint.md` — Batch 1 then Batch 2 |
+| 5 | **Abyss v0.21** | ✅ Shipped | Maintenance only unless AB2/3D vision returns |
 | 6 | **P1 cleanup** | Hygiene | `renderGuardianLogs` vars; blueprint X1 ticks |
 | 7 | **G6 + ARCH** | Laptop / Tauri | `lighthouse-cockpit-blueprint.md` |
 
@@ -261,7 +261,7 @@ WebAuthn bypass for VM testing: see `AGENTS.md`.
 | `abyss-v021-blueprint.md` | **Abyss** — honest sky (two batches) |
 | `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6) |
 | `AGENTS.md` | Agent runbook, dev server, lint |
-| `NQ blueprint.md` | Product-wide architecture |
+| `NQ blueprint.md` | **App blueprint v2** (May 2026) — product-wide architecture |
 | `Watcher implementation.md` | Watcher history/notes |
 
 ---
@@ -271,6 +271,7 @@ WebAuthn bypass for VM testing: see `AGENTS.md`.
 | Date | Author | Change |
 |------|--------|--------|
 | 2026-05-18 | Code review session | Initial checkpoint after PR #33 merge on main |
+| 2026-05-20 | Blueprint pass | `NQ blueprint.md` → v2; Abyss v0.21 marked shipped |
 
 ---
 
