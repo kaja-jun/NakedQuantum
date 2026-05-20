@@ -343,7 +343,8 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 | **P1 Pass 1** — term arcs + cognitive modes + Guardian UI | ✅ | #48 |
 | **P1 Pass 2** — per-field confidence + negation scope | ✅ | P1-c, P1-d |
 | **P1 Pass 3** — `soup_surface` + A1–A3 ethics | ✅ | P1-e, P1-f; Settings toggles |
-| Return detector | ⏳ | Phase 2-a |
+| **P2 Pass 1** — return + revisit + silent attractors + watcher_focus + prediction | ⏳ | This PR |
+| Return detector | ⏳ | Phase 2-a (in P2 PR) |
 
 ### §10.1 — Phase 0 gap checkpoint
 
@@ -360,6 +361,14 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 | **P1-1** | ✅ TERM ARCS tier in summon; performative/recursive/fugue qualifiers; Guardian **Witness to guardian** / **SUMMON GUARDIAN** |
 | **P1-2** | ✅ Per-field confidence in summon witness blocks (P1-c); negation scope 6-token + hedges (P1-d) |
 | **P1-3** | ✅ `soup_surface` mesh gravity boost; Settings auto-invoke + strict consensus (P1-e, P1-f) |
+
+### §10.3 — Phase 2 gap checkpoint
+
+| Pass | Verify |
+|------|--------|
+| **P2-1** | RETURN DETECTIONS + SILENT ATTRACTORS tiers in summon; `computeReturnDetections` |
+| **P2-2** | Daily `runDailyRevisitCheck` → `revisit_flag` strip; `prediction_tag` / `prediction_outcome` on summon + fast-map save |
+| **P2-3** | `watcher_focus` in directive; `getWatcherSimilarityThreshold()` on Watcher pass |
 
 ---
 
