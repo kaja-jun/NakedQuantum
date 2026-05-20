@@ -847,6 +847,36 @@ function initWorker(){
 const NQ_DEV_MODE = true;
 //const NQ_DEV_MODE = false;
 
+const GUARDIAN_LS_AUTO_INVOKE = 'nq_guardian_auto_invoke_enabled';
+const GUARDIAN_LS_STRICT_INVOKE = 'nq_guardian_strict_invoke';
+const SOUP_SURFACE_GRAVITY_BOOST = 40;
+const SOUP_SURFACE_DEFAULT_HOURS = 48;
+
+function isGuardianAutoInvokeEnabled() {
+  try {
+    var v = localStorage.getItem(GUARDIAN_LS_AUTO_INVOKE);
+    if (v === 'false') return false;
+  } catch (e) {}
+  return true;
+}
+
+function isGuardianStrictInvokeEnabled() {
+  try {
+    return localStorage.getItem(GUARDIAN_LS_STRICT_INVOKE) === 'true';
+  } catch (e) {}
+  return false;
+}
+
+function getGuardianTriggerOptions() {
+  if (NQ_DEV_MODE || !isGuardianStrictInvokeEnabled()) return {};
+  return {
+    strictProduction: true,
+    requireConsensus: true,
+    requireWatcherEcho: true,
+    minWatcherScore: 0.72
+  };
+}
+
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
 const W_SIMILARITY_THRESHOLD = NQ_DEV_MODE ? 0.50 : 0.73;
 const W_DECAY_ACTIVE_DAYS = 25;
@@ -2918,6 +2948,7 @@ async function _executeRenderTableView() {
     if(!e.target.closest('.nq-card')) void unfocusMesh();
   };
   runGravityDecay();
+  await refreshSoupSurfaceBoost();
     await renderBreadcrumb();
   // Remove old drop line -- renderBreadcrumb redraws it
   const oldDrop = document.getElementById('bc-drop-svg');
@@ -3056,7 +3087,7 @@ async function _executeRenderTableView() {
     const recentChronicles = allActive.filter(d => d.item_type === 'chronicle');
 
             const allMesh = [...recentDiscourses, ...recentSparks, ...recentChronicles];
-    allMesh.sort((a,b) => (b.is_favourite||0) - (a.is_favourite||0) || (b.gravity||0) - (a.gravity||0) || (b.updated_at||0) - (a.updated_at||0));
+    allMesh.sort(compareSoupMeshDiscourses);
     const mesh = document.getElementById('soup-mesh');
     for(const d of allMesh) {
       const card = await buildDiscourseCard(d);
@@ -3410,15 +3441,7 @@ async function unfocusMesh() {
 
   const createCard = document.getElementById('nq-create-card');
   const cards = Array.from(mesh.querySelectorAll('.nq-card:not(.nq-create-card)'));
-  cards.sort((a, b) => {
-    const aFav = parseInt(a.dataset.fav || 0);
-    const bFav = parseInt(b.dataset.fav || 0);
-    const aGrav = parseInt(a.dataset.gravity || 0);
-    const bGrav = parseInt(b.dataset.gravity || 0);
-    const aTime = parseInt(a.dataset.time || 0);
-    const bTime = parseInt(b.dataset.time || 0);
-    return (bFav - aFav) || (bGrav - aGrav) || (bTime - aTime);
-  });
+  cards.sort(compareSoupCardGravity);
   cards.forEach(card => mesh.appendChild(card));
   if(createCard) mesh.appendChild(createCard);
   finalizeSoupMeshCreateLast();
@@ -3807,6 +3830,35 @@ function openCreateMenu(card) {
   document.body.appendChild(menu);
 }
 
+function soupSurfaceBoostActiveFor(discourseId) {
+  if (!soupSurfaceBoost || !discourseId) return false;
+  return discourseId === soupSurfaceBoost.discourse_id && Date.now() < soupSurfaceBoost.expires_at;
+}
+
+function discourseEffectiveGravity(d) {
+  var g = (d && d.gravity) || 0;
+  if (!d || !d.id || !soupSurfaceBoostActiveFor(d.id)) return g;
+  return g + (soupSurfaceBoost.gravity_boost || SOUP_SURFACE_GRAVITY_BOOST);
+}
+
+function compareSoupMeshDiscourses(a, b) {
+  var fav = (b.is_favourite || 0) - (a.is_favourite || 0);
+  if (fav) return fav;
+  var grav = discourseEffectiveGravity(b) - discourseEffectiveGravity(a);
+  if (grav) return grav;
+  return (b.updated_at || 0) - (a.updated_at || 0);
+}
+
+function compareSoupCardGravity(a, b) {
+  var aGrav = parseInt(a.dataset.gravity || 0, 10);
+  var bGrav = parseInt(b.dataset.gravity || 0, 10);
+  var aFav = parseInt(a.dataset.fav || 0, 10);
+  var bFav = parseInt(b.dataset.fav || 0, 10);
+  var aTime = parseInt(a.dataset.time || 0, 10);
+  var bTime = parseInt(b.dataset.time || 0, 10);
+  return (bFav - aFav) || (bGrav - aGrav) || (bTime - aTime);
+}
+
 async function buildDiscourseCard(d){
   const date = new Date(d.updated_at||d.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric"});
   const preview = d.raw_text ? d.raw_text.replace(/\n+/g,' ').slice(0,120) : '';
@@ -3816,8 +3868,9 @@ async function buildDiscourseCard(d){
     card.dataset.id = d.id;
   card.dataset.folderId = d.folder_id || '';
   card.dataset.fav = d.is_favourite || 0;
-  card.dataset.gravity = d.gravity || 0;
+  card.dataset.gravity = discourseEffectiveGravity(d);
   card.dataset.time = d.updated_at || d.created_at || 0;
+  if (soupSurfaceBoostActiveFor(d.id)) card.classList.add('soup-surface-boost');
   if (typeof selectedItems !== 'undefined' && selectedItems.has(d.id)) card.classList.add('card-selected');
   card.innerHTML = `
     <div class="nq-card-head">
@@ -5082,9 +5135,9 @@ let fastMap = {
     await dbPut('guardian_summaries', fastMap);
     console.log(`◈ Sovereign Fast Map generated for ${discourseId}`);
 
-    if (!mapOpts.skipAutoInvite && checkGuardianTrigger) {
+    if (!mapOpts.skipAutoInvite && isGuardianAutoInvokeEnabled() && checkGuardianTrigger) {
       try {
-        const trig2 = checkGuardianTrigger(fastMap);
+        const trig2 = checkGuardianTrigger(fastMap, getGuardianTriggerOptions());
         if (trig2.shouldInvoke) {
           guardianLastInvokeQualifiers = trig2.qualifiers || [];
           try {
@@ -5840,6 +5893,8 @@ var NEURAL_CASCADE_DEPTH = 3;      // max hops per cascade
 var abyssWeather = 'neutral';
 /** Active guardian directive tint for Abyss disc-dots (refreshed on open + after strip). */
 var abyssActiveTint = null;
+/** Temporary Soup mesh gravity boost from latest soup_surface directive. */
+var soupSurfaceBoost = null;
    // multiple expanding rings per touch
 
 function getAbyssLinkThreshold() {
@@ -8509,6 +8564,28 @@ function divergenceNote(link, mapA, mapB) {
   return null;
 }
 
+function witnessConfidenceSuffix(obj) {
+  if (!obj || typeof obj.confidence !== 'number') return '';
+  if (obj.confidence < 0.45) return ' (tentative; conf ' + obj.confidence + ')';
+  if (obj.confidence < 0.55) return ' (low conf ' + obj.confidence + ')';
+  return '';
+}
+
+function countTentativeFastMapFields(fastMap) {
+  if (!fastMap) return 0;
+  var fields = [
+    fastMap.emotional_arc, fastMap.pacing, fastMap.rigidity, fastMap.questioning,
+    fastMap.silence_weight, fastMap.entry_exit_delta, fastMap.incompleteness,
+    fastMap.depersonalisation, fastMap.performative_mode, fastMap.recursive_mode, fastMap.fugue_mode
+  ];
+  var n = 0;
+  for (var i = 0; i < fields.length; i++) {
+    if (fields[i] && typeof fields[i].confidence === 'number' && fields[i].confidence < 0.45) n++;
+  }
+  if (fastMap.signature && fastMap.signature.paradox && fastMap.signature.paradox.confidence < 0.45) n++;
+  return n;
+}
+
 function formatDiscourseWitnessBlock(d, fastMap, mapNum) {
   var wordCount = (d.raw_text || '').trim().split(/\s+/).filter(Boolean).length;
   var date = new Date(d.updated_at || d.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -8528,15 +8605,21 @@ function formatDiscourseWitnessBlock(d, fastMap, mapNum) {
     block += 'Key terms: ' + fastMap.key_terms.slice(0, 5).map(function (t) { return t.term + '(' + t.count + ')'; }).join(', ') + '\n';
   }
   if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
-    block += 'Emotional arc: ' + fastMap.emotional_arc.direction + '\n';
+    block += 'Emotional arc: ' + fastMap.emotional_arc.direction + witnessConfidenceSuffix(fastMap.emotional_arc) + '\n';
   }
-  if (fastMap.pacing) block += 'Pacing: ' + fastMap.pacing.label + ' (avg ' + fastMap.pacing.avg_words_per_sentence + ' words/sentence)\n';
-  if (fastMap.rigidity) block += 'Cognitive state: ' + fastMap.rigidity.label + ' (' + fastMap.rigidity.absolute_count + ' absolutes)\n';
-  if (fastMap.questioning) block += 'Questioning: ' + fastMap.questioning.label + ' (' + fastMap.questioning.question_count + ' questions)\n';
+  if (fastMap.pacing) {
+    block += 'Pacing: ' + fastMap.pacing.label + ' (avg ' + fastMap.pacing.avg_words_per_sentence + ' words/sentence)' + witnessConfidenceSuffix(fastMap.pacing) + '\n';
+  }
+  if (fastMap.rigidity) {
+    block += 'Cognitive state: ' + fastMap.rigidity.label + ' (' + fastMap.rigidity.absolute_count + ' absolutes)' + witnessConfidenceSuffix(fastMap.rigidity) + '\n';
+  }
+  if (fastMap.questioning) {
+    block += 'Questioning: ' + fastMap.questioning.label + ' (' + fastMap.questioning.question_count + ' questions)' + witnessConfidenceSuffix(fastMap.questioning) + '\n';
+  }
   if (fastMap.signature) {
     block += 'Writing signature: ' + fastMap.signature.summary + '\n';
     if (fastMap.signature.paradox && fastMap.signature.paradox.pairs && fastMap.signature.paradox.pairs.length) {
-      block += 'Paradox pairs: ' + fastMap.signature.paradox.pairs.join(' | ') + '\n';
+      block += 'Paradox pairs: ' + fastMap.signature.paradox.pairs.join(' | ') + witnessConfidenceSuffix(fastMap.signature.paradox) + '\n';
     }
   }
   if (fastMap.extractive_summary) block += 'Excerpt: "' + fastMap.extractive_summary.slice(0, 300) + '"\n';
@@ -8549,20 +8632,28 @@ function formatDiscourseWitnessBlock(d, fastMap, mapNum) {
     }
   }
   if (fastMap.pronoun_trajectory) {
-    block += 'Pronoun trajectory: ' + fastMap.pronoun_trajectory.label + ' (dominant: ' + fastMap.pronoun_trajectory.dominant + ')\n';
+    block += 'Pronoun trajectory: ' + fastMap.pronoun_trajectory.label + ' (dominant: ' + fastMap.pronoun_trajectory.dominant + ')' + witnessConfidenceSuffix(fastMap.pronoun_trajectory) + '\n';
   }
-  if (fastMap.silence_weight) block += 'Silence weight: ' + fastMap.silence_weight.label + ' (' + fastMap.silence_weight.count + ' markers)\n';
-  if (fastMap.entry_exit_delta) block += 'Entry/exit register: ' + fastMap.entry_exit_delta.delta + '\n';
-  if (fastMap.incompleteness) block += 'Ending: ' + fastMap.incompleteness.label + '\n';
-  if (fastMap.depersonalisation) block += 'Perspective: ' + fastMap.depersonalisation.label + '\n';
+  if (fastMap.silence_weight) {
+    block += 'Silence weight: ' + fastMap.silence_weight.label + ' (' + fastMap.silence_weight.count + ' markers)' + witnessConfidenceSuffix(fastMap.silence_weight) + '\n';
+  }
+  if (fastMap.entry_exit_delta) {
+    block += 'Entry/exit register: ' + fastMap.entry_exit_delta.delta + witnessConfidenceSuffix(fastMap.entry_exit_delta) + '\n';
+  }
+  if (fastMap.incompleteness) block += 'Ending: ' + fastMap.incompleteness.label + witnessConfidenceSuffix(fastMap.incompleteness) + '\n';
+  if (fastMap.depersonalisation) block += 'Perspective: ' + fastMap.depersonalisation.label + witnessConfidenceSuffix(fastMap.depersonalisation) + '\n';
   if (fastMap.performative_mode && fastMap.performative_mode.label === 'Performative') {
-    block += 'Mode: performative (' + fastMap.performative_mode.confidence + ')\n';
+    block += 'Mode: performative (' + fastMap.performative_mode.confidence + ')' + witnessConfidenceSuffix(fastMap.performative_mode) + '\n';
   }
   if (fastMap.recursive_mode && fastMap.recursive_mode.label === 'Recursive') {
-    block += 'Mode: recursive (' + fastMap.recursive_mode.confidence + ')\n';
+    block += 'Mode: recursive (' + fastMap.recursive_mode.confidence + ')' + witnessConfidenceSuffix(fastMap.recursive_mode) + '\n';
   }
   if (fastMap.fugue_mode && fastMap.fugue_mode.label === 'Fugue') {
-    block += 'Mode: fugue (' + fastMap.fugue_mode.confidence + ')\n';
+    block += 'Mode: fugue (' + fastMap.fugue_mode.confidence + ')' + witnessConfidenceSuffix(fastMap.fugue_mode) + '\n';
+  }
+  var tentativeN = countTentativeFastMapFields(fastMap);
+  if (tentativeN >= 3) {
+    block += '[Cartographer: ' + tentativeN + ' fields below confidence — weight stable signals.]\n';
   }
   block += '\n';
   return block;
@@ -8822,6 +8913,7 @@ function attachGuardianInvokeStripHandlers() {
 }
 
 async function checkAndShowGuardianInvoke() {
+  if (!NQ_DEV_MODE && !isGuardianAutoInvokeEnabled()) return;
   if (NQ_DEV_MODE) {
     if (currentView !== 'soup') return;
     if (guardianInvokeActive) return;
@@ -8887,7 +8979,7 @@ guardianInvokeActive = true;
 
   var trig;
   try {
-    trig = checkGuardianTrigger(fastMap);
+    trig = checkGuardianTrigger(fastMap, getGuardianTriggerOptions());
   } catch (e6) {
     return;
   }
@@ -8956,9 +9048,11 @@ guardianInvokeActive = true;
 
   attachGuardianInvokeStripHandlers();
 
-  var directiveRoot = workerDirective || deriveAbyssTintDirective(fastMap, triggeredBy);
+  var directiveRoot = buildGuardianDirectiveRoot(workerDirective, fastMap, triggeredBy, pending.discourseId);
   void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced', pending.discourseId, directiveRoot);
   await refreshAbyssActiveTint();
+  await refreshSoupSurfaceBoost();
+  if (currentMode === 'soup' && currentView === 'soup') void renderTableView();
 }
 
 async function openGuardianView(entryOpts){
@@ -9082,6 +9176,10 @@ function openGuardianSettingsModal() {
   });
 
   updateCartoButtons();
+  var autoCb = document.getElementById('guardian-setting-auto-invoke');
+  var strictCb = document.getElementById('guardian-setting-strict-invoke');
+  if (autoCb) autoCb.checked = isGuardianAutoInvokeEnabled();
+  if (strictCb) strictCb.checked = isGuardianStrictInvokeEnabled();
   document.getElementById('guardian-settings-modal').classList.add('visible');
   document.getElementById('cosm-overlay').classList.add('active');
 }
@@ -9107,6 +9205,12 @@ function applyGuardianSettings() {
     const label = document.getElementById('mapping-toggle-label');
     if(label) label.textContent = pendingMappingMode === 'sovereign' ? 'Sovereign' : 'Deep';
   }
+  var autoCb = document.getElementById('guardian-setting-auto-invoke');
+  var strictCb = document.getElementById('guardian-setting-strict-invoke');
+  try {
+    if (autoCb) localStorage.setItem(GUARDIAN_LS_AUTO_INVOKE, autoCb.checked ? 'true' : 'false');
+    if (strictCb) localStorage.setItem(GUARDIAN_LS_STRICT_INVOKE, strictCb.checked ? 'true' : 'false');
+  } catch (eLs) {}
   closeOverlay();
 }
 
@@ -9293,6 +9397,88 @@ function deriveAbyssTintDirective(fastMap, triggeredBy) {
       applied_at: Date.now()
     }
   };
+}
+
+function deriveSoupSurfaceDirective(discourseId) {
+  if (!discourseId) return null;
+  return {
+    soup_surface: {
+      discourse_id: discourseId,
+      gravity_boost: SOUP_SURFACE_GRAVITY_BOOST,
+      duration_hours: SOUP_SURFACE_DEFAULT_HOURS,
+      applied_at: Date.now()
+    }
+  };
+}
+
+function buildGuardianDirectiveRoot(workerDirective, fastMap, triggeredBy, discourseId) {
+  var root = {};
+  if (workerDirective && typeof workerDirective === 'object') {
+    if (workerDirective.abyss_tint) root.abyss_tint = workerDirective.abyss_tint;
+    if (workerDirective.soup_surface) root.soup_surface = workerDirective.soup_surface;
+  }
+  if (!root.abyss_tint) {
+    var derivedTint = deriveAbyssTintDirective(fastMap, triggeredBy);
+    if (derivedTint && derivedTint.abyss_tint) root.abyss_tint = derivedTint.abyss_tint;
+  }
+  if (!root.soup_surface && discourseId) {
+    var derivedSoup = deriveSoupSurfaceDirective(discourseId);
+    if (derivedSoup && derivedSoup.soup_surface) root.soup_surface = derivedSoup.soup_surface;
+  }
+  if (!root.abyss_tint && !root.soup_surface) return null;
+  return root;
+}
+
+function normalizeSoupSurfaceDirective(directiveRoot) {
+  if (!directiveRoot || !directiveRoot.soup_surface) return null;
+  var s = directiveRoot.soup_surface;
+  var id = s.discourse_id != null ? String(s.discourse_id).trim() : '';
+  if (!id) return null;
+  var appliedAt = typeof s.applied_at === 'number' ? s.applied_at : Date.now();
+  var hours = typeof s.duration_hours === 'number' ? s.duration_hours : SOUP_SURFACE_DEFAULT_HOURS;
+  return {
+    discourse_id: id,
+    gravity_boost: typeof s.gravity_boost === 'number' ? s.gravity_boost : SOUP_SURFACE_GRAVITY_BOOST,
+    applied_at: appliedAt,
+    expires_at: appliedAt + hours * 3600000
+  };
+}
+
+function persistSoupSurfaceBoostLocal(boost) {
+  try {
+    if (!boost) localStorage.removeItem('nq_soup_surface_boost');
+    else localStorage.setItem('nq_soup_surface_boost', JSON.stringify(boost));
+  } catch (e) {}
+}
+
+async function refreshSoupSurfaceBoost() {
+  soupSurfaceBoost = null;
+  try {
+    var cached = localStorage.getItem('nq_soup_surface_boost');
+    if (cached) {
+      var parsed = JSON.parse(cached);
+      if (parsed && parsed.discourse_id && Date.now() < parsed.expires_at) {
+        soupSurfaceBoost = parsed;
+      }
+    }
+  } catch (eCache) {}
+  try {
+    var logs = await dbGetAll('guardian_logs');
+    var sorted = logs.slice().sort(function (a, b) { return (b.invoked_at || 0) - (a.invoked_at || 0); });
+    var now = Date.now();
+    for (var i = 0; i < sorted.length; i++) {
+      var dir = parseGuardianDirectiveRaw(sorted[i].directive);
+      var surf = normalizeSoupSurfaceDirective(dir);
+      if (surf && now < surf.expires_at) {
+        soupSurfaceBoost = surf;
+        persistSoupSurfaceBoostLocal(surf);
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('[Soup] soup_surface boost load:', e);
+  }
+  persistSoupSurfaceBoostLocal(null);
 }
 
 function abyssDotMatchesActiveTint(dna) {

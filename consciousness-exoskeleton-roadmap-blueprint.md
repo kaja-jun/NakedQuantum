@@ -185,7 +185,7 @@ Pass 1 → Pass 2 → Pass 3 → tick §10. Worker deploy is **your** step after
 
 ### Phase 1 — Signal honesty + second directive (2–4 weeks)
 
-**Passes:** P1 Pass 1 (a+b+UI) · P1 Pass 2 (c+d) · P1 Pass 3 (e+f) — see §10.2
+**One pass per phase:** Phase 1 shipped in #48 + completion PR (P1-c–f). Phase 2+ = one merge per phase. See §10.2.
 
 | ID | Work | Done when |
 |----|------|-----------|
@@ -340,7 +340,9 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 | **P0 Pass 1** — ledger v2 + reckoning | ✅ | After blocks use `created_at`; §8 preamble |
 | **P0 Pass 2** — `abyss_tint` | ✅ | `directive` column; tint on `abyssDraw`; client derive + worker JSON |
 | **P0 Pass 3** — strip ledger | ✅ | `witnessLedgerBlock` in worker payload — **deploy worker when able** |
-| **P1 Pass 1** — term arcs + cognitive modes + Guardian UI | ⏳ | This PR |
+| **P1 Pass 1** — term arcs + cognitive modes + Guardian UI | ✅ | #48 |
+| **P1 Pass 2** — per-field confidence + negation scope | ✅ | P1-c, P1-d |
+| **P1 Pass 3** — `soup_surface` + A1–A3 ethics | ✅ | P1-e, P1-f; Settings toggles |
 | Return detector | ⏳ | Phase 2-a |
 
 ### §10.1 — Phase 0 gap checkpoint
@@ -355,9 +357,9 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 
 | Pass | Verify |
 |------|--------|
-| **P1-1** | TERM ARCS tier in summon; performative/recursive/fugue qualifiers; Guardian **Witness to guardian** / **SUMMON GUARDIAN** |
-| **P1-2** | Per-field confidence on fast map (P1-c); negation hardening (P1-d) |
-| **P1-3** | `soup_surface` directive; A1–A3 ethics (P1-e, P1-f) |
+| **P1-1** | ✅ TERM ARCS tier in summon; performative/recursive/fugue qualifiers; Guardian **Witness to guardian** / **SUMMON GUARDIAN** |
+| **P1-2** | ✅ Per-field confidence in summon witness blocks (P1-c); negation scope 6-token + hedges (P1-d) |
+| **P1-3** | ✅ `soup_surface` mesh gravity boost; Settings auto-invoke + strict consensus (P1-e, P1-f) |
 
 ---
 

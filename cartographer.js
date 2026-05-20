@@ -146,7 +146,13 @@ const NEGATORS = new Set([
   'not', 'never', 'no', 'nor', 'neither', 'none', 'without', 'hardly', 'barely',
   'cannot', 'cant', 'dont', 'doesnt', 'didnt', 'wont', 'wouldnt', 'couldnt',
   'shouldnt', 'isnt', 'arent', 'wasnt', 'werent', 'hasnt', 'havent', 'hadnt',
-  'mustnt', 'neednt', 'aint'
+  'mustnt', 'neednt', 'aint', 'nothing', 'nobody', 'nowhere'
+]);
+
+/** Clause hedges that often flip polarity for the following phrase (P1-d). */
+const NEGATION_SCOPE_MARKERS = new Set([
+  'but', 'though', 'although', 'yet', 'unless', 'except', 'rather', 'instead',
+  'seldom', 'rarely', 'scarcely'
 ]);
 
 function buildLexiconWords() {
@@ -213,8 +219,11 @@ function normalizeToken(raw) {
 }
 
 function isNegated(words, index) {
-  for (let k = Math.max(0, index - 2); k < index; k++) {
+  const start = Math.max(0, index - 6);
+  for (let k = start; k < index; k++) {
     if (NEGATORS.has(words[k])) return true;
+    if (NEGATION_SCOPE_MARKERS.has(words[k])) return true;
+    if (words[k] === 'no' && k + 1 < index && words[k + 1] === 'longer') return true;
   }
   return false;
 }
@@ -1007,9 +1016,56 @@ last_trigger_type: 'nq_guardian_last_trigger_type'
 };
 
 const GUARDIAN_DEFAULT_COOLDOWN_MS = 6 * 60 * 1000;
+const GUARDIAN_PRODUCTION_COOLDOWN_MS = 72 * 60 * 60 * 1000;
 const GUARDIAN_POST_ATTEMPT_MS = 2 * 60 * 1000;
 const GUARDIAN_POST_USER_SESSION_MS = 90 * 1000;
 const GUARDIAN_MIN_WORDS = 35;
+const GUARDIAN_HIGH_CONFIDENCE = 0.55;
+const GUARDIAN_STRICT_WATCHER_MIN = 0.72;
+
+function guardianWatcherEchoScore(fastMap, minScore) {
+  if (!fastMap || !fastMap.watcher) return 0;
+  var floor = typeof minScore === 'number' ? minScore : GUARDIAN_STRICT_WATCHER_MIN;
+  var best = 0;
+  var sim = fastMap.watcher.top_similar;
+  if (sim && sim.length) {
+    for (var i = 0; i < sim.length; i++) {
+      if (sim[i].score > best) best = sim[i].score;
+    }
+  }
+  var con = fastMap.watcher.top_contradictory;
+  if (con && con.length) {
+    for (var j = 0; j < con.length; j++) {
+      if (con[j].score > best) best = con[j].score;
+    }
+  }
+  return best >= floor ? best : 0;
+}
+
+function isStrongGuardianQualifier(q) {
+  if (!q || !q.type) return false;
+  if (q.type === 'paradox' && (q.count || 0) >= 3 && (q.confidence || 0) >= 0.5) return true;
+  if (q.type === 'orbit' && q.orbiting && q.orbiting.some(function (o) { return (o.count || 0) >= 5; }) && (q.confidence || 0) >= 0.48) return true;
+  if (q.type === 'silence' && (q.ratio || 0) >= 0.18 && (q.confidence || 0) >= 0.5) return true;
+  if (q.type === 'performative' && (q.confidence || 0) >= 0.5) return true;
+  if (q.type === 'recursive' && (q.confidence || 0) >= 0.5) return true;
+  if (q.type === 'fugue' && (q.confidence || 0) >= 0.45) return true;
+  if (q.type === 'inversion_loop' && (q.confidence || 0) >= 0.52) return true;
+  if (q.type === 'escalating_arc' && (q.confidence || 0) >= 0.52) return true;
+  return false;
+}
+
+function guardianMeetsConsensus(qualifiers, fastMap, opts) {
+  if (!qualifiers || !qualifiers.length) return false;
+  var hi = qualifiers.filter(function (q) { return (q.confidence || 0) >= GUARDIAN_HIGH_CONFIDENCE; });
+  var strong = qualifiers.some(isStrongGuardianQualifier);
+  var consensus = hi.length >= 2 || strong;
+  if (!consensus) return false;
+  if (opts && opts.requireWatcherEcho) {
+    return guardianWatcherEchoScore(fastMap, opts.minWatcherScore) > 0 || strong;
+  }
+  return true;
+}
 
 function parseGuardianStoredMs(raw) {
 if (raw == null) return null;
@@ -1118,7 +1174,7 @@ return q;
   */
 export function checkGuardianTrigger(fastMapOrText, options) {
 const opts = options || {};
-var cooldownMs = GUARDIAN_DEFAULT_COOLDOWN_MS;
+var cooldownMs = opts.strictProduction ? GUARDIAN_PRODUCTION_COOLDOWN_MS : GUARDIAN_DEFAULT_COOLDOWN_MS;
 if (typeof opts.cooldownMs === 'number' && opts.cooldownMs >= 0) cooldownMs = opts.cooldownMs;
 var minWords = GUARDIAN_MIN_WORDS;
 if (typeof opts.minWords === 'number' && opts.minWords >= 0) minWords = opts.minWords;
@@ -1248,6 +1304,21 @@ meta: { dismissed_count: dismissed }
 }
 
 var shouldInvoke = qualifiers.length > 0;
+if (shouldInvoke && opts.requireConsensus && !guardianMeetsConsensus(qualifiers, fastMap, opts)) {
+  return {
+    shouldInvoke: false,
+    reason: 'consensus_not_met',
+    qualifiers: qualifiers,
+    primaryQualifier: null,
+    fastMap: fastMap,
+    clocks: clocks,
+    meta: {
+      word_count: fastMap.word_count,
+      watcher_echo: guardianWatcherEchoScore(fastMap, opts.minWatcherScore),
+      requireConsensus: true
+    }
+  };
+}
 var primaryQualifier = shouldInvoke && qualifiers[0] ? qualifiers[0].type : null;
 
 if (shouldInvoke && clocks.last_trigger_type) {
