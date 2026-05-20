@@ -967,7 +967,7 @@ button {
 .abyss-view canvas { display: block; }
 /* ABYSS TOOLTIP -- lightweight label for guardian-node, cluster-dot */
 #abyss-tooltip {
-  position: absolute;
+  position: fixed;
   display: none;
   background: rgba(5, 5, 5, 0.92);
   border: 1px solid var(--border);
@@ -976,10 +976,16 @@ button {
   padding: 8px 12px;
   border-radius: 8px;
   z-index: 2000;
-  max-width: 220px;
+  max-width: min(260px, calc(100vw - 24px));
+  box-sizing: border-box;
   pointer-events: none;
   box-shadow: 0 4px 20px rgba(0,0,0,0.8);
   transition: opacity 0.15s ease;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+#abyss-tooltip.abyss-tooltip--interactive {
+  pointer-events: auto;
 }
 
 /* ABYSS BOTTOM SHEET -- rich panel for disc-dot, thread-sim, thread-contra */
@@ -988,13 +994,16 @@ button {
   bottom: 0;
   left: 0;
   right: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: rgba(6, 6, 10, 0.97);
   border-top: 1px solid #2a2a2a;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   z-index: 2100;
   border-radius: 18px 18px 0 0;
-  padding: 0 0 40px;
+  padding: 0 0 max(40px, env(safe-area-inset-bottom, 0px));
   transform: translateY(100%);
   transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.34s;
   max-height: 70vh;
@@ -1002,6 +1011,7 @@ button {
   flex-direction: column;
   pointer-events: none;
   visibility: hidden;
+  overflow: hidden;
 }
 #abyss-sheet.open {
   transform: translateY(0);
@@ -1020,8 +1030,11 @@ button {
 #abyss-sheet-scroll {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   padding: 16px 20px 20px;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 .abyss-sheet-type {
   font-size: 8px;
@@ -1041,6 +1054,8 @@ button {
   color: var(--text);
   line-height: 1.35;
   margin-bottom: 6px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .abyss-sheet-date {
   font-size: 9px;
@@ -1057,6 +1072,8 @@ button {
   font-style: italic;
   margin-bottom: 16px;
   opacity: 0.8;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .abyss-sheet-arc {
   font-size: 10px;

@@ -6015,13 +6015,17 @@ async function abyssSettle(iterations, strongLinks) {
   for (var oi = 0; oi < discDots.length; oi++) {
     var od = discDots[oi];
     if (vectors[od.id]) continue;
-    var odx = od.x - 0.5;
-    var ody = od.y - 0.5;
-    var olen = Math.sqrt(odx * odx + ody * ody) + 0.001;
-    var rad = 0.35 + (abyssHash(od.id) % 150) / 1000;
-    od.x = Math.min(0.90, Math.max(0.10, 0.5 + (odx / olen) * rad));
-    od.y = Math.min(0.90, Math.max(0.10, 0.5 + (ody / olen) * rad));
+    abyssBiasPresenceToRim(od);
   }
+}
+
+function abyssBiasPresenceToRim(obj) {
+  var odx = obj.x - 0.5;
+  var ody = obj.y - 0.5;
+  var olen = Math.sqrt(odx * odx + ody * ody) + 0.001;
+  var rad = 0.35 + (abyssHash(String(obj.id) + 'rim') % 150) / 1000;
+  obj.x = Math.min(0.90, Math.max(0.10, 0.5 + (odx / olen) * rad));
+  obj.y = Math.min(0.90, Math.max(0.10, 0.5 + (ody / olen) * rad));
 }
    
 var ABYSS_EMERGE = {
@@ -6199,6 +6203,37 @@ async function buildAbyssObjects() {
     console.warn('[Abyss] guardian / summaries layer:', extErr && extErr.message ? extErr.message : extErr);
   }
 
+  try {
+    var chars = await dbGetAll('characters');
+    if (!Array.isArray(chars)) chars = [];
+    var activeChars = chars.filter(function (c) {
+      return !c.is_deleted && !c.isDeleted;
+    });
+    for (var ci = 0; ci < activeChars.length; ci++) {
+      var ch = activeChars[ci];
+      var chHash = abyssHash(ch.id + 'sanctuary');
+      var chX = 0.08 + ((chHash & 0xFFF) / 0xFFF) * 0.84;
+      var chY = 0.08 + (((chHash >> 12) & 0xFFF) / 0xFFF) * 0.84;
+      var chAge = abyssAge(ch.updated_at || ch.created_at || 0);
+      var sp = {
+        kind: 'sanctuary-presence',
+        id: ch.id,
+        name: ch.name || 'Presence',
+        x: chX,
+        y: chY,
+        age: chAge,
+        vx: 0,
+        vy: 0,
+        brownianScale: 0.012,
+        emergeAt: ABYSS_EMERGE.dots
+      };
+      abyssBiasPresenceToRim(sp);
+      abyssObjects.push(sp);
+    }
+  } catch (sanctErr) {
+    console.warn('[Abyss] Sanctuary layer:', sanctErr && sanctErr.message ? sanctErr.message : sanctErr);
+  }
+
   for (var dpi = 0; dpi < abyssObjects.length; dpi++) {
     if (abyssObjects[dpi].kind === 'disc-dot') {
       abyssObjects[dpi].dna = buildAbyssDna(summariesMap.get(abyssObjects[dpi].id));
@@ -6310,20 +6345,23 @@ function abyssUpdate(elapsed) {
 
   for (var i = 0; i < abyssObjects.length; i++) {
     var obj = abyssObjects[i];
-    if (obj.kind !== 'disc-dot') continue;   // only dots move for now
+    if (obj.kind !== 'disc-dot' && obj.kind !== 'sanctuary-presence') continue;
 
-    var driftScale = (obj.dna && obj.dna.driftScale) ? obj.dna.driftScale : 0.04;
+    var driftScale = 0.04;
+    if (obj.kind === 'sanctuary-presence') {
+      driftScale = obj.brownianScale || 0.012;
+    } else {
+      driftScale = (obj.dna && obj.dna.driftScale) ? obj.dna.driftScale : 0.04;
+    }
     var brownX = (Math.random() - 0.5) * driftScale;
     var brownY = (Math.random() - 0.5) * driftScale;
     obj.vx = (obj.vx || 0) + brownX;
     obj.vy = (obj.vy || 0) + brownY;
 
-    // Dampening
     obj.vx *= 0.985;
     obj.vy *= 0.985;
 
-    // Touch force (radial, falloff 1/d²)
-    if (forceFromTouch.x) {
+    if (obj.kind === 'disc-dot' && forceFromTouch.x) {
       var dx = (obj.x * abyssW) - forceFromTouch.x;
       var dy = (obj.y * abyssH) - forceFromTouch.y;
       var dist = Math.sqrt(dx * dx + dy * dy) + 1; // avoid div 0
@@ -6624,6 +6662,29 @@ function abyssDraw(elapsed) {
         abyssCtx.stroke();
       }
 
+    } else if (obj.kind === 'sanctuary-presence') {
+      var sAlpha = emergeT * (0.08 + obj.age * 0.28);
+      abyssCtx.beginPath();
+      abyssCtx.arc(cx, cy, 1.2, 0, Math.PI * 2);
+      abyssCtx.fillStyle = 'rgba(78,200,138,' + sAlpha + ')';
+      abyssCtx.fill();
+      var sPulse = 0.5 + Math.sin(performance.now() * 0.0003 + obj.x * 6) * 0.5;
+      var sRingAlpha = sAlpha * 0.3 * sPulse;
+      if (sRingAlpha > 0.01) {
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 4 + sPulse * 2, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(78,200,138,' + sRingAlpha + ')';
+        abyssCtx.lineWidth = 0.4;
+        abyssCtx.stroke();
+      }
+      if (abyssSelectedNode && abyssSelectedNode.id === obj.id) {
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(78,200,138,0.35)';
+        abyssCtx.lineWidth = 0.8;
+        abyssCtx.stroke();
+      }
+
     } else if (obj.kind === 'cluster-dot') {
       var clAlpha = emergeT * 0.35;
       if (clAlpha < 0.02) continue;
@@ -6812,16 +6873,88 @@ function abyssDraw(elapsed) {
 // ── ABYSS INTERACTION ────────────────────────────────────────────────────────
 
 var abyssSelectedNode = null;
+var _abyssTooltipDiscTarget = null;
+
+function abyssHideTooltip() {
+  var tt = document.getElementById('abyss-tooltip');
+  if (!tt) return;
+  tt.style.display = 'none';
+  tt.className = '';
+  _abyssTooltipDiscTarget = null;
+}
+
+function abyssGetViewAbyssRect() {
+  var view = document.getElementById('view-abyss');
+  if (view) return view.getBoundingClientRect();
+  return {
+    left: 0,
+    top: 0,
+    right: window.innerWidth,
+    bottom: window.innerHeight,
+    width: window.innerWidth,
+    height: window.innerHeight
+  };
+}
+
+/** Position fixed/absolute overlay in viewport coords; clamp inside #view-abyss. */
+function abyssPositionOverlayEl(el, clientX, clientY, opts) {
+  opts = opts || {};
+  var margin = typeof opts.margin === 'number' ? opts.margin : 12;
+  var edgePad = typeof opts.edgePad === 'number' ? opts.edgePad : 10;
+  var navSafe = typeof opts.navSafe === 'number' ? opts.navSafe : 54;
+  var offset = typeof opts.offset === 'number' ? opts.offset : 14;
+  var preferBelow = !!opts.preferBelow;
+
+  var viewRect = abyssGetViewAbyssRect();
+  el.style.display = 'block';
+  el.style.maxWidth = Math.min(260, Math.max(160, viewRect.width - edgePad * 2)) + 'px';
+  el.style.visibility = 'hidden';
+  var w = el.offsetWidth;
+  var h = el.offsetHeight;
+  el.style.visibility = '';
+
+  var minX = viewRect.left + edgePad;
+  var maxX = viewRect.right - edgePad - w;
+  var minY = viewRect.top + navSafe;
+  var maxY = viewRect.bottom - edgePad - h;
+
+  var posX = clientX + offset;
+  var posY = preferBelow ? clientY + offset : clientY - h - offset;
+
+  if (posX + w > viewRect.right - edgePad) posX = clientX - w - offset;
+  if (posY < minY) posY = clientY + offset;
+  if (posY + h > viewRect.bottom - edgePad) posY = viewRect.bottom - edgePad - h;
+
+  if (maxX < minX) posX = viewRect.left + (viewRect.width - w) / 2;
+  else {
+    if (posX < minX) posX = minX;
+    if (posX > maxX) posX = maxX;
+  }
+  if (maxY < minY) posY = viewRect.top + navSafe;
+  else {
+    if (posY < minY) posY = minY;
+    if (posY > maxY) posY = maxY;
+  }
+
+  el.style.left = Math.round(posX) + 'px';
+  el.style.top = Math.round(posY) + 'px';
+}
+
+function abyssCanvasPointToClient(canvasX, canvasY) {
+  var rect = abyssGetRect();
+  return { x: rect.left + canvasX, y: rect.top + canvasY };
+}
 
 function abyssCloseSheet() {
   var sheet = document.getElementById('abyss-sheet');
   if (sheet) sheet.classList.remove('open');
 }
 
-function abyssShowTooltip(obj, tapX, tapY) {
+function abyssShowTooltip(obj, canvasTapX, canvasTapY) {
   abyssCloseSheet();
   var tt = document.getElementById('abyss-tooltip');
   if (!tt) return;
+  tt.className = '';
   var content = '';
 
   if (obj.kind === 'guardian-node') {
@@ -6843,13 +6976,70 @@ function abyssShowTooltip(obj, tapX, tapY) {
   }
 
   tt.innerHTML = content;
-  tt.style.display = 'block';
-  var w = tt.offsetWidth, h = tt.offsetHeight;
-  var posX = tapX + 16, posY = tapY - h - 16;
-  if (posX + w > window.innerWidth - 16) posX = tapX - w - 16;
-  if (posY < 70) posY = tapY + 16;
-  tt.style.left = posX + 'px';
-  tt.style.top  = posY + 'px';
+  var client = abyssCanvasPointToClient(canvasTapX, canvasTapY);
+  abyssPositionOverlayEl(tt, client.x, client.y);
+}
+
+function abyssShowDiscTooltip(obj, canvasTapX, canvasTapY) {
+  abyssCloseSheet();
+  _abyssTooltipDiscTarget = obj;
+  var tt = document.getElementById('abyss-tooltip');
+  if (!tt) return;
+  tt.className = 'abyss-tooltip--interactive';
+
+  var arcLabel = '';
+  if (obj.dna && obj.dna.arcDir && obj.dna.arcDir !== 'flat') {
+    arcLabel = '<div style="color:var(--muted);font-size:9px;margin-top:3px;opacity:0.7;">' + escHtml(obj.dna.arcDir) + '</div>';
+  }
+
+  tt.innerHTML =
+    '<div style="color:var(--accent-dim);font-size:8px;letter-spacing:2px;font-weight:900;text-transform:uppercase;margin-bottom:4px;">' +
+      escHtml(obj.typeLabel || 'discourse') +
+    '</div>' +
+    '<div style="color:var(--text);font-size:12px;font-family:Georgia,serif;margin-bottom:2px;line-height:1.35;word-break:break-word;">' +
+      escHtml(obj.title || 'Untitled') +
+    '</div>' +
+    arcLabel +
+    '<button type="button" id="abyss-enter-btn" style="margin-top:8px;background:none;border:1px solid var(--accent-dim);color:var(--accent);font-size:9px;font-weight:900;letter-spacing:1px;padding:4px 10px;border-radius:6px;text-transform:uppercase;cursor:pointer;">Enter ◈</button>';
+
+  var client = abyssCanvasPointToClient(canvasTapX, canvasTapY);
+  abyssPositionOverlayEl(tt, client.x, client.y);
+
+  var enterBtn = document.getElementById('abyss-enter-btn');
+  if (enterBtn) {
+    enterBtn.onclick = function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      var target = _abyssTooltipDiscTarget;
+      abyssHideTooltip();
+      if (target) void abyssOpenSheet(target);
+    };
+  }
+}
+
+function abyssShowSanctuaryTooltip(obj, canvasTapX, canvasTapY) {
+  abyssCloseSheet();
+  var tt = document.getElementById('abyss-tooltip');
+  if (!tt) return;
+  tt.className = '';
+
+  var dateStr = '';
+  if (obj.age > 0) {
+    dateStr = new Date(Date.now() - (1 - obj.age) * 90 * 86400000).toLocaleDateString('en-US', {
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  tt.innerHTML =
+    '<div style="color:rgba(78,200,138,0.7);font-size:8px;letter-spacing:2px;font-weight:900;text-transform:uppercase;margin-bottom:4px;">Sanctuary</div>' +
+    '<div style="color:var(--text);font-size:12px;font-family:Georgia,serif;line-height:1.35;word-break:break-word;">' +
+      escHtml(obj.name || 'Presence') +
+    '</div>' +
+    (dateStr ? '<div style="color:var(--muted);font-size:9px;margin-top:3px;opacity:0.6;">' + escHtml(dateStr) + '</div>' : '');
+
+  var client = abyssCanvasPointToClient(canvasTapX, canvasTapY);
+  abyssPositionOverlayEl(tt, client.x, client.y);
 }
 
 async function abyssOpenSheet(obj) {
@@ -7218,14 +7408,13 @@ function abyssTouchEndCore() {
 
   if (movedX > 10 || movedY > 10) return;
 
-  var abyssTt = document.getElementById('abyss-tooltip');
-  if (abyssTt) abyssTt.style.display = 'none';
+  abyssHideTooltip();
 
   var closest = null;
   var minD = 34;
   for (var i = 0; i < abyssObjects.length; i++) {
     var obj = abyssObjects[i];
-    if (obj.kind !== 'disc-dot' && obj.kind !== 'guardian-node' && obj.kind !== 'cluster-dot') continue;
+    if (obj.kind !== 'disc-dot' && obj.kind !== 'guardian-node' && obj.kind !== 'cluster-dot' && obj.kind !== 'sanctuary-presence') continue;
     var nx = obj.x * abyssW;
     var ny = obj.y * abyssH;
     var dist = Math.sqrt((tapX - nx) * (tapX - nx) + (tapY - ny) * (tapY - ny));
@@ -7233,7 +7422,9 @@ function abyssTouchEndCore() {
   }
   if (closest) {
     if (closest.kind === 'disc-dot') {
-      abyssOpenSheet(closest);
+      abyssShowDiscTooltip(closest, tapX, tapY);
+    } else if (closest.kind === 'sanctuary-presence') {
+      abyssShowSanctuaryTooltip(closest, tapX, tapY);
     } else if (closest.kind === 'guardian-node') {
       abyssShowTooltip(closest, tapX, tapY);
     } else if (closest.kind === 'cluster-dot') {
@@ -7264,6 +7455,7 @@ function abyssTouchEndCore() {
     return;
   }
 
+  abyssHideTooltip();
   abyssCloseSheet();
   abyssSelectedNode = null;
 }
