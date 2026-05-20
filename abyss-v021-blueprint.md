@@ -89,40 +89,40 @@ The Abyss is the **only place that sees the whole sovereign app without reading 
 
 #### B1.0 — Plumbing & filters
 
-- [ ] Declare `summariesMap = new Map()` at **start** of `buildAbyssObjects` (survives try/catch).
-- [ ] Load `guardian_summaries` **once** (`getAll`) → fill `summariesMap` **before** disc-dot loop (dedupe today’s double `getAll` if easy).
-- [ ] Filter active discourses: `!d.isDeleted && !d.deleted_at` (align with Soup elsewhere).
-- [ ] Add module-level `var abyssWeather = 'neutral'` near other Abyss vars.
-- [ ] Add `var abyssLinkThreshold = NQ_DEV_MODE ? W_SIMILARITY_THRESHOLD : 0.73` (or equivalent) — use for **both** thread build and settle link list.
-- [ ] Extract `abyssArcTension(mapRow)` and `abyssLinkIsContradiction(mapA, mapB)` — used by threads **and** settle.
+- [x] Declare `summariesMap = new Map()` at **start** of `buildAbyssObjects` (survives try/catch).
+- [x] Load `guardian_summaries` **once** (`getAll`) → fill `summariesMap` **before** disc-dot loop (dedupe today’s double `getAll` if easy).
+- [x] Filter active discourses: `!d.isDeleted && !d.deleted_at` (align with Soup elsewhere).
+- [x] Add module-level `var abyssWeather = 'neutral'` near other Abyss vars.
+- [x] Add `getAbyssLinkThreshold()` — use for **both** thread build and settle link list.
+- [x] Extract `abyssArcTension(mapRow)` and `abyssLinkIsContradiction(mapA, mapB)` — used by threads **and** settle.
 
 #### B1.1 — M1 + M1b: `abyssSettle(iterations, strongLinks)`
 
-- [ ] New `async function abyssSettle(iterations, strongLinks)` after `buildAbyssObjects` helpers.
-- [ ] Read vectors: `wdb.getAll('embeddings')` → map `id → vector` (no `watcherEmbedder` call).
-- [ ] Target only `kind === 'disc-dot'`.
-- [ ] **Vector springs (M1b):** all pairs with both vectors; `sim = watcherCosine(Float32Array, …)`; rest length `0.15 + (1 - sim) * 0.55`; force scaled by `sim`; use same units as blueprint v0.20 draft.
-- [ ] **Link forces (M1):** for each `strongLinks` entry `{ a, b, score, isContra }`; pull `score * 0.018`, repel `-0.012` if contra (stronger than live `abyssUpdate` pulls).
-- [ ] **Global repulsion** when `dist < 0.18` (prevent collapse).
-- [ ] **Orphans** (no vector): skip velocity apply in loop; after settle, rim bias from center `(0.5, 0.5)` → radius ~0.35–0.50 (deterministic + small jitter ok).
-- [ ] **Skip settle** if `discDots.length < 3`.
-- [ ] **Cap:** if `discDots.length > 80` → `iterations = 100`; optional: only vector-spring pairs with `sim > 0.55` when `n > 50`.
-- [ ] **Yield:** every 20 iterations `await new Promise(r => setTimeout(r, 0))` so main thread breathes on iPhone.
-- [ ] **Cancel:** if `!abyssRunning` return mid-loop.
-- [ ] Do **not** settle `sanctuary-presence`, `guardian-node`, anchors, clusters (clusters follow parent).
+- [x] New `async function abyssSettle(iterations, strongLinks)` after `buildAbyssObjects` helpers.
+- [x] Read vectors: `wdb.getAll('embeddings')` → map `id → vector` (no `watcherEmbedder` call).
+- [x] Target only `kind === 'disc-dot'`.
+- [x] **Vector springs (M1b):** all pairs with both vectors; `sim = watcherCosine(Float32Array, …)`; rest length `0.15 + (1 - sim) * 0.55`; force scaled by `sim`.
+- [x] **Link forces (M1):** for each `strongLinks` entry `{ a, b, score, isContra }`; pull `score * 0.018`, repel `-0.012` if contra.
+- [x] **Global repulsion** when `dist < 0.18` (prevent collapse).
+- [x] **Orphans** (no vector): skip velocity apply in loop; after settle, rim bias from center.
+- [x] **Skip settle** if `discDots.length < 3`.
+- [x] **Cap:** if `discDots.length > 80` → `iterations = 100`; sparse pairs `sim > 0.55` when `n > 50`.
+- [x] **Yield:** every 20 iterations `await new Promise(r => setTimeout(r, 0))`.
+- [x] **Cancel:** if `!abyssRunning` return mid-loop.
+- [x] Do **not** settle `sanctuary-presence`, `guardian-node`, anchors, clusters (clusters follow parent).
 
 #### B1.2 — `buildAbyssObjects` + thread build
 
-- [ ] Build disc-dots at hash positions (unchanged seed).
-- [ ] Build `strongLinks` array while creating threads: filter `score >= abyssLinkThreshold`, slice(0, 30), attach `isContra` from shared helper.
-- [ ] Threads only connect `disc-dot` ↔ `disc-dot` (unchanged).
-- [ ] Return or close over `strongLinks` for `openAbyssView` → `abyssSettle(200, strongLinks)`.
+- [x] Build disc-dots at hash positions (unchanged seed).
+- [x] Build `strongLinks` array while creating threads: filter `score >= abyssLinkThreshold`, slice(0, 30), attach `isContra` from shared helper.
+- [x] Threads only connect `disc-dot` ↔ `disc-dot` (unchanged).
+- [x] Return `{ strongLinks }` for `openAbyssView` → `abyssSettle(200, strongLinks)`.
 
 #### B1.3 — M2: Dot DNA (second pass)
 
-- [ ] After `summariesMap` full, loop disc-dots: `buildAbyssDna(summariesMap.get(dot.id))` → attach `dot.dna`.
-- [ ] Only rows with `map_type === 'fast'`.
-- [ ] Parse `emotional_arc` if string (same as `abyssArcTension`).
+- [x] After `summariesMap` full, loop disc-dots: `buildAbyssDna(summariesMap.get(dot.id))` → attach `dot.dna`.
+- [x] Only rows with `map_type === 'fast'`.
+- [x] Parse `emotional_arc` if string (same as `abyssArcTension`).
 - [ ] DNA fields:
 
 ```js
@@ -142,40 +142,40 @@ The Abyss is the **only place that sees the whole sovereign app without reading 
 
 #### B1.4 — `abyssDraw` M2 phenotype
 
-- [ ] Replace flat disc-dot block: tone-based RGB, age + emerge alpha.
-- [ ] `paradox >= 3` → faint double-ring (radii ~4.5, ~7).
-- [ ] `silenceRatio > 0.1` → multiply `dotAlpha` ~0.75 and slow pulse on ring optional.
-- [ ] Depersonalisation “dissolving/detached” → nudge RGB cooler (subtle).
-- [ ] Selected glow ring unchanged.
+- [x] Replace flat disc-dot block: tone-based RGB, age + emerge alpha.
+- [x] `paradox >= 3` → faint double-ring (radii ~4.5, ~7).
+- [x] `silenceRatio > 0.1` → multiply `dotAlpha` ~0.75.
+- [x] Depersonalisation “dissolving/detached” → nudge RGB cooler (subtle).
+- [x] Selected glow ring unchanged.
 
 #### B1.5 — `abyssUpdate` drift scale
 
-- [ ] In disc-dot Brownian block: `var scale = (obj.dna && obj.dna.driftScale) || 0.04` instead of hardcoded `0.04`.
+- [x] In disc-dot Brownian block: `driftScale` from `obj.dna` (default 0.04).
 
 #### B1.6 — M5: Weather layer
 
-- [ ] In `buildAbyssObjects`, after map fill: compute `abyssWeather` from **fast maps only** (`map_type === 'fast'`, skip `*_deep`).
-- [ ] Collect `emotional_arc.tension_shift`; require **`arcScores.length >= 3`** else stay `neutral`.
-- [ ] `avg > 0.025` → `charged`; `avg < -0.025` → `resolving`; else `neutral`.
-- [ ] In spark draw loop: shift `sparkR/G/B` by weather (charged warm, resolving cool blue-grey, neutral current).
+- [x] In `buildAbyssObjects`, after map fill: compute `abyssWeather` from **fast maps only**.
+- [x] Collect `emotional_arc.tension_shift`; require **`arcScores.length >= 3`** else stay `neutral`.
+- [x] `avg > 0.025` → `charged`; `avg < -0.025` → `resolving`; else `neutral`.
+- [x] In spark draw loop: shift `sparkR/G/B` by weather.
 
 #### B1.7 — AB1: Honest labeling
 
-- [ ] Subtle copy in Abyss realm (footer or first line under local nav): e.g. *“Constellation shaped by Watcher echoes — not folders or maps.”*
-- [ ] No modal; one line, low opacity.
+- [x] Subtle copy under Abyss nav (`#abyss-honesty-hint` in `index.html`).
+- [x] No modal; one line, low opacity.
 
 #### B1.8 — `openAbyssView` call order
 
-- [ ] `abyssRunning = true`
-- [ ] `await buildAbyssObjects()` → capture `strongLinks`
-- [ ] `await abyssSettle(200, strongLinks)` (or 100 if large archive)
-- [ ] **Then** `abyssEnterTime = Date.now()`
-- [ ] Seed sparks, reset timers, `abyssTick()`
-- [ ] Remove early `abyssEnterTime` assignment (~7068 today).
+- [x] `abyssRunning = true`
+- [x] `await buildAbyssObjects()` → capture `strongLinks`
+- [x] `await abyssSettle(200, strongLinks)` (or 100 if large archive)
+- [x] **Then** `abyssEnterTime = Date.now()`
+- [x] Seed sparks, reset timers, `abyssTick()`
+- [x] Remove early `abyssEnterTime` assignment.
 
 #### B1.9 — Validation (Batch 1)
 
-- [ ] `node --check app.js`
+- [x] `node --check app.js`
 - [ ] Manual: open Abyss with 5+ embedded discourses — clusters near threads; orphans toward rim.
 - [ ] Dev mode: threads appear at 0.50 threshold links, not only 0.73.
 - [ ] Fast map missing → neutral dot (legacy look).
@@ -344,7 +344,7 @@ After v0.21 ships, update `guardian-refinement-roadmap-blueprint.md` §9 checkbo
 | Item | Date | Notes |
 |------|------|-------|
 | Blueprint pinned v0.21 | 2026-05-19 | Two batches; code review + v0.20 draft merged |
-| **Batch 1** | | |
+| **Batch 1** | 2026-05-20 | M1/M1b settle, M2 DNA, M5 weather, AB1 hint, link threshold alignment |
 | **Batch 2** | | |
 
 ---
