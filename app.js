@@ -8459,12 +8459,12 @@ function applyGuardianUiStrings(state) {
   var label = document.querySelector('#view-guardian .guardian-label');
   var sendBtn = document.getElementById('btn-guardian-send');
   var input = document.getElementById('guardian-input');
-  if (label) label.textContent = 'Witness';
+  if (label) label.textContent = 'Witness to guardian';
   if (state === 'processing' && sub) sub.textContent = 'Reading the archive…';
   else if (state === 'speaking' && sub) sub.textContent = 'Witnessing.';
   else if (state === 'silent' && sub) sub.textContent = 'Nothing more to say right now.';
   else if (sub) sub.textContent = 'Summon when you want a witness — not a mirror.';
-  if (btn && state === 'idle') btn.textContent = 'Summon witness';
+  if (btn && state === 'idle') btn.textContent = 'SUMMON GUARDIAN';
   if (sendBtn && !sendBtn.disabled) sendBtn.textContent = 'Continue';
   if (input && state === 'idle') input.placeholder = 'Offer a line, if you want…';
 }
@@ -8555,8 +8555,113 @@ function formatDiscourseWitnessBlock(d, fastMap, mapNum) {
   if (fastMap.entry_exit_delta) block += 'Entry/exit register: ' + fastMap.entry_exit_delta.delta + '\n';
   if (fastMap.incompleteness) block += 'Ending: ' + fastMap.incompleteness.label + '\n';
   if (fastMap.depersonalisation) block += 'Perspective: ' + fastMap.depersonalisation.label + '\n';
+  if (fastMap.performative_mode && fastMap.performative_mode.label === 'Performative') {
+    block += 'Mode: performative (' + fastMap.performative_mode.confidence + ')\n';
+  }
+  if (fastMap.recursive_mode && fastMap.recursive_mode.label === 'Recursive') {
+    block += 'Mode: recursive (' + fastMap.recursive_mode.confidence + ')\n';
+  }
+  if (fastMap.fugue_mode && fastMap.fugue_mode.label === 'Fugue') {
+    block += 'Mode: fugue (' + fastMap.fugue_mode.confidence + ')\n';
+  }
   block += '\n';
   return block;
+}
+
+function parseFastMapKeyTermsList(fm) {
+  if (!fm) return [];
+  var kt = fm.key_terms;
+  if (typeof kt === 'string') {
+    try { kt = JSON.parse(kt); } catch (e) { return []; }
+  }
+  if (!Array.isArray(kt)) return [];
+  var out = [];
+  for (var i = 0; i < kt.length; i++) {
+    var term = kt[i] && kt[i].term != null ? String(kt[i].term).trim() : '';
+    if (!term) continue;
+    out.push({ term: term, count: kt[i].count || 1 });
+  }
+  return out;
+}
+
+function computeCorpusTermArcs(discs, fastMapById) {
+  var termMap = {};
+  var now = Date.now();
+  for (var di = 0; di < discs.length; di++) {
+    var d = discs[di];
+    if (d.isDeleted || d.deleted_at) continue;
+    var fm = fastMapById.get(d.id);
+    if (!fm || fm.map_type !== 'fast') continue;
+    var created = d.created_at || 0;
+    var arc = fastMapArcDirection(fm);
+    var terms = parseFastMapKeyTermsList(fm);
+    for (var ti = 0; ti < Math.min(6, terms.length); ti++) {
+      var term = terms[ti].term.toLowerCase();
+      if (term.length < 3) continue;
+      if (!termMap[term]) termMap[term] = { appearances: [], registers: {} };
+      var orbitCount = terms[ti].count || 0;
+      if (d.raw_text && orbitCount < 2) {
+        try {
+          var re = new RegExp('\\b' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+          var m = d.raw_text.match(re);
+          if (m) orbitCount = m.length;
+        } catch (reErr) { /* skip bad pattern */ }
+      }
+      termMap[term].appearances.push({
+        discourse_id: d.id,
+        date: created,
+        arc_direction: arc,
+        orbit_count: orbitCount
+      });
+      termMap[term].registers[arc] = true;
+    }
+  }
+  var out = {};
+  Object.keys(termMap).forEach(function (term) {
+    var t = termMap[term];
+    if (t.appearances.length < 2) return;
+    t.appearances.sort(function (a, b) { return a.date - b.date; });
+    var last = t.appearances[t.appearances.length - 1];
+    t.last_seen_days_ago = Math.floor((now - last.date) / 86400000);
+    var peakApp = t.appearances[0];
+    for (var pi = 1; pi < t.appearances.length; pi++) {
+      if (t.appearances[pi].orbit_count > peakApp.orbit_count) peakApp = t.appearances[pi];
+    }
+    t.peak_date = peakApp.date;
+    t.emotional_registers = Object.keys(t.registers);
+    t.register_shift = t.emotional_registers.length >= 2;
+    if (t.last_seen_days_ago > 14) t.trajectory = 'declining';
+    else if (t.appearances.length >= 3 && t.appearances[t.appearances.length - 1].orbit_count >= t.appearances[0].orbit_count) {
+      t.trajectory = 'rising';
+    } else {
+      t.trajectory = 'declining';
+    }
+    out[term] = t;
+  });
+  return out;
+}
+
+function formatCorpusTermArcsTier(arcsMap, topN) {
+  topN = topN || 5;
+  var keys = Object.keys(arcsMap);
+  if (!keys.length) return '';
+  var entries = keys.map(function (k) {
+    return { term: k, arc: arcsMap[k], n: arcsMap[k].appearances.length };
+  });
+  entries.sort(function (a, b) {
+    if (!!b.arc.register_shift !== !!a.arc.register_shift) return (b.arc.register_shift ? 1 : 0) - (a.arc.register_shift ? 1 : 0);
+    return b.n - a.n;
+  });
+  var lines = [];
+  for (var i = 0; i < Math.min(topN, entries.length); i++) {
+    var e = entries[i];
+    var shiftFlag = e.arc.register_shift ? ' · register shift' : '';
+    lines.push(
+      '· "' + e.term + '" — ' + e.arc.appearances.length + ' appearances, last ' + e.arc.last_seen_days_ago +
+      'd ago, ' + e.arc.trajectory + shiftFlag + ' (registers: ' + e.arc.emotional_registers.join(', ') + ')'
+    );
+  }
+  return '── TERM ARCS (corpus shape, top ' + Math.min(topN, entries.length) + ') ──\n\n' + lines.join('\n') + '\n\n';
 }
 
 function applyGuardianArchiveBudget(header, tier1, tier2, tier3, tier4, budget) {
@@ -8935,7 +9040,7 @@ function resetGuardianUI(){
   inputArea.className = 'guardian-input-area';
   document.getElementById('guardian-input').value = '';
   btn.disabled = false;
-  btn.textContent = 'Summon witness';
+  btn.textContent = 'SUMMON GUARDIAN';
   applyGuardianUiStrings('idle');
 }
 
@@ -9074,7 +9179,7 @@ async function summonGuardian(userAddition, summonOpts){
     glyph.className = 'guardian-glyph';
     realm.classList.remove('dimming');
     btn.disabled = false;
-    btn.textContent = 'Summon witness';
+    btn.textContent = 'SUMMON GUARDIAN';
     applyGuardianUiStrings('idle');
     guardianState = 'resting';
   }
@@ -9397,8 +9502,11 @@ async function buildGuardianContext(discs) {
     console.warn('[Guardian] Deep map tier skipped:', dErr);
   }
 
-  // Tier 4 — archive rollup
-  var tier4 = '── ARCHIVE ROLLUP ──\n\n';
+  // Tier 4 — term arcs (temporal corpus shape)
+  var tier4 = formatCorpusTermArcsTier(computeCorpusTermArcs(discs, fastMapById), 5);
+
+  // Tier 5 — archive rollup
+  tier4 += '── ARCHIVE ROLLUP ──\n\n';
   var mappedCount = 0;
   fastMapById.forEach(function () { mappedCount++; });
   tier4 += 'Fast-mapped discourses: ' + mappedCount + ' / ' + discs.length + '\n';
