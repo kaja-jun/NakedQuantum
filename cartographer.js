@@ -1,7 +1,7 @@
 /**
 
 - NakedQuantum -- Sovereign NLP Pipeline
-- cartographer.js v0.3
+- cartographer.js v0.5 (C3–C8 cartographer roadmap complete)
 - 
 - Pure functions. No DOM. No DB. No globals.
 - Takes text in, returns rich shape data out.
@@ -809,8 +809,13 @@ const endsOnQuestion    = finalLine.endsWith('?');
 const endsOnFragment    = finalLen <= 5;
 const endsOnEllipsis    = finalLine.endsWith('...') || finalLine.endsWith('\u2026');
 const endsOnDash        = /[—–-]$/.test(finalLine);
-const endsOnDissolution = SENTIMENT.dissolution.has(lastWord) || SENTIMENT.existence.has(lastWord);
-const endsOnResolved    = SENTIMENT.resolved.has(lastWord) || SENTIMENT.positive.has(lastWord);
+const lastIdx = finalLen - 1;
+const endsOnDissolution = lastIdx >= 0 && (
+  lexiconHitNegated(finalWords, lastIdx, SENTIMENT.dissolution) ||
+  lexiconHitNegated(finalWords, lastIdx, SENTIMENT.existence));
+const endsOnResolved = lastIdx >= 0 && (
+  lexiconHitNegated(finalWords, lastIdx, SENTIMENT.resolved) ||
+  lexiconHitNegated(finalWords, lastIdx, SENTIMENT.positive));
 const isFullSentence    = finalLen > 10 && !endsOnQuestion;
 
 // Score intentional incompleteness
