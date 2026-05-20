@@ -4,7 +4,7 @@
 
 ### Overview
 
-NakedQuantum is a zero-dependency PWA with no build step. The **UI shell** is `index.html` (markup only); **styles** live in `app.css` and **application logic** in `app.js`, with `cartographer.js` (NLP pipeline) and `sw.js` (service worker) as supporting files. There is no bundler, no package manager dependencies, and no backend — everything runs in the browser.
+NakedQuantum is a zero-dependency PWA with no build step. Multi-batch realm work: see pinned blueprints (e.g. `guardian-refinement-roadmap-blueprint.md`, `abyss-v021-blueprint.md`). The **UI shell** is `index.html` (markup only); **styles** live in `app.css` and **application logic** in `app.js`, with `cartographer.js` (NLP pipeline) and `sw.js` (service worker) as supporting files. There is no bundler, no package manager dependencies, and no backend — everything runs in the browser.
 
 ### Running the dev server
 

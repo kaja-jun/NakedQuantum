@@ -207,7 +207,7 @@ Use this as the **default queue**; override only with explicit Kaja decision.
 | 2 | **A1 — Production thresholds** | Prevents strip spam before wider use | Centralize knobs: cooldown, `MIN_QUALIFIER_CONFIDENCE`, watcher threshold; keep dev override flag |
 | 3 | **A2 — Settings + onboarding** | Ethics + sovereignty | `nq_guardian_auto_invoke_enabled`; explain strip; master toggle |
 | 4 | **A3 — Qualifier consensus** | Reduces false invokes | 2+ qualifiers or one “strong” signal in `checkGuardianTrigger` |
-| 5 | **AB1 — Abyss honest label** | Trust | Copy only — constellation / ritual layout |
+| 5 | **Abyss v0.21** | Active | See `abyss-v021-blueprint.md` — Batch 1 then Batch 2 |
 | 6 | **P1 cleanup** | Hygiene | `renderGuardianLogs` vars; blueprint X1 ticks |
 | 7 | **G6 + ARCH** | Laptop / Tauri | `lighthouse-cockpit-blueprint.md` |
 
@@ -258,6 +258,7 @@ WebAuthn bypass for VM testing: see `AGENTS.md`.
 |----------|-----|
 | `nq-review-checkpoint-2026-05.md` | **This file** — review base |
 | `guardian-refinement-roadmap-blueprint.md` | Guardian + Cartographer roadmap & shipped log |
+| `abyss-v021-blueprint.md` | **Abyss** — honest sky (two batches) |
 | `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6) |
 | `AGENTS.md` | Agent runbook, dev server, lint |
 | `NQ blueprint.md` | Product-wide architecture |
