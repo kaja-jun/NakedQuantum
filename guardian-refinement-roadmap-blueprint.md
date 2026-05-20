@@ -297,15 +297,17 @@ function divergenceNote(link, mapA, mapB) {
 
 ---
 
-## 9. Phase AB — Abyss honesty (parallel track, 3D future)
+## 9. Phase AB — Abyss honesty (canonical: `abyss-v021-blueprint.md`)
 
-*Current: hash-seeded positions (`abyssHash(d.id)`); threads connect hash points — ritual layout, not semantic map.*
+*Current on `main`: hash-seeded positions (`abyssHash(d.id)`); threads connect hash points — ritual layout, not semantic map.*
 
-- [ ] **AB1 — Honest labeling** — Subtle UI copy: constellation / ritual layout until embedding-driven positions ship.
-- [ ] **AB2 — 3D cosmos** — Continue Kaja’s 0.10 → living cosmos; positions driven by real geometry when ready (UMAP/t-SNE on cached BGE or equivalent **offline**).
-- [ ] **AB3 — Thread semantics** — Only draw “proximity” threads when layout coordinates reflect similarity (or style differently for chronological/hash links).
+**Implementation contract:** [`abyss-v021-blueprint.md`](abyss-v021-blueprint.md) — two batches (honest sky → Sanctuary + interaction).
 
-*Does not block G1–G3; blocks trusting Abyss as “my mind map” without disclaimer.*
+- [ ] **AB v0.21 Batch 1** — M1/M1b settle, M2 DNA, M5 weather, AB1 label, Watcher threshold alignment
+- [ ] **AB v0.21 Batch 2** — M3 Sanctuary presence, M4 tooltip + Enter ◈
+- [ ] **AB2 — 3D cosmos / offline UMAP** — Deferred; laptop snapshot when Tauri (`lighthouse-cockpit-blueprint.md`). Vectors already in IDB; in-browser UMAP not required for v0.21.
+
+*Does not block Guardian G phases (shipped). Blocks marketing Abyss as a semantic “mind map” until Batch 1 lands.*
 
 ---
 
@@ -347,7 +349,7 @@ function divergenceNote(link, mapA, mapB) {
 | 6 | **G4–G5** | Strip prior theory + prompt/UI interaction |
 | 7 | **A1–A3** | Production thresholds + default-off opt-in |
 | 8 | **C6–C8** | Summary/paradox/perf polish |
-| 9 | **AB1–AB3** | Abyss honesty alongside 3D work |
+| 9 | **Abyss v0.21** (`abyss-v021-blueprint.md`) | Batch 1 honest sky → Batch 2 Sanctuary + M4 |
 | 10 | **G6, ARCH** | Desktop / refactor when laptop ready |
 
 *Kimi review (May 2026): agreed C1–C2 first; elevate G2; default auto-invoke OFF; tagged re-map.*
@@ -369,6 +371,7 @@ function divergenceNote(link, mapA, mapB) {
 | Doc | Relationship |
 |-----|----------------|
 | `nq-review-checkpoint-2026-05.md` | **Code review checkpoint** — syntax, risks, what to do / not do / how (base for next sessions) |
+| `abyss-v021-blueprint.md` | **Abyss honest sky** — two-batch contract (layout, DNA, Sanctuary, M4) |
 | `lighthouse-cockpit-blueprint.md` | Desktop write column + live strip; Guardian whisper channel; **wait for Tauri** |
 | `NQ blueprint.md` | Realms, Engram, core ethics |
 | `NakedQuantum story.md` | Vision and tone |
