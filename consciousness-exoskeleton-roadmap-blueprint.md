@@ -151,12 +151,23 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 | ID | Work | Files | Done when |
 |----|------|-------|-----------|
 | **P0-a** | Production thresholds live | `app.js` | Watcher silent period, 0.73 similarity, 20h pass, no fake strip in dev |
-| **P0-b** | **Witness ledger v2** | `app.js` | Each ledger line = date + theory + **after:** `{days_to_next, next_arc, word_delta}` from SQL discourses after `invoked_at` |
+| **P0-b** | **Witness ledger v2** | `app.js` | Each ledger line = date + theory + **After:** block (see §8 — **`created_at` only**) |
 | **P0-c** | Strip gets ledger slice | `app.js`, `worker.mjs` | Worker prompt includes last 2 ledger lines (char cap), not only `priorTheoryLine` |
-| **P0-d** | **`directive: abyss_tint`** | `worker.mjs`, `app.js`, `app.css` | Worker may return `{ observation, directive }`; app applies tint to Abyss dots with `key_terms` overlap; persist `directive` on log; expires in 24h |
-| **P0-e** | Summon calibration line | `GUARDIAN_SYSTEM_PROMPT` / prior block | Model instructed to **test** ledger and name which prior theory failed |
+| **P0-d** | **`directive: abyss_tint`** | `worker.mjs`, `app.js`, `app.css` | Worker returns `{ observation, directive }`; tint applied on Abyss draw; expiry via log row (§6) |
+| **P0-e** | Ledger reckoning instruction | `buildGuardianPriorWitnessBlock` preamble | Exact copy in §8 — one clause per ledger line: confirmed / contradicted / unrelated |
 
 **Acceptance (felt):** Guardian speaks → Abyss visibly shifts → next summon references prior theory **and** whether subsequent writing matched it.
+
+#### P0 implementation order (recommended)
+
+| Step | Work | Blocker? |
+|------|------|----------|
+| **1** | **P0-b + P0-e** — ledger v2 + reckoning preamble in `app.js` | None — pure client JS + summon path |
+| **2** | **P0-a** — `NQ_DEV_MODE` off (or Settings toggle) | None |
+| **3** | **P0-d** — `directive` column, parser, Abyss tint on draw | **CF Worker deploy** for JSON response shape |
+| **4** | **P0-c** — strip Worker gets ledger slice | Depends on step 3 deploy if strip returns directives too |
+
+**Answer:** Start **`app.js` ledger v2 first**, not Worker access. Worker is the blocker only for **Loop 3** (`abyss_tint`); Loop 2 closure ships without redeploying Cloudflare.
 
 ---
 
@@ -201,13 +212,27 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 {
   "observation": "string — user-visible",
   "directive": {
-    "abyss_tint": { "terms": ["enough"], "tint": "amber", "duration_hours": 24 },
-    "soup_surface": { "discourse_id": "uuid", "duration_hours": 48, "reason": "contradiction_unresolved" },
-    "watcher_focus": { "terms": ["father"], "threshold_delta": -0.08, "duration_hours": 72 },
-    "revisit_flag": { "discourse_id": "uuid", "days": 3, "reason": "escalation_unclosed" }
+    "abyss_tint": {
+      "terms": ["enough"],
+      "tint": "amber",
+      "duration_hours": 24,
+      "applied_at": 1716200000000
+    }
   }
 }
 ```
+
+**Persistence (P0-d):**
+
+- `ALTER TABLE guardian_logs ADD COLUMN directive TEXT` — stores stringified `directive` object (or full worker payload minus observation).
+- On apply: set `applied_at = Date.now()` inside the parsed object before save.
+- Compute `expires_at = applied_at + (duration_hours * 3600000)`.
+
+**Expiry (do not use “on load only” — must survive reload):**
+
+- On **every `abyssDraw`** (and when building `abyssObjects` if tints affect DNA): load latest non-expired log(s) with `directive.abyss_tint`.
+- If `Date.now() > expires_at`, skip tint (do not remove column retroactively; ignore stale rows).
+- Active tint: disc-dots whose fast-map `key_terms` overlap `terms[]` get CSS class e.g. `abyss-directive-tint--amber` until expiry.
 
 **Rules:**
 
@@ -224,7 +249,7 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 
 **Per appearance:**
 
-- `discourse_id`, `date` (`created_at` or `updated_at` policy — pick one, document it)
+- `discourse_id`, `date` — always **`created_at`** (same rule as §8 After-block)
 - `arc_direction` from fast map
 - `orbit_count` from `detectRepetitionOrbits` on that discourse body (or stored key_terms overlap)
 
@@ -245,11 +270,34 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 After: 4 days → next entry arc "flat"; "enough" appeared 1× in closing line.
 ```
 
-**After-block algorithm (deterministic):**
+### After-block algorithm (deterministic)
 
-1. Find first discourse with `updated_at > log.invoked_at`.
-2. Load its fast map → `arc_direction`, key_terms, word count.
-3. If none within 30 days → `After: silence (no new entries in 30d).`
+**Column rule (explicit):** use **`created_at`**, not `updated_at`.
+
+- `updated_at` changes on edits and gravity bumps — it is not “what you wrote after I spoke.”
+- `created_at > log.invoked_at` = first **new** discourse born after that witness moment.
+- Sort candidate discourses by `created_at` ascending; take the **first** match.
+- If the same discourse is edited later, After block does **not** change (immutable to creation).
+
+**Steps:**
+
+1. From `cosm_discourses` (non-deleted): `created_at > log.invoked_at`, sort `created_at` ASC, take first row.
+2. Load its fast map → `arc_direction`, `key_terms`, optional word count / first line snippet.
+3. `days_to_next = floor((next.created_at - log.invoked_at) / 86400000)` (0 if same day).
+4. If no row within **30 days** → `After: silence (no new entries in 30d).`
+5. Optional: second new entry within 7 days — one extra clause if cheap (not required for P0).
+
+### P0-e — Ledger reckoning preamble (exact copy)
+
+Append to `buildGuardianPriorWitnessBlock` **after** the `── WITNESS LEDGER ──` header and **before** the ledger lines:
+
+```text
+For each ledger line above: state whether the subsequent writing confirmed, contradicted, or was unrelated to the theory. One clause per line. Then speak from what you now know.
+```
+
+This is what forces meta-meta **reckoning**, not mere acknowledgement. Also keep existing line: *Test your WITNESS LEDGER against the archive above…*
+
+**Strip Worker (P0-c):** Same reckoning sentence (truncated if needed) + last **2** ledger lines with After blocks — char budget ~800.
 
 Inject via `buildGuardianPriorWitnessBlock` (summon) and compact variant for strip Worker.
 
@@ -259,11 +307,11 @@ Inject via `buildGuardianPriorWitnessBlock` (summon) and compact variant for str
 
 | Doc | Role |
 |-----|------|
-| `NQ blueprint.md` | Stable product map (realms, tables, shipped log) |
+| `NakedQuantum-app-blueprint.md` | Stable product map (realms, tables, shipped log) |
 | **This file** | Vision → loops → phased exoskeleton work |
 | `guardian-refinement-roadmap-blueprint.md` | Guardian/Cartographer batch detail; reference P0–P1 here |
 | `abyss-v021-blueprint.md` | Abyss **shipped**; tint directives extend M2 phenotype |
-| `nq-review-checkpoint-2026-05.md` | P0 risks, lint, process |
+| `NakedQuantum-checkpoint-2026-05.md` | P0 risks, lint, process |
 
 When merging a batch: tick **Shipped log** below + relevant section in guardian roadmap.
 
@@ -287,6 +335,7 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 | Date | Change |
 |------|--------|
 | 2026-05-20 | Initial pin — merges Kimi review + gap analysis + code audit; philosophy guardrails |
+| 2026-05-20 | Sharpen P0-b (`created_at`), P0-d (expiry on `abyssDraw`), P0-e (reckoning preamble), impl order |
 
 ---
 
