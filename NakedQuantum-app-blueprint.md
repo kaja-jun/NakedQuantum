@@ -13,8 +13,8 @@
 |------|------|
 | New feature / realm design | §1 vision, §3 realms, §6–§12 features |
 | Before coding | Pinned sub-blueprint if one exists (§2 index) |
-| Agent handoff | §15 **Shipped log** + `nq-review-checkpoint-2026-05.md` §7 queue |
-| Production ship | Checkpoint §5 P0 (`NQ_DEV_MODE`, worker deploy, thresholds) |
+| Agent handoff | §15 **Shipped log** + `NakedQuantum-checkpoint-2026-05.md` §7 queue |
+| Production ship | `NakedQuantum-checkpoint-2026-05.md` §5 P0 (`NQ_DEV_MODE`, worker deploy, thresholds) |
 
 **Rules (unchanged):** accurate over comfortable, Sanctuary blind to Trio (Watcher / Cartographer / Guardian), blueprint-first, one batch per PR, no bundler without explicit approval.
 
@@ -24,6 +24,8 @@
 
 NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (characters / chat) into one organism. Not productivity. Not wellness. A place that is **accurate** — sometimes it cuts, sometimes it smiles, never apologizes.
 
+**North star (quest):** *An obsessive, meta-meta-cognitive consciousness exoskeleton.* Possible as **practice** + three closed loops — see **`consciousness-exoskeleton-roadmap-blueprint.md`**.
+
 **Compass:** fund one person's time to walk their own path. A few hundred kindred souls is enough; zero is still enough.
 
 ---
@@ -32,8 +34,9 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 
 | Document | Scope |
 |----------|--------|
-| **`NQ blueprint.md`** (this file) | Product-wide architecture, realms, data, UI language |
-| `nq-review-checkpoint-2026-05.md` | Code review base, risks, **what to do next** |
+| **`NakedQuantum-app-blueprint.md`** (this file) | Product-wide architecture, realms, data, UI language |
+| `consciousness-exoskeleton-roadmap-blueprint.md` | Vision → three loops → phased exoskeleton (philosophy, not fantasy) |
+| `NakedQuantum-checkpoint-2026-05.md` | Code review base, risks, **what to do next** |
 | `guardian-refinement-roadmap-blueprint.md` | Guardian G0–G6, Cartographer C1–C8, auto-invoke A1–A3 |
 | `abyss-v021-blueprint.md` | Abyss honest sky (settle, DNA, sanctuary presence, sheet UX) |
 | `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6, deferred) |

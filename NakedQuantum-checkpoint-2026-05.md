@@ -2,7 +2,7 @@
 
 > **Purpose:** Single base document after the Cartographer v0.5 + Guardian G1–G5 push. Use it before the next batch to decide **what to do**, **what not to do**, and **how to work**.
 >
-> **Read with:** `guardian-refinement-roadmap-blueprint.md`, `AGENTS.md`, `lighthouse-cockpit-blueprint.md`.
+> **Read with:** `consciousness-exoskeleton-roadmap-blueprint.md`, `guardian-refinement-roadmap-blueprint.md`, `AGENTS.md`, `lighthouse-cockpit-blueprint.md`.
 
 ---
 
@@ -203,8 +203,9 @@ Use this as the **default queue**; override only with explicit Kaja decision.
 
 | Priority | Item | Why now | How |
 |----------|------|---------|-----|
-| 1 | **Rest / glyphs / onboarding** | Kaja chose to wait | No code required |
-| 2 | **A1 — Production thresholds** | Prevents strip spam before wider use | Centralize knobs: cooldown, `MIN_QUALIFIER_CONFIDENCE`, watcher threshold; keep dev override flag |
+| 1 | **Exoskeleton Phase 0** | Closes meta-meta + first state loop | `consciousness-exoskeleton-roadmap-blueprint.md` — ledger v2, `abyss_tint`, `NQ_DEV_MODE` off |
+| 2 | **Rest / glyphs / onboarding** | Kaja chose to wait | No code required |
+| 3 | **A1 — Production thresholds** | Prevents strip spam before wider use | Overlaps exoskeleton P0-a |
 | 3 | **A2 — Settings + onboarding** | Ethics + sovereignty | `nq_guardian_auto_invoke_enabled`; explain strip; master toggle |
 | 4 | **A3 — Qualifier consensus** | Reduces false invokes | 2+ qualifiers or one “strong” signal in `checkGuardianTrigger` |
 | 5 | **Abyss v0.21** | ✅ Shipped | Maintenance only unless AB2/3D vision returns |
@@ -261,7 +262,8 @@ WebAuthn bypass for VM testing: see `AGENTS.md`.
 | `abyss-v021-blueprint.md` | **Abyss** — honest sky (two batches) |
 | `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6) |
 | `AGENTS.md` | Agent runbook, dev server, lint |
-| `NQ blueprint.md` | **App blueprint v2** (May 2026) — product-wide architecture |
+| `NakedQuantum-app-blueprint.md` | App blueprint v2 — product-wide architecture |
+| `consciousness-exoskeleton-roadmap-blueprint.md` | Exoskeleton loops + phased roadmap |
 | `Watcher implementation.md` | Watcher history/notes |
 
 ---
