@@ -984,10 +984,6 @@ button {
   word-wrap: break-word;
   overflow-wrap: anywhere;
 }
-#abyss-tooltip.abyss-tooltip--interactive {
-  pointer-events: auto;
-}
-
 /* ABYSS BOTTOM SHEET -- rich panel for disc-dot, thread-sim, thread-contra */
 #abyss-sheet {
   position: absolute;
@@ -1138,6 +1134,30 @@ button {
 }
 .abyss-echo-bar-fill.sim    { background: #d29a70; }
 .abyss-echo-bar-fill.contra { background: #8ab4cc; }
+.abyss-sheet-enter-wrap {
+  margin-top: 18px;
+  padding-top: 4px;
+  flex-shrink: 0;
+}
+.abyss-sheet-enter {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: none;
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+}
+.abyss-sheet-enter:active {
+  opacity: 0.75;
+}
 .abyss-sheet-divider {
   height: 1px;
   background: #1e1e1e;

@@ -6873,14 +6873,20 @@ function abyssDraw(elapsed) {
 // ── ABYSS INTERACTION ────────────────────────────────────────────────────────
 
 var abyssSelectedNode = null;
-var _abyssTooltipDiscTarget = null;
 
 function abyssHideTooltip() {
   var tt = document.getElementById('abyss-tooltip');
   if (!tt) return;
   tt.style.display = 'none';
   tt.className = '';
-  _abyssTooltipDiscTarget = null;
+}
+
+function abyssFormatDiscTypeLabel(typeLabel) {
+  var t = String(typeLabel || 'discourse').toLowerCase();
+  if (t === 'note') return 'Spark Note';
+  if (t === 'chronicle') return 'Chronicle';
+  if (t === 'discourse') return 'Discourse';
+  return typeLabel || 'Discourse';
 }
 
 function abyssGetViewAbyssRect() {
@@ -6980,42 +6986,38 @@ function abyssShowTooltip(obj, canvasTapX, canvasTapY) {
   abyssPositionOverlayEl(tt, client.x, client.y);
 }
 
-function abyssShowDiscTooltip(obj, canvasTapX, canvasTapY) {
-  abyssCloseSheet();
-  _abyssTooltipDiscTarget = obj;
-  var tt = document.getElementById('abyss-tooltip');
-  if (!tt) return;
-  tt.className = 'abyss-tooltip--interactive';
-
-  var arcLabel = '';
-  if (obj.dna && obj.dna.arcDir && obj.dna.arcDir !== 'flat') {
-    arcLabel = '<div style="color:var(--muted);font-size:9px;margin-top:3px;opacity:0.7;">' + escHtml(obj.dna.arcDir) + '</div>';
-  }
-
-  tt.innerHTML =
-    '<div style="color:var(--accent-dim);font-size:8px;letter-spacing:2px;font-weight:900;text-transform:uppercase;margin-bottom:4px;">' +
-      escHtml(obj.typeLabel || 'discourse') +
-    '</div>' +
-    '<div style="color:var(--text);font-size:12px;font-family:Georgia,serif;margin-bottom:2px;line-height:1.35;word-break:break-word;">' +
-      escHtml(obj.title || 'Untitled') +
-    '</div>' +
-    arcLabel +
-    '<button type="button" id="abyss-enter-btn" style="margin-top:8px;background:none;border:1px solid var(--accent-dim);color:var(--accent);font-size:9px;font-weight:900;letter-spacing:1px;padding:4px 10px;border-radius:6px;text-transform:uppercase;cursor:pointer;">Enter ◈</button>';
-
-  var client = abyssCanvasPointToClient(canvasTapX, canvasTapY);
-  abyssPositionOverlayEl(tt, client.x, client.y);
-
-  var enterBtn = document.getElementById('abyss-enter-btn');
-  if (enterBtn) {
-    enterBtn.onclick = function (e) {
-      e.stopPropagation();
-      e.preventDefault();
-      var target = _abyssTooltipDiscTarget;
-      abyssHideTooltip();
-      if (target) void abyssOpenSheet(target);
-    };
-  }
+function abyssAppendDiscSheetEnter(scroll, obj) {
+  var wrap = document.createElement('div');
+  wrap.className = 'abyss-sheet-enter-wrap';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'abyss-sheet-enter';
+  btn.textContent = 'Enter ◈';
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+    void abyssEnterDiscFromSheet(obj);
+  });
+  wrap.appendChild(btn);
+  scroll.appendChild(wrap);
 }
+
+async function abyssEnterDiscFromSheet(obj) {
+  if (!obj || !obj.id) return;
+  abyssCloseSheet();
+  abyssHideTooltip();
+  var disc = await getDiscourse(obj.id);
+  if (!disc) {
+    showToast('Not found ◆');
+    return;
+  }
+  if (disc.item_type === 'note') {
+    openSparkEditSheet({ id: disc.id, title: disc.title, raw_text: disc.raw_text });
+    return;
+  }
+  await openDiscourse(obj.id);
+}
+
 
 function abyssShowSanctuaryTooltip(obj, canvasTapX, canvasTapY) {
   abyssCloseSheet();
@@ -7043,6 +7045,7 @@ function abyssShowSanctuaryTooltip(obj, canvasTapX, canvasTapY) {
 }
 
 async function abyssOpenSheet(obj) {
+  abyssHideTooltip();
   abyssCloseSheet();
   var scroll = document.getElementById('abyss-sheet-scroll');
   scroll.innerHTML = '';
@@ -7050,7 +7053,7 @@ async function abyssOpenSheet(obj) {
   // Type badge
   var typeEl = document.createElement('div');
   typeEl.className = 'abyss-sheet-type disc';
-  typeEl.textContent = (obj.typeLabel || 'discourse').toUpperCase();
+  typeEl.textContent = abyssFormatDiscTypeLabel(obj.typeLabel).toUpperCase();
   scroll.appendChild(typeEl);
 
   // Title
@@ -7182,6 +7185,7 @@ async function abyssOpenSheet(obj) {
     });
   }
 
+  abyssAppendDiscSheetEnter(scroll, obj);
   document.getElementById('abyss-sheet').classList.add('open');
 }
 
@@ -7422,7 +7426,7 @@ function abyssTouchEndCore() {
   }
   if (closest) {
     if (closest.kind === 'disc-dot') {
-      abyssShowDiscTooltip(closest, tapX, tapY);
+      void abyssOpenSheet(closest);
     } else if (closest.kind === 'sanctuary-presence') {
       abyssShowSanctuaryTooltip(closest, tapX, tapY);
     } else if (closest.kind === 'guardian-node') {
