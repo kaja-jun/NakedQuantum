@@ -661,6 +661,8 @@ db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoke
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN theory_one_line TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN qualifiers TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN directive TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN prediction_tag TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN prediction_outcome TEXT"); } catch (e) {}
 
   ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'].forEach
 (t => {
@@ -851,6 +853,10 @@ const GUARDIAN_LS_AUTO_INVOKE = 'nq_guardian_auto_invoke_enabled';
 const GUARDIAN_LS_STRICT_INVOKE = 'nq_guardian_strict_invoke';
 const SOUP_SURFACE_GRAVITY_BOOST = 40;
 const SOUP_SURFACE_DEFAULT_HOURS = 48;
+const WATCHER_FOCUS_DEFAULT_THRESHOLD = 0.58;
+const WATCHER_FOCUS_DEFAULT_HOURS = 72;
+const REVISIT_CHECK_LS = 'nq_revisit_check_day';
+const PERSISTENT_ORBIT_GRAVITY_BOOST = 18;
 
 function isGuardianAutoInvokeEnabled() {
   try {
@@ -1205,7 +1211,7 @@ async function runSimilarityPassMain() {
       if (a.id === b.id) continue;
       const score = watcherCosine(vecA, new Float32Array(b.vector));
       const finalScore = score * (a.item_type === 'note' || b.item_type === 'note' ? W_SPARK_BOOST : 1.0);
-      if (finalScore >= W_SIMILARITY_THRESHOLD) {
+      if (finalScore >= getWatcherSimilarityThreshold()) {
         const linkId = [a.id, b.id].sort().join('_');
         await wdb.put('links', { id: linkId, a: a.id, b: b.id, score: Math.round(finalScore * 1000) / 1000, created_at: now });
       }
@@ -2949,6 +2955,7 @@ async function _executeRenderTableView() {
   };
   runGravityDecay();
   await refreshSoupSurfaceBoost();
+  await refreshWatcherFocus();
     await renderBreadcrumb();
   // Remove old drop line -- renderBreadcrumb redraws it
   const oldDrop = document.getElementById('bc-drop-svg');
@@ -5065,7 +5072,7 @@ async function injectWatcherFlags(fastMap, discourseId) {
   // Potential contradictions: high similarity but need to check emotional arc
   // Simplified: flag any with similarity > 0.7
   const topContradictory = [];
-for(const s of similarities.filter(s => s.score > 0.65)){
+for(const s of similarities.filter(s => s.score > getWatcherSimilarityThreshold() * 0.9)){
   const otherMap = await dbGet('guardian_summaries', s.id);
   if(!otherMap) continue;
   const currentArc = fastMap.emotional_arc?.tension_shift || 0;
@@ -5134,6 +5141,10 @@ let fastMap = {
 
     await dbPut('guardian_summaries', fastMap);
     console.log(`◈ Sovereign Fast Map generated for ${discourseId}`);
+
+    try { await scoreGuardianPredictionsOnSave(discourseId, fastMap); } catch (predErr) {
+      console.warn('[Guardian] prediction score:', predErr);
+    }
 
     if (!mapOpts.skipAutoInvite && isGuardianAutoInvokeEnabled() && checkGuardianTrigger) {
       try {
@@ -5895,10 +5906,20 @@ var abyssWeather = 'neutral';
 var abyssActiveTint = null;
 /** Temporary Soup mesh gravity boost from latest soup_surface directive. */
 var soupSurfaceBoost = null;
+/** Lowered Watcher similarity threshold from watcher_focus directive. */
+var watcherFocusActive = null;
    // multiple expanding rings per touch
 
 function getAbyssLinkThreshold() {
   return NQ_DEV_MODE ? W_SIMILARITY_THRESHOLD : 0.73;
+}
+
+function getWatcherSimilarityThreshold() {
+  var base = NQ_DEV_MODE ? W_SIMILARITY_THRESHOLD : 0.73;
+  if (watcherFocusActive && Date.now() < watcherFocusActive.expires_at) {
+    return Math.min(base, watcherFocusActive.threshold || WATCHER_FOCUS_DEFAULT_THRESHOLD);
+  }
+  return base;
 }
 
 function abyssArcTension(mapRow) {
@@ -8755,6 +8776,210 @@ function formatCorpusTermArcsTier(arcsMap, topN) {
   return '── TERM ARCS (corpus shape, top ' + Math.min(topN, entries.length) + ') ──\n\n' + lines.join('\n') + '\n\n';
 }
 
+function fastMapQualifierBucket(fm) {
+  if (!fm) return 'none';
+  if (fm.performative_mode && fm.performative_mode.label === 'Performative') return 'performative';
+  if (fm.recursive_mode && fm.recursive_mode.label === 'Recursive') return 'recursive';
+  if (fm.fugue_mode && fm.fugue_mode.label === 'Fugue') return 'fugue';
+  var sig = fm.signature;
+  if (typeof sig === 'string') { try { sig = JSON.parse(sig); } catch (e) { sig = null; } }
+  if (sig && sig.paradox && (sig.paradox.label === 'Paradox-dominant' || sig.paradox.label === 'Charged')) return 'paradox';
+  if (sig && sig.orbits && (sig.orbits.label === 'Multi-orbit' || (sig.orbits.orbiting && sig.orbits.orbiting.some(function (o) { return o.count >= 5; })))) return 'orbit';
+  if (fm.silence_weight && (fm.silence_weight.label === 'Silence as structure' || (fm.silence_weight.ratio || 0) >= 0.12)) return 'silence';
+  if (fm.emotional_arc && String(fm.emotional_arc.direction || '').indexOf('escalating') !== -1) return 'escalating';
+  return 'neutral';
+}
+
+function sharedKeyTermsBetween(mapA, mapB) {
+  var a = new Set(parseFastMapKeyTermStrings(mapA).slice(0, 5));
+  var shared = [];
+  parseFastMapKeyTermStrings(mapB).slice(0, 5).forEach(function (t) {
+    if (a.has(t)) shared.push(t);
+  });
+  return shared;
+}
+
+function computeReturnDetections(discs, fastMapById, watcherLinks) {
+  var out = [];
+  var seen = {};
+  function pushHit(hit) {
+    var key = [hit.discourse_id_a, hit.discourse_id_b].sort().join('_');
+    if (seen[key]) return;
+    seen[key] = true;
+    out.push(hit);
+  }
+  var discById = {};
+  for (var di = 0; di < discs.length; di++) discById[discs[di].id] = discs[di];
+
+  if (watcherLinks && watcherLinks.length) {
+    for (var wi = 0; wi < watcherLinks.length; wi++) {
+      var link = watcherLinks[wi];
+      if ((link.score || 0) < 0.55) continue;
+      var mapA = fastMapById.get(link.a);
+      var mapB = fastMapById.get(link.b);
+      if (!mapA || !mapB) continue;
+      var arcA = fastMapArcDirection(mapA);
+      var arcB = fastMapArcDirection(mapB);
+      var bucketA = fastMapQualifierBucket(mapA);
+      var bucketB = fastMapQualifierBucket(mapB);
+      var discA = discById[link.a];
+      var discB = discById[link.b];
+      var daysApart = discA && discB ? Math.abs((discA.created_at || 0) - (discB.created_at || 0)) / 86400000 : 0;
+      if (daysApart < 3) continue;
+      var arcShift = arcA !== arcB && arcA !== 'unknown' && arcB !== 'unknown';
+      var qualShift = bucketA !== bucketB && bucketA !== 'neutral' && bucketB !== 'neutral';
+      if (!arcShift && !qualShift) continue;
+      var reason = arcShift ? ('arc shifted ' + arcA + ' → ' + arcB) : ('qualifier ' + bucketA + ' → ' + bucketB);
+      pushHit({
+        discourse_id_a: link.a,
+        discourse_id_b: link.b,
+        score: link.score,
+        reason: reason,
+        arc_a: arcA,
+        arc_b: arcB,
+        days_apart: Math.floor(daysApart),
+        shared_terms: sharedKeyTermsBetween(mapA, mapB)
+      });
+    }
+  }
+
+  var arcsMap = computeCorpusTermArcs(discs, fastMapById);
+  Object.keys(arcsMap).forEach(function (term) {
+    var arc = arcsMap[term];
+    if (!arc.register_shift || arc.appearances.length < 2) return;
+    var first = arc.appearances[0];
+    var last = arc.appearances[arc.appearances.length - 1];
+    if (first.discourse_id === last.discourse_id) return;
+    var days = Math.floor((last.date - first.date) / 86400000);
+    if (days < 7) return;
+    pushHit({
+      discourse_id_a: first.discourse_id,
+      discourse_id_b: last.discourse_id,
+      score: 0.6,
+      reason: 'term "' + term + '" returned with register shift',
+      arc_a: first.arc_direction,
+      arc_b: last.arc_direction,
+      days_apart: days,
+      shared_terms: [term]
+    });
+  });
+
+  out.sort(function (a, b) { return (b.score || 0) - (a.score || 0); });
+  return out;
+}
+
+function formatReturnDetectionsTier(detections, topN) {
+  topN = topN || 4;
+  if (!detections || !detections.length) return '';
+  var lines = [];
+  for (var i = 0; i < Math.min(topN, detections.length); i++) {
+    var d = detections[i];
+    lines.push(
+      '· Return: d_' + String(d.discourse_id_b).slice(-4) + ' ↔ d_' + String(d.discourse_id_a).slice(-4) +
+      ' (' + Math.round((d.score || 0) * 100) + '%) — ' + d.reason + ', ' + d.days_apart + 'd apart'
+    );
+  }
+  return '── RETURN DETECTIONS (semantic cluster, shifted register) ──\n\n' + lines.join('\n') + '\n\n';
+}
+
+function formatSilentAttractorsTier(arcsMap, topN) {
+  topN = topN || 5;
+  var entries = Object.keys(arcsMap).map(function (k) {
+    return { term: k, arc: arcsMap[k] };
+  }).filter(function (e) {
+    return e.arc.appearances.length >= 3 && e.arc.last_seen_days_ago > 14;
+  });
+  if (!entries.length) return '';
+  entries.sort(function (a, b) { return b.arc.last_seen_days_ago - a.arc.last_seen_days_ago; });
+  var lines = [];
+  for (var i = 0; i < Math.min(topN, entries.length); i++) {
+    var e = entries[i];
+    lines.push(
+      '· "' + e.term + '" — ' + e.arc.appearances.length + '×, silent ' + e.arc.last_seen_days_ago +
+      'd, ' + e.arc.trajectory
+    );
+  }
+  return '── SILENT ATTRACTORS (absent but recurring) ──\n\n' + lines.join('\n') + '\n\n';
+}
+
+function derivePredictionTag(triggeredBy, qualifiers, fastMap) {
+  var q = triggeredBy || (qualifiers && qualifiers[0] && qualifiers[0].type) || '';
+  if (q === 'escalating_arc' || q === 'paradox') return 'next_escalating';
+  if (q === 'orbit' || q === 'recursive') return 'orbit_persists';
+  if (q === 'silence' || q === 'fugue') return 'silence_holds';
+  if (fastMap && fastMap.emotional_arc && fastMap.emotional_arc.tension_shift > 0.02) return 'next_escalating';
+  return 'next_arc_flat';
+}
+
+function scorePredictionOutcome(tag, snapshot, fastMapNow) {
+  if (!tag || !fastMapNow) return 'unscored';
+  var arc = fastMapNow.emotional_arc || {};
+  var ts = typeof arc.tension_shift === 'number' ? arc.tension_shift : 0;
+  if (tag === 'next_escalating') return ts > 0.02 ? 'hit' : (ts < -0.02 ? 'miss' : 'partial');
+  if (tag === 'orbit_persists') {
+    var snapTerms = snapshot && snapshot.orbit_terms ? snapshot.orbit_terms : [];
+    var nowTerms = new Set(parseFastMapKeyTermStrings(fastMapNow));
+    var kept = snapTerms.filter(function (t) { return nowTerms.has(t); });
+    return kept.length >= Math.max(1, Math.floor(snapTerms.length / 2)) ? 'hit' : 'miss';
+  }
+  if (tag === 'silence_holds') {
+    var ratio = fastMapNow.silence_weight && fastMapNow.silence_weight.ratio;
+    return ratio >= 0.1 ? 'hit' : 'partial';
+  }
+  return Math.abs(ts) <= 0.02 ? 'hit' : 'partial';
+}
+
+async function scoreGuardianPredictionsOnSave(discourseId, fastMap) {
+  if (!fastMap || fastMap.map_type !== 'fast' || fastMap.word_count < 35) return;
+  var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+  var logs = (await dbGetAll('guardian_logs')).filter(function (l) {
+    return l.log_type === 'summon' && !l.was_silent && l.prediction_tag && !l.prediction_outcome;
+  }).sort(function (a, b) { return (a.invoked_at || 0) - (b.invoked_at || 0); });
+  for (var li = 0; li < logs.length; li++) {
+    var log = logs[li];
+    var invoked = log.invoked_at || 0;
+    var candidates = allDiscs.filter(function (d) {
+      return (d.created_at || 0) > invoked;
+    }).sort(function (a, b) { return (a.created_at || 0) - (b.created_at || 0); });
+    var targetId = log.primary_discourse_id;
+    if (!targetId && candidates.length) targetId = candidates[0].id;
+    if (targetId !== discourseId && (!candidates.length || candidates[0].id !== discourseId)) continue;
+    var snap = parseGeometrySnapshot(log.geometry_snapshot);
+    var outcome = scorePredictionOutcome(log.prediction_tag, snap, fastMap);
+    log.prediction_outcome = outcome;
+    await dbPut('guardian_logs', log);
+    break;
+  }
+}
+
+function deriveWatcherFocusDirective(fastMap) {
+  if (!fastMap || fastMap.map_type !== 'fast') return null;
+  var terms = parseFastMapKeyTermStrings(fastMap).slice(0, 4);
+  var snap = buildFastMapSnapshotForWorker(fastMap);
+  if (!terms.length && snap.orbitingTerms && snap.orbitingTerms.length) terms = snap.orbitingTerms.slice(0, 4);
+  if (!terms.length) return null;
+  return {
+    watcher_focus: {
+      terms: terms,
+      threshold: WATCHER_FOCUS_DEFAULT_THRESHOLD,
+      duration_hours: WATCHER_FOCUS_DEFAULT_HOURS,
+      applied_at: Date.now()
+    }
+  };
+}
+
+function deriveRevisitFlagDirective(discourseId, reason) {
+  if (!discourseId) return null;
+  return {
+    revisit_flag: {
+      discourse_id: discourseId,
+      reason: reason || 'return detected',
+      flagged_at: Date.now(),
+      duration_hours: 48
+    }
+  };
+}
+
 function applyGuardianArchiveBudget(header, tier1, tier2, tier3, tier4, budget) {
   var t1 = tier1 || '';
   var t2 = tier2 || '';
@@ -8912,6 +9137,46 @@ function attachGuardianInvokeStripHandlers() {
   }
 }
 
+async function runDailyRevisitCheck() {
+  var day = new Date().toISOString().slice(0, 10);
+  try {
+    if (localStorage.getItem(REVISIT_CHECK_LS) === day) return;
+    localStorage.setItem(REVISIT_CHECK_LS, day);
+  } catch (eDay) { return; }
+  if (!isGuardianAutoInvokeEnabled() || NQ_DEV_MODE) return;
+  if (guardianInvokeActive) return;
+  try {
+    if (localStorage.getItem('nq_guardian_invoke_pending')) return;
+  } catch (ePend) {}
+  var discs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+  if (discs.length < 2) return;
+  var fastMapById = new Map();
+  for (var fi = 0; fi < discs.length; fi++) {
+    var fm = await dbGet('guardian_summaries', discs[fi].id);
+    if (fm && fm.map_type === 'fast') fastMapById.set(discs[fi].id, fm);
+  }
+  var watcherLinks = [];
+  if (isWatcherReady && watcherDB) {
+    try { watcherLinks = await wdb.getAll('links'); } catch (eLinks) { watcherLinks = []; }
+  }
+  var hits = computeReturnDetections(discs, fastMapById, watcherLinks);
+  if (!hits.length) return;
+  var hit = hits[0];
+  var targetId = hit.discourse_id_b;
+  var d = await getDiscourse(targetId);
+  var title = (d && d.title) ? d.title : 'Untitled';
+  var observation = 'You returned to "' + title + '": ' + hit.reason + '.';
+  try {
+    localStorage.setItem('nq_guardian_invoke_pending', JSON.stringify({
+      discourseId: targetId,
+      at: Date.now(),
+      revisit: true,
+      reason: hit.reason,
+      observation: observation
+    }));
+  } catch (eStore) {}
+}
+
 async function checkAndShowGuardianInvoke() {
   if (!NQ_DEV_MODE && !isGuardianAutoInvokeEnabled()) return;
   if (NQ_DEV_MODE) {
@@ -8972,6 +9237,38 @@ guardianInvokeActive = true;
   try {
     fastMap = await dbGet('guardian_summaries', pending.discourseId);
   } catch (e4) {}
+
+  if (pending.revisit && pending.observation) {
+    var revisitObs = String(pending.observation).trim();
+    if (!revisitObs) {
+      try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (eRev0) {}
+      return;
+    }
+    var stripR = document.getElementById('guardian-invoke-strip');
+    var textElR = document.getElementById('guardian-invoke-text');
+    if (!stripR || !textElR) return;
+    textElR.textContent = revisitObs;
+    stripR.style.display = 'block';
+    requestAnimationFrame(function () { stripR.classList.add('visible'); });
+    guardianInvokeActive = true;
+    guardianInvokeLastTriggerType = 'revisit';
+    try {
+      localStorage.setItem('nq_guardian_last_invoke', String(Date.now()));
+      localStorage.setItem('nq_guardian_last_trigger_type', 'revisit');
+      localStorage.removeItem('nq_guardian_invoke_pending');
+      localStorage.setItem('nq_guardian_invoke_observation', revisitObs);
+    } catch (eRev1) {}
+    if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(true);
+    attachGuardianInvokeStripHandlers();
+    var revDir = buildGuardianDirectiveRoot(null, fastMap, 'revisit', pending.discourseId, deriveRevisitFlagDirective(pending.discourseId, pending.reason));
+    void logGuardianAutoInvoke(revisitObs, 'revisit', 'surfaced', pending.discourseId, revDir);
+    await refreshAbyssActiveTint();
+    await refreshSoupSurfaceBoost();
+    await refreshWatcherFocus();
+    if (currentMode === 'soup' && currentView === 'soup') void renderTableView();
+    return;
+  }
+
   if (!fastMap || fastMap.map_type !== 'fast') {
     try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e5) {}
     return;
@@ -9052,6 +9349,7 @@ guardianInvokeActive = true;
   void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced', pending.discourseId, directiveRoot);
   await refreshAbyssActiveTint();
   await refreshSoupSurfaceBoost();
+  await refreshWatcherFocus();
   if (currentMode === 'soup' && currentView === 'soup') void renderTableView();
 }
 
@@ -9411,12 +9709,19 @@ function deriveSoupSurfaceDirective(discourseId) {
   };
 }
 
-function buildGuardianDirectiveRoot(workerDirective, fastMap, triggeredBy, discourseId) {
+function buildGuardianDirectiveRoot(workerDirective, fastMap, triggeredBy, discourseId, extraDirectives) {
   var root = {};
+  var extra = extraDirectives || {};
   if (workerDirective && typeof workerDirective === 'object') {
     if (workerDirective.abyss_tint) root.abyss_tint = workerDirective.abyss_tint;
     if (workerDirective.soup_surface) root.soup_surface = workerDirective.soup_surface;
+    if (workerDirective.watcher_focus) root.watcher_focus = workerDirective.watcher_focus;
+    if (workerDirective.revisit_flag) root.revisit_flag = workerDirective.revisit_flag;
   }
+  if (extra.abyss_tint) root.abyss_tint = extra.abyss_tint;
+  if (extra.soup_surface) root.soup_surface = extra.soup_surface;
+  if (extra.watcher_focus) root.watcher_focus = extra.watcher_focus;
+  if (extra.revisit_flag) root.revisit_flag = extra.revisit_flag;
   if (!root.abyss_tint) {
     var derivedTint = deriveAbyssTintDirective(fastMap, triggeredBy);
     if (derivedTint && derivedTint.abyss_tint) root.abyss_tint = derivedTint.abyss_tint;
@@ -9425,8 +9730,46 @@ function buildGuardianDirectiveRoot(workerDirective, fastMap, triggeredBy, disco
     var derivedSoup = deriveSoupSurfaceDirective(discourseId);
     if (derivedSoup && derivedSoup.soup_surface) root.soup_surface = derivedSoup.soup_surface;
   }
-  if (!root.abyss_tint && !root.soup_surface) return null;
+  if (!root.watcher_focus) {
+    var derivedFocus = deriveWatcherFocusDirective(fastMap);
+    if (derivedFocus && derivedFocus.watcher_focus) root.watcher_focus = derivedFocus.watcher_focus;
+  }
+  if (!Object.keys(root).length) return null;
   return root;
+}
+
+function normalizeWatcherFocusDirective(directiveRoot) {
+  if (!directiveRoot || !directiveRoot.watcher_focus) return null;
+  var w = directiveRoot.watcher_focus;
+  var terms = Array.isArray(w.terms) ? w.terms.map(function (x) { return String(x).toLowerCase().trim(); }).filter(Boolean) : [];
+  if (!terms.length) return null;
+  var appliedAt = typeof w.applied_at === 'number' ? w.applied_at : Date.now();
+  var hours = typeof w.duration_hours === 'number' ? w.duration_hours : WATCHER_FOCUS_DEFAULT_HOURS;
+  return {
+    terms: terms,
+    threshold: typeof w.threshold === 'number' ? w.threshold : WATCHER_FOCUS_DEFAULT_THRESHOLD,
+    applied_at: appliedAt,
+    expires_at: appliedAt + hours * 3600000
+  };
+}
+
+async function refreshWatcherFocus() {
+  watcherFocusActive = null;
+  try {
+    var logs = await dbGetAll('guardian_logs');
+    var sorted = logs.slice().sort(function (a, b) { return (b.invoked_at || 0) - (a.invoked_at || 0); });
+    var now = Date.now();
+    for (var i = 0; i < sorted.length; i++) {
+      var dir = parseGuardianDirectiveRaw(sorted[i].directive);
+      var focus = normalizeWatcherFocusDirective(dir);
+      if (focus && now < focus.expires_at) {
+        watcherFocusActive = focus;
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('[Watcher] watcher_focus load:', e);
+  }
 }
 
 function normalizeSoupSurfaceDirective(directiveRoot) {
@@ -9688,8 +10031,17 @@ async function buildGuardianContext(discs) {
     console.warn('[Guardian] Deep map tier skipped:', dErr);
   }
 
-  // Tier 4 — term arcs (temporal corpus shape)
-  var tier4 = formatCorpusTermArcsTier(computeCorpusTermArcs(discs, fastMapById), 5);
+  var corpusArcs = computeCorpusTermArcs(discs, fastMapById);
+  var watcherLinks = [];
+  if (isWatcherReady && watcherDB) {
+    try { watcherLinks = await wdb.getAll('links'); } catch (wLinksErr) { watcherLinks = []; }
+  }
+  var returnDetections = computeReturnDetections(discs, fastMapById, watcherLinks);
+
+  // Tier 4 — temporal corpus + return witness
+  var tier4 = formatReturnDetectionsTier(returnDetections, 4);
+  tier4 += formatSilentAttractorsTier(corpusArcs, 5);
+  tier4 += formatCorpusTermArcsTier(corpusArcs, 5);
 
   // Tier 5 — archive rollup
   tier4 += '── ARCHIVE ROLLUP ──\n\n';
@@ -9847,6 +10199,7 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
     quals = [{ type: guardianPendingTriggerType }];
   }
   var theory = buildTheoryOneLine(guardianPendingTriggerType, quals, fm, text || '');
+  var predictionTag = derivePredictionTag(guardianPendingTriggerType, quals, fm);
   var log = {
     id: 'gl_' + Date.now(),
     invoked_at: Date.now(),
@@ -9862,7 +10215,9 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
     geometry_snapshot: snap,
     triggered_by: guardianPendingTriggerType || null,
     qualifiers: JSON.stringify(quals),
-    theory_one_line: theory
+    theory_one_line: theory,
+    prediction_tag: predictionTag,
+    prediction_outcome: null
   };
   guardianLastInvokeQualifiers = null;
   await dbPut('guardian_logs', log);
@@ -9903,6 +10258,12 @@ function openGuardianLogDetail(log){
   if (log.theory_one_line) {
     lines.push('');
     lines.push('Theory: ' + String(log.theory_one_line).trim());
+  }
+  if (log.prediction_tag) {
+    var predLine = 'Prediction: ' + log.prediction_tag;
+    if (log.prediction_outcome) predLine += ' → ' + log.prediction_outcome;
+    else predLine += ' (pending)';
+    lines.push(predLine);
   }
   var quals = parseQualifiers(log.qualifiers);
   if (quals.length) {
@@ -10641,6 +11002,7 @@ async function init(){
   document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
   initWatcher();
   initGuardianModel();
+  void runDailyRevisitCheck();
 }
 
 // BOOTUP
