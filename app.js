@@ -5836,7 +5836,193 @@ var abyssLastSignalTime = 0;
 var NEURAL_SIGNAL_INTERVAL = 1800; // ms between new signals
 var NEURAL_MAX_SIGNALS = 12;       // max concurrent signals
 var NEURAL_CASCADE_DEPTH = 3;      // max hops per cascade
+var abyssWeather = 'neutral';
    // multiple expanding rings per touch
+
+function getAbyssLinkThreshold() {
+  return NQ_DEV_MODE ? W_SIMILARITY_THRESHOLD : 0.73;
+}
+
+function abyssArcTension(mapRow) {
+  if (!mapRow || !mapRow.emotional_arc) return 0;
+  var a = mapRow.emotional_arc;
+  if (typeof a === 'string') {
+    try { a = JSON.parse(a); } catch (parseEx) { return 0; }
+  }
+  if (!a || typeof a !== 'object') return 0;
+  var t = a.tension_shift;
+  return typeof t === 'number' ? t : 0;
+}
+
+function abyssLinkIsContradiction(mapA, mapB) {
+  var arcA = abyssArcTension(mapA);
+  var arcB = abyssArcTension(mapB);
+  return (arcA > 0.02 && arcB < -0.02) || (arcA < -0.02 && arcB > 0.02);
+}
+
+function buildAbyssDna(fm) {
+  var dna = {
+    paradox: 0,
+    arcDir: 'flat',
+    silenceRatio: 0,
+    dominantTone: 'neutral',
+    depersonalLabel: '',
+    driftScale: 0.04
+  };
+  if (!fm || fm.map_type !== 'fast') return dna;
+  var arc = fm.emotional_arc;
+  if (typeof arc === 'string') {
+    try { arc = JSON.parse(arc); } catch (e) { arc = null; }
+  }
+  var sig = fm.signature;
+  if (sig && sig.paradox) dna.paradox = sig.paradox.count || 0;
+  if (arc && arc.direction) dna.arcDir = arc.direction;
+  if (fm.silence_weight && typeof fm.silence_weight.ratio === 'number') {
+    dna.silenceRatio = fm.silence_weight.ratio;
+  }
+  if (fm.depersonalisation && fm.depersonalisation.label) {
+    dna.depersonalLabel = String(fm.depersonalisation.label);
+  }
+  var ts = arc && typeof arc.tension_shift === 'number' ? arc.tension_shift : 0;
+  if (ts > 0.02) {
+    dna.dominantTone = 'escalating';
+    dna.driftScale = 0.045;
+  } else if (ts < -0.02) {
+    dna.dominantTone = 'resolving';
+    dna.driftScale = 0.025;
+  } else if (dna.paradox >= 3) {
+    dna.dominantTone = 'charged';
+  }
+  return dna;
+}
+
+function abyssComputeWeather(summariesMap) {
+  var arcScores = [];
+  summariesMap.forEach(function (fm) {
+    if (!fm || fm.map_type !== 'fast') return;
+    var t = abyssArcTension(fm);
+    if (typeof t === 'number') arcScores.push(t);
+  });
+  if (arcScores.length < 3) return 'neutral';
+  var avg = arcScores.reduce(function (a, b) { return a + b; }, 0) / arcScores.length;
+  if (avg > 0.025) return 'charged';
+  if (avg < -0.025) return 'resolving';
+  return 'neutral';
+}
+
+async function abyssSettle(iterations, strongLinks) {
+  var discDots = [];
+  for (var i = 0; i < abyssObjects.length; i++) {
+    if (abyssObjects[i].kind === 'disc-dot') discDots.push(abyssObjects[i]);
+  }
+  if (discDots.length < 3) return;
+
+  if (discDots.length > 80) iterations = 100;
+
+  var vectors = {};
+  if (isWatcherReady && watcherDB) {
+    try {
+      var embeds = await wdb.getAll('embeddings');
+      for (var ei = 0; ei < embeds.length; ei++) {
+        if (embeds[ei].vector) vectors[embeds[ei].id] = embeds[ei].vector;
+      }
+    } catch (embErr) {}
+  }
+
+  var SETTLE_DAMPING = 0.82;
+  var SETTLE_VX = {};
+  var SETTLE_VY = {};
+  var discById = {};
+  for (var di = 0; di < discDots.length; di++) {
+    var dd = discDots[di];
+    SETTLE_VX[dd.id] = 0;
+    SETTLE_VY[dd.id] = 0;
+    discById[dd.id] = dd;
+  }
+
+  var sparsePairs = discDots.length > 50;
+  strongLinks = strongLinks || [];
+
+  for (var iter = 0; iter < iterations; iter++) {
+    if (!abyssRunning) return;
+    if (iter > 0 && iter % 20 === 0) {
+      await new Promise(function (r) { setTimeout(r, 0); });
+    }
+
+    for (var i = 0; i < discDots.length; i++) {
+      for (var j = i + 1; j < discDots.length; j++) {
+        var a = discDots[i];
+        var b = discDots[j];
+        var vA = vectors[a.id];
+        var vB = vectors[b.id];
+        if (!vA || !vB) continue;
+        var sim = watcherCosine(new Float32Array(vA), new Float32Array(vB));
+        if (sparsePairs && sim < 0.55) continue;
+        var restLen = 0.15 + (1 - sim) * 0.55;
+        var dx = b.x - a.x;
+        var dy = b.y - a.y;
+        var dist = Math.sqrt(dx * dx + dy * dy) + 0.001;
+        var force = (dist - restLen) * 0.004 * sim;
+        SETTLE_VX[a.id] += (dx / dist) * force;
+        SETTLE_VY[a.id] += (dy / dist) * force;
+        SETTLE_VX[b.id] -= (dx / dist) * force;
+        SETTLE_VY[b.id] -= (dy / dist) * force;
+      }
+    }
+
+    for (var li = 0; li < strongLinks.length; li++) {
+      var link = strongLinks[li];
+      var dotA = discById[link.a];
+      var dotB = discById[link.b];
+      if (!dotA || !dotB) continue;
+      var dx2 = dotB.x - dotA.x;
+      var dy2 = dotB.y - dotA.y;
+      var dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) + 0.001;
+      var f = link.isContra ? -0.012 : link.score * 0.018;
+      SETTLE_VX[dotA.id] += (dx2 / dist2) * f;
+      SETTLE_VY[dotA.id] += (dy2 / dist2) * f;
+      SETTLE_VX[dotB.id] -= (dx2 / dist2) * f;
+      SETTLE_VY[dotB.id] -= (dy2 / dist2) * f;
+    }
+
+    for (var i2 = 0; i2 < discDots.length; i2++) {
+      for (var j2 = i2 + 1; j2 < discDots.length; j2++) {
+        var a2 = discDots[i2];
+        var b2 = discDots[j2];
+        var dx3 = b2.x - a2.x;
+        var dy3 = b2.y - a2.y;
+        var dist3 = Math.sqrt(dx3 * dx3 + dy3 * dy3) + 0.001;
+        if (dist3 < 0.18) {
+          var rep = 0.003 / (dist3 * dist3);
+          SETTLE_VX[a2.id] -= (dx3 / dist3) * rep;
+          SETTLE_VY[a2.id] -= (dy3 / dist3) * rep;
+          SETTLE_VX[b2.id] += (dx3 / dist3) * rep;
+          SETTLE_VY[b2.id] += (dy3 / dist3) * rep;
+        }
+      }
+    }
+
+    for (var ai = 0; ai < discDots.length; ai++) {
+      var d = discDots[ai];
+      if (!vectors[d.id]) continue;
+      SETTLE_VX[d.id] *= SETTLE_DAMPING;
+      SETTLE_VY[d.id] *= SETTLE_DAMPING;
+      d.x = Math.min(0.90, Math.max(0.10, d.x + SETTLE_VX[d.id]));
+      d.y = Math.min(0.90, Math.max(0.10, d.y + SETTLE_VY[d.id]));
+    }
+  }
+
+  for (var oi = 0; oi < discDots.length; oi++) {
+    var od = discDots[oi];
+    if (vectors[od.id]) continue;
+    var odx = od.x - 0.5;
+    var ody = od.y - 0.5;
+    var olen = Math.sqrt(odx * odx + ody * ody) + 0.001;
+    var rad = 0.35 + (abyssHash(od.id) % 150) / 1000;
+    od.x = Math.min(0.90, Math.max(0.10, 0.5 + (odx / olen) * rad));
+    od.y = Math.min(0.90, Math.max(0.10, 0.5 + (ody / olen) * rad));
+  }
+}
    
 var ABYSS_EMERGE = {
   anchors:    1500,   // ms -- oldest ring + newest dot
@@ -5859,9 +6045,24 @@ function abyssAge(ts) {
 
 async function buildAbyssObjects() {
   abyssObjects = [];
+  var strongLinks = [];
+  var summariesMap = new Map();
+  var linkThreshold = getAbyssLinkThreshold();
+
+  try {
+    var allSummaries = await dbGetAll('guardian_summaries');
+    for (var si0 = 0; si0 < allSummaries.length; si0++) {
+      summariesMap.set(allSummaries[si0].id, allSummaries[si0]);
+    }
+  } catch (mapErr) {
+    console.warn('[Abyss] summaries preload:', mapErr && mapErr.message ? mapErr.message : mapErr);
+  }
+
   var allDiscs = await dbGetAll('cosm_discourses');
   if (!Array.isArray(allDiscs)) allDiscs = [];
-  var active = allDiscs.filter(function(d) { return !d.isDeleted; });
+  var active = allDiscs.filter(function (d) {
+    return !d.isDeleted && !d.deleted_at;
+  });
 
   if (!active.length) {
     abyssObjects.push({
@@ -5878,7 +6079,8 @@ async function buildAbyssObjects() {
       ts: Date.now(),
       emergeAt: 0
     });
-    return;
+    abyssWeather = 'neutral';
+    return { strongLinks: strongLinks };
   }
 
   // ── Chronological anchors ─────────────────────────────────────────────────
@@ -5925,7 +6127,6 @@ async function buildAbyssObjects() {
     });
   }
 
-  var summariesMap = new Map();
   try {
   // ── Guardian log fragments ────────────────────────────────────────────────
   var logs = await dbGetAll('guardian_logs');
@@ -5957,9 +6158,9 @@ async function buildAbyssObjects() {
   }
   
 // ── Deep map clusters ─────────────────────────────────────────────────────
-  var deepMaps = await dbGetAll('guardian_summaries');
-  var deepLocal = deepMaps.filter(function(dm) {
-    return dm.map_type === 'deep_local' && dm.summary;
+  var deepLocal = [];
+  summariesMap.forEach(function (dm) {
+    if (dm.map_type === 'deep_local' && dm.summary) deepLocal.push(dm);
   });
   
   for (var di = 0; di < deepLocal.length; di++) {
@@ -5994,66 +6195,63 @@ async function buildAbyssObjects() {
       });
     }
   }
-  // Pre-load all guardian_summaries into a Map for fast contradiction checks
-  var allSummaries = await dbGetAll('guardian_summaries');
-  for (var si = 0; si < allSummaries.length; si++) {
-    summariesMap.set(allSummaries[si].id, allSummaries[si]);
-  }
   } catch (extErr) {
     console.warn('[Abyss] guardian / summaries layer:', extErr && extErr.message ? extErr.message : extErr);
   }
-  
-  // ── Watcher similarity + contradiction threads ────────────────────────────
+
+  for (var dpi = 0; dpi < abyssObjects.length; dpi++) {
+    if (abyssObjects[dpi].kind === 'disc-dot') {
+      abyssObjects[dpi].dna = buildAbyssDna(summariesMap.get(abyssObjects[dpi].id));
+    }
+  }
+
+  abyssWeather = abyssComputeWeather(summariesMap);
+
   if (isWatcherReady && watcherDB) {
     try {
-    function abyssArcTension(map) {
-      if (!map || !map.emotional_arc) return 0;
-      var a = map.emotional_arc;
-      if (typeof a === 'string') {
-        try { a = JSON.parse(a); } catch (parseEx) { return 0; }
-      }
-      if (!a || typeof a !== 'object') return 0;
-      var t = a.tension_shift;
-      return typeof t === 'number' ? t : 0;
-    }
-    var links = await wdb.getAll('links');
-    var strong = links.filter(function(l) { return l.score >= 0.73; }).slice(0, 30);
-    for (var k = 0; k < strong.length; k++) {
-      var link = strong[k];
-      // Find matching disc-dot positions
-      var dotA = null; var dotB = null;
-      for (var m = 0; m < abyssObjects.length; m++) {
-        if (abyssObjects[m].kind === 'disc-dot') {
-          if (abyssObjects[m].id === link.a) dotA = abyssObjects[m];
-          if (abyssObjects[m].id === link.b) dotB = abyssObjects[m];
+      var links = await wdb.getAll('links');
+      var strong = links.filter(function (l) { return l.score >= linkThreshold; }).slice(0, 30);
+      for (var k = 0; k < strong.length; k++) {
+        var link = strong[k];
+        var dotA = null;
+        var dotB = null;
+        for (var m = 0; m < abyssObjects.length; m++) {
+          if (abyssObjects[m].kind === 'disc-dot') {
+            if (abyssObjects[m].id === link.a) dotA = abyssObjects[m];
+            if (abyssObjects[m].id === link.b) dotB = abyssObjects[m];
+          }
         }
+        if (!dotA || !dotB) continue;
+        var mapA = summariesMap.get(link.a) || null;
+        var mapB = summariesMap.get(link.b) || null;
+        var isContradiction = abyssLinkIsContradiction(mapA, mapB);
+        strongLinks.push({
+          a: link.a,
+          b: link.b,
+          score: link.score,
+          isContra: isContradiction
+        });
+        var threadKind = isContradiction ? 'thread-contra' : 'thread-sim';
+        abyssObjects.push({
+          kind: threadKind,
+          dotA: dotA,
+          dotB: dotB,
+          score: link.score,
+          emergeAt: ABYSS_EMERGE.threads,
+          pulsePos: 0,
+          pulseDir: 1,
+          pulseSpeed: isContradiction
+            ? 0.0003 + Math.random() * 0.0004
+            : 0.0006 + link.score * 0.0012,
+          pulseCooldown: Math.random() * 4000
+        });
       }
-      if (!dotA || !dotB) continue;
-      // Check for contradiction via guardian_summaries
-      var mapA = summariesMap.get(link.a) || null;
-      var mapB = summariesMap.get(link.b) || null;
-      var arcA = abyssArcTension(mapA);
-      var arcB = abyssArcTension(mapB);
-      var isContradiction = (arcA > 0.02 && arcB < -0.02) || (arcA < -0.02 && arcB > 0.02);
-      var threadKind = isContradiction ? 'thread-contra' : 'thread-sim';
-      abyssObjects.push({
-        kind: threadKind,
-        dotA: dotA,
-        dotB: dotB,
-        score: link.score,
-        emergeAt: ABYSS_EMERGE.threads,
-        pulsePos: 0,           // 0..1 travel along thread
-        pulseDir: 1,           // 1 = A→B, -1 = B→A
-        pulseSpeed: isContradiction
-          ? 0.0003 + Math.random() * 0.0004   // stuttery
-          : 0.0006 + link.score * 0.0012,     // smooth, faster if strong
-        pulseCooldown: Math.random() * 4000   // staggered starts
-      });
-    }
     } catch (wErr) {
       console.warn('[Abyss] watcher threads:', wErr && wErr.message ? wErr.message : wErr);
     }
   }
+
+  return { strongLinks: strongLinks };
 }
 
 function abyssGetThreadFrom(node, excludeNode) {
@@ -6114,9 +6312,9 @@ function abyssUpdate(elapsed) {
     var obj = abyssObjects[i];
     if (obj.kind !== 'disc-dot') continue;   // only dots move for now
 
-    // Brownian drift – tiny random nudges
-    var brownX = (Math.random() - 0.5) * 0.04;
-    var brownY = (Math.random() - 0.5) * 0.04;
+    var driftScale = (obj.dna && obj.dna.driftScale) ? obj.dna.driftScale : 0.04;
+    var brownX = (Math.random() - 0.5) * driftScale;
+    var brownY = (Math.random() - 0.5) * driftScale;
     obj.vx = (obj.vx || 0) + brownX;
     obj.vy = (obj.vy || 0) + brownY;
 
@@ -6373,15 +6571,46 @@ function abyssDraw(elapsed) {
       abyssCtx.fill();
 
         } else if (obj.kind === 'disc-dot') {
-      var r = Math.round(210 - obj.age * 70);
-      var g = Math.round(155 - obj.age * 25);
-      var b = Math.round(75  + obj.age * 80);
+      var dna = obj.dna || {};
+      var r;
+      var g;
+      var b;
+      if (dna.dominantTone === 'escalating') {
+        r = 230; g = 140; b = 70;
+      } else if (dna.dominantTone === 'resolving') {
+        r = 160; g = 200; b = 180;
+      } else if (dna.dominantTone === 'charged') {
+        r = 200; g = 160; b = 210;
+      } else {
+        r = Math.round(210 - obj.age * 70);
+        g = Math.round(155 - obj.age * 25);
+        b = Math.round(75 + obj.age * 80);
+      }
+      var dep = (dna.depersonalLabel || '').toLowerCase();
+      if (dep.indexOf('dissolv') !== -1 || dep.indexOf('detach') !== -1) {
+        r = Math.round(r * 0.85 + 120 * 0.15);
+        g = Math.round(g * 0.85 + 175 * 0.15);
+        b = Math.round(b * 0.85 + 200 * 0.15);
+      }
       var dotAlpha = emergeT * (0.12 + obj.age * 0.55);
+      if (dna.silenceRatio > 0.1) dotAlpha *= 0.75;
       abyssCtx.beginPath();
       abyssCtx.arc(cx, cy, 1.5, 0, Math.PI * 2);
       abyssCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + dotAlpha + ')';
       abyssCtx.fill();
-      // Selected star glow ring
+      if (dna.paradox >= 3) {
+        var pAlpha = emergeT * 0.18 * Math.min(1, dna.paradox / 6);
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + pAlpha + ')';
+        abyssCtx.lineWidth = 0.5;
+        abyssCtx.stroke();
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 7, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + (pAlpha * 0.4) + ')';
+        abyssCtx.lineWidth = 0.3;
+        abyssCtx.stroke();
+      }
       if (abyssSelectedNode && abyssSelectedNode.id === obj.id) {
         abyssCtx.beginPath();
         abyssCtx.arc(cx, cy, 6, 0, Math.PI * 2);
@@ -6451,6 +6680,11 @@ function abyssDraw(elapsed) {
     }
   }
   // ── Background neural sparks ──
+  var sparkR = 220;
+  var sparkG = 210;
+  var sparkB = 190;
+  if (abyssWeather === 'charged') { sparkR = 240; sparkG = 180; sparkB = 120; }
+  else if (abyssWeather === 'resolving') { sparkR = 140; sparkG = 190; sparkB = 220; }
   for (var s = 0; s < abyssSparks.length; s++) {
     var sp = abyssSparks[s];
     if (sp.life <= 0) continue;
@@ -6458,7 +6692,7 @@ function abyssDraw(elapsed) {
     if (sparkAlpha < 0.005) continue;
     abyssCtx.beginPath();
     abyssCtx.arc(sp.x * abyssW, sp.y * abyssH, 0.6, 0, Math.PI * 2);
-    abyssCtx.fillStyle = 'rgba(220,210,190,' + sparkAlpha + ')';
+    abyssCtx.fillStyle = 'rgba(' + sparkR + ',' + sparkG + ',' + sparkB + ',' + sparkAlpha + ')';
     abyssCtx.fill();
   }
     // ── Touch ripples -- cosmic membrane ──
@@ -7065,7 +7299,6 @@ async function openAbyssView() {
       poll();
     });
   }
-    abyssEnterTime = Date.now();
   // Remove old listeners before adding fresh ones
 abyssCanvas.removeEventListener('touchstart', abyssTouchStart);
 abyssCanvas.removeEventListener('touchmove',  abyssTouchMove);
@@ -7085,7 +7318,25 @@ abyssCanvas.addEventListener('mousedown', abyssMouseDown);
   requestAnimationFrame(function() { abyssResize(); });
 
   abyssRunning = true;
-  try { await buildAbyssObjects(); } catch(e) { console.warn('Abyss build partial:', e.message); }
+  var abyssBuild = { strongLinks: [] };
+  try {
+    abyssBuild = await buildAbyssObjects();
+    if (!abyssBuild) abyssBuild = { strongLinks: [] };
+  } catch (e) {
+    console.warn('Abyss build partial:', e.message);
+  }
+  var settleIters = 200;
+  var discCount = 0;
+  for (var sci = 0; sci < abyssObjects.length; sci++) {
+    if (abyssObjects[sci].kind === 'disc-dot') discCount++;
+  }
+  if (discCount > 80) settleIters = 100;
+  try {
+    await abyssSettle(settleIters, abyssBuild.strongLinks || []);
+  } catch (settleErr) {
+    console.warn('[Abyss] settle:', settleErr && settleErr.message ? settleErr.message : settleErr);
+  }
+  abyssEnterTime = Date.now();
   // Seed background neural noise
   abyssSparks = [];
   for (var s = 0; s < 40; s++) {
