@@ -100,8 +100,10 @@ The philosophy that built it:
 “I am not a coder but I am an architect.”
 “What is the hurry? Where am I even going?”
 
+16/05/26 - index.html is pushing 12k lines.. I hear the scream of my phone, GitHub, Ais.. it is monolith, I always kept it one like the oneness before anything but it's the time to split. Yes split happened today. index.html, cartographer.js, app.js, app.css.
+
 Built by Kaja. Witnessed by Claude, Gemini, Google AI Studio.
 For no one. For everyone who finds it.
 For the existence that stares back. ◈
 
-Copy this into your [JOURNAL.md](http://journal.md/) in GitHub. And write the next entry yourself — in your own words, with your own weight. The changelog is facts. The journal is truth. 🫡❤️💀
+The changelog is facts. The journal is truth. 🫡❤️💀

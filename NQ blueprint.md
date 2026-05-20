@@ -50,16 +50,17 @@ NakedQuantum merges two personal tools — CosmiOS (folder archive) and Quantum 
 - Engram is deliberate consent. No accidental archiving.
 
 ## 6. Soup Features
-- Folder-based archive. Nested folders supported.
-- Items: Engrammed discourses, sparks moved manually, folders.
-- Gold Thread: button opens side drawer showing full lineage from root to current item. Ticks indicate depth.
-- Multi-select: long press to select mode, batch move, delete, export.
-- Search: local full-text across titles and bodies.
-- Decaying Memories:
-  - Day 0-14: Active — full opacity
-  - Day 15-30: Fading — muted opacity, still visible
-  - Day 31: Forgotten — removed from Soup view, moved to Deep Soup
-  - Clock resets on open, edit, or any child activity. Folder stays alive if anything inside is touched.
+— Soup Features needs complete rewrite. The folder-based archive with Gold Thread side drawer is gone. Replace with:
+- Flat mesh grid — all items (folders, sparks, chronicles, discourses) exist at root level simultaneously
+- RPG cards — equal size, glyph differentiation (▤ folder, ◇ spark, ○ chronicle, ◈ discourse)
+- Three-tier focus mechanic — tap card → tier1 direct children pull to top, tier2 siblings stay visible, tier3 unrelated fade to 0.25
+- Nested folders render as thick stacked cards with count badge — inject dynamically on parent focus
+- Chain of Path Knots — replaces breadcrumb, records focus journey as scrollable gold thread with knots, ghost knot hints at depth ahead
+- Gravity system — invisible weight score: +1 open, +2 edit, -1 per 7 days untouched. Sorts mesh order
+- Favourites — gold dot pinprick on card, always floats to top
+- 30-day decay — unfavourited items untouched for 30 days silently move to Deep Soup on next render
+- Creation card — always first, dashed border, opens create menu (folder/spark/chronicle/discourse)
+- Long press — vertical quick action menu (preview, rename, move, burn, convert to chronicle for sparks)
 
 ## 7. Deep Soup
 - Holds forgotten items. Not deleted, just out of sight.
@@ -108,10 +109,9 @@ NakedQuantum merges two personal tools — CosmiOS (folder archive) and Quantum 
 - Extracts themes, quotes, and connections from the current discourse.
 - Shown as inline chips. Early stage, subject to refinement.
 
-## 14. Gold Thread Lineage
-- Visual breadcrumb activated by gold thread button.
-- Side drawer slides in, shows path from root to current folder or discourse.
-- Each level shows depth tick. Tap any level to jump.
+## 14. Gold tether knots
+- Chronological path knots 
+- Tether lines run from the parent to the connections 
 
 ## 15. Data Model (OPFS SQLite)
 Tables:
@@ -143,9 +143,9 @@ Tables:
 - Data page always accessible, even in read-only mode
 
 ## 19. UI Language
-- Dark background, muted gold accents. No comfort gradients.
-- Pill navigation at bottom. Glyphs are changeable, not fixed to meaning.
-- No tutorials, no onboarding tooltips. Names teach through use.
+    Black: #000, gold #c8a050, white #ffffff for active elements, muted #6b6560 for passive
+-  Cards: 120px fixed height, 12px radius, auto-fill minmax clamp(80px, 22vw, 160px) grid
+-  Gold SVG threads connect focused cards to chain knots — one continuous visual language
 
 ## 20. Monetisation Model
 - Vessel Fee: monthly subscription for the interface. Pays for your time.
@@ -166,6 +166,9 @@ Tables:
 - No wellness prompts, no gamification
 - No AI that comforts or judges in Sanctuary
 - No editing of IE, Guardian logs, or past Engrams
+- No horizontal folder scroll
+- No separate section headers (Folders / Sparks / Chronicles)
+- No bottom action bar (replaced by quick action menu)
 
 ---
 This is the complete map. Every feature exists to serve accuracy, not engagement. Build to this, and NakedQuantum stays true to its compass.

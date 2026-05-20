@@ -28,9 +28,9 @@
 - Delta sync - E2EE- Supabase ✅
 - Pre made characters - immutable (complex continue creative process) ✅
 - Guardian of archives (Highly intelligent reasoning model) - A cold honest Ai lives separately from containers, summoned deliberately. ✅
-- Local cartographer uses distil bart cnn sumariser model to feed guardian. ✅
+- Local cartographer uses both nlp js and distil bart cnn sumariser model to feed guardian. ✅
 - Fast maps and deep maps ✅
-- Local js NLP ✅
+- Local js aka cartographer uses plenty of word markers - NLP ✅
 - Watcher - Ai watches the patterns of discourses, thoughts, notes - Local Vector embeddings - silent observer - Ego/performance/contradiction/incomsistencies detection - Gold pulsing dot surfacing connections/patterns - Xenova/bge-base-en-v1.5 109mb ✅
 - Removing motes after decay - no functions except philosophy. ✅
 - Merging void into Deepsoup page.✅
@@ -98,7 +98,7 @@ Phase 5, cold backup
 Way into future, like when the NQ get stabilised and officially enter the polishing stage before we think of monetising. It's just an option of map in the lighthouse table that could either we change or pick it up along the path. Question is.. they align with our life long personal project of myself that live as a metacognition uncomfortable personal space of mine for years if I survive lol then it survives years of digital and world transformation too.
 
 - Tauri
-- P2P Syncing (GunDB/Waku), web assembly? Rust?Rust’s `ring` or `rust-crypto` libraries
+- web assembly? Rust?Rust’s `ring` or `rust-crypto` libraries
 - Open to evolving without bending the honest compass.
 
 ---

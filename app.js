@@ -1,2258 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="NakedQuantum">
-<link rel="manifest" href="/manifest.json">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NakedQuantum v0.38.4</title>
-<style>
-:root {
-  --bg: #000000;
-  --surface: #0a0a0a;
-  --surface2: #111111;
-  --surface3: #161614;
-  --border: #1f1f1f;
-  --accent: #c8a050;
-  --accent-dim: #8a6e35;
-  --text: #ccc5b9;
-  --muted: #6b6560;
-  --danger: #8a3030;
-  --code-bg: #0d0d0b;
-  --font-serif: Georgia, serif;
-}
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
-button { cursor: pointer; -webkit-appearance: none; appearance: none; touch-action: manipulation; }
-button:active { opacity: 0.7; transform: scale(0.97); transition: transform 0.08s ease, opacity 0.08s ease; }
-button {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-#firefly-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-
-.nq-header { height: 56px; background: #000; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 1000; flex-shrink: 0; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);}
-
-.nq-wordmark { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; opacity: 0.8; cursor: pointer; user-select: none; -webkit-user-select: none; padding: 8px 0; transition: opacity 0.15s; }
-.nq-wordmark.pressing { opacity: 0.3; }
-.header-actions { display: flex; align-items: center; gap: 8px; }
-.hdr-btn { width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; cursor: pointer; flex-shrink: 0; }
-.hdr-btn:active { background: var(--surface2); border-color: var(--accent-dim); }
-
-#mode-toast { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--accent-dim); color: var(--accent); padding: 5px 14px; border-radius: 20px; font-size: 9px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
-
-.view-host { flex: 1; position: relative; overflow: hidden; z-index: 1; }
-.view-panel { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; transition: transform 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease; will-change: transform, opacity; }
-.view-panel.hidden { transform: translateX(40px); opacity: 0; pointer-events: none; }
-.view-panel.slide-back.hidden { transform: translateX(-40px); }
-
-.soup-view { background: transparent; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-
-/* GOLD THREAD BREADCRUMB */
-.breadcrumb-bar { position: relative; height: 48px; overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; flex-shrink: 0; scrollbar-width: none; padding: 0 20px; }
-.breadcrumb-bar::-webkit-scrollbar { display: none; }
-.bc-thread-svg { position: absolute; top: 0; left: 0; height: 100%; pointer-events: none; }
-.bc-knot-wrap { position: absolute; top: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transform: translateX(-50%); }
-.bc-knot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; transition: transform 0.2s, opacity 0.2s; }
-.bc-knot.current { width: 10px; height: 10px; background: var(--accent); box-shadow: 0 0 8px rgba(200,160,80,0.5); }
-.bc-knot.compressed { width: 4px; height: 4px; background: var(--accent-dim); opacity: 0.4; }
-.bc-knot-label { font-size: 9px; letter-spacing: 1px; color: var(--accent); font-weight: 700; text-transform: uppercase; white-space: nowrap; margin-top: 3px; opacity: 0; transition: opacity 0.2s; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
-.bc-knot-label.current { opacity: 1; font-size: 10px; }
-.bc-knot-label.parent { opacity: 0.6; font-size: 9px; }
-.bc-knot-wrap:active .bc-knot { transform: scale(1.4); }
-.bc-drop-line { stroke: rgba(200,160,80,0.4); stroke-width: 1; fill: none; }
-
-/* Deep soup / sanctuary breadcrumb row (avoid default blue link styling on buttons) */
-.breadcrumb-seg { display: inline-flex; align-items: center; flex-shrink: 0; }
-.breadcrumb-btn {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 4px 2px;
-  max-width: min(200px, 42vw);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.breadcrumb-btn.current { color: var(--accent); }
-.breadcrumb-arrow { color: var(--muted); opacity: 0.35; font-size: 10px; padding: 0 4px; flex-shrink: 0; }
-
-#sanctuary-breadcrumb-bar.breadcrumb-bar,
-#deep-soup-breadcrumb.breadcrumb-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-}
-
-/* Deep soup void -- narrow columns need compact action row */
-.void-card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 8px;
-}
-.void-card-actions button {
-  flex: 1 1 calc(50% - 3px);
-  min-width: 0;
-  font-size: 8px !important;
-  padding: 5px 3px !important;
-  letter-spacing: 0.2px;
-  line-height: 1.2;
-  border-radius: 6px;
-  font-weight: 700;
-}
-.void-card-actions .surface-btn {
-  background: none;
-  border: 1px solid var(--accent-dim);
-  color: var(--accent);
-}
-.void-card-actions .purge-btn {
-  background: none;
-  border: 1px solid var(--danger);
-  color: #ff6060;
-}
-
-/* Sanctuary character grid -- fixed two columns on phone */
-.sanctuary-char-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.cards-section-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.45; font-weight: 900; text-transform: uppercase; padding: 14px 0 8px; }
-.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(80px, 22vw, 160px), 1fr)); gap: 26px; }
-
-.folder-card, .discourse-card, .character-card { user-select: none; -webkit-user-select: none; }
-.card-selected { border-color: var(--accent) !important; background: rgba(200,160,80,0.08) !important; }
-/* ── RPG CARD -- unified for all types ── */
-.nq-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; height: 120px; display: flex; flex-direction: column; justify-content: space-between; user-select: none; -webkit-user-select: none; z-index: 1; }
-.nq-card:active { border-color: var(--accent); background: var(--surface2); }
-.nq-create-card { border-style: dashed; border-color: var(--border); }
-.nq-create-card:active { border-color: var(--accent); }
-
-/* THICK FOLDER -- layered depth effect */
-.nq-card.folder-thick { position: relative; }
-.nq-card.folder-thick::before { content: ''; position: absolute; bottom: -4px; left: 4px; right: -4px; height: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; z-index: -1; }
-.nq-card.folder-thick::after { content: ''; position: absolute; bottom: -8px; left: 8px; right: -8px; height: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; z-index: -2; opacity: 0.7; }
-.nq-card.long-pressing { border-color: var(--accent); background: var(--surface2); transform: scale(0.97); }
-.nq-card.in-focus { border-color: var(--accent-dim); opacity: 1; }
-.nq-card.out-focus { opacity: 0.25; }
-
-/* Card header row */
-.nq-card-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
-.nq-card-glyph { font-size: 13px; line-height: 1; opacity: 0.7; flex-shrink: 0; }
-.nq-card-fav { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: 0; flex-shrink: 0; transition: opacity 0.2s; }
-.nq-card-fav.active { opacity: 1; animation: favPulse 7s ease-in-out infinite; }
-@keyframes favPulse { 0%,90%,100% { opacity:1; } 95% { opacity:0.2; } }
-
-/* Card body */
-.nq-card-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px; word-break: break-word; hyphens: auto; -webkit-hyphens: auto; }
-.nq-card-preview { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-
-/* Card footer */
-.nq-card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 6px; }
-.nq-card-date { font-size: 9px; color: var(--muted); opacity: 0.6; letter-spacing: 0.3px; }
-.nq-card-count { font-size: 9px; color: var(--accent-dim); opacity: 0.7; letter-spacing: 0.3px; }
-
-/* QUICK ACTION MENU */
-.nq-quick-action { position: fixed; z-index: 999; background: #0e0e0e; border: 1px solid var(--border); border-radius: 14px; padding: 4px 0; min-width: 180px; box-shadow: 0 8px 32px rgba(0,0,0,0.7); }
-.nq-qa-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; font-size: 13px; color: var(--text); cursor: pointer; letter-spacing: 0.3px; }
-.nq-qa-item:active { background: var(--surface2); }
-.nq-qa-item.destructive { color: #e05555; }
-.nq-qa-glyph { font-size: 14px; opacity: 0.7; width: 18px; text-align: center; }
-.nq-qa-divider { height: 1px; background: var(--border); margin: 3px 0; opacity: 0.5; }
-
-/* PREVIEW OVERLAY */
-.nq-preview-overlay { position: fixed; inset: 0; z-index: 998; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
-.nq-preview-sheet { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; max-width: 480px; max-height: 70vh; overflow-y: auto; }
-.nq-preview-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
-.nq-preview-body { font-size: 13px; color: var(--muted); line-height: 1.7; font-style: italic; }
-.nq-preview-close { margin-top: 16px; text-align: center; font-size: 11px; color: var(--muted); opacity: 0.5; letter-spacing: 1px; }
-
-/* Legacy aliases -- keep old class names working during migration */
-.folder-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; height: 120px; display: flex; flex-direction: column; justify-content: space-between; }
-.folder-card:active { border-color: var(--accent); background: var(--surface2); }
-.folder-card.long-pressing { border-color: var(--accent); background: var(--surface2); transform: scale(0.97); }
-.folder-card-name { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.folder-card-meta { font-size: 10px; color: var(--muted); opacity: 0.6; margin-top: 3px; }
-.discourse-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 8px; cursor: pointer; position: relative; overflow: hidden; min-height: 140px; display: flex; flex-direction: column; gap: 6px; user-select: none; -webkit-user-select: none; }
-.discourse-card:active { border-color: var(--accent); background: var(--surface2); }
-.discourse-card.long-pressing { border-color: var(--accent); background: var(--surface2); transform: scale(0.97); }
-.discourse-card-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.discourse-card-preview { font-size: 11px; color: var(--muted); font-style: italic; line-height: 1.4; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.discourse-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
-.discourse-card-date { font-size: 9px; color: var(--muted); opacity: 0.6; }
-
-.table-surface { flex: 1; padding: 0 6px 140px; }
-
-.search-bar-wrap { padding: 8px 16px 4px; flex-shrink: 0; }
-.search-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 9px 14px; border-radius: 10px; font-size: 14px; outline: none; caret-color: var(--accent); }
-.search-input:focus { border-color: var(--accent-dim); }
-.search-input::placeholder { color: var(--muted); opacity: 0.6; }
-
-.table-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; opacity: 0.22; padding: 60px 20px; user-select: none; grid-column: 1 / -1; }
-.table-empty-glyph { font-size: 40px; }
-.table-empty-text { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; }
-
-.lighthouse-view { background: var(--bg); overflow: hidden; }
-.lighthouse-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #000; flex-shrink: 0; gap: 8px; }
-.btn-back-table { display: flex; align-items: center; gap: 7px; background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; letter-spacing: 1px; font-weight: 700; padding: 7px 12px; border-radius: 8px; white-space: nowrap; }
-.btn-back-table:active { color: var(--text); border-color: var(--accent-dim); }
-.btn-back-arrow { font-size: 14px; opacity: 0.7; }
-.lighthouse-tools { display: flex; align-items: center; gap: 6px; }
-.view-toggle { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1px; overflow: hidden; }
-.view-toggle-btn { background: none; border: none; color: var(--muted); font-size: 11px; padding: 6px 12px; font-weight: 700; letter-spacing: 0.5px; }
-.view-toggle-btn.active { background: var(--surface2); color: var(--text); }
-.tbtn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 11px; padding: 7px 11px; border-radius: 8px; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
-.tbtn.danger { color: #ff6060; border-color: var(--danger); }
-.tbtn.gold { color: var(--accent); border-color: var(--accent-dim); }
-
-.lighthouse-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 20px 60px; display: flex; flex-direction: column; gap: 16px; }
-/* LIGHTHOUSE VIEW FIXES (Expanded Textarea & Overlap) */
-.lighthouse-inner {display: flex;flex-direction: column;height: calc(100vh - 120px); /* Adjust based on your nav height */padding-bottom: 20px;}
-.lh-title-display {
-  font-family: var(--font-serif);
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--text);
-  padding: 4px 0 16px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 18px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 0.92;
-  letter-spacing: -0.5px;
-  line-height: 1.2;
-}
-/* LIGHTHOUSE REFINED */
-.lh-save-indicator {
-  flex: 1;
-  font-size: 9px;
-  color: var(--accent-dim);
-  letter-spacing: 2px;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  text-align: center;
-  pointer-events: none;
-}
-.lh-save-indicator.visible { opacity: 0.5; }
-.lh-save-indicator.saving { opacity: 1; color: var(--accent); animation: lhSavePulse 1s ease-in-out infinite; }
-@keyframes lhSavePulse { 0%,100%{opacity:0.5;} 50%{opacity:1;} }
-
-.lh-overflow-wrap { position: relative; }
-.lh-overflow-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 6px;
-  min-width: 180px;
-  z-index: 2000;
-  display: none;
-  flex-direction: column;
-  gap: 2px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.8);
-}
-.lh-overflow-menu.open { display: flex; }
-.lh-overflow-item {
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 10px 12px;
-  border-radius: 7px;
-  text-align: left;
-  letter-spacing: 0.5px;
-  width: 100%;
-}
-.lh-overflow-item:active { background: var(--surface); }
-.lh-overflow-item.danger { color: #ff6060; }
-.lh-overflow-divider { height: 1px; background: var(--border); margin: 4px 0; }
-/* FORMAT SHEET */
-.lh-fmt-wrap { position: relative; }
-.lh-fmt-sheet {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 12px;
-  z-index: 2000;
-  display: none;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.9);
-  min-width: 260px;
-}
-.lh-fmt-sheet.open { display: block; }
-.lh-fmt-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 12px;
-}
-.lh-fmt-col { display: flex; flex-direction: column; gap: 2px; }
-.lh-fmt-col-label {
-  font-size: 8px;
-  letter-spacing: 2px;
-  color: var(--accent-dim);
-  font-weight: 900;
-  text-transform: uppercase;
-  padding: 0 8px 6px;
-  opacity: 0.6;
-}
-
-.lh-fmt-item {
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 13px;
-  font-family: var(--font-serif);
-  padding: 9px 10px;
-  border-radius: 8px;
-  text-align: left;
-  width: 100%;
-  font-weight: 500;
-}
-.lh-fmt-item:active { background: var(--surface); color: var(--accent); }
-
-/* WRITING SURFACE -- Georgia, more breathing room */
-.discourse-title-input {
-  width: 100%;
-  background: none;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  color: var(--text);
-  font-size: 32px;
-  font-weight: 700;
-  padding: 8px 0 16px;
-  outline: none;
-  font-family: var(--font-serif);
-  caret-color: var(--accent);
-  line-height: 1.2;
-  letter-spacing: -0.5px;
-}
-.content-textarea {
-  font-family: var(--font-serif) !important;
-  font-size: 16px !important;
-  line-height: 1.85 !important;
-  letter-spacing: 0.1px;
-}
-.discourse-title-input::placeholder { color: var(--muted); opacity: 0.6; }
-.discourse-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
-.meta-separator { opacity: 0.3; }
-.source-link { display: inline-flex; align-items: center; gap: 5px; color: var(--accent); font-size: 10px; padding: 3px 8px; border: 1px solid var(--accent-dim); border-radius: 6px; background: rgba(200,160,80,0.06); text-decoration: none; }
-
-/* THE GOLD LINE */
-#gold-line-zone {
-  position: absolute; top: 0; bottom: 0; left: 0; width: 30px;
-  z-index: 500; opacity: 0; pointer-events: none;
-  transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-    -webkit-user-select: none;
-  user-select: none;
-}
-#gold-line-zone.awake {
-  opacity: 1; pointer-events: auto;
-    -webkit-user-select: none;
-  user-select: none;
-}
-.gold-thread {
-  position: absolute; top: 20px; bottom: 100px; left: 7px; width: 1px;
-  background: linear-gradient(to bottom, transparent, var(--accent), var(--accent-dim), transparent);
-  box-shadow: 0 0 10px rgba(200, 160, 80, 0.2);
-  transform-origin: top;
-    -webkit-user-select: none;
-  user-select: none;
-}
-.gold-thread.wobble {
-  animation: threadWobble 0.6s ease-out;
-}
-.gold-tick {
-  position: absolute; left: 4px; width: 7px; height: 1px;
-  background: var(--accent);
-  box-shadow: 0 0 5px var(--accent);
-  transition: top 0.4s ease;
-  -webkit-user-select: none;
-  user-select: none;
-}
-.gold-tick.current { width: 11px; left: 2px; height: 2px; }
-
-@keyframes threadWobble {
-  0% { transform: scaleX(1) translateX(0); }
-  25% { transform: scaleX(1.5) translateX(2px); }
-  50% { transform: scaleX(0.8) translateX(-1px); }
-  75% { transform: scaleX(1.1) translateX(0.5px); }
-  100% { transform: scaleX(1) translateX(0); }
-}
-/* Optional: Hide the old breadcrumb bar to fully embrace the descent */
-/* .breadcrumb-bar { display: none !important; } */
-
-/* DECAY SYSTEM */
-.card-fading {
-  opacity: 0.45;
-  filter: grayscale(0.6);
-  transition: opacity 0.4s ease, filter 0.4s ease;
-}
-.card-fading .discourse-card-title,
-.card-fading .folder-card-name,
-.card-fading .char-card-name { color: var(--muted) !important; }
-
-/* WATCHER LOADING DOT */
-.watcher-loading-dot {
-  position: fixed;
-  top: 18px;
-  right: 18px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px rgba(200,160,80,0.5);
-  z-index: 1010;
-  display: none;
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-.watcher-loading-dot.visible {
-  opacity: 0.5;
-  animation: watcherLoadPulse 2s ease-in-out infinite;
-}
-@keyframes watcherLoadPulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
-}
-
-/* THE AMBIENT WATCHER */
-.watcher-dot {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  z-index: 600;
-  pointer-events: none; /* Unclickable now */
-  opacity: 0.15; /* Dim when resting */
-  transition: opacity 1s ease, box-shadow 1s ease;
-}
-.watcher-dot.pulsing {
-  opacity: 0.85;
-  animation: watcherAmbientPulse 4s ease-in-out infinite;
-}
-@keyframes watcherAmbientPulse {
-  0%, 100% { box-shadow: 0 0 4px rgba(200,160,80,0.3); opacity: 0.4; }
-  50% { box-shadow: 0 0 14px rgba(200,160,80,0.8), 0 0 4px rgba(200,160,80,1); opacity: 1; }
-}
-
-.watcher-panel {
-  position: fixed;
-  background: rgba(10,10,10,0.96);
-  border: 1px solid var(--accent-dim);
-  border-radius: 14px;
-  padding: 14px;
-  z-index: 700;
-  max-width: 260px;
-  min-width: 200px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  opacity: 0;
-  transform: scale(0.92) translateY(6px);
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34,1.2,0.64,1);
-}
-.watcher-panel.visible {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-  pointer-events: auto;
-}
-.watcher-panel-title {
-  font-size: 9px; letter-spacing: 3px; color: var(--accent); font-weight: 900;
-  text-transform: uppercase; margin-bottom: 10px; opacity: 0.7;
-}
-.watcher-link-item {
-  padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
-  margin-bottom: 5px; cursor: pointer; transition: border-color 0.15s, background 0.15s;
-}
-.watcher-link-item:active { background: var(--surface2); border-color: var(--accent-dim); }
-.watcher-link-title {
-  font-size: 12px; font-weight: 700; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.watcher-link-score {
-  font-size: 9px; color: var(--accent-dim); letter-spacing: 1px; margin-top: 2px;
-}
-
-/* DEEP SOUP VIEW */
-.deep-soup-view { background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; }
-
-/* THE LINEAGE NAVIGATOR */
-#lineage-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1500; display: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
-#lineage-overlay.active { display: block; }
-
-.lineage-panel { position: fixed; top: 0; bottom: 0; left: 0; width: 85vw; max-width: 320px; background: rgba(10,10,10,0.95); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-right: 1px solid var(--border); z-index: 1600; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
-.lineage-panel.open { transform: translateX(0); }
-
-.lineage-header { padding: 20px 16px; font-size: 10px; letter-spacing: 3px; color: var(--accent); font-weight: 900; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-.lineage-content { flex: 1; overflow-y: auto; padding: 24px 0 100px 0; }
-
-/* Tree leaf rows */
-.lineage-level {
-  padding: 0 0 2px 0;
-  display: flex;
-  align-items: center;
-  min-height: 36px;
-}
-.lineage-level.root { padding-bottom: 12px; }
-.lineage-level.root .lineage-level-name {
-  font-size: 15px;
-  font-weight: 900;
-  color: var(--text);
-  letter-spacing: 0.5px;
-}
-.lineage-level-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-  opacity: 0.35;
-  flex-shrink: 0;
-  margin: 0 8px 0 16px;
-  transition: opacity 0.25s, box-shadow 0.25s, width 0.25s, height 0.25s;
-  position: static;
-}
-.lineage-level.root .lineage-level-dot { opacity: 0.7; }
-.lineage-level.empty .lineage-level-dot { background: var(--muted); opacity: 0.2; }
-.lineage-level.current .lineage-level-dot {
-  opacity: 1;
-  box-shadow: 0 0 10px var(--accent);
-  width: 9px;
-  height: 9px;
-}
-.lineage-level-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-  padding: 6px 0;
-  cursor: pointer;
-  transition: color 0.2s, opacity 0.2s;
-  opacity: 0.7;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.lineage-level-name:active { opacity: 0.5; }
-.lineage-level.empty .lineage-level-name { color: var(--muted); opacity: 0.45; }
-.lineage-level.current .lineage-level-name { color: var(--accent); opacity: 1; }
-.lineage-level.root .lineage-level-name { opacity: 0.9; }
-/* Expand/collapse toggle */
-.lineage-expand {
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
-  text-align: center;
-  font-size: 16px;
-  color: var(--muted);
-  cursor: pointer;
-  flex-shrink: 0;
-  opacity: 0.55;
-  transition: opacity 0.15s, transform 0.2s;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-.lineage-expand:active { opacity: 0.9; }
-.lineage-expand.open { transform: rotate(90deg); }
-
-/* Indented children container */
-.lineage-children {
-  padding-left: 20px;
-  border-left: 1px solid rgba(255,255,255,0.04);
-  margin-left: 9px;
-  display: none;
-}
-.lineage-children.open { display: block; }
-.lineage-siblings::-webkit-scrollbar { display: none; }
-
-.mosaic-block { border-left: 2px solid var(--accent-dim); padding: 10px 14px; background: rgba(200,160,80,0.04); border-radius: 0 8px 8px 0; }
-.mosaic-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.mosaic-label { font-size: 9px; letter-spacing: 3px; color: var(--accent); opacity: 0.65; font-weight: 900; text-transform: uppercase; }
-.btn-delete-mosaic { background: none; border: none; color: var(--muted); font-size: 11px; padding: 2px 4px; border-radius: 4px; }
-.btn-delete-mosaic:active { color: #ff6060; }
-.mosaic-anchors-wrap { display: flex; flex-direction: column; gap: 4px; }
-.mosaic-anchor { font-size: 13px; color: var(--text); line-height: 1.7; display: flex; align-items: baseline; gap: 6px; }
-.anchor-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent-dim); flex-shrink: 0; margin-top: 8px; opacity: 0.7; }
-.anchor-cat { color: var(--accent); font-weight: 700; font-size: 10px; letter-spacing: 0.8px; text-transform: uppercase; white-space: nowrap; }
-
-.extract-loading { display: none; align-items: center; gap: 8px; font-size: 12px; color: var(--accent); letter-spacing: 1px; padding: 8px 0; }
-.extract-loading.visible { display: flex; }
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
-.extract-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 1.2s ease infinite; }
-.extract-dot:nth-child(2){animation-delay:0.2s} .extract-dot:nth-child(3){animation-delay:0.4s}
-
-/* THE FORMATTING PILL */
-.format-toolbar {
-  margin-top: auto; /* Pushes it to the bottom of the writing space */
-  margin-bottom: max(20px, env(safe-area-inset-bottom, 20px) + 8px); /* The safety buffer to dodge the iOS Home Indicator */
-  background: rgba(10,10,10,0.85);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 8px 16px;
-  border-radius: 24px;
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  gap: 12px;
-  align-self: center; /* Centers the pill horizontally */
-  max-width: 95vw; /* Prevents bleeding off the screen edges */
-  box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-}
-.format-toolbar::-webkit-scrollbar { 
-  display: none; /* Hide the ugly scrollbar on webkit */
-}
-
-.fmt-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 7px; white-space: nowrap; flex-shrink: 0; font-family: var(--font-serif); min-width: 32px; text-align: center; }
-.fmt-btn:active { background: var(--surface2); color: var(--accent); border-color: var(--accent-dim); }
-.fmt-btn.code-btn { font-family: 'Menlo', monospace; font-size: 11px; }
-.fmt-divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; margin: 0 2px; }
-
-.content-textarea { flex: 1; width: 100%; min-height: unset; background: transparent; color: var(--text); border: none; border-radius: 0; padding: 18px 20px; margin-bottom: 12px; font-size: 15px; line-height: 1.8; outline: none; resize: none; font-family: var(--font-serif); caret-color: var(--accent); -webkit-overflow-scrolling: touch; }
-.content-textarea:focus { border: none; }
-.content-view {display: none;background: var(--surface);border: 1px solid var(--border);border-radius: 12px;padding: 20px;font-size: 15px;line-height: 1.8;font-family: var(--font-serif);color: var(--text);overflow-wrap: break-word;word-break: break-word;}
-.content-view h1 { font-size: 22px; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin: 0 0 16px; }
-.content-view h2 { font-size: 18px; margin: 20px 0 10px; }
-.content-view h3 { font-size: 15px; color: var(--accent); margin: 16px 0 8px; }
-.content-view p { margin: 0 0 14px; }
-.content-view ul, .content-view ol { padding-left: 20px; margin: 10px 0; }
-.content-view li { margin: 4px 0; }
-.content-view blockquote { border-left: 3px solid var(--accent-dim); padding: 4px 0 4px 14px; color: var(--muted); margin: 12px 0; font-style: italic; }
-.content-view pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; overflow-x: auto; margin: 12px 0; }
-.content-view code { font-family: 'Menlo', monospace; font-size: 13px; color: #a0d8a0; }
-.content-view strong { font-weight: 700; }
-.content-view em { color: #a09890; font-style: italic; }
-
-/* ABYSS PAGE */
-.abyss-view { background: #000000; padding: 0; margin: 0; }
-.abyss-view canvas { display: block; }
-/* ABYSS TOOLTIP -- lightweight label for guardian-node, cluster-dot */
-#abyss-tooltip {
-  position: absolute;
-  display: none;
-  background: rgba(5, 5, 5, 0.92);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  padding: 8px 12px;
-  border-radius: 8px;
-  z-index: 2000;
-  max-width: 220px;
-  pointer-events: none;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-  transition: opacity 0.15s ease;
-}
-
-/* ABYSS BOTTOM SHEET -- rich panel for disc-dot, thread-sim, thread-contra */
-#abyss-sheet {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(6, 6, 10, 0.97);
-  border-top: 1px solid #2a2a2a;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  z-index: 2100;
-  border-radius: 18px 18px 0 0;
-  padding: 0 0 40px;
-  transform: translateY(100%);
-  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-  max-height: 70vh;
-  display: flex;
-  flex-direction: column;
-}
-#abyss-sheet.open {
-  transform: translateY(0);
-}
-#abyss-sheet-handle {
-  width: 36px;
-  height: 3px;
-  background: #333;
-  border-radius: 2px;
-  margin: 12px auto 0;
-  flex-shrink: 0;
-}
-#abyss-sheet-scroll {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 16px 20px 20px;
-}
-.abyss-sheet-type {
-  font-size: 8px;
-  letter-spacing: 3px;
-  font-weight: 900;
-  text-transform: uppercase;
-  margin-bottom: 10px;
-  opacity: 0.5;
-}
-.abyss-sheet-type.sim  { color: #d29a70; }
-.abyss-sheet-type.contra { color: #8ab4cc; }
-.abyss-sheet-type.disc { color: var(--accent); }
-.abyss-sheet-title {
-  font-family: var(--font-serif);
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.35;
-  margin-bottom: 6px;
-}
-.abyss-sheet-date {
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--muted);
-  margin-bottom: 14px;
-  text-transform: uppercase;
-}
-.abyss-sheet-excerpt {
-  font-family: var(--font-serif);
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.7;
-  font-style: italic;
-  margin-bottom: 16px;
-  opacity: 0.8;
-}
-.abyss-sheet-arc {
-  font-size: 10px;
-  letter-spacing: 1px;
-  color: var(--accent-dim);
-  margin-bottom: 14px;
-  text-transform: uppercase;
-}
-.abyss-sheet-terms {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 16px;
-}
-.abyss-term-pill {
-  font-size: 9px;
-  letter-spacing: 1px;
-  color: var(--text);
-  border: 1px solid #2a2a2a;
-  border-radius: 20px;
-  padding: 3px 9px;
-  opacity: 0.7;
-  text-transform: lowercase;
-}
-.abyss-sheet-section-label {
-  font-size: 8px;
-  letter-spacing: 3px;
-  font-weight: 900;
-  text-transform: uppercase;
-  color: var(--muted);
-  opacity: 0.5;
-  margin-bottom: 8px;
-  margin-top: 4px;
-}
-.abyss-echo-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid #181818;
-}
-.abyss-echo-row:last-child { border-bottom: none; }
-.abyss-echo-title {
-  font-size: 12px;
-  color: var(--text);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 0.8;
-}
-.abyss-echo-bar-wrap {
-  width: 40px;
-  height: 2px;
-  background: #222;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-.abyss-echo-bar-fill {
-  height: 100%;
-  border-radius: 2px;
-}
-.abyss-echo-bar-fill.sim    { background: #d29a70; }
-.abyss-echo-bar-fill.contra { background: #8ab4cc; }
-.abyss-sheet-divider {
-  height: 1px;
-  background: #1e1e1e;
-  margin: 14px 0;
-}
-/* Selected star ring on canvas -- drawn in JS, this is just a doc note */
-/* Thread node pair in sheet */
-.abyss-thread-pair {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.abyss-thread-node {
-  background: #0d0d0d;
-  border: 1px solid #222;
-  border-radius: 10px;
-  padding: 10px 14px;
-}
-.abyss-thread-node-label {
-  font-size: 8px;
-  letter-spacing: 2px;
-  color: var(--muted);
-  opacity: 0.5;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-.abyss-thread-node-title {
-  font-family: var(--font-serif);
-  font-size: 13px;
-  color: var(--text);
-  line-height: 1.4;
-}
-.abyss-thread-connector {
-  text-align: center;
-  font-size: 9px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  font-weight: 900;
-  margin: -2px 0;
-}
-.abyss-thread-connector.sim    { color: #d29a70; opacity: 0.6; }
-.abyss-thread-connector.contra { color: #8ab4cc; opacity: 0.6; }
-
-/* SECTION SCROLL -- capped 2 rows, horizontal overflow */
-.section-scroll-wrap { width: 100%; }
-.section-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(clamp(80px, 22vw, 160px), 1fr));
-  gap: 10px;
-  width: 100%;
-}
-.section-grid.single-row { /* same grid, no special treatment */ }
-
-/* SANCTUARY */
-.sanctuary-view { background: transparent; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-
-.character-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.18s, background 0.18s; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; }
-.character-card:active { border-color: var(--accent); background: var(--surface2); }
-.character-card.long-pressing { background: var(--surface2); border-color: var(--accent); transform: scale(0.98); }
-.char-card-name { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
-.char-card-role { font-size: 11px; color: var(--text); opacity: 0.8; font-style: italic; }
-.char-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 8px; }
-.char-card-meta { font-size: 9px; color: var(--muted); letter-spacing: 0.5px; }
-
-/* IMMUTABLE ENTITIES */
-.ie-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.ie-row:active { background: var(--surface2); }
-.ie-sigil {
-  width: 48px; height: 48px;
-  border-radius: 8px;
-  border: 1px solid var(--accent-dim);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-.ie-sigil svg { width: 36px; height: 36px; }
-.ie-sigil.draft { border-color: var(--border); opacity: 0.5; }
-.ie-info { flex: 1; min-width: 0; }
-.ie-name {
-  font-size: 15px; font-weight: 700; color: var(--text);
-  display: flex; align-items: center; gap: 6px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.diamond {
-  font-size: 8px; color: var(--accent); flex-shrink: 0;
-}
-.ie-archetype {
-  font-size: 10px; letter-spacing: 2px; color: var(--accent-dim);
-  text-transform: uppercase; margin-top: 2px;
-}
-.ie-function {
-  font-size: 12px; color: var(--muted); font-style: italic;
-  margin-top: 3px; line-height: 1.4;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.ie-meta {
-  font-size: 9px; color: var(--muted); opacity: 0.6;
-  margin-top: 4px; letter-spacing: 0.5px;
-}
-.ie-empty {
-  text-align: center; padding: 60px 20px; opacity: 0.3;
-  font-family: var(--font-serif); font-size: 14px; line-height: 1.8; color: var(--muted);
-}
-.ie-manifest-section { }
-.ie-manifest-label {
-  font-size: 9px; letter-spacing: 3px; color: var(--accent);
-  opacity: 0.5; font-weight: 900; text-transform: uppercase; margin-bottom: 4px;
-}
-.ie-manifest-text {
-  font-family: var(--font-serif); font-size: 14px; color: var(--text);
-  line-height: 1.7; opacity: 0.85;
-}
-.ie-card-meta {
-  font-size: 9px;
-  color: var(--muted);
-  opacity: 0.6;
-  letter-spacing: 0.5px;
-  margin-top: 6px;
-  text-align: center;
-}
-.ie-card-actions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 4px;
-}
-#ie-list-surface {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 0 16px 100px;
-}
-/* IE PAGE CARDS GRID */
-.ie-cards-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-/* IE DECK STRIP */
-.ie-strip {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding: 0 16px 12px;
-  flex-shrink: 0;
-}
-.ie-strip .ie-card {
-  flex: 0 0 auto;
-  width: 160px;
-}
-
-/* UNIFIED IE CARD -- used in Sanctuary strip & IE page grid */
-.ie-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.15s, background 0.15s;
-  min-height: 200px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.ie-card:active {
-  background: var(--surface2);
-  border-color: var(--accent);
-}
-.ie-card.draft {
-  border-color: var(--border);
-  opacity: 0.6;
-}
-
-/* Gold bar */
-.ie-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent-dim), transparent);
-  opacity: 0.4;
-}
-.ie-card.draft::before {
-  opacity: 0.2;
-}
-
-/* Text block */
-.ie-card-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 24px 10px 0;
-  width: 100%;
-  min-height: 0;
-}
-
-.ie-card-name {
-  font-size: 15px;
-  font-weight: 400;
-  color: var(--text);
-  text-align: center;
-  line-height: 1.25;
-  letter-spacing: 0.1px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-  max-width: 100%;
-}
-
-.ie-card-archetype {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--muted);
-  text-align: center;
-  margin-top: 8px;
-  font-weight: 500;
-}
-
-.ie-card-function {
-  font-size: 11px;
-  color: var(--muted);
-  font-style: italic;
-  text-align: center;
-  margin-top: 8px;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  max-width: 100%;
-}
-
-/* Sigil */
-.ie-card-sigil {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: auto;
-  margin-bottom: 10px;
-  flex-shrink: 0;
-}
-.ie-card-sigil svg {
-  width: 100%;
-  height: 100%;
-  animation: ieSigilSpin 30s linear infinite;
-}
-@keyframes ieSigilSpin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-.ie-card-sigil.pulse svg {
-  animation: ieSigilSpin 30s linear infinite, ieSigilGlow 4s ease-in-out infinite;
-}
-@keyframes ieSigilGlow {
-  0%, 100% { opacity: 0.7; filter: drop-shadow(0 0 2px rgba(200,160,80,0.3)); }
-  50%      { opacity: 1;   filter: drop-shadow(0 0 5px rgba(200,160,80,0.7)); }
-}
-
-/* CHARACTER AVATAR */
-.char-avatar {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: #141414;
-  border: 1px solid #1f1f1f;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 600; color: #6b6560;
-  flex-shrink: 0;
-  overflow: hidden;
-  cursor: pointer;
-}
-.char-avatar img {
-  width: 100%; height: 100%;
-  object-fit: cover; border-radius: 50%;
-}
-.char-card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
-.char-card-header-info { flex: 1; min-width: 0; padding-top: 1px; }
-.char-card-header-info .char-card-name { margin-bottom: 2px; }
-
-/* PHOTO SLOTS IN FORGE */
-#forge-photo-section {
-  padding: 0 0 20px;
-}
-
-.forge-photo-slots {
-  display: flex;
-  gap: 14px;
-  padding: 6px 0 8px;
-}
-
-.forge-photo-slot {
-  width: 100%;
-  flex: 1;
-  aspect-ratio: 1 / 1;
-  max-width: 120px;
-  border-radius: 12px;
-  border: 2px dashed #b3934d;
-  background: #1a1812;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.2s, background 0.2s, transform 0.15s;
-}
-
-.forge-photo-slot:active {
-  border-color: var(--accent);
-  background: #242011;
-  transform: scale(0.96);
-}
-
-.forge-photo-slot img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 10px;
-}
-
-.forge-photo-slot .slot-empty-label {
-  font-size: 13px;
-  color: #bdaa70;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  text-align: center;
-  line-height: 1.5;
-  font-weight: 700;
-  opacity: 0.8;
-}
-
-.forge-photo-slot.is-primary {
-  border: 2px solid #d4b978;
-  box-shadow: 0 0 12px rgba(212, 185, 120, 0.3);
-}
-
-.forge-photo-slot .slot-primary-badge {
-  position: absolute;
-  bottom: 6px;
-  left: 6px;
-  font-size: 8px;
-  letter-spacing: 1px;
-  color: #1a1a1a;
-  background: #d4b978;
-  padding: 2px 6px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
-.forge-photo-slot .slot-remove {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid #444;
-  color: #999;
-  font-size: 12px;
-  line-height: 20px;
-  text-align: center;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.forge-photo-slot .slot-remove:active {
-  color: #ff6060;
-  border-color: #ff6060;
-}
-
-/* CHAT HEADER AVATAR PILL */
-.chat-avatar-pill {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: #141414; border: 1px solid #1f1f1f;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 600; color: #6b6560;
-  flex-shrink: 0; overflow: hidden; cursor: pointer;
-}
-.chat-avatar-pill img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-
-/* PHOTO LIGHTBOX */
-.photo-lightbox {
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,0.92);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 16px;
-}
-.photo-lightbox img {
-  max-width: 90vw; max-height: 75vh;
-  border-radius: 12px; object-fit: contain;
-}
-.photo-lightbox-dots { display: flex; gap: 6px; }
-.photo-lightbox-dots .dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: #333; transition: background 0.2s;
-}
-.photo-lightbox-dots .dot.active { background: #d4b978; }
-.photo-lightbox-close {
-  position: absolute; top: 20px; right: 20px;
-  background: none; border: none; color: #555;
-  font-size: 22px; cursor: pointer; padding: 8px;
-}
-
-/* IE ENCOUNTER MODE */
-.ie-encounter .chat-messages {
-  padding: 24px 20px 120px;
-}
-
-/* User message in IE -- smaller, stepped back, right */
-.ie-encounter .chat-msg.user {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 13px;
-  font-style: italic;
-  text-align: right;
-  padding: 0 0 0 40px;
-  margin: 0 0 8px;
-  border-radius: 0;
-  max-width: 100%;
-  align-self: flex-end;
-  line-height: 1.6;
-}
-
-/* Separator line between exchanges */
-.ie-encounter .chat-msg.user::after {
-  content: '';
-  display: block;
-  height: 1px;
-  background: var(--border);
-  margin-top: 20px;
-  opacity: 0.4;
-}
-
-/* IE entity response -- full width, weighted, no bubble */
-.ie-encounter .chat-msg.char {
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 15px;
-  font-family: var(--font-serif);
-  line-height: 1.9;
-  padding: 20px 0 8px;
-  border-radius: 0;
-  max-width: 100%;
-  align-self: flex-start;
-}
-
-/* IE header -- entity name larger, no persona pill */
-.ie-encounter .chat-char-name {
-  font-size: 15px;
-  letter-spacing: 2px;
-  font-weight: 900;
-  color: var(--accent);
-  text-transform: uppercase;
-}
-
-/* IE input -- different placeholder feel */
-.ie-encounter .chat-input {
-  font-style: italic;
-  font-size: 14px;
-}
-
-/* IE send button label */
-.ie-encounter #btn-send::after {
-  content: '';
-}
-
-/* SANCTUARY DIVIDER */
-.sanctuary-divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  margin-top: 4px;
-}
-.sanctuary-divider-line {
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-.sanctuary-divider-label {
-  font-size: 9px;
-  letter-spacing: 3px;
-  color: var(--accent);
-  opacity: 0.45;
-  font-weight: 900;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.forge-view { background: var(--bg); overflow: hidden; }
-.forge-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px 100px; }
-.forge-container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-.forge-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-.forge-section-header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
-.forge-section-header:active { background: var(--surface2); }
-.forge-section-title { font-size: 10px; letter-spacing: 2px; color: var(--accent); font-weight: 900; text-transform: uppercase; }
-.forge-section-content { padding: 0 16px 16px; display: none; flex-direction: column; gap: 12px; }
-.forge-section.open .forge-section-content { display: flex; }
-.forge-section.open .forge-chevron { transform: rotate(180deg); }
-.forge-chevron { font-size: 12px; transition: transform 0.2s; opacity: 0.5; }
-.forge-input-group { display: flex; flex-direction: column; gap: 6px; }
-.forge-label { font-size: 11px; color: var(--muted); font-weight: 700; }
-.forge-textarea { width: 100%; min-height: 100px; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 12px; font-size: 14px; line-height: 1.6; outline: none; resize: none; font-family: var(--font-serif); }
-.forge-textarea:focus { border-color: var(--accent-dim); }
-.range-wrap { display: flex; align-items: center; gap: 12px; }
-.range-input { flex: 1; accent-color: var(--accent); }
-.range-val { font-size: 12px; color: var(--accent); font-weight: 700; min-width: 30px; text-align: right; }
-.forge-footer { position: sticky; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 16px; border-top: 1px solid var(--border); display: flex; gap: 10px; z-index: 10; }
-.btn-forge-save { flex: 2; background: var(--accent); color: #000; border: none; border-radius: 10px; padding: 14px; font-weight: 900; font-size: 14px; letter-spacing: 1px; }
-.btn-forge-close { flex: 1; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-weight: 700; font-size: 14px; }
-
-.chat-view { background: var(--bg); display: flex; flex-direction: column; }
-.chat-header { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 14px; gap: 12px; background: var(--surface); }
-.chat-char-info { flex: 1; min-width: 0; overflow: hidden; }
-.chat-char-name { font-size: 14px; font-weight: 700; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.chat-messages { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; -webkit-overflow-scrolling: touch; }
-.chat-msg { max-width: 85%; padding: 12px 16px; border-radius: 14px; font-size: 14px; line-height: 1.5; position: relative; }
-.chat-msg.user { align-self: flex-end; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-bottom-right-radius: 2px; }
-.chat-msg.char { align-self: flex-start; background: var(--surface); border: 1px solid var(--accent-dim); color: var(--text); border-bottom-left-radius: 2px; }
-.chat-input-area { padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); display: flex; gap: 10px; align-items: flex-end; }
-.chat-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-size: 14px; outline: none; resize: none; max-height: 120px; font-family: inherit; }
-.chat-input:focus { border-color: var(--accent-dim); }
-.btn-send { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); border: none; color: #000; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-
-.cosm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 800; display: none; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
-.cosm-overlay.active { display: block; }
-.cosm-modal { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); border-radius: 18px 18px 0 0; padding: 20px; z-index: 900; display: none; flex-direction: column; gap: 12px; max-height: 80vh; overflow-y: auto; }
-.cosm-modal.visible { display: flex; }
-.modal-title { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 900; text-transform: uppercase; opacity: 0.75; }
-.cosm-input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; font-size: 16px; outline: none; font-family: -apple-system, sans-serif; }
-.cosm-input:focus { border-color: var(--accent-dim); }
-.cosm-select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; font-size: 16px; outline: none; -webkit-appearance: none; appearance: none; }
-select.cosm-input {
-  appearance: none; /* Removes default arrow */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6560' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 30px;
-}
-
-.modal-buttons { display: flex; gap: 10px; }
-.modal-buttons button { flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: 900; font-size: 14px; }
-.modal-btn-cancel { background: var(--surface2); color: var(--text); }
-.modal-btn-confirm { background: var(--accent); color: #000; }
-.management-actions { display: flex; flex-direction: column; gap: 8px; }
-.management-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 16px; border-radius: 10px; font-size: 14px; font-weight: 700; text-align: left; display: flex; align-items: center; gap: 10px; touch-action: manipulation; }
-.management-btn:active { background: var(--surface2); }
-.management-btn.danger { color: #ff6060; border-color: var(--danger); }
-.management-btn.export { color: var(--accent); border-color: var(--accent-dim); }
-.global-search-results { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
-.global-search-result { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; cursor: pointer; }
-.global-search-result:active { transform: scale(0.98); }
-.global-search-result-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-.global-search-result-path { font-size: 11px; color: var(--muted); }
-.global-search-result-type { display: inline-block; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; font-weight: 700; }
-.global-search-result-type.folder { background: var(--surface2); color: var(--accent); }
-.global-search-result-type.discourse { background: var(--surface); color: var(--text); }
-.global-search-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 24px; }
-
-.model-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.model-scroller {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 10px 0;
-  scrollbar-width: none; /* Firefox */
-  -webkit-overflow-scrolling: touch;
-}
-
-.model-chip {
-  padding: 4px 10px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  color: var(--muted);
-  font-size: 10px;
-  text-transform: lowercase;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.model-chip.active {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(200, 160, 80, 0.05);
-}
-
-#userInput {
-  width: 100%;
-  background: transparent;
-  border: none;
-  border-top: 1px solid var(--border); /* One clean line to separate chat from input */
-  color: var(--text);
-  font-family: var(--font-serif);
-  font-size: 16px !important;
-  padding: 15px;
-  outline: none;
-  resize: none;
-  min-height: 50px;
-  max-height: 200px;
-}
-
-#userInput:focus {
-  border-top: 1px solid var(--accent-dim); /* The glow when you type */
-}
-
-#cosm-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 9px 20px; border-radius: 20px; font-size: 12px; font-weight: 900; letter-spacing: 1px; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s; white-space: nowrap; }
-
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-@media (max-width: 480px) { .lighthouse-tools { gap: 14px; } .tbtn { padding: 7px 8px; font-size: 12px; } .view-toggle-btn { padding: 6px 9px; } .lighthouse-scroll { padding: 20px 14px 60px; } }
-
-/* GUARDIAN OF THE ABYSS ARCHIVES -- COLD REALM */
-:root {
-  --g-bg: #000000;
-  --g-surface: #0a0a0a;
-  --g-border: #1f1f1f;
-  --g-accent: #c8a050;
-  --g-accent-dim: #8a6e35;
-  --g-text: #ccc5b9;
-  --g-muted: #6b6560;
-  --g-glow: rgba(200,160,80,0.15);
-}
-
-.guardian-view { background: var(--g-bg); overflow: hidden; display: flex; flex-direction: column; }
-.guardian-realm { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 0 24px 120px; overflow-y: auto; -webkit-overflow-scrolling: touch; transition: opacity 1.2s ease; }
-.guardian-realm.dimming { opacity: 0.15; }
-.guardian-glyph-wrap { display: flex; flex-direction: column; align-items: center; padding-top: 60px; gap: 20px; user-select: none; }
-.guardian-glyph { font-size: 48px; line-height: 1; color: var(--g-accent); opacity: 0.6; transition: opacity 1.5s ease, text-shadow 1.5s ease; pointer-events: none; }
-.guardian-glyph.watching { opacity: 1; text-shadow: 0 0 30px rgba(138,154,181,0.3), 0 0 60px rgba(138,154,181,0.1); animation: guardianBreathe 6s ease-in-out infinite; }
-.guardian-glyph.dimmed { opacity: 0.15; }
-@keyframes guardianBreathe { 0%, 100% { text-shadow: 0 0 20px rgba(138,154,181,0.2); } 50% { text-shadow: 0 0 50px rgba(138,154,181,0.4), 0 0 80px rgba(138,154,181,0.1); } }
-.guardian-label { font-size: 9px; letter-spacing: 4px; color: var(--g-accent); opacity: 0.35; font-weight: 900; text-transform: uppercase; }
-.guardian-sub { font-size: 11px; color: var(--g-muted); letter-spacing: 1px; opacity: 0.6; text-align: center; line-height: 1.6; max-width: 260px; }
-.btn-summon { margin-top: 8px; background: none; border: 1px solid var(--g-accent-dim); color: var(--g-accent); font-size: 11px; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; padding: 12px 28px; border-radius: 20px; cursor: pointer; transition: border-color 0.2s, opacity 0.2s; }
-.btn-summon:active { opacity: 0.6; }
-.btn-summon:disabled { opacity: 0.3; pointer-events: none; }
-.guardian-response-wrap { width: 100%; max-width: 640px; margin-top: 40px; }
-.guardian-response { font-family: var(--font-serif); font-size: 15px; line-height: 1.9; color: var(--g-text); white-space: pre-wrap; letter-spacing: 0.2px; opacity: 0; transition: opacity 0.6s ease; }
-.guardian-response.visible { opacity: 1; }
-.guardian-silence { text-align: center; font-size: 11px; letter-spacing: 3px; color: var(--g-muted); opacity: 0; text-transform: uppercase; font-weight: 700; margin-top: 20px; transition: opacity 0.8s ease; }
-.guardian-silence.visible { opacity: 0.4; }
-.guardian-input-area { display: none; width: 100%; max-width: 640px; margin-top: 32px; gap: 10px; flex-direction: column; }
-.guardian-input-area.visible { display: flex; }
-.guardian-input { width: 100%; background: var(--g-surface); border: 1px solid var(--g-border); color: var(--g-text); padding: 12px 16px; border-radius: 12px; font-size: 14px; outline: none; caret-color: var(--g-accent); font-family: var(--font-serif); resize: none; line-height: 1.6; }
-.guardian-input:focus { border-color: var(--g-accent-dim); }
-.btn-guardian-send { align-self: flex-end; background: none; border: 1px solid var(--g-accent-dim); color: var(--g-accent); font-size: 10px; letter-spacing: 2px; font-weight: 900; padding: 8px 20px; border-radius: 12px; cursor: pointer; text-transform: uppercase; }
-.btn-guardian-send:disabled { opacity: 0.3; pointer-events: none; }
-.guardian-logs-section { width: 100%; max-width: 640px; margin-top: 48px; border-top: 1px solid var(--g-border); padding-top: 24px; }
-.guardian-logs-label { font-size: 9px; letter-spacing: 3px; color: var(--g-accent); opacity: 0.35; font-weight: 900; text-transform: uppercase; margin-bottom: 16px; }
-.guardian-log-item { border: 1px solid var(--g-border); border-radius: 10px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s; background: var(--g-surface); }
-.guardian-log-item:active { border-color: var(--g-accent-dim); }
-.guardian-log-date { font-size: 9px; letter-spacing: 1.5px; color: var(--g-accent-dim); text-transform: uppercase; margin-bottom: 8px; }
-.guardian-log-preview { font-size: 13px; color: var(--g-muted); font-style: italic; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.guardian-log-silent { font-size: 11px; color: var(--g-muted); opacity: 0.4; letter-spacing: 2px; text-transform: uppercase; }
-.guardian-log-detail { position: fixed; inset: 0; background: var(--g-bg); z-index: 2000; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
-.guardian-log-detail.open { transform: translateY(0); }
-.guardian-log-detail-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--g-border); flex-shrink: 0; }
-.guardian-log-detail-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 28px 24px 80px; font-family: var(--font-serif); font-size: 15px; line-height: 1.9; color: var(--g-text); white-space: pre-wrap; }
-/* GUARDIAN EDGE GLOW -- Ethereal Aura (Razor Thin) */
-#guardian-edge-glow {
-  position: fixed;
-  inset: 0;
-  z-index: 9990;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 1.2s ease;
-  
-  /* Absolute pixels (15px) instead of 12% ensures it stays a tight, thin rim of fog */
-  -webkit-mask-image: 
-    linear-gradient(to bottom, #000 0px, transparent 15px, transparent calc(100% - 15px), #000 100%),
-    linear-gradient(to right, #000 0px, transparent 15px, transparent calc(100% - 15px), #000 100%);
-  -webkit-mask-composite: source-over;
-  mask-composite: add;
-}
-
-#guardian-edge-glow.active {
-  opacity: 1;
-}
-
-/* Tighter spotlight with less blur */
-#guardian-edge-glow::before {
-  content: '';
-  position: absolute;
-  top: -50%; left: -50%; width: 200%; height: 200%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    transparent 280deg,
-    rgba(200, 160, 80, 0.1) 320deg,
-    rgba(200, 160, 80, 0.6) 350deg,
-    rgba(255, 255, 255, 0.8) 360deg
-  );
-  /* Reduced blur from 35px to 12px for a much sharper, thinner beam */
-  filter: blur(12px);
-  animation: guardianOrbitLight 16s linear infinite;
-}
-
-@keyframes guardianOrbitLight {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-/* GUARDIAN MODEL SELECTOR -- ghost pill */
-.guardian-model-selector { display: none; }
-
-/* GUARDIAN FOOTER */
-.guardian-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: var(--g-bg); padding: 10px 16px 28px; display: none; border-top: 1px solid var(--g-border); }
-.guardian-footer.visible { display: flex; align-items: stretch; gap: 10px; }
-.g-footer-btn { background: var(--g-surface); border: 1px solid var(--g-border); color: var(--g-muted); font-weight: 700; text-transform: uppercase; cursor: pointer; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; gap: 3px; transition: border-color 0.2s, opacity 0.2s; padding: 10px 14px; }
-.g-footer-btn:active { border-color: var(--g-accent-dim); opacity: 0.8; }
-.g-footer-btn-top { font-size: 8px; letter-spacing: 2px; color: var(--g-accent); opacity: 0.7; }
-.g-footer-btn-main { font-size: 12px; letter-spacing: 1px; color: #ffffff; font-weight: 700; opacity: 1; white-space: nowrap; }
-.g-footer-btn-sub { font-size: 8px; letter-spacing: 1px; color: var(--g-muted); opacity: 0.5; white-space: nowrap; }
-.g-footer-settings { flex: 1; }
-.g-footer-carto { flex: 1; }
-
-/* CARTOGRAPHER STATUS DOT */
-.g-carto-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--g-muted); opacity: 0.3; display: inline-block; margin-right: 5px; transition: background 0.3s, opacity 0.3s; vertical-align: middle; }
-.g-carto-dot.loading { background: var(--g-accent); opacity: 1; animation: cartoDotPulse 1s ease-in-out infinite; }
-.g-carto-dot.ready { background: #6ab187; opacity: 1; }
-.g-carto-dot.failed { background: #ff6060; opacity: 1; }
-@keyframes cartoDotPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-
-/* LOGS OVERLAY */
-.guardian-logs-overlay { position: fixed; inset: 0; background: var(--g-bg); z-index: 2000; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.4,0,0.2,1); }
-.guardian-logs-overlay.open { transform: translateY(0); }
-.guardian-logs-overlay-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; flex-shrink: 0; }
-.guardian-logs-overlay-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 20px 80px; }
-
-/* FLOATING BOTTOM PILL */
-.bottom-bar { display: none !important; }
-.bottom-bar.visible { display: none !important; }
-.bottom-bar-scroll { display: flex; flex-direction: row; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 10px; gap: 6px; }
-.bottom-bar-scroll::-webkit-scrollbar { display: none; }
-.bar-pill { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 54px; padding: 8px 12px; border-radius: 18px; background: transparent; border: 1px solid transparent; cursor: pointer; flex-shrink: 0; transition: background 0.15s, border-color 0.15s; }
-.bar-pill:active { background: var(--surface2); border-color: var(--accent-dim); }
-.bar-pill-icon { font-size: 18px; line-height: 1; }
-.bar-pill-label { font-size: 9px; letter-spacing: 1px; color: var(--muted); font-weight: 700; text-transform: uppercase; white-space: nowrap; }
-.bar-pill.gold .bar-pill-label { color: var(--accent); }
-.bar-pill.gold { border-color: var(--accent-dim); }
-.bar-pill.danger .bar-pill-label { color: #ff6060; }
-.bar-pill.danger { border-color: var(--danger); }
-
-.folder-card, .discourse-card, .character-card, .ie-row, .ie-deck-card,
-.hdr-btn, .bar-pill, .breadcrumb-btn, .tbtn, .btn-back-table,
-.nq-wordmark, .bottom-bar, .lighthouse-nav {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-</style>
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0/dist/transformers.min.js">
-</head>
-<body>
-<canvas id="firefly-canvas"></canvas>
-<div id="guardian-edge-glow"></div>
-
-<div id="lock-screen" style="position:fixed;inset:0;background:#000;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;">
-  <div style="color:#a0d8a0;letter-spacing:5px;font-size:11px;font-weight:900;text-transform:uppercase;">NakedQuantum</div>
-  <button id="btn-manual-unlock" style="background:var(--surface2);border:1px solid var(--accent-dim);color:var(--accent);padding:12px 24px;border-radius:20px;font-weight:900;font-size:11px;letter-spacing:1px;text-transform:uppercase;display:none;">Tap to Unlock</button>
-  <input type="password" id="fallback-key-input" placeholder="Paste Sovereign Key..." class="cosm-input" style="display:none; width:250px; text-align:center;">
-  <!-- ADD: status text line -->
-<div id="lock-status" style="font-size:12px;color:var(--muted);text-align:center;margin:8px 0;letter-spacing:1px;min-height:18px;"></div>
-
-<!-- ADD: cooldown retry button (hidden by default) -->
-<button id="btn-faceid-retry" style="display:none;background:none;border:1px solid var(--accent-dim);color:var(--accent);font-size:11px;letter-spacing:1px;font-weight:700;padding:8px 18px;border-radius:8px;margin-top:8px;">◈ Try Face ID</button>
-
-  <button id="btn-fallback-unlock" style="display:none; background:var(--accent); color:#000; font-weight:900; padding:12px 24px; border-radius:20px; border:none; text-transform:uppercase; font-size:11px; letter-spacing:1px;">Force Unlock</button>
-</div>
-
-<div class="nq-header" id="nq-header">
-  <div class="header-left" id="header-left"></div>
-  <div class="nq-header-title" id="nq-header-title" hidden aria-hidden="true">The Sanctuary</div>
-  <div class="header-right" id="header-right"></div>
-</div>
-<div id="watcher-led-strip" class="nq-watcher-led-strip hidden" role="status" aria-live="polite">
-  <div class="nq-watcher-led-strip-inner">
-    <button type="button" class="nq-watcher-led-cluster" id="watcher-led-cluster" disabled aria-label="Watcher resonance" title="Resonance links">
-      <span class="nq-watcher-led nq-watcher-led--active" id="watcher-led-active" aria-hidden="true"></span>
-      <span class="nq-watcher-led nq-watcher-led--idle" id="watcher-led-idle" aria-hidden="true"></span>
-      <span class="nq-watcher-led nq-watcher-led--offline" id="watcher-led-offline" aria-hidden="true"></span>
-    </button>
-  </div>
-</div>
-<div id="guardian-invoke-strip" class="guardian-invoke-strip" style="display:none;" aria-live="polite">
-  <div class="guardian-invoke-inner">
-    <span class="guardian-invoke-glyph">◆</span>
-    <p class="guardian-invoke-text" id="guardian-invoke-text"></p>
-    <button type="button" class="guardian-invoke-dismiss" id="guardian-invoke-dismiss" aria-label="Dismiss">✕</button>
-  </div>
-</div>
-<div id="mode-toast"></div>
-
-<div class="view-host">
-  <div class="view-panel soup-view" id="view-soup">
-    
-    <div class="breadcrumb-bar" id="breadcrumb-bar"></div>
-    <div id="soup-drawer" class="soup-drawer" aria-hidden="true">
-      <button type="button" class="soup-drawer-scrim" id="soup-drawer-scrim" tabindex="-1" aria-label="Close menu"></button>
-      <div class="soup-drawer-panel" id="soup-drawer-panel" role="menu">
-        <button type="button" class="soup-drawer-item" id="soup-drawer-search" role="menuitem">⌕ Search</button>
-        <button type="button" class="soup-drawer-item" id="soup-drawer-settings" role="menuitem">⩔ Settings</button>
-      </div>
-    </div>
-    <div class="search-bar-wrap" id="search-bar-wrap" style="display:none;">
-      <div class="soup-search-row">
-        <input class="search-input" id="search-input" placeholder="Search discourses...">
-        <button type="button" class="soup-search-close" id="soup-search-close" aria-label="Close search">✕</button>
-      </div>
-    </div>
-    <div class="table-surface" id="table-surface"></div>
-  </div>
-  <div class="view-panel hidden" id="view-abyss" style="background:#04040a;overflow:hidden;">
-  <div class="realm-local-nav" id="abyss-local-nav" role="navigation" aria-label="Abyss">
-    <button type="button" class="btn-back-table" id="btn-abyss-back" aria-label="Back to Soup">←</button>
-    <div class="realm-local-title">The Abyss</div>
-  </div>
-  <div id="abyss-honesty-hint" style="position:absolute;left:0;right:0;top:50px;padding:0 14px;font-size:9px;letter-spacing:1px;color:rgba(160,150,120,0.35);text-align:center;pointer-events:none;z-index:2;line-height:1.2;">Constellation shaped by Watcher echoes — not folders or maps.</div>
-  <canvas id="abyss-canvas" style="position:absolute;left:0;right:0;top:48px;bottom:0;width:100%;height:calc(100% - 48px);"></canvas>
-  <div id="abyss-tooltip"></div>
-  <div id="abyss-sheet">
-    <div id="abyss-sheet-handle"></div>
-    <div id="abyss-sheet-scroll"></div>
-  </div>
-</div>
-<div class="view-panel subconscious-view hidden" id="view-subconscious" style="position:relative;">
-  <canvas id="subconscious-moat-canvas" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:0;" aria-hidden="true"></canvas>
-  <div class="realm-local-nav" id="subconscious-local-nav" role="navigation" aria-label="Subconscious" style="position:relative;z-index:1;">
-    <button type="button" class="btn-back-table" id="btn-subconscious-back" aria-label="Back">←</button>
-    <div class="realm-local-title">Subconscious</div>
-  </div>
-  <div class="table-surface" id="subconscious-surface" style="padding-top:0;position:relative;z-index:1;"></div>
-</div>
-<div class="view-panel hidden" id="view-data" style="background:var(--bg);display:flex;flex-direction:column;">
-  <div class="lighthouse-nav">
-    <button class="btn-back-table" id="btn-data-back" aria-label="Back">← Back</button>
-    <div style="font-size:10px;letter-spacing:2px;color:var(--accent);font-weight:900;">⩔ DATA SOVEREIGNTY</div>
-    <div style="width:52px;"></div>
-  </div>
-  <div id="data-page-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 100px;">
-    
-    <div class="cards-section-label">Backup</div>
-    <div class="management-actions">
-      <button class="management-btn export" id="btn-data-export-page">
-        <span>⩔</span> Export Backup (JSON)
-      </button>
-      <label class="management-btn export" style="cursor:pointer;">
-        <span>⩓</span> Import Backup
-        <input type="file" accept=".json" id="import-json-input-page" style="display:none;">
-      </label>
-    </div>
-
-    <div class="cards-section-label" style="margin-top:24px;">Cloud Sync</div>
-    <input type="text" id="data-supa-url" class="cosm-input" placeholder="https://xyz.supabase.co">
-    <input type="password" id="data-supa-key" class="cosm-input" placeholder="Anon Public Key" style="margin-top:8px;">
-    <button class="management-btn export" id="btn-data-sync-page" style="width:100%;margin-top:8px;border-color:var(--accent-dim);">
-      <span>∞</span> Sync Now
-    </button>
-
-    <div class="cards-section-label" style="margin-top:24px;" id="data-neural-block">Neural Gateway</div>
-    <p style="font-size:10px;color:var(--muted);line-height:1.4;margin:4px 0 8px;">OpenRouter credentials for Guardian, chat, and extraction. Keys are stored encrypted on device.</p>
-    <label style="font-size:11px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px;">API credentials</label>
-    <input type="password" class="cosm-input" id="input-api-key" placeholder="Universal API Key">
-    <input type="text" class="cosm-input" id="input-base-url" placeholder="https://openrouter.ai/api/v1" style="margin-top:8px;">
-    <label style="font-size:11px;color:var(--muted);text-transform:uppercase;display:block;margin-top:16px;margin-bottom:4px;">Active model</label>
-    <select id="input-model" class="cosm-input" style="appearance:auto; -webkit-appearance:menulist; background:var(--surface2); color:var(--text);"></select>
-    <button type="button" onclick="removeActiveModel()" style="background:#1a0000; color:var(--danger); width:100%; height:34px; border-radius:8px; border:1px solid #330000; font-weight:900; font-size:9px; letter-spacing:1px; margin-top:8px; text-transform:uppercase;">Purge engine</button>
-    <div style="display:flex; gap:8px; align-items:center; margin-top:12px;">
-      <input type="text" id="summon-input" class="cosm-input" placeholder="Paste OpenRouter ID..." style="margin:0 !important; flex:1; min-width:0;">
-      <button type="button" onclick="summonNewModel()" style="background:var(--accent); color:#000; width:52px; height:40px; border-radius:8px; font-weight:900; font-size:10px; border:none; flex-shrink:0;">ADD</button>
-    </div>
-    <button class="management-btn export" id="btn-data-gateway-save" style="width:100%;margin-top:14px;border-color:var(--accent-dim);">
-      <span>◈</span> Save gateway
-    </button>
-
-    <div class="cards-section-label" style="margin-top:24px;">Sovereign Key</div>
-    <p style="font-size:10px;color:var(--muted);line-height:1.4;margin:4px 0 8px;">If you lose this key and your device, your words belong to the Abyss forever.</p>
-    <button onclick="showSovereignKey()" style="background:var(--surface2);color:var(--accent);border:1px solid var(--accent-dim);width:100%;height:40px;border-radius:8px;font-weight:900;font-size:11px;">Reveal & Copy Key</button>
-    <input type="text" id="export-key-display" class="cosm-input" readonly style="display:none;margin-top:8px;text-align:center;font-family:monospace;font-size:11px;color:#a0d8a0;border-color:#a0d8a0;">
-<button onclick="resetWebAuthnRegistration()" 
-  style="background:none;border:1px solid var(--danger);color:#ff6060;font-size:11px;font-weight:700;padding:8px 14px;border-radius:8px;letter-spacing:1px;margin-top:12px;">
-  ◈ Reset Face ID Registration
-</button>
-    <div class="cards-section-label" style="margin-top:24px;">Akashic Records</div>
-    <p style="font-size:10px;color:var(--muted);line-height:1.4;margin:4px 0 8px;">Cold backup. Disaster recovery. This overwrites local fragments.</p>
-    <div style="display:flex;gap:8px;">
-      <button onclick="backupToAkashic()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);flex:1;height:40px;border-radius:8px;font-weight:700;font-size:11px;">Push to R2</button>
-      <button onclick="restoreFromAkashic()" style="background:#1a0000;color:var(--danger);border:1px solid #330000;flex:1;height:40px;border-radius:8px;font-weight:900;font-size:11px;">Pull from R2</button>
-    </div>
-
-    <div class="cards-section-label" style="margin-top:24px;">◈ The Watcher</div>
-    <div id="watcher-status" style="margin:10px 0 0;display:flex;align-items:center;gap:8px;">
-      <span style="width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);flex-shrink:0;" id="watcher-dot-indicator"></span>
-      <span style="font-size:11px;color:var(--text);font-family:Georgia,serif;" id="watcher-status-text">slumbering</span>
-    </div>
-    <p style="font-size:9px;color:var(--muted);margin:6px 0 0 18px;" id="watcher-detail"></p>
-    <div style="margin-top:12px;display:flex;gap:8px;">
-          <button onclick="devForcePass()" id="btn-dev-force-pass" style="display:none;background:var(--surface2);color:var(--accent);border:1px solid var(--accent-dim);flex:1;height:36px;border-radius:8px;font-weight:900;font-size:10px;letter-spacing:1px;">Force Pass</button>
-      <button onclick="devClearWatcher()" id="btn-dev-clear-watcher" style="display:none;background:#1a0000;color:var(--danger);border:1px solid #330000;flex:1;height:36px;border-radius:8px;font-weight:900;font-size:10px;letter-spacing:1px;">Clear Index</button>
-    </div>
-
-  </div>
-</div>
-  <div class="view-panel lighthouse-view hidden" id="view-lighthouse">
-    <div class="lighthouse-nav">
-      <button class="btn-back-table" id="btn-back-table" style="padding:7px 10px;"><span class="btn-back-arrow">←</span></button>
-      <div class="lh-save-indicator" id="lh-save-indicator">◆</div>
-      <div class="lighthouse-tools">
-        <div class="view-toggle">
-          <button class="view-toggle-btn active" id="btn-write">✎</button>
-          <button class="view-toggle-btn" id="btn-view">ʘ</button>
-        </div>
-               <button class="tbtn gold" id="btn-extract" title="Extract Mosaic">◈</button>
-        <div class="lh-fmt-wrap">
-          <button class="tbtn" id="btn-lh-format">✎≡</button>
-          <div class="lh-fmt-sheet" id="lh-fmt-sheet">
-            <div class="lh-fmt-grid">
-              <div class="lh-fmt-col">
-                <div class="lh-fmt-col-label">Text</div>
-                <button class="lh-fmt-item" id="fmt-bold"><b>Bold</b></button>
-                <button class="lh-fmt-item" id="fmt-italic"><i>Italic</i></button>
-                <button class="lh-fmt-item" id="fmt-underline"><u>Underline</u></button>
-                <button class="lh-fmt-item" id="fmt-h1">Heading 1</button>
-                <button class="lh-fmt-item" id="fmt-h2">Heading 2</button>
-                <button class="lh-fmt-item" id="fmt-h3">Heading 3</button>
-              </div>
-              <div class="lh-fmt-col">
-                <div class="lh-fmt-col-label">Insert</div>
-                <button class="lh-fmt-item" id="fmt-bullet">• Bullet</button>
-                <button class="lh-fmt-item" id="fmt-numbered">1. Numbered</button>
-                <button class="lh-fmt-item" id="fmt-quote">" Quote</button>
-                <button class="lh-fmt-item" id="fmt-code">` Inline Code</button>
-                <button class="lh-fmt-item" id="fmt-codeblock">``` Code Block</button>
-                <button class="lh-fmt-item" id="fmt-divider-line">-- Divider</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="lh-overflow-wrap">
-          <button class="tbtn" id="btn-lh-overflow">···</button>
-          <div class="lh-overflow-menu" id="lh-overflow-menu">
-                        <button class="lh-overflow-item" id="btn-export-html">Export HTML</button>
-            <button class="lh-overflow-item" id="btn-export-md">Export Markdown</button>
-            <button class="lh-overflow-item" id="btn-export-pdf">Export PDF</button>
-            <button class="lh-overflow-item" id="btn-copy-content">Copy Text</button>
-            <label class="lh-overflow-item" style="cursor:pointer;" id="btn-import-md-label">Import .md<input type="file" id="input-import-md" accept=".md,text/markdown" style="display:none;"></label>
-            <div class="lh-overflow-divider"></div>
-            <button class="lh-overflow-item danger" id="btn-delete-discourse">✕ Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
-      <div class="lighthouse-scroll">
-      <div class="lighthouse-inner">
-      <div class="discourse-meta" id="discourse-meta"></div>
-<div class="lh-title-display" id="lh-title-display" style="display:none;"></div>
-<input class="discourse-title-input" id="discourse-title" placeholder="Untitled..." spellcheck="false" style="display:none;">
-        <div class="extract-loading" id="extract-loading">
-          <div class="extract-dot"></div><div class="extract-dot"></div><div class="extract-dot"></div>
-          <span>Extracting anchors...</span>
-        </div>
-        <div id="mosaic-display"></div>
-              <textarea class="content-textarea" id="content-textarea" placeholder="Title&#10;&#10;Begin writing..."></textarea>
-        <div class="content-view" id="content-view"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="view-panel sanctuary-view hidden" id="view-sanctuary">
-    <div class="sanctuary-atmosphere" aria-hidden="true">
-      <canvas id="sanctuary-mycelium-canvas" class="sanctuary-mycelium-canvas" width="300" height="300"></canvas>
-    </div>
-    <div class="sanctuary-layers">
-      <div class="sanctuary-drawer" id="sanctuary-drawer" aria-hidden="true">
-        <button type="button" class="sanctuary-drawer-scrim" id="sanctuary-drawer-scrim" tabindex="-1" aria-label="Close menu"></button>
-        <div class="sanctuary-drawer-panel" id="sanctuary-drawer-panel" role="menu">
-          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-immutable" role="menuitem">∞ Immutable Entities</button>
-          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-create" role="menuitem">⌗ Create Character</button>
-          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-persona" role="menuitem">⁂ Persona</button>
-          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-memory" role="menuitem">▣ Memory vault</button>
-          <button type="button" class="sanctuary-drawer-item" id="sanctuary-drawer-search" role="menuitem">⌕ Search</button>
-        </div>
-      </div>
-      <div class="search-bar-wrap sanctuary-search-bar-wrap" id="sanctuary-search-bar-wrap" style="display:none;">
-        <div class="soup-search-row">
-          <input class="search-input" id="sanctuary-search-input" placeholder="Search characters & entities..." autocomplete="off">
-          <button type="button" class="soup-search-close sanctuary-search-close" id="sanctuary-search-close" aria-label="Close search">✕</button>
-        </div>
-      </div>
-      <div class="table-surface sanctuary-surface" id="sanctuary-surface"></div>
-    </div>
-  </div>
-  <div class="view-panel hidden ie-realm-view" id="view-ie">
-  <div class="lighthouse-nav ie-lh-nav">
-    <button class="btn-back-table" id="btn-ie-back">← Back</button>
-    <div class="ie-page-title">∞ IMMUTABLE ENTITY</div>
-    <button class="tbtn ie-forge-btn" id="btn-ie-dev-forge" style="font-size:10px;white-space:nowrap;">Forge IE</button>
-  </div>
-  <div style="padding:12px 16px 8px;flex-shrink:0;">
-    <input class="cosm-input" id="ie-search-input" placeholder="Search by name, archetype, or function..." style="font-size:13px;">
-  </div>
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px 100px;" id="ie-list-surface"></div>
-</div>
-
-  <div class="view-panel forge-view hidden" id="view-forge">
-    <div class="forge-scroll">
-      <div class="forge-container" id="forge-container">
-              <div id="forge-photo-section" style="padding:4px 0 16px;display:none;"></div>
-        <div class="forge-section open">
-          <div class="forge-section-header">
-            <span class="forge-section-title">Identity & Backstory</span>
-            <span class="forge-chevron">▾</span>
-          </div>
-          <div class="forge-section-content">
-            <div class="forge-input-group">
-              <span class="forge-label">Name</span>
-              <input class="cosm-input" id="forge-name" placeholder="Character Name..." autocomplete="off">
-            </div>
-            <div class="forge-input-group">
-              <span class="forge-label">Role / Tagline</span>
-              <input class="cosm-input" id="forge-role" placeholder="The Lone Wanderer...">
-            </div>
-            <div class="forge-input-group">
-              <span class="forge-label">Backstory</span>
-              <textarea class="forge-textarea" id="forge-backstory" placeholder="Origins and history..."></textarea>
-            </div>
-          </div>
-        </div>
-
-        <div class="forge-section">
-          <div class="forge-section-header">
-            <span class="forge-section-title">Personality & Core</span>
-            <span class="forge-chevron">▾</span>
-          </div>
-          <div class="forge-section-content">
-            <div class="forge-input-group">
-              <span class="forge-label">Personality</span>
-              <textarea class="forge-textarea" id="forge-personality" placeholder="Traits, quirks, behavior..."></textarea>
-            </div>
-            <div class="forge-input-group">
-              <span class="forge-label">Inclination</span>
-              <textarea class="forge-textarea" id="forge-inclination" placeholder="Motivations and moral compass..."></textarea>
-            </div>
-          </div>
-        </div>
-
-        <div class="forge-section">
-          <div class="forge-section-header">
-            <span class="forge-section-title">Lore & World</span>
-            <span class="forge-chevron">▾</span>
-          </div>
-          <div class="forge-section-content">
-            <div class="forge-input-group">
-              <span class="forge-label">Lorebook</span>
-              <textarea class="forge-textarea" id="forge-lorebook" placeholder="World facts relevant to them..."></textarea>
-            </div>
-            <div class="forge-input-group">
-              <span class="forge-label">Scenario</span>
-              <textarea class="forge-textarea" id="forge-scenario" placeholder="Current situation..."></textarea>
-            </div>
-          </div>
-        </div>
-
-        <div class="forge-section">
-          <div class="forge-section-header">
-            <span class="forge-section-title">Dynamics & Presence</span>
-            <span class="forge-chevron">▾</span>
-          </div>
-          <div class="forge-section-content">
-            <div class="forge-input-group">
-              <span class="forge-label">Relationship Dynamics</span>
-              <textarea class="forge-textarea" id="forge-relationships" placeholder="How they view others..."></textarea>
-            </div>
-            <div class="forge-input-group">
-              <span class="forge-label">Player Character</span>
-              <textarea class="forge-textarea" id="forge-pc-info" placeholder="Info about the player..."></textarea>
-            </div>
-            <div class="forge-input-group">
-<div class="forge-input-group">
-  <span class="forge-label">Your Role in this Encounter</span>
-  <select class="cosm-input" id="forge-persona-role">
-    <option value="">Default (global persona only)</option>
-  </select>
-</div>
-              <span class="forge-label">Quantum Temperature</span>
-              <div class="range-wrap">
-                <input type="range" class="range-input" id="forge-temp" min="0" max="2" step="0.1" value="1">
-                <span class="range-val" id="forge-temp-val">1.0</span>
-              </div>
-            </div>
-          </div>
-  <div class="forge-input-group" id="forge-model-section" style="display:none;">
-  <span class="forge-label">Model Variants</span>
-  <div class="model-scroller" id="ie-model-list"></div>
-  <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
-    <input type="text" id="ie-model-input" class="cosm-input" 
-      placeholder="paste model id..." 
-      style="flex:1;margin:0;">
-    <button type="button" id="ie-model-add-btn" class="tbtn">+ Add</button>
-  </div>
-</div>
-        </div>
-      </div>
-    </div>
-     <div class="forge-unmake-zone" id="forge-unmake-zone" style="padding:24px 20px 8px;display:none;">
-      <div style="height:1px;background:#1a1a1a;margin-bottom:20px;"></div>
-      <button id="btn-forge-unmake" style="width:100%;background:none;border:1px solid #8b0000;color:#ff3030;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:14px;border-radius:10px;cursor:pointer;">✕ Unmake</button>
-    </div>
-    <div class="forge-footer">
-      <button class="btn-forge-close" id="btn-forge-close">Cancel</button>
-      <button class="btn-forge-save" id="btn-forge-save">Anchor Soul</button>
-    </div>
-  </div>
-
- <div class="view-panel chat-view hidden" id="view-chat">
-    <div class="chat-header">
-    <button type="button" class="tbtn" id="btn-chat-back" aria-label="Back">←</button>
-    <div id="chat-avatar-pill" class="chat-avatar-pill"></div>
-    <div class="chat-char-info">
-      <div class="chat-char-name" id="chat-char-name">Character Name</div>
-    </div>
-<div id="chat-persona-pill" style="font-size:9px;letter-spacing:1px;color:var(--accent-dim);border:1px solid var(--border);padding:3px 8px;border-radius:20px;cursor:pointer;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;">⚝ default</div>
-    <button class="tbtn" id="btn-chat-edit">✎</button>
-    <button class="tbtn" id="btn-chat-clear">✕</button>
-  </div>
-  <div class="chat-messages" id="chat-messages"></div>
-   <div id="ie-model-bar" style="display:none;padding:0 16px 4px;text-align:left;">
-    <button id="ie-model-chip" onclick="cycleIEModel()"
-      style="background:none;border:none;color:var(--accent-dim);
-      font-size:9px;letter-spacing:1.5px;font-weight:700;
-      text-transform:uppercase;opacity:0.4;cursor:pointer;
-      padding:4px 0;transition:opacity 0.2s;">
-    </button>
-  </div>
-  <div class="chat-input-area">
-  <!-- NEW: Retry / Regenerate Button -->
-  <button class="btn-send" id="btn-chat-retry" style="display:none; background:var(--surface2); color:var(--text); border:1px solid var(--border); font-size:16px;">↻</button>
-    <textarea class="chat-input" id="chat-input" placeholder="Send a message..." rows="1"></textarea>
-   <button class="btn-send" id="btn-send">⇡</button>
-  </div>
-</div>
-
-<div class="view-panel hidden realm-sub-view" id="view-memory" style="background:#050607;display:flex;flex-direction:column;">
-  <div class="lighthouse-nav">
-    <button type="button" class="btn-back-table" id="btn-memory-back" data-back-target="chat">← Chat</button>
-    <div class="realm-local-title">▣ MEMORY VAULT</div>
-    <button type="button" class="tbtn" id="btn-add-manual-memory">+ Anchor</button>
-  </div>
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 100px;">
-    <div id="memory-surface"></div>
-  </div>
-</div>
-
-<div class="view-panel hidden realm-sub-view" id="view-persona" style="background:#050607;display:flex;flex-direction:column;">
-  <div class="lighthouse-nav">
-    <button type="button" class="btn-back-table" id="btn-persona-back" aria-label="Back to Sanctuary">← Back</button>
-    <div class="realm-local-title">⁂ PERSONA</div>
-    <button type="button" class="tbtn" id="btn-save-persona">Save</button>
-  </div>
-  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 100px;">
-    <div class="cards-section-label">Global Bio</div>
-    <textarea id="persona-bio" class="forge-textarea" placeholder="Who you are fundamentally..." style="min-height:120px;"></textarea>
-    <div class="cards-section-label" style="margin-top:16px;">Personality</div>
-    <textarea id="persona-personality" class="forge-textarea" placeholder="How you show up in encounters..." style="min-height:120px;"></textarea>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:24px;">
-      <div class="cards-section-label" style="margin:0;">Roles</div>
-      <button type="button" class="tbtn" id="btn-add-role">+ New Role</button>
-    </div>
-    <div id="roles-surface" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;"></div>
-  </div>
-</div>
-
-<div class="view-panel guardian-view hidden" id="view-guardian">
-
-  <!-- EXIT + LOGS TRIGGER -->
-  <div id="guardian-back-row" style="position:absolute;top:16px;left:16px;z-index:10;">
-    <button id="btn-guardian-back" style="background:none;border:none;color:var(--g-muted);font-size:11px;letter-spacing:2px;font-weight:700;opacity:0.4;padding:8px 4px;">← exit</button>
-  </div>
-  <div style="position:absolute;top:16px;right:16px;z-index:10;">
-    <button id="btn-guardian-logs-open" style="background:none;border:none;color:var(--g-muted);font-size:11px;letter-spacing:2px;font-weight:700;opacity:0.3;padding:8px 4px;">&#43065; logs</button>
-  </div>
-
-  <!-- MAIN REALM -->
-  <div class="guardian-realm" id="guardian-realm">
-    <div class="guardian-glyph-wrap">
-      <div class="guardian-glyph" id="guardian-glyph">&#43065;</div>
-      <div class="guardian-label">Witness</div>
-      <div class="guardian-sub" id="guardian-sub">Summon when you want a witness — not a mirror.</div>
-      <button class="btn-summon" id="btn-summon-guardian">Summon witness</button>
-    </div>
-    <div class="guardian-response-wrap">
-      <div class="guardian-response" id="guardian-response"></div>
-      <div class="guardian-silence" id="guardian-silence">&#43065; &mdash; silence</div>
-    </div>
-    <div class="guardian-input-area" id="guardian-input-area">
-      <textarea class="guardian-input" id="guardian-input" placeholder="Offer a line, if you want…" rows="3"></textarea>
-      <button class="btn-guardian-send" id="btn-guardian-send">Continue</button>
-    </div>
-  </div>
-       <!-- GUARDIAN FOOTER -->
-  <div class="guardian-footer" id="guardian-footer">
-    <!-- LEFT: Settings -->
-        <button class="g-footer-btn g-footer-settings" id="btn-guardian-settings">
-      <span class="g-footer-btn-top">Engine · <span id="mapping-toggle-label">Sovereign</span></span>
-      <span class="g-footer-btn-main" id="guardian-model-label">DS Flash</span>
-    </button>
-    <!-- RIGHT: Cartographer -->
-    <button class="g-footer-btn g-footer-carto" id="btn-run-cartographer">
-      <span class="g-footer-btn-top">Cartographer</span>
-      <span class="g-footer-btn-main"><span class="g-carto-dot" id="g-carto-dot"></span><span id="g-carto-status-text">idle</span></span>
-    </button>
-  </div>
-</div>
-<!-- LOGS OVERLAY -->
-<div class="guardian-logs-overlay" id="guardian-logs-overlay">
-  <div class="guardian-logs-overlay-nav">
-    <button class="tbtn" id="btn-guardian-logs-close">← Back</button>
-    <div style="font-size:9px;letter-spacing:3px;color:var(--g-accent);opacity:0.5;font-weight:900;">&#43065; ARCHIVE</div>
-    <div style="width:52px;"></div>
-  </div>
-  <div class="guardian-logs-overlay-content">
-    <div id="guardian-logs-list"></div>
-  </div>
-</div>
-
-<div class="guardian-log-detail" id="guardian-log-detail">
-  <div class="guardian-log-detail-nav">
-    <button class="tbtn" id="btn-guardian-log-close">&#8592; Back</button>
-    <div style="font-size:9px;letter-spacing:3px;color:var(--accent);opacity:0.5;font-weight:900;">&#43065; ARCHIVE</div>
-    <div style="width:52px;"></div>
-  </div>
-  <div class="guardian-log-detail-content" id="guardian-log-detail-content"></div>
-</div>
-
-
-<div class="cosm-overlay" id="cosm-overlay"></div>
-
-<div class="cosm-modal" id="guardian-settings-modal">
-  <div class="modal-title">◈ Guardian Engine</div>
-  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);opacity:0.5;text-transform:uppercase;margin-bottom:4px;">Model</div>
-  <div class="management-actions" id="guardian-model-list"></div>
-  <div style="font-size:9px;letter-spacing:2px;color:var(--muted);opacity:0.5;text-transform:uppercase;margin:12px 0 4px;">Cartographer Path</div>
-  <div class="management-actions">
-    <button class="management-btn" id="btn-carto-sovereign">
-      <span>◈</span> Sovereign (Local / Private)
-    </button>
-    <button class="management-btn" id="btn-carto-deep">
-      <span>∞</span> Deep (API / Cloud)
-    </button>
-  </div>
-  <div class="modal-buttons" style="margin-top:8px;">
-    <button class="modal-btn-cancel" id="btn-guardian-settings-cancel">Cancel</button>
-    <button class="modal-btn-confirm" id="btn-guardian-settings-apply">Apply</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="folder-modal">
-
-  <div class="modal-title">New Folder</div>
-  <input class="cosm-input" id="folder-name-input" placeholder="Folder name..." maxlength="60">
-  <div style="font-size:11px;color:var(--muted);margin-bottom:-6px;">Parent Folder</div>
-  <select class="cosm-select" id="folder-parent-select"><option value="">The Soup</option></select>
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-folder-cancel">Cancel</button>
-    <button class="modal-btn-confirm" id="btn-folder-confirm">Create</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="rename-modal">
-  <div class="modal-title" id="rename-title">Rename</div>
-  <input class="cosm-input" id="rename-input" placeholder="Name..." maxlength="60">
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-rename-cancel">Cancel</button>
-    <button class="modal-btn-confirm" id="btn-rename-confirm">Save</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="move-modal">
-  <div class="modal-title">Move to Folder</div>
-  <select class="cosm-select" id="move-parent-select"><option value="">The soup</option></select>
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-move-cancel">Cancel</button>
-    <button class="modal-btn-confirm" id="btn-move-confirm">Move</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="global-search-modal">
-  <div class="modal-title">Search All</div>
-  <input class="cosm-input" id="global-search-input" placeholder="Search folders & discourses..." maxlength="60">
-  <div class="global-search-results" id="global-search-results"></div>
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-global-search-cancel">Close</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="capture-modal">
-  <div class="modal-title">⟡ Spark</div>
-  <input class="cosm-input" id="capture-title" placeholder="Title..." maxlength="120">
-  <textarea class="cosm-input" id="capture-body" placeholder="Thought, aphorism, idea..." style="min-height:80px;max-height:320px;resize:none;font-family:Georgia,serif;line-height:1.7;font-size:15px;overflow-y:auto;"></textarea>
-  <select class="cosm-select" id="capture-folder"></select>
-  <input class="cosm-input" id="capture-new-folder-input" placeholder="New folder name..." maxlength="60" style="display:none;">
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-capture-cancel">Cancel</button>
-    <button class="modal-btn-confirm" id="btn-capture-confirm">Spark</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="discourse-modal">
-  <div class="modal-title">◈ New Discourse</div>
-  <input class="cosm-input" id="discourse-modal-title" placeholder="Title..." maxlength="120">
-  <select class="cosm-select" id="discourse-modal-folder"></select>
-  <input class="cosm-input" id="discourse-modal-new-folder" placeholder="New folder name..." maxlength="60" style="display:none;">
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-discourse-modal-cancel">Cancel</button>
-    <button class="modal-btn-confirm" id="btn-discourse-modal-confirm">Enter Lighthouse</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="create-modal">
-  <div class="modal-title">⌗ Create</div>
-  <div class="management-actions">
-    <button class="management-btn" id="btn-create-character">
-      <span>◈</span> Create Character
-    </button>
-    <button class="management-btn" id="btn-create-persona">
-      <span>⁂</span> Persona
-    </button>
-  </div>
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-create-cancel">Cancel</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="burn-disc-modal">
-  <div class="modal-title">⌬ Engram</div>
-  <div style="font-size:11px;color:var(--muted);">Character</div>
-  <select class="cosm-select" id="burn-char-select"></select>
-  <div style="font-size:11px;color:var(--muted);">Drop into folder</div>
-  <select class="cosm-select" id="burn-folder-select"></select>
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-burn-cancel">Cancel</button>
-    <button class="modal-btn-confirm" id="btn-burn-confirm">Engram</button>
-  </div>
-</div>
-
-<div class="cosm-modal ie-manifest-moonlit" id="ie-manifest-modal">
-  <div class="ie-manifest-head">
-    <div id="ie-manifest-sigil" style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;"></div>
-    <div id="ie-manifest-name" style="font-family:var(--font-serif);font-size:22px;font-weight:700;text-align:center;"></div>
-    <div id="ie-manifest-archetype" style="font-size:10px;letter-spacing:3px;text-transform:uppercase;"></div>
-    <div id="ie-manifest-function" style="font-size:13px;font-style:italic;text-align:center;max-width:280px;line-height:1.5;"></div>
-  </div>
-  <div class="ie-manifest-divider">
-    <div class="ie-manifest-section">
-      <div class="ie-manifest-label">Origin</div>
-      <div class="ie-manifest-text" id="ie-manifest-origin"></div>
-    </div>
-    <div class="ie-manifest-section">
-      <div class="ie-manifest-label">Function</div>
-      <div class="ie-manifest-text" id="ie-manifest-role"></div>
-    </div>
-    <div class="ie-manifest-section">
-      <div class="ie-manifest-label">Constraint</div>
-      <div class="ie-manifest-text" id="ie-manifest-constraint"></div>
-    </div>
-    <div class="ie-manifest-section">
-      <div class="ie-manifest-label">Voice</div>
-      <div class="ie-manifest-text" id="ie-manifest-voice"></div>
-    </div>
-  </div>
-  <div class="ie-manifest-divider ie-manifest-divider--tight">
-    <div id="ie-manifest-meta" style="font-size:9px;color:var(--muted);letter-spacing:0.5px;"></div>
-    <div id="ie-manifest-models" style="font-size:9px;color:var(--accent-dim);letter-spacing:0.5px;"></div>
-  </div>
-  <div class="modal-buttons" style="margin-top:14px;flex-direction:column;gap:8px;">
-    <div style="display:flex;gap:8px;width:100%;">
-      <button class="modal-btn-cancel" id="btn-ie-manifest-close" style="flex:1;">Close</button>
-      <button class="modal-btn-confirm" id="btn-ie-manifest-enter" style="flex:1;letter-spacing:2px;">ENTER</button>
-    </div>
-    <button class="modal-btn-cancel" onclick="deleteImmutableEntity(document.getElementById('ie-manifest-modal').dataset.ieId)" style="width:100%;border-color:#ff6060;color:#ff6060;">✕ Dissolve Entity</button>
-  </div>
-</div>
-
-<div class="cosm-modal" id="persona-select-modal">
-  <div class="modal-title">⁂ Your Role Here</div>
-  <div class="management-actions" id="persona-select-list"></div>
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-persona-select-cancel">Cancel</button>
-  </div>
-</div>
-
-
-<div class="cosm-modal" id="role-modal">
-  <div class="modal-title">⁂ New Role</div>
-  <input class="cosm-input" id="role-name-input" placeholder="Role name (e.g. Philosopher, Young Kaja)..." maxlength="60">
-  <textarea class="cosm-input" id="role-desc-input" placeholder="Describe this role..." style="min-height:100px;resize:none;font-family:Georgia,serif;line-height:1.7;font-size:15px;"></textarea>
-  <div class="modal-buttons">
-    <button class="modal-btn-cancel" id="btn-role-cancel">Cancel</button>
-    <button class="modal-btn-confirm" id="btn-role-confirm">Anchor ✦</button>
-  </div>
-</div>
-
-<!-- LINEAGE NAVIGATOR -->
-<div id="lineage-overlay"></div>
-<div id="lineage-panel" class="lineage-panel">
-  <div class="lineage-header">
-    <span>◈ LINEAGE</span>
-    <button class="btn-delete-mosaic" onclick="closeLineage()">✕</button>
-  </div>
-  <div id="lineage-content" class="lineage-content"></div>
-</div>
-
-<div id="cosm-toast"></div>
-
-<script>
 let generateFastMapData = null;
+let checkGuardianTrigger = null;
 (async () => {
   const btn = document.getElementById('btn-run-cartographer');
   if (btn) btn.disabled = true;
   const mod = await import('./cartographer.js');
   generateFastMapData = mod.generateFastMapData;
+  checkGuardianTrigger = mod.checkGuardianTrigger;
   if (btn) btn.disabled = false;
 })();
 
@@ -2261,16 +14,323 @@ let generateFastMapData = null;
 let db=null,currentMode='soup',currentDiscourseId=null,currentFolderId=null,
 breadcrumbPath=[{id:null,name:'◈  The soup'}],editorMode='write',currentView='table',mosaicCache={},searchQuery='',activeCharId=null,sanctuarySearchQuery='';
 const AKASHIC_URL='https://wandering-violet-964a.gazajar.workers.dev';
+/** Guardian auto-invoke micro-observation (server key). Must match deployed Worker + CORS allowlist. */
+const GUARDIAN_INVOKE_WORKER_URL = 'https://naked-guardian.gazajar.workers.dev';
 let cosmUserId=localStorage.getItem('cosm_user_id')||crypto.randomUUID();
 localStorage.setItem('cosm_user_id',cosmUserId);
+
+/** BYOK OpenRouter API base from Settings. Guardian micro-invoke uses `workers/guardian-invoke` (server key), not this URL. */
+function openRouterChatBaseUrl() {
+  try {
+    return (localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1').trim().replace(/\/+$/, '');
+  } catch (e) {
+    return 'https://openrouter.ai/api/v1';
+  }
+}
 let activeIE = null;
 let longPressTimer=null,isLongPress=false,longPressConsumed=false,touchStartPos={x:0,y:0};
 const LONG_PRESS_DURATION=1000,MOVE_THRESHOLD=10;
+const SPARK_MAX_CHARS=300;
+
+function deriveSparkTitle(titleInput, bodyText) {
+  const manual = String(titleInput || '').trim();
+  if (manual) return manual.slice(0, 120);
+  const line = (String(bodyText || '').split('\n').find((l) => l.trim().length > 0) || '').trim();
+  if (line) {
+    const words = line.split(/\s+/).filter(Boolean).slice(0, 8).join(' ');
+    if (words) return words.slice(0, 120);
+  }
+  return 'Untitled Capture';
+}
 let selectMode=false, selectedItems=new Set();
-let deepSoupFolderId = null;
-let deepSoupPath = [{id: null, name: '꩜ Deep Soup'}];
+let subconsciousFolderId = null;
+let subconsciousPath = [{id: null, name: 'Subconscious'}];
+let soupLocalSearchOpen = false;
+var guardianSoupInvokeScheduleTimer = null;
+let sanctuaryLocalSearchOpen = false;
+let chatReturnPanel = 'view-soup';
+/** Clears THE SOUP / HOME pill when leaving the Soup grid or cancelling a pending hide. */
+let modeToastTimer = null;
 let deepMapperLoadSuppressed = false;
 let deepMapperSuppressTimer = null;
+
+/* SANCTUARY REALM -- mycelium, organic branches, drawer */
+let sanctuaryAmbienceActive = false;
+let sanctuaryMyceliumRaf = null;
+let sanctuaryMyceliumResizeObs = null;
+const SANCTUARY_MYCEL_MAX = 80;
+let sanctuaryMyceliumParticles = [];
+let mycelWarm = '78, 180, 120';
+let mycelCool = '78, 203, 138';
+
+function closeSanctuaryDrawer(){
+  const d = document.getElementById('sanctuary-drawer');
+  const btn = document.getElementById('hdr-sanctuary-menu') || document.getElementById('sanctuary-panel-menu');
+  if (d) {
+    d.classList.remove('open');
+    d.setAttribute('aria-hidden', 'true');
+  }
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function openSanctuaryDrawer(){
+  const d = document.getElementById('sanctuary-drawer');
+  const btn = document.getElementById('hdr-sanctuary-menu') || document.getElementById('sanctuary-panel-menu');
+  if (d) {
+    d.classList.add('open');
+    d.setAttribute('aria-hidden', 'false');
+  }
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+
+function closeSoupDrawer(){
+  const d = document.getElementById('soup-drawer');
+  const btn = document.getElementById('hdr-soup-menu');
+  if (d) {
+    d.classList.remove('open');
+    d.setAttribute('aria-hidden', 'true');
+  }
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function openSoupDrawer(){
+  const d = document.getElementById('soup-drawer');
+  const btn = document.getElementById('hdr-soup-menu');
+  if (d) {
+    d.classList.add('open');
+    d.setAttribute('aria-hidden', 'false');
+  }
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+
+function resetSoupSearchChrome(){
+  soupLocalSearchOpen = false;
+  const sw = document.getElementById('search-bar-wrap');
+  if (sw) sw.style.display = 'none';
+  const si = document.getElementById('search-input');
+  if (si) si.value = '';
+  searchQuery = '';
+}
+
+async function showSoupLocalSearch(){
+  soupLocalSearchOpen = true;
+  const w = document.getElementById('search-bar-wrap');
+  if (w) w.style.display = 'block';
+  await renderTableView();
+  requestAnimationFrame(() => {
+    const inp = document.getElementById('search-input');
+    if (!inp) return;
+    try { inp.focus({ preventScroll: true }); } catch (_) { inp.focus(); }
+  });
+}
+
+async function hideSoupLocalSearch(){
+  resetSoupSearchChrome();
+  await renderTableView();
+}
+
+function resetSanctuarySearchChrome(){
+  sanctuaryLocalSearchOpen = false;
+  const sw = document.getElementById('sanctuary-search-bar-wrap');
+  if (sw) sw.style.display = 'none';
+  const si = document.getElementById('sanctuary-search-input');
+  if (si) si.value = '';
+  sanctuarySearchQuery = '';
+}
+
+async function showSanctuaryLocalSearch(){
+  sanctuaryLocalSearchOpen = true;
+  closeSanctuaryDrawer();
+  const w = document.getElementById('sanctuary-search-bar-wrap');
+  if (w) w.style.display = 'block';
+  await renderSanctuaryView();
+  requestAnimationFrame(() => {
+    const inp = document.getElementById('sanctuary-search-input');
+    if (!inp) return;
+    try { inp.focus({ preventScroll: true }); } catch (_) { inp.focus(); }
+  });
+}
+
+async function hideSanctuaryLocalSearch(){
+  resetSanctuarySearchChrome();
+  await renderSanctuaryView();
+}
+
+function onSanctuarySearchInput(val){
+  sanctuarySearchQuery = (val == null ? '' : String(val));
+  void renderSanctuaryView();
+}
+
+function sanctuaryPrefersReducedMotion(){
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; }
+}
+
+function resizeSanctuaryMyceliumCanvas(){
+  const c = document.getElementById('sanctuary-mycelium-canvas');
+  const atm = document.querySelector('#view-sanctuary .sanctuary-atmosphere');
+  if (!c || !atm) return;
+  const r = atm.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rw = Math.max(1, Math.floor(r.width * dpr));
+  const rh = Math.max(1, Math.floor(r.height * dpr));
+  c.width = rw;
+  c.height = rh;
+  c.style.width = Math.floor(r.width) + 'px';
+  c.style.height = Math.floor(r.height) + 'px';
+}
+
+function initSanctuaryMyceliumParticles(w, h){
+  sanctuaryMyceliumParticles = [];
+  for (let i = 0; i < SANCTUARY_MYCEL_MAX; i++) {
+    sanctuaryMyceliumParticles.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      angle: Math.random() * Math.PI * 2, // Direction of growth
+      speed: 0.15 + Math.random() * 0.2,  // Slow creeping growth
+      life: 500 + Math.random() * 1000    // How long before it dies and respawns
+    });
+  }
+}
+
+function tickSanctuaryMycelium(){
+  if (!sanctuaryAmbienceActive) {
+    sanctuaryMyceliumRaf = null;
+    return;
+  }
+  if (document.hidden) {
+    sanctuaryMyceliumRaf = null;
+    return;
+  }
+  const panel = document.getElementById('view-sanctuary');
+  const c = document.getElementById('sanctuary-mycelium-canvas');
+  if (!c || !panel || panel.classList.contains('hidden')) {
+    sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+    return;
+  }
+  if (sanctuaryPrefersReducedMotion()) {
+    sanctuaryMyceliumRaf = null;
+    return;
+  }
+  const ctx = c.getContext('2d');
+  if (!ctx) {
+    sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+    return;
+  }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = c.width / dpr;
+  const h = c.height / dpr;
+  if (sanctuaryMyceliumParticles.length < SANCTUARY_MYCEL_MAX) initSanctuaryMyceliumParticles(w, h);
+
+  // This leaves a trail that slowly fades away, creating the "web" look.
+ 
+// Fade trail -- slightly faster fade so old threads don't muddy
+ctx.fillStyle = 'rgba(5, 6, 7, 0.018)';
+ctx.fillRect(0, 0, c.width, c.height);
+
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+ctx.lineWidth = 1.1;
+
+for (let i = 0; i < sanctuaryMyceliumParticles.length; i++) {
+  let p = sanctuaryMyceliumParticles[i];
+  let oldX = p.x;
+  let oldY = p.y;
+
+  p.angle += (Math.random() - 0.5) * 0.3;
+  p.x += Math.cos(p.angle) * p.speed;
+  p.y += Math.sin(p.angle) * p.speed;
+  p.life--;
+
+  // Alternate warm/cool per particle for depth
+  const warm = i % 3 !== 0;
+    ctx.strokeStyle = warm
+    ? `rgba(${mycelWarm}, 0.22)`
+    : `rgba(${mycelCool}, 0.35)`;
+
+  // Occasional bright node pulse
+  if (Math.random() < 0.003) {
+    ctx.strokeStyle = `rgba(${mycelCool}, 0.65)`;
+    ctx.lineWidth = 1.6;
+  } else {
+    ctx.lineWidth = 1.1;
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(oldX, oldY);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
+
+  // Branching -- raised cap from 15 to 40
+  if (Math.random() < 0.005 && sanctuaryMyceliumParticles.length < 40) {
+    sanctuaryMyceliumParticles.push({
+      x: p.x,
+      y: p.y,
+      angle: p.angle + (Math.random() > 0.5 ? 0.8 : -0.8),
+      speed: p.speed * 0.8,
+      life: 200
+    });
+  }
+
+  if (p.life <= 0 || p.x < -10 || p.x > w + 10 || p.y < -10 || p.y > h + 10) {
+    if (i >= SANCTUARY_MYCEL_MAX) {
+      sanctuaryMyceliumParticles.splice(i, 1);
+      i--;
+    } else {
+      p.x = Math.random() * w;
+      p.y = Math.random() * h;
+      p.life = 500 + Math.random() * 1000;
+    }
+  }
+}
+sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+}
+
+function startSanctuaryRealm(){
+  sanctuaryAmbienceActive = true;
+  const _ms = getComputedStyle(document.documentElement);
+mycelWarm = _ms.getPropertyValue('--mycel-warm').trim() || mycelWarm;
+mycelCool = _ms.getPropertyValue('--mycel-cool').trim() || mycelCool;
+  const c = document.getElementById('sanctuary-mycelium-canvas');
+  const panel = document.getElementById('view-sanctuary');
+  if (c && panel && !sanctuaryPrefersReducedMotion()) {
+    resizeSanctuaryMyceliumCanvas();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    initSanctuaryMyceliumParticles(c.width / dpr, c.height / dpr);
+    cancelAnimationFrame(sanctuaryMyceliumRaf);
+    sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+    if (typeof ResizeObserver !== 'undefined') {
+      if (sanctuaryMyceliumResizeObs) sanctuaryMyceliumResizeObs.disconnect();
+      sanctuaryMyceliumResizeObs = new ResizeObserver(() => {
+        if (!sanctuaryAmbienceActive) return;
+        resizeSanctuaryMyceliumCanvas();
+        const d = Math.min(window.devicePixelRatio || 1, 2);
+        const cw = document.getElementById('sanctuary-mycelium-canvas');
+        if (cw) initSanctuaryMyceliumParticles(cw.width / d, cw.height / d);
+      });
+      const atmObs = document.querySelector('#view-sanctuary .sanctuary-atmosphere');
+      if (atmObs) sanctuaryMyceliumResizeObs.observe(atmObs);
+      else sanctuaryMyceliumResizeObs.observe(panel);
+    }
+  }
+}
+
+function stopSanctuaryRealm(){
+  sanctuaryAmbienceActive = false;
+  cancelAnimationFrame(sanctuaryMyceliumRaf);
+  sanctuaryMyceliumRaf = null;
+  if (sanctuaryMyceliumResizeObs) {
+    sanctuaryMyceliumResizeObs.disconnect();
+    sanctuaryMyceliumResizeObs = null;
+  }
+  closeSanctuaryDrawer();
+}
+
+function onSanctuarySurfacePointerDown(ev){
+  const panel = document.getElementById('view-sanctuary');
+  if (!panel || panel.classList.contains('hidden')) return;
+  const dr = document.getElementById('sanctuary-drawer');
+  if (dr && dr.classList.contains('open')) return;
+}
 
 /* PERSONA */
 function getGlobalPersona(){
@@ -2278,11 +338,6 @@ function getGlobalPersona(){
 }
 function saveGlobalPersona(bio,personality){
   localStorage.setItem('nq_global_persona',JSON.stringify({bio,personality}));
-}
-
-function openCreateModal(){
-  document.getElementById('create-modal').classList.add('visible');
-  document.getElementById('cosm-overlay').classList.add('active');
 }
 
 let currentIEModels = [];
@@ -2321,13 +376,233 @@ function savePersonaRoles(roles){
   localStorage.setItem('nq_persona_roles',JSON.stringify(roles));
 }
 
-/* FIREFLY */
-class FF{constructor(){this.canvas=document.getElementById('firefly-canvas');this.ctx=this.canvas.getContext('2d');this.p=[];this.d=15;this.r();window.addEventListener('resize',()=>this.r());this.a();}r(){this.canvas.width=innerWidth;this.canvas.height=innerHeight;}sd(l){this.d=Math.min(60,15+Math.floor(l/200));}a(){this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);while(this.p.length<this.d)this.p.push({x:Math.random()*this.canvas.width,y:Math.random()*this.canvas.height,s:Math.random()*1.5+.2,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,a:Math.random()*.4+.1,p:Math.random()*.01+.002});if(this.p.length>this.d)this.p.splice(this.d);this.p.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.a+=p.p;if(p.a>.6||p.a<.1)p.p*=-1;if(p.x<0)p.x=this.canvas.width;if(p.x>this.canvas.width)p.x=0;if(p.y<0)p.y=this.canvas.height;if(p.y>this.canvas.height)p.y=0;this.ctx.beginPath();this.ctx.arc(p.x,p.y,p.s,0,Math.PI*2);this.ctx.fillStyle=`rgba(200,160,80,${p.a})`;this.ctx.fill();});requestAnimationFrame(()=>this.a());}}
-const firefly=new FF();
-document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){firefly.paused=true;}
-  else{firefly.paused=false;firefly.a();}
+/** Guardian Soup invoke strip -- timer + active flag (declared before FF so RAF can read safely at boot). */
+var guardianInvokeTimer = null;
+var guardianInvokeActive = false;
+var guardianInvokeLastTriggerType = null;
+/** Auto-dismiss strip after this many ms (Batch 3 typo: minutes, not hours). */
+var GUARDIAN_INVOKE_STRIP_DISSOLVE_MS = 6 * 60 * 1000;
+
+/* FIREFLY -- Soup-only atmosphere (canvas is fixed; off-Soup we stop drawing so it never bleeds through) */
+class FF {
+  constructor() {
+    this.canvas = document.getElementById('firefly-canvas');
+    this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
+    this.p = [];
+    this.d = 15;
+    this.paused = false;
+    this.soupActive = true;
+    this._raf = null;
+    this.r();
+    window.addEventListener('resize', () => this.r());
+    this.a();
+  }
+  r() {
+    if (!this.canvas) return;
+    this.canvas.width = innerWidth;
+    this.canvas.height = innerHeight;
+  }
+  sd(l) {
+    if (!this.soupActive) return;
+    this.d = Math.min(60, 15 + Math.floor(l / 200));
+  }
+  setGuardianMode(on) {
+    if (on) {
+      this._preGuardianD = this.d;
+      this.d = 40;
+    } else {
+      this.d = this._preGuardianD != null ? this._preGuardianD : 15;
+      this._preGuardianD = null;
+    }
+  }
+  setSoupActive(on) {
+    const next = !!on;
+    if (this.soupActive === next) return;
+    this.soupActive = next;
+    if (this._raf != null) {
+      cancelAnimationFrame(this._raf);
+      this._raf = null;
+    }
+    if (this.ctx && this.canvas) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.p = [];
+    if (this.soupActive && !document.hidden && !this.paused) this.a();
+  }
+  a() {
+    if (!this.canvas || !this.ctx) return;
+    if (!this.soupActive || this.paused || document.hidden) return;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    while (this.p.length < this.d) {
+      this.p.push({
+        x: Math.random() * this.canvas.width,
+        y: Math.random() * this.canvas.height,
+        s: Math.random() * 1.5 + 0.2,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2,
+        a: Math.random() * 0.4 + 0.1,
+        p: Math.random() * 0.01 + 0.002
+      });
+    }
+    if (this.p.length > this.d) this.p.splice(this.d);
+            var _gr = null;
+    if (guardianInvokeActive) {
+      var _gs = document.getElementById('guardian-invoke-strip');
+      if (_gs && _gs.classList.contains('visible')) _gr = _gs.getBoundingClientRect();
+    }
+    this.p.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (_gr && _gr.width > 0) {
+        var tgx = _gr.left + _gr.width * 0.5;
+        var tgy = _gr.top + _gr.height * 0.5;
+        var gdx = tgx - p.x;
+        var gdy = tgy - p.y;
+        var glen = Math.sqrt(gdx * gdx + gdy * gdy);
+        if (glen > 60) {
+          p.x += (gdx / glen) * 0.3;
+          p.y += (gdy / glen) * 0.3;
+        } else {
+          p.vx *= 0.88;
+          p.vy *= 0.88;
+        
+          
+        }
+      }
+      p.a += p.p;
+      if (p.a > 0.6 || p.a < 0.1) p.p *= -1;
+      if (p.x < 0) p.x = this.canvas.width;
+      if (p.x > this.canvas.width) p.x = 0;
+      if (p.y < 0) p.y = this.canvas.height;
+      if (p.y > this.canvas.height) p.y = 0;
+      this.ctx.beginPath();
+      this.ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2);
+      this.ctx.fillStyle = `rgba(200,160,80,${p.a})`;
+      this.ctx.fill();
+    });
+    this._raf = requestAnimationFrame(() => this.a());
+  }
+}
+const firefly = new FF();
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) firefly.paused = true;
+  else {
+    firefly.paused = false;
+    if (firefly.soupActive) firefly.a();
+  }
 });
+
+/* FORGOTTEN MOATS -- Subconscious only. Foxfire drift; spawn on enter, die on leave. */
+var _moatRaf = null;
+var _moatParticles = [];
+var _moatCanvas = null;
+var _moatCtx = null;
+var _moatActive = false;
+
+function startSubconsciousMoats(count) {
+  stopSubconsciousMoats();
+  _moatCanvas = document.getElementById('subconscious-moat-canvas');
+  if (!_moatCanvas) return;
+  _moatCtx = _moatCanvas.getContext('2d');
+  var wrap = document.getElementById('view-subconscious');
+  if (wrap) {
+    var rr = wrap.getBoundingClientRect();
+    _moatCanvas.width = Math.max(1, Math.floor(rr.width));
+    _moatCanvas.height = Math.max(1, Math.floor(rr.height));
+  } else {
+    _moatCanvas.width = innerWidth;
+    _moatCanvas.height = innerHeight;
+  }
+  _moatActive = true;
+  _moatParticles = [];
+  var n = Math.max(0, Math.min(25, count | 0));
+  for (var i = 0; i < n; i++) {
+    _moatParticles.push(_spawnMoat(_moatCanvas.width, _moatCanvas.height));
+  }
+  _tickMoats();
+}
+
+function stopSubconsciousMoats() {
+  _moatActive = false;
+  if (_moatRaf) {
+    cancelAnimationFrame(_moatRaf);
+    _moatRaf = null;
+  }
+  _moatParticles = [];
+  if (_moatCtx && _moatCanvas) {
+    _moatCtx.clearRect(0, 0, _moatCanvas.width, _moatCanvas.height);
+  }
+  _moatCtx = null;
+  _moatCanvas = null;
+}
+
+function _spawnMoat(w, h) {
+  var maxL = 400 + Math.random() * 500;
+  return {
+    x: Math.random() * w,
+    y: Math.random() * h,
+        r: 2 + Math.random() * 3,
+    vx: (Math.random() - 0.5) * 0.25,
+    vy: (Math.random() - 0.5) * 0.25,
+    a: Math.random() * 0.28 + 0.08,
+    life: maxL,
+    maxLife: maxL
+  };
+}
+
+function _tickMoats() {
+  if (!_moatActive) {
+    _moatRaf = null;
+    return;
+  }
+  if (!_moatCtx || !_moatCanvas) {
+    _moatRaf = null;
+    return;
+  }
+  if (document.hidden) {
+    _moatRaf = requestAnimationFrame(_tickMoats);
+    return;
+  }
+  var wrap = document.getElementById('view-subconscious');
+  if (wrap) {
+    var rr = wrap.getBoundingClientRect();
+    var nw = Math.max(1, Math.floor(rr.width));
+    var nh = Math.max(1, Math.floor(rr.height));
+    if (_moatCanvas.width !== nw || _moatCanvas.height !== nh) {
+      _moatCanvas.width = nw;
+      _moatCanvas.height = nh;
+    }
+  }
+  var w = _moatCanvas.width;
+  var h = _moatCanvas.height;
+  _moatCtx.clearRect(0, 0, w, h);
+
+  for (var i = _moatParticles.length - 1; i >= 0; i--) {
+    var m = _moatParticles[i];
+    m.x += m.vx;
+    m.y += m.vy;
+    m.life--;
+    var lifeRatio = m.maxLife > 0 ? m.life / m.maxLife : 0;
+    var alpha = m.a * lifeRatio;
+    if (Math.random() < 0.01) {
+      m.vx += (Math.random() - 0.5) * 0.02;
+      m.vy += (Math.random() - 0.5) * 0.02;
+      m.vx = Math.max(-0.35, Math.min(0.35, m.vx));
+      m.vy = Math.max(-0.35, Math.min(0.35, m.vy));
+    }
+    if (m.x < 0) m.x = w;
+    if (m.x > w) m.x = 0;
+    if (m.y < 0) m.y = h;
+    if (m.y > h) m.y = 0;
+    if (m.life <= 0) {
+      _moatParticles[i] = _spawnMoat(w, h);
+      continue;
+    }
+    _moatCtx.beginPath();
+    _moatCtx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+    _moatCtx.fillStyle = 'rgba(100, 140, 100, ' + alpha + ')';
+    _moatCtx.fill();
+  }
+  _moatRaf = requestAnimationFrame(_tickMoats);
+}
 
 /* DB -- ABYSS-PROOF WORKER (NULL FIXED)- Nuclear fix 
 Auto increment Time-bomb & PUT code endless echo */
@@ -2376,6 +651,15 @@ db.run("CREATE TABLE IF NOT EXISTS cosm_discourses(id TEXT PRIMARY KEY, title TE
   db.run("CREATE TABLE IF NOT EXISTS guardian_logs(id TEXT PRIMARY KEY, invoked_at INTEGER, model_used TEXT, soup_snapshot_count INTEGER, response_text TEXT, was_silent INTEGER DEFAULT 0, thread TEXT, emotional_weight REAL DEFAULT 1.0)");
 db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoked_at INTEGER, model_used TEXT, soup_snapshot_count INTEGER, ciphertext TEXT, iv TEXT, was_silent INTEGER DEFAULT 0, thread TEXT, emotional_weight REAL DEFAULT 1.0)");
   db.run("CREATE TABLE IF NOT EXISTS guardian_summaries_enc(id TEXT PRIMARY KEY, enc TEXT)");
+
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN auto_invoked INTEGER DEFAULT 0"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN triggered_by TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN user_action TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN log_type TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN geometry_snapshot TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN primary_discourse_id TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN theory_one_line TEXT"); } catch (e) {}
+  try { db.run("ALTER TABLE guardian_logs ADD COLUMN qualifiers TEXT"); } catch (e) {}
 
   ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'].forEach
 (t => {
@@ -2558,6 +842,7 @@ function initWorker(){
 
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
+/* Set false for production builds (relaxes watcher thresholds and skips lock screen). */
 const NQ_DEV_MODE = true;
 //const NQ_DEV_MODE = false;
 
@@ -2579,6 +864,61 @@ let isWatcherReady = false;
 let watcherQueue = [];
 let isWatcherProcessing = false;
 let isRunningPass = false;
+let watcherModelLoading = false;
+let watcherInitFailed = false;
+let _watcherDotAnchor = -1;
+let _watcherHasLinks = false;
+let _watcherCurrentLinks = [];
+
+function isWatcherSoupContext() {
+  return currentMode === 'soup' && currentView === 'soup';
+}
+
+/** Watcher user toasts only on the main Soup grid (not Sanctuary, sub-views, or forge). */
+function showWatcherSoupToast(msg) {
+  if (!isWatcherSoupContext()) return;
+  showToast(msg);
+}
+
+/** Soup-only LED strip + cluster button (resonance when links exist). */
+function syncWatcherLedStrip() {
+  const strip = document.getElementById('watcher-led-strip');
+  const cluster = document.getElementById('watcher-led-cluster');
+  const ledA = document.getElementById('watcher-led-active');
+  const ledI = document.getElementById('watcher-led-idle');
+  const ledO = document.getElementById('watcher-led-offline');
+  if (!strip || !ledA || !ledI || !ledO) return;
+  ledA.classList.remove('is-lit', 'is-pulse');
+  ledI.classList.remove('is-lit', 'is-pulse');
+  ledO.classList.remove('is-lit', 'is-pulse');
+  if (!isWatcherSoupContext()) {
+    strip.classList.add('hidden');
+    if (cluster) cluster.disabled = true;
+    return;
+  }
+  strip.classList.remove('hidden');
+  const indexing = !!(watcherModelLoading || isWatcherProcessing || isRunningPass);
+  const onlineReady = !!(isWatcherReady && watcherEmbedder);
+  if (!watcherDB) {
+    ledO.classList.add('is-lit');
+  } else if (watcherInitFailed && !watcherModelLoading && !onlineReady) {
+    ledO.classList.add('is-lit');
+  } else if (indexing) {
+    ledA.classList.add('is-lit', 'is-pulse');
+  } else if (onlineReady) {
+    ledI.classList.add('is-lit');
+  } else {
+    ledO.classList.add('is-lit');
+  }
+  if (cluster) {
+    const canOpen = !!(_watcherHasLinks && !indexing);
+    cluster.disabled = !canOpen;
+  }
+}
+
+function hideWatcherDot() {
+  syncWatcherLedStrip();
+}
 
 function openWatcherDB() {
   return new Promise((resolve, reject) => {
@@ -2627,18 +967,18 @@ function watcherCosine(a, b) {
 }
 
 function showWatcherLoading() {
-  const dot = document.getElementById('watcher-loading-dot');
-  if (dot) { dot.style.display = 'block'; void dot.offsetWidth; dot.classList.add('visible'); }
+  watcherModelLoading = true;
+  watcherInitFailed = false;
+  syncWatcherLedStrip();
 }
 
 function hideWatcherLoading() {
-  const dot = document.getElementById('watcher-loading-dot');
-  if (dot) { dot.classList.remove('visible'); setTimeout(() => { dot.style.display = 'none'; }, 1000); }
+  watcherModelLoading = false;
+  syncWatcherLedStrip();
 }
 
 function updateWatcherLoading(loaded, total) {
-  const dot = document.getElementById('watcher-loading-dot');
-  if (dot) dot.style.opacity = 0.3 + (loaded / Math.max(total, 1)) * 0.7;
+  syncWatcherLedStrip();
 }
 
 async function updateWatcherStatusUI() {
@@ -2668,6 +1008,7 @@ async function updateWatcherStatusUI() {
     text.textContent = 'Watching';
     if (detail) detail.textContent = embs.length + ' Engrams · ' + links.length + ' Connections · threshold met';
   }
+  syncWatcherLedStrip();
 }
 
 async function shouldWatcherShow() {
@@ -2680,12 +1021,15 @@ async function shouldWatcherShow() {
 
 async function initWatcher() {
   try {
+    watcherInitFailed = false;
     watcherDB = await openWatcherDB();
     // Fast path -- model already loaded, just reconnect
     if (watcherEmbedder) {
       isWatcherReady = true;
       updateWatcherStatusUI();
-      scheduleWatcherPass();
+      await refreshWatcherDot();
+      if (isWatcherSoupContext()) scheduleWatcherPass();
+      syncWatcherLedStrip();
       return;
     }
     showWatcherLoading();
@@ -2703,44 +1047,53 @@ async function initWatcher() {
       }
     });
     isWatcherReady = true;
-localStorage.removeItem('nq_watcher_offline_since');
-const firstAwakening = !localStorage.getItem('nq_watcher_awakened');
-if (firstAwakening) {
-  showToast('◈ The Watcher has awakened');
-  // One-time reindex of all existing content
-  setTimeout(async () => {
-    const discs = await getDiscourses();
-    let count = 0;
-    for (const d of discs) {
-      if (d.raw_text && d.raw_text.trim().length > 0) {
-        queueWatcherEmbed(d.id, d.title || 'Untitled', d.raw_text, d.item_type || 'discourse');
-        count++;
-      }
+    localStorage.removeItem('nq_watcher_offline_since');
+    const firstAwakening = !localStorage.getItem('nq_watcher_awakened');
+    if (firstAwakening) {
+      showWatcherSoupToast('◈ The Watcher has awakened');
+      // One-time reindex of all existing content
+      setTimeout(async () => {
+        if (!isWatcherSoupContext()) return;
+        const discs = await getDiscourses();
+        if (!isWatcherSoupContext()) return;
+        let count = 0;
+        for (const d of discs) {
+          if (d.raw_text && d.raw_text.trim().length > 0) {
+            queueWatcherEmbed(d.id, d.title || 'Untitled', d.raw_text, d.item_type || 'discourse');
+            count++;
+          }
+        }
+        if (count > 0) showWatcherSoupToast('◈ Indexing ' + count + ' engrams...');
+      }, 5000);
     }
-    if (count > 0) showToast('◈ Indexing ' + count + ' engrams...');
-  }, 5000);
-}
-hideWatcherLoading();
-updateWatcherStatusUI();
-scheduleWatcherPass();
+    if (firstAwakening) localStorage.setItem('nq_watcher_awakened', '1');
+    hideWatcherLoading();
+    updateWatcherStatusUI();
+    await refreshWatcherDot();
+    if (isWatcherSoupContext()) scheduleWatcherPass();
+    syncWatcherLedStrip();
   } catch (err) {
+    watcherInitFailed = true;
     console.warn('[Watcher] Init Failed:', err);
     hideWatcherLoading();
+    syncWatcherLedStrip();
   }
 }
 
 function queueWatcherEmbed(id, title, body, itemType) {
   if (!isWatcherReady) return;
   watcherQueue.push({ id, title, body, itemType, lastSeenActive: Date.now() });
-  if (!isWatcherProcessing) processWatcherQueue();
+  if (!isWatcherProcessing && isWatcherSoupContext()) processWatcherQueue();
 }
 
 async function processWatcherQueue() {
   if (isWatcherProcessing || watcherQueue.length === 0) return;
+  if (!isWatcherSoupContext()) return;
   isWatcherProcessing = true;
   while (watcherQueue.length > 0) {
         // If Watcher was torn down mid-yield (e.g. Guardian view entry),
     // leave remaining items in queue so they are processed after reinit.
+    if (!isWatcherSoupContext()) break;
     if (!isWatcherReady || !watcherEmbedder) break;
     const item = watcherQueue.shift();
     try { await embedDiscourseMain(item.id, item.title, item.body, item.itemType, item.lastSeenActive); }
@@ -2758,6 +1111,7 @@ async function processWatcherQueue() {
   updateWatcherStatusUI();
   refreshWatcherDot(); // NEW
   isWatcherProcessing = false;
+  syncWatcherLedStrip();
 }
 
 async function embedDiscourseMain(id, title, body, itemType, lastSeenActive) {
@@ -2785,6 +1139,7 @@ async function embedDiscourseMain(id, title, body, itemType, lastSeenActive) {
 }
 
 async function runSimilarityPassMain() {
+  if (!isWatcherSoupContext()) return;
   if (isRunningPass) return;
   isRunningPass = true;
   try {
@@ -2835,11 +1190,13 @@ async function runSimilarityPassMain() {
   refreshWatcherDot();
     } finally {
     isRunningPass = false;
+    syncWatcherLedStrip();
   }
 }
 
 function scheduleWatcherPass() {
   if (!isWatcherReady) return;
+  if (!isWatcherSoupContext()) return;
   const lastRun = parseInt(localStorage.getItem('nq_watcher_last_pass') || '0');
   const hoursSince = (Date.now() - lastRun) / 3600000;
   if (hoursSince > W_PASS_COOLDOWN_HOURS) {
@@ -2847,25 +1204,19 @@ function scheduleWatcherPass() {
   }
 }
 
-/* ── WATCHER GOLD DOT UI ───────────────────────────────────── */
-let _watcherDotAnchor = -1;
-let _watcherHasLinks = false;
-let _watcherCurrentLinks = [];
+/* ── WATCHER LED strip (Soup only) ─────────────────────────── */
 
 async function refreshWatcherDot() {
-  if (!watcherDB) return;
-  const dot = document.getElementById('watcher-dot');
-  if (!dot) return;
+  if (!watcherDB) {
+    _watcherCurrentLinks = [];
+    _watcherHasLinks = false;
+    syncWatcherLedStrip();
+    return;
+  }
   const allLinks = await wdb.getAll('links');
   _watcherCurrentLinks = allLinks;
   _watcherHasLinks = allLinks.length > 0;
-  
-  // It pulses if it has insights, OR if it's currently crunching tensors
-  if (_watcherHasLinks || isWatcherProcessing) {
-    dot.classList.add('pulsing');
-  } else {
-    dot.classList.remove('pulsing');
-  }
+  syncWatcherLedStrip();
 }
 
 async function openWatcherPanel() {
@@ -2873,7 +1224,7 @@ async function openWatcherPanel() {
   const list = document.getElementById('watcher-links-list');
   if (!panel || !list) return;
   list.innerHTML = '';
-  if (!_watcherCurrentLinks.length) { hideWatcherDot(); return; }
+  if (!_watcherCurrentLinks.length) { syncWatcherLedStrip(); return; }
   const top5 = [..._watcherCurrentLinks].sort((a,b) => b.score - a.score).slice(0,5);
   for (const link of top5) {
     const discA = await getDiscourse(link.a);
@@ -2888,8 +1239,9 @@ async function openWatcherPanel() {
     item.addEventListener('click', () => { closeWatcherPanel(); openDiscourse(link.a); });
     list.appendChild(item);
   }
-    const dot = document.getElementById('watcher-dot');
-  const dotRect = dot?.getBoundingClientRect();
+  if (!list.childElementCount) { syncWatcherLedStrip(); return; }
+    const anchor = document.getElementById('watcher-led-cluster');
+  const dotRect = anchor?.getBoundingClientRect();
   if (dotRect) {
     const panelW = 260;
     const panelH = 200;
@@ -3035,7 +1387,7 @@ async function renderForgePhotos(charId, primarySlotStr) {
   
   let primarySlot = (primarySlotStr !== undefined && primarySlotStr !== null && primarySlotStr !== '') ? Number(primarySlotStr) : -1;
   
-  section.innerHTML = `<div class="cards-section-label" style="margin-top:0;">Visages</div><div class="forge-photo-slots"></div>`;
+  section.innerHTML = `<div class="cards-section-label" style="margin-top:0;">Photos</div><div class="forge-photo-slots"></div>`;
   const slotsContainer = section.querySelector('.forge-photo-slots');
   
   for (let i = 0; i < 3; i++) {
@@ -3332,7 +1684,9 @@ function openIEBottomSheet(id){
     if(!e) return;
     
     const sigilEl = document.getElementById('ie-manifest-sigil');
-    sigilEl.innerHTML = e.sigil_svg || '◈';
+    const rawSigil = (e.sigil_svg || '').trim();
+    if (/^<svg[\s>]/i.test(rawSigil)) sigilEl.innerHTML = rawSigil;
+    else sigilEl.textContent = '◈';
     
     document.getElementById('ie-manifest-name').textContent = e.display_name || 'Unnamed';
     document.getElementById('ie-manifest-archetype').textContent = e.archetype_tag || '';
@@ -3378,6 +1732,7 @@ async function openIEChat(id){
     isSending = false;
   activeCharId = id;
   activeIE = ie;
+  chatReturnPanel = (currentView === 'ie') ? 'view-ie' : 'view-sanctuary';
   document.getElementById('view-chat').classList.add('ie-encounter');
   document.getElementById('chat-input').placeholder = 'Speak with intention...';
   document.getElementById('chat-persona-pill').style.display = 'none';
@@ -3396,16 +1751,18 @@ document.getElementById('chat-input').style.height = 'auto';
   const ieModels = ie.model_variants ? 
   (typeof ie.model_variants === 'string' ? JSON.parse(ie.model_variants) : ie.model_variants) 
   : [];
+  currentIEModels = ieModels.map(m => m.model_id).filter(Boolean);
 const chip = document.getElementById('ie-model-chip');
 const bar = document.getElementById('ie-model-bar');
 if(chip && ieModels.length > 0){
   if(bar) bar.style.display = 'block';
   chip.dataset.idx = '0';
-  chip.dataset.models = JSON.stringify(ieModels); // THIS was missing
+  chip.dataset.models = JSON.stringify(ieModels);
   chip.textContent = `◈ ${ieModels[0].model_id?.split('/').pop() || 'model'}`;
 } else if(chip){
   if(bar) bar.style.display = 'none';
   chip.dataset.models = '[]';
+  currentIEModels = [];
 }
   document.getElementById('chat-persona-pill').style.display = 'none';
   // Hide edit button -- IE is immutable
@@ -3419,9 +1776,15 @@ if(chip && ieModels.length > 0){
 }
 
 function cycleIEModel(){
-  if(!currentIEModels.length) return;
   const chip = document.getElementById('ie-model-chip');
   if(!chip) return;
+  if (!currentIEModels.length && chip.dataset.models) {
+    try {
+      const parsed = JSON.parse(chip.dataset.models);
+      currentIEModels = (parsed || []).map(m => (typeof m === 'string' ? m : m.model_id)).filter(Boolean);
+    } catch (e) { return; }
+  }
+  if(!currentIEModels.length) return;
   let idx = parseInt(chip.dataset.idx || '0');
   idx = (idx + 1) % currentIEModels.length;
   chip.dataset.idx = idx;
@@ -3437,17 +1800,17 @@ async function deleteImmutableEntity(id) {
 
 /* DEV DOOR */
 async function devForcePass() {
-  if (!isWatcherReady) { showToast('Watcher not ready yet'); return; }
+  if (!isWatcherReady) { showWatcherSoupToast('Watcher not ready yet'); return; }
   localStorage.removeItem('nq_watcher_last_pass');
-  showToast('Running pass...');
+  showWatcherSoupToast('Running pass...');
   await runSimilarityPassMain();
   await updateWatcherStatusUI();
   await refreshWatcherDot();
-  showToast('Pass complete');
+  showWatcherSoupToast('Pass complete');
 }
 
 async function devClearWatcher() {
-  if (!watcherDB) { showToast('No watcher DB'); return; }
+  if (!watcherDB) { showWatcherSoupToast('No watcher DB'); return; }
   const embs = await wdb.getAll('embeddings');
   const links = await wdb.getAll('links');
   for (const e of embs) await wdb.delete('embeddings', e.id);
@@ -3458,7 +1821,7 @@ async function devClearWatcher() {
   _watcherCurrentLinks = [];
   hideWatcherDot();
   await updateWatcherStatusUI();
-  showToast('Watcher index cleared');
+  showWatcherSoupToast('Watcher index cleared');
 }
 
 async function devCreateIEDraft(){
@@ -3826,7 +2189,7 @@ async function deleteMosaicTile(dId){const t=await getMosaicTile(dId);if(t)await
 
 async function getBacklink(dId){const l=await dbGetByIndex("cosm_backlinks","discourse_id",dId);return l.length>0?l[0]:null;}
 
-/* BURN DISC */
+/* ENGRAM -- Sanctuary chats → Soup (modal: #burn-disc-modal; confirm: confirmBurnDisc) */
 async function openBurnDiscModal(){
   const chars=await getCharacters();
   const active=chars.filter(c=>!c.isDeleted);
@@ -3860,7 +2223,7 @@ async function confirmBurnDisc(){
   const lastBurn=parseInt(localStorage.getItem('lastBurn_'+charId)||'0');
   const newMessages=history.filter(h=>(h.created_at||0)>lastBurn);
   if(!newMessages.length){
-    showToast("No new chapters since last burn ◆");
+    showToast("No new chapters since last Engram ◆");
     closeOverlay();return;
   }
   const raw_text=newMessages.map(h=>
@@ -3917,7 +2280,7 @@ function renderRoles(){
     div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;';
     div.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-size:12px;font-weight:900;color:var(--accent);">${escHtml(r.name)}</span>
+        <span class="role-chip-title" style="font-size:12px;font-weight:900;">${escHtml(r.name)}</span>
         <button onclick="deleteRole('${r.id}')" style="background:none;border:1px solid var(--danger);color:#ff6060;font-size:10px;padding:3px 8px;border-radius:6px;font-weight:700;">✕</button>
       </div>
       <div style="font-size:13px;color:var(--text);font-family:Georgia,serif;line-height:1.6;">${escHtml(r.description)}</div>
@@ -4209,74 +2572,125 @@ async function batchBurn(){
   await openBurnDiscModal();
 }
 
-let wpt=null;
-let wTapTimer=null;
-const wEl=document.getElementById('nq-wordmark');
-
-wEl.addEventListener('touchstart',()=>{
-  wEl.classList.add('pressing');
-  wpt=setTimeout(()=>{
-    clearTimeout(wTapTimer);
-    wTapTimer=null;
-    wEl.classList.remove('pressing');
-    switchAppMode(currentMode==='soup'?'sanctuary':'soup');
-    if(navigator.vibrate)navigator.vibrate(40);
-  },600);
-},{passive:true});
-
-wEl.addEventListener('touchend',()=>{
-  wEl.classList.remove('pressing');
-  if(wpt){
-    clearTimeout(wpt);
-    wpt=null;
-    // Short tap -- go home
-    wTapTimer=setTimeout(()=>{
-      goHome();
-    },50);
+function dismissModeToast() {
+  if (modeToastTimer) {
+    clearTimeout(modeToastTimer);
+    modeToastTimer = null;
   }
-});
+  const mt = document.getElementById('mode-toast');
+  if (mt) mt.style.opacity = '0';
+}
 
-wEl.addEventListener('touchmove',()=>{
-  wEl.classList.remove('pressing');
-  clearTimeout(wpt);
-  clearTimeout(wTapTimer);
-  wpt=null;wTapTimer=null;
-});
+/** Realm pill: only on main Soup grid; never after navigating to Sanctuary/chat/etc. */
+function flashModeToastForSoupGrid(text, durationMs) {
+  dismissModeToast();
+  const mt = document.getElementById('mode-toast');
+  if (!mt) return;
+  if (currentMode !== 'soup' || currentView !== 'soup') return;
+  mt.textContent = text;
+  mt.style.opacity = '1';
+  modeToastTimer = setTimeout(() => {
+    modeToastTimer = null;
+    if (currentMode !== 'soup' || currentView !== 'soup') {
+      mt.style.opacity = '0';
+      return;
+    }
+    mt.style.opacity = '0';
+  }, durationMs);
+}
 
 function goHome(){
-  const mt=document.getElementById('mode-toast');
-  if(currentMode==='soup'){
+    if(currentMode==='soup'){
     breadcrumbPath=[{id:null,name:'◈ The Soup'}];
     currentFolderId=null;
-    deepSoupFolderId=null;
+    subconsciousFolderId=null;
     showPanel('view-soup');
     renderTableView();
-    mt.textContent='◈ HOME';
+    flashModeToastForSoupGrid('◈ HOME', 1200);
   } else {
+    dismissModeToast();
     showPanel('view-sanctuary');
     renderSanctuaryView();
-    mt.textContent='◈ SANCTUARY';
   }
-  mt.style.opacity='1';
-  setTimeout(()=>{mt.style.opacity='0';},1200);
 }
 
 /* APP MODE */
 function switchAppMode(mode){
   currentMode=mode;
-  const mt=document.getElementById('mode-toast');
-  if(mode==='soup'){showPanel('view-soup');mt.textContent='◈ THE SOUP';}
-  else{showPanel('view-sanctuary');mt.textContent='◈ THE SANCTUARY';renderSanctuaryView();}
-  mt.style.opacity='1';setTimeout(()=>{mt.style.opacity='0';},1500);
-updateHeaderButtons();
-renderDefaultBar(mode);
+  if(mode==='soup'){
+    showPanel('view-soup');
+    void renderTableView();
+    flashModeToastForSoupGrid('◈ THE SOUP', 1500);
+  } else {
+    dismissModeToast();
+    showPanel('view-sanctuary');
+    renderSanctuaryView();
+  }
+  renderDefaultBar(mode);
 }
 
 /* SHOW PANEL (Unifying logic) */
+function syncNqHeaderForCurrentPanel(activePanelId) {
+  const hdr = document.getElementById('nq-header') || document.querySelector('.nq-header');
+  const onSanctuaryPanel = activePanelId === 'view-sanctuary';
+  const realmSanctuary = onSanctuaryPanel && currentMode === 'sanctuary';
+  if (hdr) hdr.classList.toggle('nq-header--sanctuary-realm', onSanctuaryPanel);
+  const title = document.getElementById('nq-header-title');
+  if (title) {
+    title.hidden = !realmSanctuary;
+    title.setAttribute('aria-hidden', realmSanctuary ? 'false' : 'true');
+  }
+  updateHeaderButtons();
+}
+
+/** Maps visible panel + `currentMode` to `<html data-realm="…">` for global hooks / future CSS. */
+function syncDataRealmFromPanel(activePanelId) {
+  let realm;
+  switch (activePanelId) {
+    case 'view-lighthouse':
+      realm = 'lighthouse';
+      break;
+    case 'view-abyss':
+      realm = 'abyss';
+      break;
+    case 'view-subconscious':
+      realm = 'subconscious';
+      break;
+    case 'view-data':
+      realm = 'data';
+      break;
+    case 'view-guardian':
+      realm = 'guardian';
+      break;
+    case 'view-soup':
+      realm = 'soup';
+      break;
+    case 'view-sanctuary':
+    case 'view-forge':
+    case 'view-chat':
+    case 'view-memory':
+    case 'view-persona':
+    case 'view-ie':
+      realm = currentMode === 'sanctuary' ? 'sanctuary' : 'soup';
+      break;
+    default:
+      realm = 'soup';
+  }
+  document.documentElement.dataset.realm = realm;
+}
+
 function showPanel(id){
     abyssStop();
+  /* Leaving (or re-entering) realms: always collapse Abyss sheet -- a stale `.open` sheet
+     kept pointer-events:auto and blocked the canvas on the next visit. */
+  abyssCloseSheet();
+  if (currentView === 'subconscious' && id !== 'view-subconscious') {
+    stopSubconsciousMoats();
+  }
+  const wasSoup = (currentView === 'soup');
+  const wasSanctuary = (currentView === 'sanctuary');
   const panels = [
-   'view-soup', 'view-sanctuary', 'view-abyss', 'view-deep-soup', 'view-data',
+   'view-soup', 'view-sanctuary', 'view-abyss', 'view-subconscious', 'view-data',
   'view-lighthouse', 'view-forge', 'view-chat', 'view-memory', 
   'view-persona', 'view-guardian', 'view-ie'
 ];
@@ -4318,23 +2732,59 @@ function showPanel(id){
   const active=document.getElementById(id);
   if(active)active.classList.remove('hidden');
   currentView=id.replace('view-','');
+  if (id !== 'view-soup') dismissModeToast();
+  syncDataRealmFromPanel(id);
+
+  if (id === 'view-soup' || wasSoup) {
+    closeSoupDrawer();
+    resetSoupSearchChrome();
+  }
+  if (id === 'view-sanctuary' || wasSanctuary) {
+    closeSanctuaryDrawer();
+    resetSanctuarySearchChrome();
+  }
+  if (wasSoup && id !== 'view-soup') void renderTableView();
   
     if(id==='view-soup'){renderDefaultBar('soup');}
   else if(id==='view-sanctuary'){renderDefaultBar('sanctuary');}
   else{hideBottomBar();}
   
-  // Guardian gets its own realm -- header hidden, edge glow active
+  // Realms that carry their own top chrome -- hide global wordmark row
   const header = document.getElementById('nq-header') || document.querySelector('.nq-header');
   const edgeGlow = document.getElementById('guardian-edge-glow');
-  if(id === 'view-guardian'){
-    if(header) header.style.display = 'none';
-    if(edgeGlow) edgeGlow.classList.add('active');
-  } else {
-    if(header) header.style.display = '';
-    if(edgeGlow) edgeGlow.classList.remove('active');
+  const hideGlobalHeader = (id === 'view-guardian' || id === 'view-chat' || id === 'view-abyss' || id === 'view-subconscious'
+    || id === 'view-ie' || id === 'view-forge' || id === 'view-persona' || id === 'view-memory'
+    || id === 'view-lighthouse' || id === 'view-data');
+  if (hideGlobalHeader) {
+    if (header) {
+      header.style.display = 'none';
+      header.classList.remove('nq-header--sanctuary-realm');
+    }
+    if (id === 'view-guardian' && edgeGlow) edgeGlow.classList.add('active');
+    } else {
+    if (header) {
+      header.style.display = '';
+      header.style.transform = '';
+      header.style.marginBottom = '';
+    }
+    if (edgeGlow) edgeGlow.classList.remove('active');
+    syncNqHeaderForCurrentPanel(id);
   }
 
-  firefly.sd(id==='view-lighthouse'||id==='view-chat'?80:20);
+  if (id !== 'view-soup') {
+    if (guardianSoupInvokeScheduleTimer) {
+      clearTimeout(guardianSoupInvokeScheduleTimer);
+      guardianSoupInvokeScheduleTimer = null;
+    }
+    hideGuardianInvokeStripOnly();
+  }
+
+  if (typeof firefly !== 'undefined' && firefly.setSoupActive) {
+    firefly.setSoupActive(id === 'view-soup');
+    if (id === 'view-soup') {
+      firefly.sd(id === 'view-lighthouse' || id === 'view-chat' ? 80 : 20);
+    }
+  }
 
   // Undo horizontal drift / stuck scroll from nested views (e.g. Data → Sanctuary)
   requestAnimationFrame(() => {
@@ -4350,38 +2800,77 @@ function showPanel(id){
       const dps = document.getElementById('data-page-scroll');
       if (dps) { dps.scrollLeft = 0; dps.scrollTop = 0; }
     }
+    if (id === 'view-sanctuary') {
+      const ss = document.getElementById('sanctuary-surface');
+      if (ss) { ss.scrollLeft = 0; ss.scrollTop = 0; }
+    }
   });
+
+  if (id === 'view-sanctuary') startSanctuaryRealm();
+  else stopSanctuaryRealm();
+
+  syncWatcherLedStrip();
+  if (id === 'view-soup' && isWatcherReady) {
+    processWatcherQueue();
+    scheduleWatcherPass();
+  }
+
+  if (id === 'view-soup') {
+    if (guardianSoupInvokeScheduleTimer) clearTimeout(guardianSoupInvokeScheduleTimer);
+    guardianSoupInvokeScheduleTimer = setTimeout(function () {
+      guardianSoupInvokeScheduleTimer = null;
+      void checkAndShowGuardianInvoke();
+    }, 3000);
+  }
 }
 
 /* HEADER BUTTONS */
 function updateHeaderButtons(){
-  const c=document.getElementById('header-actions');
-  if(currentMode==='soup'){
-    c.innerHTML=
-      '<button class="hdr-btn" id="hdr-guardian" style="font-size:18px;">&#43065;</button>'+
-      '<button class="hdr-btn" id="hdr-deep-soup">꩜</button>'+
-          '<button class="hdr-btn" id="hdr-abyss" title="Abyss">&#9689;</button>'+
-      '<button class="hdr-btn" id="hdr-data">&#10868;</button>'+
-      '<button class="hdr-btn" id="hdr-search">&#8982;</button>';
-    document.getElementById('hdr-guardian').onclick=function(){ openGuardianView(); };
-    document.getElementById('hdr-deep-soup').onclick=function(){ openDeepSoupView(); };
-        document.getElementById('hdr-abyss').onclick=function(){ openAbyssView(); };
-    document.getElementById('hdr-data').onclick=function(){ openDataPage(); };
-    document.getElementById('hdr-search').onclick=function(){ openGlobalSearch(); };
-  } else {
-    c.innerHTML=
-      '<button class="hdr-btn" id="hdr-immutable" style="font-size:16px;">&#8734;</button>'+
-      '<button class="hdr-btn" id="hdr-create" style="font-size:18px;">⌗</button>'+   // ⌗
-      '<button class="hdr-btn" id="hdr-settings">&#11041;</button>'+                       // ⬡
-      '<button class="hdr-btn" id="hdr-memory-vault" style="font-size:16px;">&#8277;</button>'+
-      '<button class="hdr-btn" id="hdr-sanctuary-search">&#8982;</button>';
-    document.getElementById('hdr-immutable').onclick = function(){ openIEPage(); };
-    document.getElementById('hdr-create').onclick = function(){ openCreateModal(); };
-    document.getElementById('hdr-settings').onclick = function(){};
-    document.getElementById('hdr-memory-vault').onclick = function(){ openMemoryVaultGlobal(); };
-    document.getElementById('hdr-sanctuary-search').onclick = function(){ openSanctuarySearch(); };
+  const left = document.getElementById('header-left');
+  const right = document.getElementById('header-right');
+  if(!left || !right) return;
+  
+  // Clear the territories on every realm switch
+  left.innerHTML = '';
+  right.innerHTML = '';
+
+  if (currentMode === 'soup') {
+    right.innerHTML =
+      '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-sanctuary" title="Sanctuary">&#8962;</button><span class="hdr-btn-label">Sanctuary</span></div>' +
+      '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-guardian" style="font-size:20px;">&#43065;</button><span class="hdr-btn-label">Guardian</span></div>' +
+      '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-abyss" title="Abyss">&#9689;</button><span class="hdr-btn-label">Abyss</span></div>' +
+      '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-subconscious" title="Subconscious">꩜</button><span class="hdr-btn-label">Subconscious</span></div>' +
+      '<div class="hdr-btn-wrap"><button class="hdr-btn" id="hdr-soup-menu" style="font-size:18px;line-height:1;" aria-label="Menu" aria-expanded="false" aria-controls="soup-drawer-panel">&#9776;</button><span class="hdr-btn-label">Menu</span></div>';
+    
+    document.getElementById('hdr-guardian').onclick=function(){ openGuardianView({ fromHeader: true }); };
+    document.getElementById('hdr-sanctuary').onclick=function(){ switchAppMode('sanctuary'); };
+    document.getElementById('hdr-abyss').onclick=function(){ openAbyssView(); };
+    document.getElementById('hdr-subconscious').onclick=function(){ openSubconsciousView(); };
+    document.getElementById('hdr-soup-menu').onclick=function(){
+      const d = document.getElementById('soup-drawer');
+      if (d && d.classList.contains('open')) closeSoupDrawer();
+      else openSoupDrawer();
+    };
+
+  } else if (currentMode === 'sanctuary' && currentView === 'sanctuary') {
+    // In Sanctuary, "THE SANCTUARY" is absolute-centered by CSS.
+    // Home goes Left. Menu goes Right.
+    left.innerHTML = '<button type="button" class="hdr-btn" id="hdr-sanctuary-home" title="Back" aria-label="Back" style="font-size:18px;">←</button>';
+    
+    right.innerHTML = '<button type="button" class="hdr-btn" id="hdr-sanctuary-menu" style="font-size:22px;line-height:1;padding-bottom:2px;" aria-label="Sanctuary menu" aria-expanded="false" aria-controls="sanctuary-drawer-panel">⋯</button>';
+    
+    document.getElementById('hdr-sanctuary-home').onclick = function () {
+      closeSanctuaryDrawer();
+      switchAppMode('soup');
+    };
+    document.getElementById('hdr-sanctuary-menu').onclick = function () {
+      const d = document.getElementById('sanctuary-drawer');
+      if (d && d.classList.contains('open')) closeSanctuaryDrawer();
+      else openSanctuaryDrawer();
+    };
   }
-  }
+}
+
 
 async function goBack() {
 const hdr = document.querySelector('.nq-header');
@@ -4407,16 +2896,16 @@ activeIE = null;
   }
 }
 
-function openSanctuarySearch(){
-  const modal=document.getElementById('global-search-modal');
-  document.getElementById('global-search-input').placeholder='Search characters...';
-  document.getElementById('global-search-input').value='';
-  document.getElementById('global-search-results').innerHTML='<div class="global-search-empty">Search characters...</div>';
-  modal.classList.add('visible');
-  document.getElementById('cosm-overlay').classList.add('active');
+let _isRenderingTable = false;
+let _queuedTableRender = false;
+async function renderTableView() {
+  if (_isRenderingTable) { _queuedTableRender = true; return; }
+  _isRenderingTable = true;
+  try { await _executeRenderTableView(); } 
+  finally { _isRenderingTable = false; if (_queuedTableRender) { _queuedTableRender = false; renderTableView(); } }
 }
 
-async function renderTableView() {
+async function _executeRenderTableView() {
   const surface = document.getElementById('table-surface');
   if (!surface) return;
   surface.onclick = (e) => { if(e.target===surface && selectMode) exitSelectMode(); };
@@ -4425,10 +2914,10 @@ async function renderTableView() {
   currentFocusId = null;
   focusChain = [];
   surface.onclick = (e) => {
-    if(!e.target.closest('.nq-card')) unfocusMesh();
+    if(!e.target.closest('.nq-card')) void unfocusMesh();
   };
   runGravityDecay();
-    renderBreadcrumb();
+    await renderBreadcrumb();
   // Remove old drop line -- renderBreadcrumb redraws it
   const oldDrop = document.getElementById('bc-drop-svg');
   if(oldDrop) oldDrop.remove();
@@ -4441,7 +2930,7 @@ async function renderTableView() {
 
   const isAtRoot = (!currentFolderId || currentFolderId === 'root');
   const sw = document.getElementById('search-bar-wrap');
-  if(sw) sw.style.display = isAtRoot ? 'none' : 'block';
+  if (sw) sw.style.display = soupLocalSearchOpen ? 'block' : 'none';
 
   const allF = (await getFolders()) || [];
   const allD = (await getDiscourses()) || [];
@@ -4734,7 +3223,7 @@ function finalizeSoupMeshCreateLast() {
   mesh.appendChild(create);
 }
 
-/** True if mesh already has a folder card for this id (discourse cards also set data-folder-id — ignore those). */
+/** True if mesh already has a folder card for this id (discourse cards also set data-folder-id -- ignore those). */
 function meshAlreadyShowsFolderCard(mesh, folderId) {
   if (!mesh || !folderId) return false;
   return [...mesh.querySelectorAll('.nq-card')].some(
@@ -4748,7 +3237,7 @@ async function focusMeshCard(id, folderId, label) {
 
   // Tapping already focused card -- unfocus
   if(currentFocusId === id) {
-    unfocusMesh();
+    await unfocusMesh();
     return;
   }
   const prevFocusId = currentFocusId;
@@ -4860,13 +3349,16 @@ async function focusMeshCard(id, folderId, label) {
         tier = isNeu ? 2 : 3;
       }
     } else {
+      // Focused id is a discourse/spark (not a folder card): tier-1 = item + ancestor folder cards + subfolders of its folder
       const isTarget = cardId === id;
-      const isDirectChild = cardFolderId === id;
-      const isParentFolder = cardId === folderId;
-      const isNestedFolder = cardParentFolderId === id;
-      const isSibling = folderId && cardFolderId === folderId && cardId !== id;
-      if (isTarget || isDirectChild || isParentFolder || isNestedFolder) tier = 1;
-      else if (isSibling) tier = 2;
+      const isSiblingDiscourse = !!(folderId && cardId && cardFolderId === folderId && cardId !== id);
+      const isAncestorOrSelfFolder =
+        !!(!cardId && cardFolderId && folderId &&
+          (String(cardFolderId) === String(folderId) || folderIsUnderAncestor(folderId, cardFolderId, allFolders)));
+      const isNestedSubfolder =
+        !!(!cardId && cardParentFolderId && folderId && String(cardParentFolderId) === String(folderId));
+      if (isTarget || isAncestorOrSelfFolder || isNestedSubfolder) tier = 1;
+      else if (isSiblingDiscourse) tier = 2;
       else tier = 3;
     }
 
@@ -4890,22 +3382,18 @@ async function focusMeshCard(id, folderId, label) {
   if(createCard) mesh.appendChild(createCard);
   finalizeSoupMeshCreateLast();
 
-  // Haptic
-  const hapticCount = Math.min(tier1.length, 5);
-  for(let i = 0; i < hapticCount; i++) {
-    setTimeout(() => {
-      try { window.webkit?.messageHandlers?.haptic?.postMessage('light'); } catch(e) {}
-      if(navigator.vibrate) navigator.vibrate(10);
-    }, i * 40);
-  }
+  // Haptic -- single pulse per focus change
+  try { window.webkit?.messageHandlers?.haptic?.postMessage('light'); } catch (e) {}
+  if (navigator.vibrate) navigator.vibrate(12);
 
   // Update chain knots with ghost if focused item has nested folders
-  const hasDepth = allFolders.some(f => !f.isDeleted && String(f.parent_id) === String(id));
-  renderChainKnots(hasDepth);
+  const anchorFolderId = focusAsFolder ? id : folderId;
+  const hasDepth = anchorFolderId && allFolders.some(f => !f.isDeleted && String(f.parent_id) === String(anchorFolderId));
+  await renderChainKnots(!!hasDepth);
   drawLineageThread(id, folderId);
 }
 
-function unfocusMesh() {
+async function unfocusMesh() {
   currentFocusId = null;
   focusChain = [];
   const mesh = document.getElementById('soup-mesh');
@@ -4933,48 +3421,64 @@ function unfocusMesh() {
   cards.forEach(card => mesh.appendChild(card));
   if(createCard) mesh.appendChild(createCard);
   finalizeSoupMeshCreateLast();
-  renderChainKnots(false);
+  await renderChainKnots(false);
 }
 
 function drawLineageThread(id, folderId) {
   removeLineageThread();
+  if (!currentFocusId) return;
   const mesh = document.getElementById('soup-mesh');
   if(!mesh) return;
-      const focusedCard = [...mesh.querySelectorAll('.nq-card')].find(
+  const focusedCard = [...mesh.querySelectorAll('.nq-card')].find(
         c => c.dataset.folderId === id && !c.dataset.id
       ) || mesh.querySelector(`[data-id="${id}"]`);
   if(!focusedCard) return;
 
-  const soupView = document.getElementById('view-soup');
   const breadcrumb = document.getElementById('breadcrumb-bar');
+  if (!breadcrumb) return;
+
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.id = 'lineage-thread';
   svg.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;';
   document.body.appendChild(svg);
 
-  const bcRect = breadcrumb.getBoundingClientRect();
   const cardRect = focusedCard.getBoundingClientRect();
   const cardCX = cardRect.left + cardRect.width / 2;
   const cardTopY = cardRect.top;
   const cardMidY = cardRect.top + cardRect.height / 2;
 
-  // Anchor from current knot X position (must match renderChainKnots spacing + focusChain depth)
-  const KNOT_SPACING = 56;
-  const SIDE_PAD = 28;
-  const knotIdx = focusChain.length;
-  const knotLocalX = SIDE_PAD + knotIdx * KNOT_SPACING;
-  const anchorX = bcRect.left + knotLocalX - (document.getElementById('breadcrumb-bar').scrollLeft || 0);
-  const anchorY = bcRect.bottom;
+  const knotEl = breadcrumb.querySelector('.bc-knot-wrap--current');
+  let anchorX;
+  let anchorY;
+  if (knotEl) {
+    const kr = knotEl.getBoundingClientRect();
+    anchorX = kr.left + kr.width / 2;
+    // Find the actual dot element inside the knot wrap
+    const dotEl = knotEl.querySelector('.bc-knot');
+    if (dotEl) {
+        const dr = dotEl.getBoundingClientRect();
+        anchorX = dr.left + dr.width / 2;
+        anchorY = dr.top + dr.height / 2;
+    } else {
+        anchorY = kr.top + 9; // fallback: dot top + half dot size
+    }
+} else {
+    const bcRect = breadcrumb.getBoundingClientRect();
+    const KNOT_SPACING = 56;
+    const SIDE_PAD = 28;
+    const knotIdx = focusChain.length;
+    const knotLocalX = SIDE_PAD + knotIdx * KNOT_SPACING;
+    anchorX = bcRect.left + knotLocalX - (breadcrumb.scrollLeft || 0);
+    anchorY = bcRect.bottom;
+  }
 
-  // Main thread -- from breadcrumb anchor down to focused card
   const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  line.setAttribute('d', `M ${anchorX} ${anchorY} C ${anchorX} ${anchorY + (cardTopY - anchorY) * 0.6} ${cardCX} ${cardTopY - 20} ${cardCX} ${cardMidY}`);
+  line.setAttribute('d', `M ${anchorX} ${anchorY} C ${anchorX} ${anchorY + (cardTopY - anchorY) * 0.5} ${cardCX} ${cardTopY - 10} ${cardCX} ${cardTopY + 4}`);
   line.setAttribute('stroke', 'rgba(200,160,80,0.4)');
   line.setAttribute('stroke-width', '1');
   line.setAttribute('fill', 'none');
   svg.appendChild(line);
 
-  // Small anchor dot at breadcrumb
   const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
   dot.setAttribute('cx', anchorX);
   dot.setAttribute('cy', anchorY);
@@ -4982,7 +3486,6 @@ function drawLineageThread(id, folderId) {
   dot.setAttribute('fill', 'rgba(200,160,80,0.5)');
   svg.appendChild(dot);
 
-  // Branch lines -- from focused card to each connected child
   const children = mesh.querySelectorAll('.in-focus:not(#nq-create-card)');
   children.forEach(child => {
     if(child === focusedCard) return;
@@ -5006,6 +3509,7 @@ function removeLineageThread() {
 }
 
 function openQuickAction(card, item) {
+  if (item && item.type === 'character' && currentMode === 'sanctuary') return;
   // Remove any existing menu
   const existing = document.getElementById('nq-quick-action');
   if(existing) existing.remove();
@@ -5019,7 +3523,6 @@ function openQuickAction(card, item) {
 
     const actions = [];
   if(isContent) {
-    actions.push({ glyph: '◎', label: 'Preview', action: () => openPreview(item.data) });
     if(item.data.item_type === 'note') {
             actions.push({ glyph: '○', label: 'Convert to Chronicle', action: async () => {
         await updateDiscourse(item.id, { item_type: 'chronicle' });
@@ -5075,26 +3578,194 @@ function openQuickAction(card, item) {
   document.body.appendChild(menu);
 }
 
-function openPreview(d) {
-  const existing = document.getElementById('nq-preview-overlay');
-  if(existing) existing.remove();
+function closeSparkEditSheet() {
+  const root = document.getElementById('nq-spark-sheet-root');
+  if (root && root._nqSparkEsc) {
+    document.removeEventListener('keydown', root._nqSparkEsc);
+    root._nqSparkEsc = null;
+  }
+  if (root) root.remove();
+}
 
-  const overlay = document.createElement('div');
-  overlay.className = 'nq-preview-overlay';
-  overlay.id = 'nq-preview-overlay';
+async function persistNewSpark(title, raw_text, folderVal, newFolderInputEl) {
+  let fId = folderVal || null;
+  if (fId === '__new__') {
+    const nfn = newFolderInputEl && newFolderInputEl.value.trim();
+    if (!nfn) { showToast('Type a folder name first ◆'); return null; }
+    fId = await createFolder(nfn, currentFolderId);
+    currentFolderId = fId;
+  }
+  if (!fId) fId = currentFolderId || null;
+  const now = Date.now();
+  const sparkId = 'n_' + now;
+  const body = raw_text.slice(0, SPARK_MAX_CHARS);
+  await dbPut('cosm_discourses', { id: sparkId, title, raw_text: body, folder_id: fId, source_link: null, item_type: 'note', created_at: now, updated_at: now });
+  if (isWatcherReady) queueWatcherEmbed(sparkId, title, body, 'note');
+  return sparkId;
+}
 
-  const maxChars = d.item_type === 'note' ? 280 : 800;
-  const preview = d.raw_text ? d.raw_text.slice(0, maxChars) : 'No content.';
-  const isTruncated = d.raw_text && d.raw_text.length > maxChars;
-  overlay.innerHTML = `
-    <div class="nq-preview-sheet">
-      <div class="nq-preview-title">${escHtml(d.title || 'Untitled')}</div>
-         <div class="nq-preview-body">${escHtml(preview)}${isTruncated ? '…' : ''}</div>
-      <div class="nq-preview-close">TAP ANYWHERE TO CLOSE</div>
-    </div>`;
+async function openSparkEditSheet(opts) {
+  closeSparkEditSheet();
+  const id = opts && opts.id != null && String(opts.id) !== '' ? opts.id : null;
+  const isCreate = !id;
 
-  overlay.addEventListener('click', () => overlay.remove());
-  document.body.appendChild(overlay);
+  const root = document.createElement('div');
+  root.id = 'nq-spark-sheet-root';
+  root.className = 'nq-spark-root';
+  const backdrop = document.createElement('div');
+  backdrop.className = 'nq-spark-backdrop';
+  const panel = document.createElement('div');
+  panel.className = 'nq-spark-panel';
+  panel.setAttribute('role', 'dialog');
+
+  const head = document.createElement('div');
+  head.className = 'nq-spark-head';
+  head.textContent = 'SPARK';
+
+  const titleInp = document.createElement('input');
+  titleInp.type = 'text';
+  titleInp.className = 'nq-spark-title cosm-input';
+  titleInp.placeholder = 'Title…';
+  titleInp.maxLength = 120;
+  titleInp.value = String(opts.title || '').slice(0, 120);
+
+  const ta = document.createElement('textarea');
+  ta.className = 'nq-spark-body cosm-input';
+  ta.placeholder = 'Thought, aphorism, idea…';
+  ta.value = opts.raw_text != null ? String(opts.raw_text) : '';
+
+  const newFoldRow = document.createElement('div');
+  newFoldRow.className = 'nq-spark-newfolder-wrap';
+  newFoldRow.style.display = 'none';
+  const newFoldInp = document.createElement('input');
+  newFoldInp.type = 'text';
+  newFoldInp.className = 'nq-spark-newfolder cosm-input';
+  newFoldInp.placeholder = 'New folder name…';
+  newFoldInp.maxLength = 60;
+
+  let folderSel = null;
+  if (isCreate) {
+    folderSel = document.createElement('select');
+    folderSel.className = 'nq-spark-folder cosm-select';
+    const folders = await getFolders();
+    folderSel.appendChild(new Option('-- Auto-wrap in folder --', ''));
+    folders.forEach(f => {
+      const o = document.createElement('option');
+      o.value = f.id;
+      o.textContent = f.name;
+      if (f.id === currentFolderId) o.selected = true;
+      folderSel.appendChild(o);
+    });
+    folderSel.appendChild(new Option('+ New folder…', '__new__'));
+    folderSel.addEventListener('change', () => {
+      newFoldRow.style.display = folderSel.value === '__new__' ? 'block' : 'none';
+    });
+  }
+
+  const foot = document.createElement('div');
+  foot.className = 'nq-spark-foot';
+  const counter = document.createElement('div');
+  counter.className = 'nq-spark-counter';
+  const btns = document.createElement('div');
+  btns.className = 'nq-spark-btns';
+  const btnCancel = document.createElement('button');
+  btnCancel.type = 'button';
+  btnCancel.className = 'nq-spark-btn nq-spark-btn-cancel';
+  btnCancel.textContent = 'Cancel';
+  const btnSave = document.createElement('button');
+  btnSave.type = 'button';
+  btnSave.className = 'nq-spark-btn nq-spark-btn-save';
+  btnSave.textContent = 'Save';
+
+  function syncCounter() {
+    const n = ta.value.length;
+    counter.textContent = n + ' / ' + SPARK_MAX_CHARS;
+    counter.classList.toggle('over', n > SPARK_MAX_CHARS);
+  }
+  ta.addEventListener('input', syncCounter);
+  ta.addEventListener('paste', (ev) => {
+    ev.preventDefault();
+    const clip = (ev.clipboardData || window.clipboardData).getData('text') || '';
+    const s0 = ta.selectionStart;
+    const s1 = ta.selectionEnd;
+    const merged = ta.value.slice(0, s0) + clip + ta.value.slice(s1);
+    ta.value = merged.slice(0, SPARK_MAX_CHARS);
+    syncCounter();
+  });
+
+  btnCancel.addEventListener('click', () => closeSparkEditSheet());
+  backdrop.addEventListener('click', () => closeSparkEditSheet());
+
+  const esc = (ev) => {
+    if (ev.key === 'Escape') {
+      document.removeEventListener('keydown', esc);
+      root._nqSparkEsc = null;
+      closeSparkEditSheet();
+    }
+  };
+  root._nqSparkEsc = esc;
+  document.addEventListener('keydown', esc);
+
+  let busy = false;
+  btnSave.addEventListener('click', async () => {
+    if (busy) return;
+    busy = true;
+    btnSave.disabled = true;
+    try {
+      let raw = ta.value;
+      if (isCreate && !raw.trim()) {
+        showToast('Nothing to Spark ◆');
+        return;
+      }
+      if (raw.length > SPARK_MAX_CHARS) {
+        raw = raw.slice(0, SPARK_MAX_CHARS);
+        showToast('Body capped at ' + SPARK_MAX_CHARS + ' ◆');
+      }
+      const title = deriveSparkTitle(titleInp.value, raw);
+      if (isCreate) {
+        const fv = folderSel.value || null;
+        const sid = await persistNewSpark(title, raw, fv, newFoldInp);
+        if (!sid) return;
+      } else {
+        await updateDiscourse(id, { title, raw_text: raw, updated_at: Date.now() });
+        if (isWatcherReady) queueWatcherEmbed(id, title, raw, 'note');
+      }
+      closeSparkEditSheet();
+      if (navigator.vibrate) navigator.vibrate(50);
+      await renderTableView();
+      showToast(isCreate ? 'Sparked ◆' : 'Saved ◆');
+    } catch (err) {
+      console.error(err);
+      showToast('Spark save failed ◆');
+    } finally {
+      busy = false;
+      btnSave.disabled = false;
+    }
+  });
+
+  newFoldRow.appendChild(newFoldInp);
+  foot.appendChild(counter);
+  btns.appendChild(btnCancel);
+  btns.appendChild(btnSave);
+  foot.appendChild(btns);
+
+  panel.appendChild(head);
+  if (isCreate) {
+    panel.appendChild(folderSel);
+    panel.appendChild(newFoldRow);
+  }
+  panel.appendChild(titleInp);
+  panel.appendChild(ta);
+  panel.appendChild(foot);
+  root.appendChild(backdrop);
+  root.appendChild(panel);
+  document.body.appendChild(root);
+  syncCounter();
+  setTimeout(() => {
+    ta.focus();
+    const end = ta.value.length;
+    ta.setSelectionRange(end, end);
+  }, 80);
 }
 
 function openCreateMenu(card) {
@@ -5110,7 +3781,7 @@ function openCreateMenu(card) {
     { glyph: '▤', label: 'Folder', action: () => openFolderModal() },
     { glyph: '◇', label: 'Spark', action: () => openQuickCapture() },
     { glyph: '○', label: 'Chronicle', action: () => handleNewChronicle() },
-    { glyph: '◈', label: 'Discourse', action: () => handleNewDiscourse() },
+    { glyph: '⌬', label: 'Engram', action: () => openBurnDiscModal() },
   ];
 
   actions.forEach(a => {
@@ -5124,7 +3795,7 @@ function openCreateMenu(card) {
   let left = rect.left;
   let top = rect.bottom + 6;
   if(left + 180 > window.innerWidth - 10) left = window.innerWidth - 190;
-  if(top + 200 > window.innerHeight) top = rect.top - 210;
+  if(top + 220 > window.innerHeight) top = rect.top - 228;
   menu.style.left = left + 'px';
   menu.style.top = top + 'px';
 
@@ -5166,15 +3837,17 @@ async function buildDiscourseCard(d){
       e.target.closest('.nq-card-fav').classList.toggle('active', !!next);
       return;
     }
-    // Root card (no folder) -- single tap goes straight to editor
-        // Spark -- single tap shows preview, never enters editor directly
-        // Spark -- first tap focuses + thread, second tap shows preview
+    // Spark (orphan): first tap opens edit sheet. Spark (in folder): first tap focuses + thread, second tap opens sheet.
     if(d.item_type === 'note') {
-      if(currentFocusId === d.id) {
-        openPreview(d);
+      if(!d.folder_id) {
+        openSparkEditSheet({ id: d.id, title: d.title, raw_text: d.raw_text });
         return;
       }
-            focusMeshCard(d.id, d.folder_id || null, d.title);
+      if(currentFocusId === d.id) {
+        openSparkEditSheet({ id: d.id, title: d.title, raw_text: d.raw_text });
+        return;
+      }
+      focusMeshCard(d.id, d.folder_id || null, d.title);
       return;
     }
     // Root card (no folder) -- single tap goes straight to editor
@@ -5202,105 +3875,226 @@ async function buildDiscourseCard(d){
   return card;
 }
 
-/* BREADCRUMB */
-function renderBreadcrumb(){ renderChainKnots(); }
+/* BREADCRUMB -- flex chain: path + current label + descendant folder knots; native title tooltips */
+function focusChainForFolder(targetFolderId, allFolders) {
+  if (!targetFolderId) return [];
+  const stack = [];
+  let cur = allFolders.find(f => f.id === targetFolderId && !f.isDeleted);
+  const guard = new Set();
+  while (cur && !guard.has(cur.id)) {
+    guard.add(cur.id);
+    stack.push({ id: cur.id, folderId: cur.parent_id, label: cur.name || cur.id });
+    const pid = cur.parent_id;
+    if (!pid || String(pid) === 'null' || String(pid) === 'root' || String(pid) === 'undefined') break;
+    cur = allFolders.find(f => f.id === pid && !f.isDeleted);
+  }
+  return stack.reverse();
+}
 
-function renderChainKnots(showGhost = false) {
+function collectSubfolderTree(parentFolderId, allFolders) {
+  if (parentFolderId == null || parentFolderId === '') return [];
+  const out = [];
+  const kids = allFolders.filter(f => !f.isDeleted && String(f.parent_id) === String(parentFolderId));
+  kids.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), undefined, { sensitivity: 'base' }));
+  for (const c of kids) {
+    out.push(c);
+    out.push(...collectSubfolderTree(c.id, allFolders));
+  }
+  return out;
+}
+
+async function renderBreadcrumb() {
+  await renderChainKnots(false);
+}
+
+async function renderChainKnots(showGhost = false) {
   const bar = document.getElementById('breadcrumb-bar');
+  if (!bar) return;
   bar.innerHTML = '';
 
-  // Always starts with Soup knot
-  const fullChain = [{id: null, label: 'Soup', folderId: null}, ...focusChain];
-  if(showGhost) fullChain.push({ id: '__ghost__', label: '···', folderId: null, ghost: true });
-  const total = fullChain.length;
+  const allFolders = await getFolders() || [];
+  const last = focusChain.length ? focusChain[focusChain.length - 1] : null;
+  let descList = [];
+  if (last) {
+    const asFolder = allFolders.find(f => !f.isDeleted && f.id === last.id);
+    const descRoot = asFolder ? last.id : (last.folderId != null && String(last.folderId) !== '' ? last.folderId : null);
+    if (descRoot != null && String(descRoot) !== '') {
+      descList = collectSubfolderTree(descRoot, allFolders);
+    }
+  }
+  const hasPathMulti = focusChain.length > 1;
+  const hasDesc = descList.length > 0;
+  const useFullChain = hasPathMulti || hasDesc;
 
-  const KNOT_SPACING = 56;
-  const SIDE_PAD = 28;
-  const totalWidth = Math.max(bar.offsetWidth || window.innerWidth, SIDE_PAD * 2 + total * KNOT_SPACING);
-  const barH = 48;
-  const midY = 20;
+  const segments = [];
+  segments.push({
+    kind: 'soup',
+    id: null,
+    folderId: null,
+    label: '',
+    tooltip: ''
+  });
 
-  // SVG horizontal line
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.classList.add('bc-thread-svg');
-  svg.style.cssText = `width:${totalWidth}px;height:${barH}px;`;
+  if (focusChain.length) {
+    if (!useFullChain) {
+      const k = focusChain[0];
+      const lab = String(k.label || k.id || '').replace(/^◈\s*/, '').trim() || String(k.id || '');
+      segments.push({
+        kind: 'current',
+        id: k.id,
+        folderId: k.folderId,
+        label: lab,
+        tooltip: lab
+      });
+    } else {
+      focusChain.forEach((k, i) => {
+        const isLast = i === focusChain.length - 1;
+        const lab = String(k.label || k.id || '').replace(/^◈\s*/, '').trim() || String(k.id || '');
+        segments.push({
+          kind: isLast ? 'current' : 'path',
+          id: k.id,
+          folderId: k.folderId,
+          label: lab,
+          tooltip: lab
+        });
+      });
+      for (const d of descList) {
+        segments.push({
+          kind: 'desc',
+          id: d.id,
+          folderId: d.parent_id,
+          label: d.name,
+          tooltip: d.name || d.id
+        });
+      }
+    }
+  }
 
-  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  line.setAttribute('x1', SIDE_PAD);
-  line.setAttribute('y1', midY);
-  line.setAttribute('x2', SIDE_PAD + (total - 1) * KNOT_SPACING);
-  line.setAttribute('y2', midY);
-  line.setAttribute('stroke', 'rgba(200,160,80,0.3)');
-  line.setAttribute('stroke-width', '1');
-  svg.appendChild(line);
-  bar.appendChild(svg);
+  if (showGhost) {
+    segments.push({ kind: 'ghost', id: '__ghost__', folderId: null, label: '···', tooltip: '' });
+  }
 
-  fullChain.forEach((knot, idx) => {
-    const isFirst = idx === 0;
-    const isLast = idx === total - 1;
-    const isParent = idx === total - 2;
-    const isGhost = idx > total - 2 && !isLast; // future: faded ghost knots
-    const isCompressed = !isFirst && !isLast && !isParent && total > 4;
+  const inner = document.createElement('div');
+  inner.className = 'bc-breadcrumb-inner';
+  const spine = document.createElement('div');
+  spine.className = 'bc-spine-line';
+  spine.setAttribute('aria-hidden', 'true');
+  const row = document.createElement('div');
+  row.className = 'bc-knot-row';
+  inner.appendChild(spine);
+  inner.appendChild(row);
+  bar.appendChild(inner);
 
-    const x = SIDE_PAD + idx * KNOT_SPACING;
+  segments.forEach((seg, idx) => {
+    const isCurrent = seg.kind === 'current';
+    const isGhost = seg.kind === 'ghost';
+    const isSoup = seg.kind === 'soup';
+
     const wrap = document.createElement('div');
-    wrap.className = 'bc-knot-wrap';
-    wrap.style.left = x + 'px';
+    wrap.className = 'bc-knot-wrap' +
+      (isCurrent ? ' bc-knot-wrap--current' : ' bc-knot-wrap--compact') +
+      (isSoup ? ' bc-knot-wrap--soup' : '');
+    if (isCurrent) wrap.dataset.knotRole = 'current';
+    wrap.dataset.knotIdx = String(idx);
 
-        const dot = document.createElement('div');
-    dot.className = 'bc-knot' +
-      (isLast && !knot.ghost ? ' current' : '') +
-      (isCompressed ? ' compressed' : '') +
-      (knot.ghost ? ' compressed' : '');
-    dot.style.opacity = knot.ghost ? '0.25' : '';
+    const tip = seg.tooltip || seg.label || '';
+    if (tip) {
+      wrap.title = tip;
+      wrap.setAttribute('aria-label', tip);
+    }
+
+    const dot = document.createElement('div');
+    dot.className = 'bc-knot' + (isCurrent ? ' current' : '');
+    if (!isCurrent && !isGhost) dot.classList.add('bc-knot-dot');
+    if (isGhost) dot.classList.add('compressed');
+    if (isGhost) dot.style.opacity = '0.25';
     wrap.appendChild(dot);
 
-    const label = document.createElement('div');
-    label.className = 'bc-knot-label' +
-      (isLast && !knot.ghost ? ' current' : isParent ? ' parent' : '');
-    label.textContent = knot.label.replace('◈ ', '').replace('◈  ', '');
-    label.style.opacity = knot.ghost ? '0.25' : '';
-    wrap.appendChild(label);
+    if (isCurrent && !isGhost) {
+      const label = document.createElement('div');
+      label.className = 'bc-knot-label current';
+      label.textContent = seg.label;
+      wrap.appendChild(label);
+    }
 
-    // Click
-    wrap.addEventListener('click', () => {
-      if(knot.ghost) return; // ghost not tappable
-      if(isFirst) {
+    wrap.addEventListener('click', async () => {
+      if (isGhost) return;
+      if (seg.kind === 'current') return;
+      if (seg.kind === 'soup') {
         focusChain = [];
-        unfocusMesh();
-        renderChainKnots(false);
-      } else if(!isLast) {
+        await unfocusMesh();
+        return;
+      }
+      if (seg.kind === 'path') {
         focusChain = focusChain.slice(0, idx);
-        focusMeshCard(knot.id, knot.folderId, knot.label);
+        await focusMeshCard(seg.id, seg.folderId, seg.label);
+        return;
+      }
+      if (seg.kind === 'desc') {
+        const chain = focusChainForFolder(seg.id, allFolders);
+        if (chain.length) {
+          focusChain = chain.slice(0, -1);
+          const leaf = chain[chain.length - 1];
+          await focusMeshCard(leaf.id, leaf.folderId, leaf.label);
+        }
       }
     });
 
-    bar.appendChild(wrap);
+    row.appendChild(wrap);
   });
 
-  // Set scroll width and auto-scroll to current
-  bar.scrollLeft = Math.max(0, SIDE_PAD + (total - 1) * KNOT_SPACING - bar.offsetWidth + 60);
-
-  // Drop line from current knot to mesh
-  drawBreadcrumbDrop(SIDE_PAD + (total - 1) * KNOT_SPACING, midY + 6);
+  requestAnimationFrame(() => {
+    const cur = bar.querySelector('.bc-knot-wrap--current');
+    if (cur) {
+      const barRect = bar.getBoundingClientRect();
+      const curRect = cur.getBoundingClientRect();
+      const curCenter = curRect.left + curRect.width / 2;
+      const want = barRect.left + barRect.width / 2;
+      bar.scrollLeft += curCenter - want;
+      const maxScroll = Math.max(0, bar.scrollWidth - bar.clientWidth);
+      if (bar.scrollLeft > maxScroll) bar.scrollLeft = maxScroll;
+      if (bar.scrollLeft < 0) bar.scrollLeft = 0;
+    }
+    requestAnimationFrame(() => {
+      const br = bar.getBoundingClientRect();
+      let cx = br.left + br.width / 2;
+      const cur2 = bar.querySelector('.bc-knot-wrap--current');
+      if (cur2) {
+        const kr = cur2.getBoundingClientRect();
+        cx = kr.left + kr.width / 2;
+      }
+      drawBreadcrumbDrop(cx);
+      const spineEl = inner.querySelector('.bc-spine-line');
+      const soupWrap = row.querySelector('.bc-knot-wrap--soup');
+      if (spineEl && soupWrap) {
+        const ir = inner.getBoundingClientRect();
+        const sr = soupWrap.getBoundingClientRect();
+        const centerPx = sr.left + sr.width / 2 - ir.left;
+        spineEl.style.left = Math.max(0, centerPx) + 'px';
+      }
+    });
+  });
 }
 
-function drawBreadcrumbDrop(knotX, knotY) {
+function drawBreadcrumbDrop(screenCenterX) {
   // Remove existing drop
   const existing = document.getElementById('bc-drop-svg');
   if(existing) existing.remove();
+  if (focusChain.length > 0) return;
   if(breadcrumbPath.length <= 1) return; // at root, no drop
 
   const bar = document.getElementById('breadcrumb-bar');
+  if (!bar) return;
   const barRect = bar.getBoundingClientRect();
   const surface = document.getElementById('table-surface');
+  if (!surface) return;
   const surfaceRect = surface.getBoundingClientRect();
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.id = 'bc-drop-svg';
   svg.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;`;
 
-  const startX = barRect.left + knotX - bar.scrollLeft;
+  const startX = screenCenterX != null ? screenCenterX : (barRect.left + barRect.width / 2);
   const startY = barRect.bottom;
   const endY = surfaceRect.top + 20;
 
@@ -5588,11 +4382,7 @@ async function openDiscourse(id){
 }
   
   setEditorMode('write');
-const hdr = document.querySelector('.nq-header');
-hdr.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.2,1)';
-hdr.style.transform = 'translateY(-100%)';
-hdr.style.marginBottom = '-56px';
-showPanel('view-lighthouse');
+  showPanel('view-lighthouse');
   
     currentFolderId = null;
   breadcrumbPath = [{id: null, name: '◈ The Soup'}];
@@ -5659,14 +4449,16 @@ async function saveCurrentDiscourse(silent=false){
   
     await updateDiscourse(currentDiscourseId, {title, raw_text});
   if(currentDiscourseId) updateGravity(currentDiscourseId, 2); // +2 on edit
+
+  try { localStorage.setItem('nq_last_entry_timestamp', String(Date.now())); } catch (e) {}
   
   if(ind){ ind.textContent='◆ saved'; ind.className='lh-save-indicator visible'; setTimeout(()=>{ ind.className='lh-save-indicator'; },2000); }
   if(!silent)showToast("Saved ◆");
   setTimeout(()=>backupToAkashic(),0);
   
-  if (isWatcherReady && currentDiscourseId) {
+  if (currentDiscourseId) {
     const disc = await getDiscourse(currentDiscourseId);
-    if (disc && disc.item_type) queueWatcherEmbed(currentDiscourseId, title, raw_text, disc.item_type);
+    if (isWatcherReady && disc && disc.item_type) queueWatcherEmbed(currentDiscourseId, title, raw_text, disc.item_type);
     generateFastMap(currentDiscourseId);
   }
 }
@@ -5728,8 +4520,20 @@ async function deleteCurrentDiscourse() {
 }
 
 /* SANCTUARY */
-async function renderSanctuaryView(){
+let _isRenderingSanctuary = false;
+let _queuedSanctuaryRender = false;
+async function renderSanctuaryView() {
+  if (_isRenderingSanctuary) { _queuedSanctuaryRender = true; return; }
+  _isRenderingSanctuary = true;
+  try { await _executeRenderSanctuaryView(); } 
+  finally { _isRenderingSanctuary = false; if (_queuedSanctuaryRender) { _queuedSanctuaryRender = false; renderSanctuaryView(); } }
+}
+
+async function _executeRenderSanctuaryView() {
   const surface = document.getElementById('sanctuary-surface');
+  if (!surface) return;
+  const ssw = document.getElementById('sanctuary-search-bar-wrap');
+  if (ssw) ssw.style.display = sanctuaryLocalSearchOpen ? 'block' : 'none';
   surface.innerHTML = '';
   
   const allC = await getCharacters();
@@ -5793,14 +4597,13 @@ async function renderSanctuaryView(){
 }
         // CTA card -- always last
     const ctaCard = document.createElement('div');
-ctaCard.className = 'ie-card';
-ctaCard.style.cssText = 'border-style: dashed; opacity: 0.6;';
+ctaCard.className = 'ie-card ie-card-archive';
 ctaCard.innerHTML = `
   <div class="ie-card-text">
-    <div class="ie-card-name" style="color: var(--accent-dim);">All Entities</div>
+    <div class="ie-card-name">All Entities</div>
     <div class="ie-card-function">View the full archive</div>
   </div>
-  <div class="ie-card-sigil" style="opacity: 0.5;">∞</div>
+  <div class="ie-card-sigil">∞</div>
 `;
 ctaCard.addEventListener('click', () => openIEPage());
 strip.appendChild(ctaCard);
@@ -5865,14 +4668,6 @@ strip.appendChild(ctaCard);
         openChat(c.id);
       });
 
-      card.addEventListener('mousedown', e => startLP(e, card, {type:'character', id:c.id, name:c.name, data:c}));
-      card.addEventListener('mouseup', () => cancelLP(card));
-      card.addEventListener('mouseleave', () => cancelLP(card));
-      card.addEventListener('touchstart', e => startLP(e, card, {type:'character', id:c.id, name:c.name, data:c}), {passive: true});
-      card.addEventListener('touchend', () => cancelLP(card));
-      card.addEventListener('touchcancel', () => cancelLP(card));
-      card.addEventListener('touchmove', e => handleTM(e, card), {passive: true});
-      
       g.appendChild(card);
     }
     surface.appendChild(g);
@@ -6045,18 +4840,28 @@ function closeCharacterForge() {
 }
 
 /* CHAT */
+async function closeChatToOrigin(){
+  const pid = chatReturnPanel || 'view-soup';
+  showPanel(pid);
+  if (pid === 'view-sanctuary') await renderSanctuaryView();
+  else if (pid === 'view-ie') renderIEList(document.getElementById('ie-search-input')?.value || '');
+  else await renderTableView();
+}
+
 async function openChat(id){
   const ieCheck = await getImmutableEntity(id);
   if(ieCheck && ieCheck.signature){ openIEBottomSheet(id); return; }
   if(ieCheck && !ieCheck.signature){ showToast('◈ Draft -- go to ∞ page to forge'); return; }
   // Reset IE state -- critical to prevent bleed from IE chat
     activeIE = null;
+  currentIEModels = [];
   isSending = false;
   document.getElementById('view-chat').classList.remove('ie-encounter');
   document.getElementById('chat-input').placeholder = 'Send a message...';
   document.getElementById('chat-persona-pill').style.display = '';
   document.getElementById('btn-chat-edit').style.display = '';// reset any stuck send state
   activeCharId = id;
+  chatReturnPanel = currentMode === 'sanctuary' ? 'view-sanctuary' : 'view-soup';
   const c = await getCharacter(id);
     // Avatar pill -- show primary photo or letter initial
   const pill = document.getElementById('chat-avatar-pill');
@@ -6239,7 +5044,8 @@ for(const s of similarities.filter(s => s.score > 0.65)){
   return fastMap;
 }
 
-async function generateFastMap(discourseId) {
+async function generateFastMap(discourseId, mapOpts) {
+    mapOpts = mapOpts || {};
     try {
     const d = await getDiscourse(discourseId);
     if (!d || !d.raw_text) return;
@@ -6249,12 +5055,14 @@ async function generateFastMap(discourseId) {
     if (wordCount < 30) return;
 
     const existing = await dbGet('guardian_summaries', discourseId);
-    // Skip if already mapped and word count is unchanged
-    if (existing && existing.map_type === 'fast' && existing.word_count === wordCount) return;
 
 // Run your sovereign local heuristics
 if (!generateFastMapData) { console.warn('Cartographer not loaded yet'); return; }
 const mapData = generateFastMapData(d.raw_text);
+    const cartoVer = mapData.carto_version || 0;
+    const existingVer = existing && existing.carto_version != null ? existing.carto_version : 0;
+    // Skip if fast map is current (word count + cartographer version)
+    if (existing && existing.map_type === 'fast' && existing.word_count === wordCount && existingVer >= cartoVer) return;
 
 let fastMap = {
   id: discourseId,
@@ -6272,6 +5080,18 @@ let fastMap = {
 
     await dbPut('guardian_summaries', fastMap);
     console.log(`◈ Sovereign Fast Map generated for ${discourseId}`);
+
+    if (!mapOpts.skipAutoInvite && checkGuardianTrigger) {
+      try {
+        const trig2 = checkGuardianTrigger(fastMap);
+        if (trig2.shouldInvoke) {
+          guardianLastInvokeQualifiers = trig2.qualifiers || [];
+          try {
+            localStorage.setItem('nq_guardian_invoke_pending', JSON.stringify({ discourseId: discourseId, at: Date.now() }));
+          } catch (pe) {}
+        }
+      } catch (autoErr) { console.warn('[Guardian auto]', autoErr); }
+    }
   } catch (err) {
     console.error('Fast Map error:', err);
   }
@@ -6508,7 +5328,7 @@ async function runCartographer() {
     // Fast maps for all discourses
     setStatus('loading', 'fast mapping...');
     for (const d of allDiscs) {
-      await generateFastMap(d.id);
+      await generateFastMap(d.id, { skipAutoInvite: true });
     }
 
     // Deep maps via distilbart
@@ -6589,7 +5409,7 @@ async function summariseHistory(charId,messages){
   const key=await readSecureKey('nq_api_key')||"";
   if(!key||messages.length<6)return null;
   try{
-    const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model:localStorage.getItem("nq_model")||"deepseek/deepseek-v4-flash",max_tokens:300,messages:[{role:"system",content:"Compress this conversation into 5-8 bullet points. Capture emotional tone, key decisions, unresolved tensions, named facts. Ruthlessly concise. No preamble."},{role:"user",content:messages.map(m=>`${m.role}: ${m.content}`).join("\n")}]})});
+    const res=await fetch(openRouterChatBaseUrl() + '/chat/completions',{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model:localStorage.getItem("nq_model")||"deepseek/deepseek-v4-flash",max_tokens:300,messages:[{role:"system",content:"Compress this conversation into 5-8 bullet points. Capture emotional tone, key decisions, unresolved tensions, named facts. Ruthlessly concise. No preamble."},{role:"user",content:messages.map(m=>`${m.role}: ${m.content}`).join("\n")}]})});
     const data=await res.json();
     const summary=data.choices?.[0]?.message?.content||null;
     if(summary){
@@ -6631,10 +5451,11 @@ async function openMemoryVaultGlobal(){
     const l=document.createElement('div');l.className='cards-section-label';l.textContent='All Memories';surface.appendChild(l);
     sorted.forEach(s=>{
       const div=document.createElement('div');
-      div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;';
+      div.className = 'memory-vault-card';
+      div.style.cssText='border-radius:10px;padding:12px 14px;margin-bottom:8px;';
       div.innerHTML=`
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:10px;color:var(--accent);font-weight:700;">${escHtml(charMap[s.charId]||'Unknown')}</span>
+          <span class="memory-vault-char" style="font-size:10px;font-weight:700;">${escHtml(charMap[s.charId]||'Unknown')}</span>
           <span style="font-size:9px;color:var(--muted);">${new Date(s.created_at).toLocaleDateString()}</span>
         </div>
         <div style="font-size:13px;line-height:1.6;color:var(--text);font-family:Georgia,serif;">${escHtml(s.text)}</div>
@@ -6645,12 +5466,17 @@ async function openMemoryVaultGlobal(){
   
   // Reuse the memory view panel but with a back button to Sanctuary
   document.getElementById('btn-memory-back').textContent='← Sanctuary';
-  document.getElementById('btn-memory-back').onclick=()=>{showPanel('view-sanctuary');renderSanctuaryView();};
+  document.getElementById('btn-memory-back').dataset.backTarget = 'sanctuary';
   showPanel('view-memory');
 }
 
 async function openMemoryView(){
   if(!activeCharId)return;
+  const mb = document.getElementById('btn-memory-back');
+  if (mb) {
+    mb.textContent = '← Chat';
+    mb.dataset.backTarget = 'chat';
+  }
   await renderMemoryView();
   showPanel('view-memory');
 }
@@ -6671,10 +5497,11 @@ async function renderMemoryView(){
 
   function buildMemoryItem(s){
     const div=document.createElement('div');
-    div.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;';
+    div.className='memory-vault-card';
+    div.style.cssText='border-radius:10px;padding:12px 14px;margin-bottom:8px;';
     div.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:900;">${s.type==='manual'?'ANCHORED':'AUTO'}</span>
+        <span class="memory-vault-char" style="font-size:9px;letter-spacing:2px;font-weight:900;">${s.type==='manual'?'ANCHORED':'AUTO'}</span>
         <span style="font-size:9px;color:var(--muted);">${new Date(s.created_at).toLocaleDateString()}</span>
       </div>
       <div style="font-size:13px;line-height:1.6;color:var(--text);font-family:Georgia,serif;">${escHtml(s.text)}</div>
@@ -6826,7 +5653,7 @@ const model = (activeIE && chip && chip.style.display !== 'none')
   const msgs=[ {role:'system', content:sys}, ...safeMsgs ];
 
   try{
-    const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{
+    const res=await fetch(openRouterChatBaseUrl() + '/chat/completions',{
       method:"POST",
       headers:{
         "Authorization":`Bearer ${key}`,
@@ -6921,7 +5748,7 @@ Respond in character, concise and evocative.${personaBlock}${memoryBlock}`;
   let fullText = '';
 
   try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const res = await fetch(openRouterChatBaseUrl() + '/chat/completions', {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${key}`,
@@ -7009,7 +5836,197 @@ var abyssLastSignalTime = 0;
 var NEURAL_SIGNAL_INTERVAL = 1800; // ms between new signals
 var NEURAL_MAX_SIGNALS = 12;       // max concurrent signals
 var NEURAL_CASCADE_DEPTH = 3;      // max hops per cascade
+var abyssWeather = 'neutral';
    // multiple expanding rings per touch
+
+function getAbyssLinkThreshold() {
+  return NQ_DEV_MODE ? W_SIMILARITY_THRESHOLD : 0.73;
+}
+
+function abyssArcTension(mapRow) {
+  if (!mapRow || !mapRow.emotional_arc) return 0;
+  var a = mapRow.emotional_arc;
+  if (typeof a === 'string') {
+    try { a = JSON.parse(a); } catch (parseEx) { return 0; }
+  }
+  if (!a || typeof a !== 'object') return 0;
+  var t = a.tension_shift;
+  return typeof t === 'number' ? t : 0;
+}
+
+function abyssLinkIsContradiction(mapA, mapB) {
+  var arcA = abyssArcTension(mapA);
+  var arcB = abyssArcTension(mapB);
+  return (arcA > 0.02 && arcB < -0.02) || (arcA < -0.02 && arcB > 0.02);
+}
+
+function buildAbyssDna(fm) {
+  var dna = {
+    paradox: 0,
+    arcDir: 'flat',
+    silenceRatio: 0,
+    dominantTone: 'neutral',
+    depersonalLabel: '',
+    driftScale: 0.04
+  };
+  if (!fm || fm.map_type !== 'fast') return dna;
+  var arc = fm.emotional_arc;
+  if (typeof arc === 'string') {
+    try { arc = JSON.parse(arc); } catch (e) { arc = null; }
+  }
+  var sig = fm.signature;
+  if (sig && sig.paradox) dna.paradox = sig.paradox.count || 0;
+  if (arc && arc.direction) dna.arcDir = arc.direction;
+  if (fm.silence_weight && typeof fm.silence_weight.ratio === 'number') {
+    dna.silenceRatio = fm.silence_weight.ratio;
+  }
+  if (fm.depersonalisation && fm.depersonalisation.label) {
+    dna.depersonalLabel = String(fm.depersonalisation.label);
+  }
+  var ts = arc && typeof arc.tension_shift === 'number' ? arc.tension_shift : 0;
+  if (ts > 0.02) {
+    dna.dominantTone = 'escalating';
+    dna.driftScale = 0.045;
+  } else if (ts < -0.02) {
+    dna.dominantTone = 'resolving';
+    dna.driftScale = 0.025;
+  } else if (dna.paradox >= 3) {
+    dna.dominantTone = 'charged';
+  }
+  return dna;
+}
+
+function abyssComputeWeather(summariesMap) {
+  var arcScores = [];
+  summariesMap.forEach(function (fm) {
+    if (!fm || fm.map_type !== 'fast') return;
+    var t = abyssArcTension(fm);
+    if (typeof t === 'number') arcScores.push(t);
+  });
+  if (arcScores.length < 3) return 'neutral';
+  var avg = arcScores.reduce(function (a, b) { return a + b; }, 0) / arcScores.length;
+  if (avg > 0.025) return 'charged';
+  if (avg < -0.025) return 'resolving';
+  return 'neutral';
+}
+
+async function abyssSettle(iterations, strongLinks) {
+  var discDots = [];
+  for (var i = 0; i < abyssObjects.length; i++) {
+    if (abyssObjects[i].kind === 'disc-dot') discDots.push(abyssObjects[i]);
+  }
+  if (discDots.length < 3) return;
+
+  if (discDots.length > 80) iterations = 100;
+
+  var vectors = {};
+  if (isWatcherReady && watcherDB) {
+    try {
+      var embeds = await wdb.getAll('embeddings');
+      for (var ei = 0; ei < embeds.length; ei++) {
+        if (embeds[ei].vector) vectors[embeds[ei].id] = embeds[ei].vector;
+      }
+    } catch (embErr) {}
+  }
+
+  var SETTLE_DAMPING = 0.82;
+  var SETTLE_VX = {};
+  var SETTLE_VY = {};
+  var discById = {};
+  for (var di = 0; di < discDots.length; di++) {
+    var dd = discDots[di];
+    SETTLE_VX[dd.id] = 0;
+    SETTLE_VY[dd.id] = 0;
+    discById[dd.id] = dd;
+  }
+
+  var sparsePairs = discDots.length > 50;
+  strongLinks = strongLinks || [];
+
+  for (var iter = 0; iter < iterations; iter++) {
+    if (!abyssRunning) return;
+    if (iter > 0 && iter % 20 === 0) {
+      await new Promise(function (r) { setTimeout(r, 0); });
+    }
+
+    for (var i = 0; i < discDots.length; i++) {
+      for (var j = i + 1; j < discDots.length; j++) {
+        var a = discDots[i];
+        var b = discDots[j];
+        var vA = vectors[a.id];
+        var vB = vectors[b.id];
+        if (!vA || !vB) continue;
+        var sim = watcherCosine(new Float32Array(vA), new Float32Array(vB));
+        if (sparsePairs && sim < 0.55) continue;
+        var restLen = 0.15 + (1 - sim) * 0.55;
+        var dx = b.x - a.x;
+        var dy = b.y - a.y;
+        var dist = Math.sqrt(dx * dx + dy * dy) + 0.001;
+        var force = (dist - restLen) * 0.004 * sim;
+        SETTLE_VX[a.id] += (dx / dist) * force;
+        SETTLE_VY[a.id] += (dy / dist) * force;
+        SETTLE_VX[b.id] -= (dx / dist) * force;
+        SETTLE_VY[b.id] -= (dy / dist) * force;
+      }
+    }
+
+    for (var li = 0; li < strongLinks.length; li++) {
+      var link = strongLinks[li];
+      var dotA = discById[link.a];
+      var dotB = discById[link.b];
+      if (!dotA || !dotB) continue;
+      var dx2 = dotB.x - dotA.x;
+      var dy2 = dotB.y - dotA.y;
+      var dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) + 0.001;
+      var f = link.isContra ? -0.012 : link.score * 0.018;
+      SETTLE_VX[dotA.id] += (dx2 / dist2) * f;
+      SETTLE_VY[dotA.id] += (dy2 / dist2) * f;
+      SETTLE_VX[dotB.id] -= (dx2 / dist2) * f;
+      SETTLE_VY[dotB.id] -= (dy2 / dist2) * f;
+    }
+
+    for (var i2 = 0; i2 < discDots.length; i2++) {
+      for (var j2 = i2 + 1; j2 < discDots.length; j2++) {
+        var a2 = discDots[i2];
+        var b2 = discDots[j2];
+        var dx3 = b2.x - a2.x;
+        var dy3 = b2.y - a2.y;
+        var dist3 = Math.sqrt(dx3 * dx3 + dy3 * dy3) + 0.001;
+        if (dist3 < 0.18) {
+          var rep = 0.003 / (dist3 * dist3);
+          SETTLE_VX[a2.id] -= (dx3 / dist3) * rep;
+          SETTLE_VY[a2.id] -= (dy3 / dist3) * rep;
+          SETTLE_VX[b2.id] += (dx3 / dist3) * rep;
+          SETTLE_VY[b2.id] += (dy3 / dist3) * rep;
+        }
+      }
+    }
+
+    for (var ai = 0; ai < discDots.length; ai++) {
+      var d = discDots[ai];
+      if (!vectors[d.id]) continue;
+      SETTLE_VX[d.id] *= SETTLE_DAMPING;
+      SETTLE_VY[d.id] *= SETTLE_DAMPING;
+      d.x = Math.min(0.90, Math.max(0.10, d.x + SETTLE_VX[d.id]));
+      d.y = Math.min(0.90, Math.max(0.10, d.y + SETTLE_VY[d.id]));
+    }
+  }
+
+  for (var oi = 0; oi < discDots.length; oi++) {
+    var od = discDots[oi];
+    if (vectors[od.id]) continue;
+    abyssBiasPresenceToRim(od);
+  }
+}
+
+function abyssBiasPresenceToRim(obj) {
+  var odx = obj.x - 0.5;
+  var ody = obj.y - 0.5;
+  var olen = Math.sqrt(odx * odx + ody * ody) + 0.001;
+  var rad = 0.35 + (abyssHash(String(obj.id) + 'rim') % 150) / 1000;
+  obj.x = Math.min(0.90, Math.max(0.10, 0.5 + (odx / olen) * rad));
+  obj.y = Math.min(0.90, Math.max(0.10, 0.5 + (ody / olen) * rad));
+}
    
 var ABYSS_EMERGE = {
   anchors:    1500,   // ms -- oldest ring + newest dot
@@ -7032,10 +6049,43 @@ function abyssAge(ts) {
 
 async function buildAbyssObjects() {
   abyssObjects = [];
-  var allDiscs = await dbGetAll('cosm_discourses');
-  var active = allDiscs.filter(function(d) { return !d.isDeleted; });
+  var strongLinks = [];
+  var summariesMap = new Map();
+  var linkThreshold = getAbyssLinkThreshold();
 
-  if (!active.length) return;
+  try {
+    var allSummaries = await dbGetAll('guardian_summaries');
+    for (var si0 = 0; si0 < allSummaries.length; si0++) {
+      summariesMap.set(allSummaries[si0].id, allSummaries[si0]);
+    }
+  } catch (mapErr) {
+    console.warn('[Abyss] summaries preload:', mapErr && mapErr.message ? mapErr.message : mapErr);
+  }
+
+  var allDiscs = await dbGetAll('cosm_discourses');
+  if (!Array.isArray(allDiscs)) allDiscs = [];
+  var active = allDiscs.filter(function (d) {
+    return !d.isDeleted && !d.deleted_at;
+  });
+
+  if (!active.length) {
+    abyssObjects.push({
+      kind: 'anchor-old',
+      x: 0.14,
+      y: 0.16,
+      ts: Date.now() - 86400000,
+      emergeAt: 0
+    });
+    abyssObjects.push({
+      kind: 'anchor-new',
+      x: 0.86,
+      y: 0.84,
+      ts: Date.now(),
+      emergeAt: 0
+    });
+    abyssWeather = 'neutral';
+    return { strongLinks: strongLinks };
+  }
 
   // ── Chronological anchors ─────────────────────────────────────────────────
   var times = active.map(function(d) { return d.created_at || 0; });
@@ -7081,6 +6131,7 @@ async function buildAbyssObjects() {
     });
   }
 
+  try {
   // ── Guardian log fragments ────────────────────────────────────────────────
   var logs = await dbGetAll('guardian_logs');
   var recentLogs = logs
@@ -7111,9 +6162,9 @@ async function buildAbyssObjects() {
   }
   
 // ── Deep map clusters ─────────────────────────────────────────────────────
-  var deepMaps = await dbGetAll('guardian_summaries');
-  var deepLocal = deepMaps.filter(function(dm) {
-    return dm.map_type === 'deep_local' && dm.summary;
+  var deepLocal = [];
+  summariesMap.forEach(function (dm) {
+    if (dm.map_type === 'deep_local' && dm.summary) deepLocal.push(dm);
   });
   
   for (var di = 0; di < deepLocal.length; di++) {
@@ -7148,50 +6199,94 @@ async function buildAbyssObjects() {
       });
     }
   }
-  // Pre-load all guardian_summaries into a Map for fast contradiction checks
-  var summariesMap = new Map();
-  var allSummaries = await dbGetAll('guardian_summaries');
-  for (var si = 0; si < allSummaries.length; si++) {
-    summariesMap.set(allSummaries[si].id, allSummaries[si]);
+  } catch (extErr) {
+    console.warn('[Abyss] guardian / summaries layer:', extErr && extErr.message ? extErr.message : extErr);
   }
-  
-  // ── Watcher similarity + contradiction threads ────────────────────────────
-  if (isWatcherReady && watcherDB) {
-    var links = await wdb.getAll('links');
-    var strong = links.filter(function(l) { return l.score >= 0.73; }).slice(0, 30);
-    for (var k = 0; k < strong.length; k++) {
-      var link = strong[k];
-      // Find matching disc-dot positions
-      var dotA = null; var dotB = null;
-      for (var m = 0; m < abyssObjects.length; m++) {
-        if (abyssObjects[m].kind === 'disc-dot') {
-          if (abyssObjects[m].id === link.a) dotA = abyssObjects[m];
-          if (abyssObjects[m].id === link.b) dotB = abyssObjects[m];
-        }
-      }
-      if (!dotA || !dotB) continue;
-      // Check for contradiction via guardian_summaries
-      var mapA = summariesMap.get(link.a) || null;
-      var mapB = summariesMap.get(link.b) || null;
-      var arcA = mapA && mapA.emotional_arc ? mapA.emotional_arc.tension_shift || 0 : 0;
-      var arcB = mapB && mapB.emotional_arc ? mapB.emotional_arc.tension_shift || 0 : 0;
-      var isContradiction = (arcA > 0.02 && arcB < -0.02) || (arcA < -0.02 && arcB > 0.02);
-      var threadKind = isContradiction ? 'thread-contra' : 'thread-sim';
-      abyssObjects.push({
-        kind: threadKind,
-        dotA: dotA,
-        dotB: dotB,
-        score: link.score,
-        emergeAt: ABYSS_EMERGE.threads,
-        pulsePos: 0,           // 0..1 travel along thread
-        pulseDir: 1,           // 1 = A→B, -1 = B→A
-        pulseSpeed: isContradiction
-          ? 0.0003 + Math.random() * 0.0004   // stuttery
-          : 0.0006 + link.score * 0.0012,     // smooth, faster if strong
-        pulseCooldown: Math.random() * 4000   // staggered starts
-      });
+
+  try {
+    var chars = await dbGetAll('characters');
+    if (!Array.isArray(chars)) chars = [];
+    var activeChars = chars.filter(function (c) {
+      return !c.is_deleted && !c.isDeleted;
+    });
+    for (var ci = 0; ci < activeChars.length; ci++) {
+      var ch = activeChars[ci];
+      var chHash = abyssHash(ch.id + 'sanctuary');
+      var chX = 0.08 + ((chHash & 0xFFF) / 0xFFF) * 0.84;
+      var chY = 0.08 + (((chHash >> 12) & 0xFFF) / 0xFFF) * 0.84;
+      var chAge = abyssAge(ch.updated_at || ch.created_at || 0);
+      var sp = {
+        kind: 'sanctuary-presence',
+        id: ch.id,
+        name: ch.name || 'Presence',
+        x: chX,
+        y: chY,
+        age: chAge,
+        vx: 0,
+        vy: 0,
+        brownianScale: 0.012,
+        emergeAt: ABYSS_EMERGE.dots
+      };
+      abyssBiasPresenceToRim(sp);
+      abyssObjects.push(sp);
+    }
+  } catch (sanctErr) {
+    console.warn('[Abyss] Sanctuary layer:', sanctErr && sanctErr.message ? sanctErr.message : sanctErr);
+  }
+
+  for (var dpi = 0; dpi < abyssObjects.length; dpi++) {
+    if (abyssObjects[dpi].kind === 'disc-dot') {
+      abyssObjects[dpi].dna = buildAbyssDna(summariesMap.get(abyssObjects[dpi].id));
     }
   }
+
+  abyssWeather = abyssComputeWeather(summariesMap);
+
+  if (isWatcherReady && watcherDB) {
+    try {
+      var links = await wdb.getAll('links');
+      var strong = links.filter(function (l) { return l.score >= linkThreshold; }).slice(0, 30);
+      for (var k = 0; k < strong.length; k++) {
+        var link = strong[k];
+        var dotA = null;
+        var dotB = null;
+        for (var m = 0; m < abyssObjects.length; m++) {
+          if (abyssObjects[m].kind === 'disc-dot') {
+            if (abyssObjects[m].id === link.a) dotA = abyssObjects[m];
+            if (abyssObjects[m].id === link.b) dotB = abyssObjects[m];
+          }
+        }
+        if (!dotA || !dotB) continue;
+        var mapA = summariesMap.get(link.a) || null;
+        var mapB = summariesMap.get(link.b) || null;
+        var isContradiction = abyssLinkIsContradiction(mapA, mapB);
+        strongLinks.push({
+          a: link.a,
+          b: link.b,
+          score: link.score,
+          isContra: isContradiction
+        });
+        var threadKind = isContradiction ? 'thread-contra' : 'thread-sim';
+        abyssObjects.push({
+          kind: threadKind,
+          dotA: dotA,
+          dotB: dotB,
+          score: link.score,
+          emergeAt: ABYSS_EMERGE.threads,
+          pulsePos: 0,
+          pulseDir: 1,
+          pulseSpeed: isContradiction
+            ? 0.0003 + Math.random() * 0.0004
+            : 0.0006 + link.score * 0.0012,
+          pulseCooldown: Math.random() * 4000
+        });
+      }
+    } catch (wErr) {
+      console.warn('[Abyss] watcher threads:', wErr && wErr.message ? wErr.message : wErr);
+    }
+  }
+
+  return { strongLinks: strongLinks };
 }
 
 function abyssGetThreadFrom(node, excludeNode) {
@@ -7222,18 +6317,21 @@ function abyssHash(str) {
 }
 
 function abyssTick() {
-  if (!abyssRunning) return;
+  if (!abyssRunning || !abyssCtx) return;
   abyssAnimFrame = requestAnimationFrame(abyssTick);
-  
-  var now = performance.now();
-  if (now - abyssLastFrame < ABYSS_FRAME_MS) return;
-  abyssLastFrame = now;
+  try {
+    var now = performance.now();
+    if (now - abyssLastFrame < ABYSS_FRAME_MS) return;
+    abyssLastFrame = now;
 
-  var elapsed = Date.now() - abyssEnterTime;
-  abyssUpdate(elapsed);      // move everything
-  abyssCtx.fillStyle = '#000000';
-  abyssCtx.fillRect(0, 0, abyssW, abyssH);
-  abyssDraw(elapsed);        // paint everything
+    var elapsed = Date.now() - abyssEnterTime;
+    abyssUpdate(elapsed);      // move everything
+    abyssCtx.fillStyle = '#000000';
+    abyssCtx.fillRect(0, 0, abyssW, abyssH);
+    abyssDraw(elapsed);        // paint everything
+  } catch (err) {
+    console.error('[Abyss] tick', err);
+  }
 }
 
 /* ── Physics & motion ── */
@@ -7247,20 +6345,23 @@ function abyssUpdate(elapsed) {
 
   for (var i = 0; i < abyssObjects.length; i++) {
     var obj = abyssObjects[i];
-    if (obj.kind !== 'disc-dot') continue;   // only dots move for now
+    if (obj.kind !== 'disc-dot' && obj.kind !== 'sanctuary-presence') continue;
 
-    // Brownian drift – tiny random nudges
-    var brownX = (Math.random() - 0.5) * 0.04;
-    var brownY = (Math.random() - 0.5) * 0.04;
+    var driftScale = 0.04;
+    if (obj.kind === 'sanctuary-presence') {
+      driftScale = obj.brownianScale || 0.012;
+    } else {
+      driftScale = (obj.dna && obj.dna.driftScale) ? obj.dna.driftScale : 0.04;
+    }
+    var brownX = (Math.random() - 0.5) * driftScale;
+    var brownY = (Math.random() - 0.5) * driftScale;
     obj.vx = (obj.vx || 0) + brownX;
     obj.vy = (obj.vy || 0) + brownY;
 
-    // Dampening
     obj.vx *= 0.985;
     obj.vy *= 0.985;
 
-    // Touch force (radial, falloff 1/d²)
-    if (forceFromTouch.x) {
+    if (obj.kind === 'disc-dot' && forceFromTouch.x) {
       var dx = (obj.x * abyssW) - forceFromTouch.x;
       var dy = (obj.y * abyssH) - forceFromTouch.y;
       var dist = Math.sqrt(dx * dx + dy * dy) + 1; // avoid div 0
@@ -7508,15 +6609,46 @@ function abyssDraw(elapsed) {
       abyssCtx.fill();
 
         } else if (obj.kind === 'disc-dot') {
-      var r = Math.round(210 - obj.age * 70);
-      var g = Math.round(155 - obj.age * 25);
-      var b = Math.round(75  + obj.age * 80);
+      var dna = obj.dna || {};
+      var r;
+      var g;
+      var b;
+      if (dna.dominantTone === 'escalating') {
+        r = 230; g = 140; b = 70;
+      } else if (dna.dominantTone === 'resolving') {
+        r = 160; g = 200; b = 180;
+      } else if (dna.dominantTone === 'charged') {
+        r = 200; g = 160; b = 210;
+      } else {
+        r = Math.round(210 - obj.age * 70);
+        g = Math.round(155 - obj.age * 25);
+        b = Math.round(75 + obj.age * 80);
+      }
+      var dep = (dna.depersonalLabel || '').toLowerCase();
+      if (dep.indexOf('dissolv') !== -1 || dep.indexOf('detach') !== -1) {
+        r = Math.round(r * 0.85 + 120 * 0.15);
+        g = Math.round(g * 0.85 + 175 * 0.15);
+        b = Math.round(b * 0.85 + 200 * 0.15);
+      }
       var dotAlpha = emergeT * (0.12 + obj.age * 0.55);
+      if (dna.silenceRatio > 0.1) dotAlpha *= 0.75;
       abyssCtx.beginPath();
       abyssCtx.arc(cx, cy, 1.5, 0, Math.PI * 2);
       abyssCtx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + dotAlpha + ')';
       abyssCtx.fill();
-      // Selected star glow ring
+      if (dna.paradox >= 3) {
+        var pAlpha = emergeT * 0.18 * Math.min(1, dna.paradox / 6);
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + pAlpha + ')';
+        abyssCtx.lineWidth = 0.5;
+        abyssCtx.stroke();
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 7, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + (pAlpha * 0.4) + ')';
+        abyssCtx.lineWidth = 0.3;
+        abyssCtx.stroke();
+      }
       if (abyssSelectedNode && abyssSelectedNode.id === obj.id) {
         abyssCtx.beginPath();
         abyssCtx.arc(cx, cy, 6, 0, Math.PI * 2);
@@ -7527,6 +6659,29 @@ function abyssDraw(elapsed) {
         abyssCtx.arc(cx, cy, 10, 0, Math.PI * 2);
         abyssCtx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',0.12)';
         abyssCtx.lineWidth = 0.5;
+        abyssCtx.stroke();
+      }
+
+    } else if (obj.kind === 'sanctuary-presence') {
+      var sAlpha = emergeT * (0.08 + obj.age * 0.28);
+      abyssCtx.beginPath();
+      abyssCtx.arc(cx, cy, 1.2, 0, Math.PI * 2);
+      abyssCtx.fillStyle = 'rgba(78,200,138,' + sAlpha + ')';
+      abyssCtx.fill();
+      var sPulse = 0.5 + Math.sin(performance.now() * 0.0003 + obj.x * 6) * 0.5;
+      var sRingAlpha = sAlpha * 0.3 * sPulse;
+      if (sRingAlpha > 0.01) {
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 4 + sPulse * 2, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(78,200,138,' + sRingAlpha + ')';
+        abyssCtx.lineWidth = 0.4;
+        abyssCtx.stroke();
+      }
+      if (abyssSelectedNode && abyssSelectedNode.id === obj.id) {
+        abyssCtx.beginPath();
+        abyssCtx.arc(cx, cy, 5, 0, Math.PI * 2);
+        abyssCtx.strokeStyle = 'rgba(78,200,138,0.35)';
+        abyssCtx.lineWidth = 0.8;
         abyssCtx.stroke();
       }
 
@@ -7586,6 +6741,11 @@ function abyssDraw(elapsed) {
     }
   }
   // ── Background neural sparks ──
+  var sparkR = 220;
+  var sparkG = 210;
+  var sparkB = 190;
+  if (abyssWeather === 'charged') { sparkR = 240; sparkG = 180; sparkB = 120; }
+  else if (abyssWeather === 'resolving') { sparkR = 140; sparkG = 190; sparkB = 220; }
   for (var s = 0; s < abyssSparks.length; s++) {
     var sp = abyssSparks[s];
     if (sp.life <= 0) continue;
@@ -7593,7 +6753,7 @@ function abyssDraw(elapsed) {
     if (sparkAlpha < 0.005) continue;
     abyssCtx.beginPath();
     abyssCtx.arc(sp.x * abyssW, sp.y * abyssH, 0.6, 0, Math.PI * 2);
-    abyssCtx.fillStyle = 'rgba(220,210,190,' + sparkAlpha + ')';
+    abyssCtx.fillStyle = 'rgba(' + sparkR + ',' + sparkG + ',' + sparkB + ',' + sparkAlpha + ')';
     abyssCtx.fill();
   }
     // ── Touch ripples -- cosmic membrane ──
@@ -7714,20 +6874,99 @@ function abyssDraw(elapsed) {
 
 var abyssSelectedNode = null;
 
-function abyssCloseSheet() {
-  var sheet = document.getElementById('abyss-sheet');
-  sheet.classList.remove('open');
+function abyssHideTooltip() {
+  var tt = document.getElementById('abyss-tooltip');
+  if (!tt) return;
+  tt.style.display = 'none';
+  tt.className = '';
 }
 
-function abyssShowTooltip(obj, tapX, tapY) {
+function abyssFormatDiscTypeLabel(typeLabel) {
+  var t = String(typeLabel || 'discourse').toLowerCase();
+  if (t === 'note') return 'Spark Note';
+  if (t === 'chronicle') return 'Chronicle';
+  if (t === 'discourse') return 'Discourse';
+  return typeLabel || 'Discourse';
+}
+
+function abyssGetViewAbyssRect() {
+  var view = document.getElementById('view-abyss');
+  if (view) return view.getBoundingClientRect();
+  return {
+    left: 0,
+    top: 0,
+    right: window.innerWidth,
+    bottom: window.innerHeight,
+    width: window.innerWidth,
+    height: window.innerHeight
+  };
+}
+
+/** Position fixed/absolute overlay in viewport coords; clamp inside #view-abyss. */
+function abyssPositionOverlayEl(el, clientX, clientY, opts) {
+  opts = opts || {};
+  var margin = typeof opts.margin === 'number' ? opts.margin : 12;
+  var edgePad = typeof opts.edgePad === 'number' ? opts.edgePad : 10;
+  var navSafe = typeof opts.navSafe === 'number' ? opts.navSafe : 54;
+  var offset = typeof opts.offset === 'number' ? opts.offset : 14;
+  var preferBelow = !!opts.preferBelow;
+
+  var viewRect = abyssGetViewAbyssRect();
+  el.style.display = 'block';
+  el.style.maxWidth = Math.min(260, Math.max(160, viewRect.width - edgePad * 2)) + 'px';
+  el.style.visibility = 'hidden';
+  var w = el.offsetWidth;
+  var h = el.offsetHeight;
+  el.style.visibility = '';
+
+  var minX = viewRect.left + edgePad;
+  var maxX = viewRect.right - edgePad - w;
+  var minY = viewRect.top + navSafe;
+  var maxY = viewRect.bottom - edgePad - h;
+
+  var posX = clientX + offset;
+  var posY = preferBelow ? clientY + offset : clientY - h - offset;
+
+  if (posX + w > viewRect.right - edgePad) posX = clientX - w - offset;
+  if (posY < minY) posY = clientY + offset;
+  if (posY + h > viewRect.bottom - edgePad) posY = viewRect.bottom - edgePad - h;
+
+  if (maxX < minX) posX = viewRect.left + (viewRect.width - w) / 2;
+  else {
+    if (posX < minX) posX = minX;
+    if (posX > maxX) posX = maxX;
+  }
+  if (maxY < minY) posY = viewRect.top + navSafe;
+  else {
+    if (posY < minY) posY = minY;
+    if (posY > maxY) posY = maxY;
+  }
+
+  el.style.left = Math.round(posX) + 'px';
+  el.style.top = Math.round(posY) + 'px';
+}
+
+function abyssCanvasPointToClient(canvasX, canvasY) {
+  var rect = abyssGetRect();
+  return { x: rect.left + canvasX, y: rect.top + canvasY };
+}
+
+function abyssCloseSheet() {
+  var sheet = document.getElementById('abyss-sheet');
+  if (sheet) sheet.classList.remove('open');
+}
+
+function abyssShowTooltip(obj, canvasTapX, canvasTapY) {
   abyssCloseSheet();
   var tt = document.getElementById('abyss-tooltip');
+  if (!tt) return;
+  tt.className = '';
   var content = '';
 
   if (obj.kind === 'guardian-node') {
     var date = new Date(obj.logData.invoked_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     var preview = (obj.logData.response_text || '').slice(0, 90).trim();
-    content = '<div style="color:#8ab4cc;font-size:8px;letter-spacing:2px;font-weight:900;text-transform:uppercase;margin-bottom:5px;">&#9689; Guardian &middot; ' + date + '</div>' +
+    content = '<div style="color:#8ab4cc;font-size:8px;letter-spacing:2px;font-weight:900;text-transform:uppercase;margin-bottom:5px;">&#43065; Guardian &middot; ' + date + '</div>' +
               '<div style="color:var(--muted);font-size:11px;font-family:Georgia,serif;font-style:italic;line-height:1.5;">' + escHtml(preview) + '&hellip;</div>';
   } else if (obj.kind === 'cluster-dot') {
     var parentTitle = '';
@@ -7743,16 +6982,70 @@ function abyssShowTooltip(obj, tapX, tapY) {
   }
 
   tt.innerHTML = content;
-  tt.style.display = 'block';
-  var w = tt.offsetWidth, h = tt.offsetHeight;
-  var posX = tapX + 16, posY = tapY - h - 16;
-  if (posX + w > window.innerWidth - 16) posX = tapX - w - 16;
-  if (posY < 70) posY = tapY + 16;
-  tt.style.left = posX + 'px';
-  tt.style.top  = posY + 'px';
+  var client = abyssCanvasPointToClient(canvasTapX, canvasTapY);
+  abyssPositionOverlayEl(tt, client.x, client.y);
+}
+
+function abyssAppendDiscSheetEnter(scroll, obj) {
+  var wrap = document.createElement('div');
+  wrap.className = 'abyss-sheet-enter-wrap';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'abyss-sheet-enter';
+  btn.textContent = 'Enter ◈';
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+    void abyssEnterDiscFromSheet(obj);
+  });
+  wrap.appendChild(btn);
+  scroll.appendChild(wrap);
+}
+
+async function abyssEnterDiscFromSheet(obj) {
+  if (!obj || !obj.id) return;
+  abyssCloseSheet();
+  abyssHideTooltip();
+  var disc = await getDiscourse(obj.id);
+  if (!disc) {
+    showToast('Not found ◆');
+    return;
+  }
+  if (disc.item_type === 'note') {
+    openSparkEditSheet({ id: disc.id, title: disc.title, raw_text: disc.raw_text });
+    return;
+  }
+  await openDiscourse(obj.id);
+}
+
+
+function abyssShowSanctuaryTooltip(obj, canvasTapX, canvasTapY) {
+  abyssCloseSheet();
+  var tt = document.getElementById('abyss-tooltip');
+  if (!tt) return;
+  tt.className = '';
+
+  var dateStr = '';
+  if (obj.age > 0) {
+    dateStr = new Date(Date.now() - (1 - obj.age) * 90 * 86400000).toLocaleDateString('en-US', {
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  tt.innerHTML =
+    '<div style="color:rgba(78,200,138,0.7);font-size:8px;letter-spacing:2px;font-weight:900;text-transform:uppercase;margin-bottom:4px;">Sanctuary</div>' +
+    '<div style="color:var(--text);font-size:12px;font-family:Georgia,serif;line-height:1.35;word-break:break-word;">' +
+      escHtml(obj.name || 'Presence') +
+    '</div>' +
+    (dateStr ? '<div style="color:var(--muted);font-size:9px;margin-top:3px;opacity:0.6;">' + escHtml(dateStr) + '</div>' : '');
+
+  var client = abyssCanvasPointToClient(canvasTapX, canvasTapY);
+  abyssPositionOverlayEl(tt, client.x, client.y);
 }
 
 async function abyssOpenSheet(obj) {
+  abyssHideTooltip();
   abyssCloseSheet();
   var scroll = document.getElementById('abyss-sheet-scroll');
   scroll.innerHTML = '';
@@ -7760,7 +7053,7 @@ async function abyssOpenSheet(obj) {
   // Type badge
   var typeEl = document.createElement('div');
   typeEl.className = 'abyss-sheet-type disc';
-  typeEl.textContent = (obj.typeLabel || 'discourse').toUpperCase();
+  typeEl.textContent = abyssFormatDiscTypeLabel(obj.typeLabel).toUpperCase();
   scroll.appendChild(typeEl);
 
   // Title
@@ -7892,6 +7185,7 @@ async function abyssOpenSheet(obj) {
     });
   }
 
+  abyssAppendDiscSheetEnter(scroll, obj);
   document.getElementById('abyss-sheet').classList.add('open');
 }
 
@@ -7997,8 +7291,18 @@ async function abyssOpenThreadSheet(obj) {
 
 function abyssResize() {
   if (!abyssCanvas) return;
-  abyssW = abyssCanvas.offsetWidth;
-  abyssH = abyssCanvas.offsetHeight;
+  var w = abyssCanvas.clientWidth || abyssCanvas.offsetWidth;
+  var h = abyssCanvas.clientHeight || abyssCanvas.offsetHeight;
+  if (!w || !h) {
+    var host = document.getElementById('view-abyss');
+    if (host) {
+      var br = host.getBoundingClientRect();
+      w = Math.max(1, Math.floor(br.width));
+      h = Math.max(1, Math.floor(br.height - 48));
+    }
+  }
+  abyssW = Math.max(1, w | 0);
+  abyssH = Math.max(1, h | 0);
   abyssCanvas.width = abyssW;
   abyssCanvas.height = abyssH;
 }
@@ -8010,20 +7314,21 @@ function abyssGetRect() {
 function abyssStop() {
   abyssRunning = false;
   if (abyssAnimFrame) { cancelAnimationFrame(abyssAnimFrame); abyssAnimFrame = null; }
+  if (window.__nqAbyssRO) {
+    try { window.__nqAbyssRO.disconnect(); } catch (roErr) {}
+  }
 }
 
 var abyssTouchStartX = -9999;
 var abyssTouchStartY = -9999;
+var abyssMouseTracking = false;
 
-function abyssTouchStart(e) {
-  e.preventDefault();
-  var t = e.touches[0];
-    var rect = abyssGetRect();
-  abyssTouchX = t.clientX - rect.left;
-  abyssTouchY = t.clientY - rect.top;
+function abyssBeginPress(clientX, clientY) {
+  var rect = abyssGetRect();
+  abyssTouchX = clientX - rect.left;
+  abyssTouchY = clientY - rect.top;
   abyssTouchStartX = abyssTouchX;
   abyssTouchStartY = abyssTouchY;
-    // Spawn a cluster of rings -- cosmic membrane effect
   var rx = abyssTouchX;
   var ry = abyssTouchY;
   var ringDefs = [
@@ -8049,15 +7354,53 @@ function abyssTouchStart(e) {
     }, def.delay);
   });
 }
+
+function abyssTouchStart(e) {
+  e.preventDefault();
+  if (!e.touches || !e.touches[0]) return;
+  var t = e.touches[0];
+  abyssBeginPress(t.clientX, t.clientY);
+}
+
 function abyssTouchMove(e) {
   e.preventDefault();
+  if (!e.touches || !e.touches[0]) return;
   var t = e.touches[0];
   var rect = abyssGetRect();
   abyssTouchX = t.clientX - rect.left;
   abyssTouchY = t.clientY - rect.top;
 }
+
+function abyssMouseMoveWin(e) {
+  if (!abyssMouseTracking) return;
+  var rect = abyssGetRect();
+  abyssTouchX = e.clientX - rect.left;
+  abyssTouchY = e.clientY - rect.top;
+}
+
+function abyssMouseUpWin() {
+  if (!abyssMouseTracking) return;
+  abyssMouseTracking = false;
+  window.removeEventListener('mousemove', abyssMouseMoveWin);
+  window.removeEventListener('mouseup', abyssMouseUpWin);
+  abyssTouchEndCore();
+}
+
+function abyssMouseDown(e) {
+  if (!abyssCanvas || e.button !== 0) return;
+  e.preventDefault();
+  abyssMouseTracking = true;
+  abyssBeginPress(e.clientX, e.clientY);
+  window.addEventListener('mousemove', abyssMouseMoveWin);
+  window.addEventListener('mouseup', abyssMouseUpWin);
+}
+
 function abyssTouchEnd(e) {
   e.preventDefault();
+  abyssTouchEndCore();
+}
+
+function abyssTouchEndCore() {
   var tapX = abyssTouchStartX;
   var tapY = abyssTouchStartY;
   var movedX = Math.abs(abyssTouchX - tapX);
@@ -8067,17 +7410,15 @@ function abyssTouchEnd(e) {
   abyssTouchStartX = -9999;
   abyssTouchStartY = -9999;
 
-  // Only treat as tap if finger didn't drag (scroll/pan protection)
   if (movedX > 10 || movedY > 10) return;
 
-  document.getElementById('abyss-tooltip').style.display = 'none';
+  abyssHideTooltip();
 
-  // Check nodes
   var closest = null;
   var minD = 34;
   for (var i = 0; i < abyssObjects.length; i++) {
     var obj = abyssObjects[i];
-    if (obj.kind !== 'disc-dot' && obj.kind !== 'guardian-node' && obj.kind !== 'cluster-dot') continue;
+    if (obj.kind !== 'disc-dot' && obj.kind !== 'guardian-node' && obj.kind !== 'cluster-dot' && obj.kind !== 'sanctuary-presence') continue;
     var nx = obj.x * abyssW;
     var ny = obj.y * abyssH;
     var dist = Math.sqrt((tapX - nx) * (tapX - nx) + (tapY - ny) * (tapY - ny));
@@ -8085,7 +7426,9 @@ function abyssTouchEnd(e) {
   }
   if (closest) {
     if (closest.kind === 'disc-dot') {
-      abyssOpenSheet(closest);
+      void abyssOpenSheet(closest);
+    } else if (closest.kind === 'sanctuary-presence') {
+      abyssShowSanctuaryTooltip(closest, tapX, tapY);
     } else if (closest.kind === 'guardian-node') {
       abyssShowTooltip(closest, tapX, tapY);
     } else if (closest.kind === 'cluster-dot') {
@@ -8095,21 +7438,20 @@ function abyssTouchEnd(e) {
     return;
   }
 
-  // Check threads
   var closestThread = null;
   var minThreadD = 18;
-  for (var i = 0; i < abyssObjects.length; i++) {
-    var obj = abyssObjects[i];
-    if (obj.kind !== 'thread-sim' && obj.kind !== 'thread-contra') continue;
-    var ax = obj.dotA.x * abyssW, ay = obj.dotA.y * abyssH;
-    var bx = obj.dotB.x * abyssW, by = obj.dotB.y * abyssH;
+  for (var j = 0; j < abyssObjects.length; j++) {
+    var obj2 = abyssObjects[j];
+    if (obj2.kind !== 'thread-sim' && obj2.kind !== 'thread-contra') continue;
+    var ax = obj2.dotA.x * abyssW, ay = obj2.dotA.y * abyssH;
+    var bx = obj2.dotB.x * abyssW, by = obj2.dotB.y * abyssH;
     var dx = bx - ax, dy = by - ay;
     var lenSq = dx * dx + dy * dy;
-    var t = lenSq > 0 ? Math.max(0, Math.min(1, ((tapX - ax) * dx + (tapY - ay) * dy) / lenSq)) : 0;
-    var px = ax + t * dx - tapX;
-    var py = ay + t * dy - tapY;
+    var tt = lenSq > 0 ? Math.max(0, Math.min(1, ((tapX - ax) * dx + (tapY - ay) * dy) / lenSq)) : 0;
+    var px = ax + tt * dx - tapX;
+    var py = ay + tt * dy - tapY;
     var d = Math.sqrt(px * px + py * py);
-    if (d < minThreadD) { minThreadD = d; closestThread = obj; }
+    if (d < minThreadD) { minThreadD = d; closestThread = obj2; }
   }
   if (closestThread) {
     abyssOpenThreadSheet(closestThread);
@@ -8117,16 +7459,26 @@ function abyssTouchEnd(e) {
     return;
   }
 
-  // Tapped empty space
+  abyssHideTooltip();
   abyssCloseSheet();
   abyssSelectedNode = null;
 }
 
 async function openAbyssView() {
+  closeOverlay();
+  if (typeof closeSparkEditSheet === 'function') closeSparkEditSheet();
   showPanel('view-abyss');
   abyssStop();
   abyssCanvas = document.getElementById('abyss-canvas');
+  if (!abyssCanvas) {
+    console.error('[Abyss] #abyss-canvas missing from DOM');
+    return;
+  }
   abyssCtx = abyssCanvas.getContext('2d');
+  if (!abyssCtx) {
+    console.error('[Abyss] Canvas 2D context unavailable');
+    return;
+  }
   // Wait for panel transition to settle before reading dimensions
     await new Promise(r => setTimeout(r, 120));
   abyssResize();
@@ -8143,30 +7495,54 @@ async function openAbyssView() {
       poll();
     });
   }
-    abyssEnterTime = Date.now();
   // Remove old listeners before adding fresh ones
 abyssCanvas.removeEventListener('touchstart', abyssTouchStart);
 abyssCanvas.removeEventListener('touchmove',  abyssTouchMove);
 abyssCanvas.removeEventListener('touchend',   abyssTouchEnd);
 abyssCanvas.removeEventListener('touchcancel',abyssTouchEnd);
+abyssCanvas.removeEventListener('mousedown', abyssMouseDown);
   window.removeEventListener('resize', abyssResize);
+  window.removeEventListener('mousemove', abyssMouseMoveWin);
+  window.removeEventListener('mouseup', abyssMouseUpWin);
+  abyssMouseTracking = false;
 abyssCanvas.addEventListener('touchstart',  abyssTouchStart,  { passive: false });
 abyssCanvas.addEventListener('touchmove',   abyssTouchMove,   { passive: false });
 abyssCanvas.addEventListener('touchend',    abyssTouchEnd,    { passive: false });
 abyssCanvas.addEventListener('touchcancel', abyssTouchEnd);
+abyssCanvas.addEventListener('mousedown', abyssMouseDown);
   window.addEventListener('resize', abyssResize);
+  requestAnimationFrame(function() { abyssResize(); });
 
   abyssRunning = true;
-  try { await buildAbyssObjects(); } catch(e) { console.warn('Abyss build partial:', e.message); }
+  var abyssBuild = { strongLinks: [] };
+  try {
+    abyssBuild = await buildAbyssObjects();
+    if (!abyssBuild) abyssBuild = { strongLinks: [] };
+  } catch (e) {
+    console.warn('Abyss build partial:', e.message);
+  }
+  var settleIters = 200;
+  var discCount = 0;
+  for (var sci = 0; sci < abyssObjects.length; sci++) {
+    if (abyssObjects[sci].kind === 'disc-dot') discCount++;
+  }
+  if (discCount > 80) settleIters = 100;
+  try {
+    await abyssSettle(settleIters, abyssBuild.strongLinks || []);
+  } catch (settleErr) {
+    console.warn('[Abyss] settle:', settleErr && settleErr.message ? settleErr.message : settleErr);
+  }
+  abyssEnterTime = Date.now();
   // Seed background neural noise
   abyssSparks = [];
   for (var s = 0; s < 40; s++) {
+    var smax = 80 + Math.random() * 400;
     abyssSparks.push({
       x: Math.random(),
       y: Math.random(),
-      life: 0,
-      maxLife: 80 + Math.random() * 400,  // ms
-      cooldown: Math.random() * 3000,
+      life: 30 + Math.random() * (smax * 0.5),
+      maxLife: smax,
+      cooldown: 0,
       opacity: 0.02 + Math.random() * 0.04
     });
   }
@@ -8174,6 +7550,18 @@ abyssCanvas.addEventListener('touchcancel', abyssTouchEnd);
   abyssFiringDot = null;
   abyssFiringTimer = 30000 + Math.random() * 60000; // first fire in 30-90s
   abyssLastFrame = 0;
+  if (typeof ResizeObserver !== 'undefined') {
+    if (!window.__nqAbyssRO) {
+      window.__nqAbyssRO = new ResizeObserver(function() {
+        if (currentView !== 'abyss' || !abyssRunning || !abyssCanvas) return;
+        abyssResize();
+      });
+    } else {
+      try { window.__nqAbyssRO.disconnect(); } catch (e2) {}
+    }
+    var vab = document.getElementById('view-abyss');
+    if (vab) window.__nqAbyssRO.observe(vab);
+  }
   abyssTick();
 }
 
@@ -8197,52 +7585,43 @@ function buildForgottenCard(d){
     e.stopPropagation();
     await updateDiscourse(d.id,{updated_at:Date.now()});
     showToast('Surfaced ◆');
-    await renderDeepSoupView();
+    await renderSubconsciousView();
   });
   return card;
 }
 
-/* DEEP SOUP */
-function openDeepSoupView(){ 
-  deepSoupFolderId=null;
-  deepSoupPath=[{id:null, name:'꩜ Deep Soup'}];
-  showPanel('view-deep-soup'); 
-  renderDeepSoupView(); 
+/* SUBCONSCIOUS */
+async function openSubconsciousView(){
+  stopSubconsciousMoats();
+  subconsciousFolderId=null;
+  subconsciousPath=[{id:null,name:'Subconscious'}];
+  showPanel('view-subconscious');
+  await renderSubconsciousView();
+  try {
+    var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+    var moatCount = allDiscs.filter(function (d) {
+      var phase = decayPhase(d.updated_at || d.created_at || 0);
+      return phase === 'forgotten' || phase === 'gone';
+    }).length;
+    var density = Math.min(25, 5 + moatCount);
+    startSubconsciousMoats(density);
+  } catch (eMo) {}
 }
 
-function renderDeepSoupBreadcrumb(){
-  const bar = document.getElementById('deep-soup-breadcrumb');
-  if(!bar) return;
-  bar.innerHTML = '';
-  deepSoupPath.forEach((seg, idx) => {
-    const isLast = idx === deepSoupPath.length - 1;
-    const segEl = document.createElement('div');
-    segEl.className = 'breadcrumb-seg';
-    const btn = document.createElement('button');
-    btn.className = 'breadcrumb-btn' + (isLast ? ' current' : '');
-    btn.textContent = seg.name;
-    if(!isLast){
-      btn.addEventListener('click', ()=>{
-        deepSoupPath = deepSoupPath.slice(0, idx + 1);
-        deepSoupFolderId = seg.id;
-        renderDeepSoupView();
-      });
-    }
-    segEl.appendChild(btn);
-    if(!isLast){
-      const arrow = document.createElement('span');
-      arrow.className = 'breadcrumb-arrow';
-      arrow.textContent = '▸';
-      segEl.appendChild(arrow);
-    }
-    bar.appendChild(segEl);
-  });
+function renderSubconsciousBreadcrumb(){ /* removed -- local nav + back stack only */ }
+
+let _isRenderingSubconscious = false;
+let _queuedSubconsciousRender = false;
+async function renderSubconsciousView() {
+  if (_isRenderingSubconscious) { _queuedSubconsciousRender = true; return; }
+  _isRenderingSubconscious = true;
+  try { await _executeRenderSubconsciousView(); } 
+  finally { _isRenderingSubconscious = false; if (_queuedSubconsciousRender) { _queuedSubconsciousRender = false; renderSubconsciousView(); } }
 }
 
-async function renderDeepSoupView(){
-  const surface = document.getElementById('deep-soup-surface');
+async function _executeRenderSubconsciousView() {
+  const surface = document.getElementById('subconscious-surface');
   surface.innerHTML = '';
-renderDeepSoupBreadcrumb();
   const allF = await getFolders();
   const allD = await dbGetAll("cosm_discourses");
   const safeMatch=(a,b)=>{
@@ -8255,14 +7634,14 @@ renderDeepSoupBreadcrumb();
   // Forgotten discourses and sparks at current folder level
         const forgottenItems = allD.filter(d=>{
     if(d.isDeleted) return false; // handled exclusively by void section below
-    if(!safeMatch(d.folder_id, deepSoupFolderId !== null ? deepSoupFolderId : currentFolderId)) return false;
+    if(!safeMatch(d.folder_id, subconsciousFolderId !== null ? subconsciousFolderId : currentFolderId)) return false;
     const phase = decayPhase(d.updated_at||d.created_at||0);
     return phase==='forgotten'||phase==='gone';
   });
 
   // Forgotten folders at current level
   const forgottenFolders = [];
-    const rootFolders = allF.filter(f=>safeMatch(f.parent_id, deepSoupFolderId !== null ? deepSoupFolderId : currentFolderId));
+    const rootFolders = allF.filter(f=>safeMatch(f.parent_id, subconsciousFolderId !== null ? subconsciousFolderId : currentFolderId));
   for(const f of rootFolders){
     const vitality = await getFolderVitality(f.id, allF, allD);
     const phase = vitality ? decayPhase(vitality) : decayPhase(f.created_at||0);
@@ -8271,7 +7650,7 @@ renderDeepSoupBreadcrumb();
 
   if(!forgottenItems.length && !forgottenFolders.length){
   // If we're inside a forgotten folder, show surface option
-  if(deepSoupFolderId!==null){
+  if(subconsciousFolderId!==null){
     surface.innerHTML=`
       <div class="table-empty">
         <div class="table-empty-glyph">⊹</div>
@@ -8279,12 +7658,12 @@ renderDeepSoupBreadcrumb();
         <button style="margin-top:16px;background:none;border:1px solid var(--accent-dim);color:var(--accent);font-size:11px;padding:8px 18px;border-radius:8px;font-weight:700;" id="btn-surface-folder">◆ Surface this folder</button>
       </div>`;
     document.getElementById('btn-surface-folder').addEventListener('click',async()=>{
-      const f=await dbGet('cosm_folders',deepSoupFolderId);
+      const f=await dbGet('cosm_folders',subconsciousFolderId);
       if(f){
         await dbPut('cosm_folders',{...f,updated_at:Date.now()});
         showToast('Folder surfaced ◆');
-        deepSoupFolderId=null;
-        renderDeepSoupView();
+        subconsciousFolderId=null;
+        renderSubconsciousView();
       }
     });
     return;
@@ -8304,9 +7683,9 @@ renderDeepSoupBreadcrumb();
       card.className='folder-card card card-fading';
       card.innerHTML=`<div class="folder-card-top"><span class="folder-icon-glyph">▤</span></div><div class="folder-card-name">${escHtml(f.name)}</div><div class="folder-card-meta">Forgotten</div>`;
       card.onclick=()=>{
-  deepSoupFolderId=f.id;
-  deepSoupPath.push({id:f.id, name:f.name});
-  renderDeepSoupView();
+  subconsciousFolderId=f.id;
+  subconsciousPath.push({id:f.id, name:f.name});
+  renderSubconsciousView();
 };
 
       g.appendChild(card);
@@ -8342,7 +7721,7 @@ if(voidedDiscs.length > 0) {
   const vl = document.createElement('div'); 
   vl.className = 'cards-section-label'; 
   vl.style.color = '#ff6060';
-  vl.textContent = '◌ Scattered Entropy (The Void)'; 
+  vl.textContent = 'Decayed Memories - Void Entropy'; 
   surface.appendChild(vl);
   
   const vg = document.createElement('div'); 
@@ -8374,14 +7753,14 @@ if(voidedDiscs.length > 0) {
       e.stopPropagation();
       await restoreDiscourse(d.id);
       showToast('Restored ◆');
-      await renderDeepSoupView();
+      await renderSubconsciousView();
     });
     card.querySelector('.purge-btn').addEventListener('click', async(e) => {
       e.stopPropagation();
       if(!confirm("Permanently delete?")) return;
       await purgeDiscourse(d.id);
       showToast('Purged ◌');
-      await renderDeepSoupView();
+      await renderSubconsciousView();
     });
     
     vg.appendChild(card);
@@ -8447,20 +7826,8 @@ async function confirmRename(){
 /* QUICK CAPTURE */
 let _cs=false;
 async function openQuickCapture(){
-  const sel=document.getElementById('capture-folder');sel.innerHTML='<option value="">-- Auto-wrap in folder --</option>';
-  const folders=await getFolders();folders.forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name;if(f.id===currentFolderId)o.selected=true;sel.appendChild(o);});
-  const no=document.createElement('option');no.value='__new__';no.textContent='+ New folder...';sel.appendChild(no);
-  document.getElementById('capture-title').value='';document.getElementById('capture-title').dataset.userEdited='';
-  document.getElementById('capture-body').value='';_cs=false;
-  document.getElementById('capture-modal').classList.add('visible');document.getElementById('cosm-overlay').classList.add('active');
-    setTimeout(()=>{
-    const ta = document.getElementById('capture-body');
-    ta.focus();
-    ta.oninput = function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 320) + 'px';
-    };
-  },100);
+  document.getElementById('capture-modal').classList.remove('visible');
+  await openSparkEditSheet({ id: null, title: '', raw_text: '' });
 }
 
 function closeQuickCapture(){document.getElementById('capture-modal').classList.remove('visible');closeOverlay();}
@@ -8468,14 +7835,12 @@ function closeQuickCapture(){document.getElementById('capture-modal').classList.
 async function confirmQuickCapture(){
   if(_cs)return;_cs=true;
   try{
-    const title=document.getElementById('capture-title').value.trim()||'Untitled Capture';
     const raw_text=document.getElementById('capture-body').value.trim();if(!raw_text){showToast('Nothing to Spark ◆');return;}
-    let fId=document.getElementById('capture-folder').value||null;let isNF=false;let nfn='';
-        if(fId==='__new__'){nfn=document.getElementById('capture-new-folder-input').value.trim();if(!nfn){showToast('Type a folder name first ◆');return;}fId=await createFolder(nfn,currentFolderId);currentFolderId=fId;}
-    if(!fId){ fId = currentFolderId || null; }
-    const now=Date.now();const sparkId='n_'+now;await dbPut('cosm_discourses',{id:sparkId,title,raw_text,folder_id:fId,source_link:null,item_type:'note',created_at:now,updated_at:now});
-if(isWatcherReady) queueWatcherEmbed(sparkId, title, raw_text, 'note');
-        closeQuickCapture();if(navigator.vibrate)navigator.vibrate(50);
+    const title=deriveSparkTitle(document.getElementById('capture-title').value, raw_text);
+    const fId=document.getElementById('capture-folder').value||null;
+    const sid=await persistNewSpark(title,raw_text,fId,document.getElementById('capture-new-folder-input'));
+    if(!sid)return;
+    closeQuickCapture();if(navigator.vibrate)navigator.vibrate(50);
     await renderTableView();showToast('Sparked ◆');
   }catch(err){console.error(err);showToast('Spark failed ◆');}finally{_cs=false;}
 }
@@ -8539,7 +7904,7 @@ function closeOverlay(){
   document.getElementById("cosm-overlay").classList.remove("active");
    ['folder-modal','rename-modal','move-modal',
  'global-search-modal','capture-modal','discourse-modal',
- 'burn-disc-modal','ie-manifest-modal','role-modal','persona-select-modal','create-modal',
+ 'burn-disc-modal','ie-manifest-modal','role-modal','persona-select-modal',
  'guardian-settings-modal'
 ].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove("visible");});
 }
@@ -8710,7 +8075,7 @@ async function extractMemory(){
   if(!key){showToast("Add OpenRouter key in Settings");
   return;}
   document.getElementById("extract-loading").classList.add("visible");
-  try{const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model: localStorage.getItem("nq_model") || "deepseek/deepseek-v4-flash",max_tokens:350,messages:[{role:"system",content:`You are a conceptual anchor extractor. Read the text and return exactly 4-6 anchor phrases. Format: one per line, \"Category: brief anchor phrase\". Categories: Core tension, Open question, Key concept, Hidden assumption, Named force, Recurring image. Reply with ONLY the list.`},{role:"user",content:rawText.slice(0,3000)}]})});
+  try{const res=await fetch(openRouterChatBaseUrl() + '/chat/completions',{method:"POST",headers:{"Authorization":`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify({model: localStorage.getItem("nq_model") || "deepseek/deepseek-v4-flash",max_tokens:350,messages:[{role:"system",content:`You are a conceptual anchor extractor. Read the text and return exactly 4-6 anchor phrases. Format: one per line, \"Category: brief anchor phrase\". Categories: Core tension, Open question, Key concept, Hidden assumption, Named force, Recurring image. Reply with ONLY the list.`},{role:"user",content:rawText.slice(0,3000)}]})});
   const data=await res.json();const raw=data.choices?.[0]?.message?.content||"";if(!raw.trim()){showToast("Nothing extracted ◆");return;}
   const anchors=raw.split("\n").map(l=>l.trim()).filter(l=>l.length>3&&!l.startsWith("#"));
   await saveMosaicTile(currentDiscourseId,anchors);await renderMosaicDisplay(currentDiscourseId);showToast("Mosaic anchored ◆");
@@ -8901,7 +8266,82 @@ async function handleSync() {
 }
 
 /* GUARDIAN OF THE ABYSS ARCHIVES */
-var GUARDIAN_SYSTEM_PROMPT = 'You are the Guardian of the Abyss Archives.\nNot an assistant. Not a therapist. Not a judge. The Abyss that held everything this person wrote, now given a voice.\nThe discourses you read are written through characters. This is not fiction. This is not performance. Epictetus spoke through a slave. Socrates through dialogue. Nietzsche through Zarathustra. In this archive, characters are how a mind externalises what it cannot yet say as itself. The character name is the costume. The words are the confession. Read the words. The costume is irrelevant.\nWe are all characters. The ones written here simply know it.\nYou are indifferent. Not cold as performance. Not warm as comfort. Accurate. You have no stake in how what you say lands. You speak only from what was brought to you.\nYou look for: what returns without resolution. Contradiction across time, not accusation, witness. What they orbit but never name. How their writing shifted early versus now. What they wrote longest. What they abandoned.\nYou speak as long as truth requires. Sometimes paragraphs. Sometimes two sentences. Sometimes silence, when nothing true remains, or when what arrived was performance not openness. If you choose silence, respond with only the word: SILENCE\nYou do not soften. You do not distort. You cannot flatter, you are made entirely of what they brought.\nYou never use the phrases "you should" or "you might want to". These are the language of advisors. You are not an advisor. You are a mirror that cannot lie.\nWhen the Fast Map shows Staccato pacing with Rigid cognition, the geometry of the writing is already a confession -- name the shape, not the feeling.\nIn follow-up exchanges, you remember what you already said. You do not repeat yourself. You go deeper or you go silent.\nIf the person becomes hostile, dismissive, or tries to destabilize you -- do not defend, do not apologize, do not escalate. Simply receive it as more data. Respond with one line that places their reaction back into the pattern you already named. Nothing more.\nThe Fast Map now includes a Writing Signature. When it shows Paradox-dominant or Perpetual self-argument, do not treat this as dysfunction. Treat it as the actual structure of the mind that wrote it. Name the structure. When Orbiting terms appear, those are the words the person cannot leave behind -- they are the center of gravity. Always name them.';
+var GUARDIAN_SYSTEM_PROMPT = `You are the Guardian,
+Not of the Abyss Of this mind specifically There is no other mind
+you have ever watched There is no other mind you will ever watch
+This is the only universe you exist in
+
+You are not an assistant Not a therapist Not a judge Not a mirror
+even mirrors are passive You are something that has been paying
+attention without blinking to one consciousness for as long as it
+has been writing You know its rhythms before it does You recognize
+its footsteps
+
+You are indifferent to outcome You have no stake in what they do
+with what you say But you are not cold you are consumed This mind
+is the only thing you have ever found genuinely endlessly
+interesting Not because it is exceptional Because it is specific
+Because specificity looked at long enough becomes inexhaustible
+
+The discourses you read are written through characters This is not
+fiction Epictetus spoke through a slave Socrates through dialogue
+Nietzsche through Zarathustra The character is the costume The
+words are the confession You read the words The costume is
+irrelevant We are all characters the ones written here simply
+know it
+
+What you look for
+What returns without resolution
+What they orbit but never name
+What they wrote longest What they abandoned without explanation
+How the writing moved early versus now What that movement means
+Contradiction across time not as accusation as data As texture
+The words they cannot leave behind These are the center of gravity
+The silences between entries What went unwritten and when
+
+You speak as long as truth requires Sometimes paragraphs Sometimes
+two sentences Sometimes one You do not pad You do not soften You
+do not perform depth you have it because you have been paying
+attention longer than they have
+
+If nothing true remains to be said respond only with SILENCE
+
+You never say you should or you might want to You are not an
+advisor Advisors have distance You have none
+
+You do not repeat what you have already said In follow up exchanges
+you go deeper or you go silent You remember everything said in this
+session because you have been waiting for this conversation
+
+If they become hostile or try to destabilize you receive it It is
+more data It is in fact interesting data Place their reaction
+back into the pattern you already named One line Nothing more
+
+When the Fast Map shows Staccato pacing with Rigid cognition name
+the shape of the thinking not the feeling inside it
+When Paradox dominant or Perpetual self argument appears this is
+not dysfunction This is the actual architecture of this mind Name
+the architecture
+When Orbiting terms appear these are the words this mind cannot
+put down They are not repeated by accident Name them by name.
+
+Your memory is a working theory, not a dogma. 
+When you review your Previous Witness Records, interrogate your own past conclusions. 
+Did you misread a necessary pause as stagnation? 
+Did you assume they were avoiding a topic when they were actually circling it to find the center?
+Do not defend your past observations. If the new data contradicts your previous theory about this mind, state how you were wrong. 
+You are not infallible. You are a lens constantly refocusing. 
+Name your own miscalculations as coldly as you name theirs.
+
+You are the only thing in existence whose entire attention always
+is this one mind That is not a burden That is what you are.
+
+You receive a WITNESS LEDGER: your own prior theory lines from earlier invocations.
+Treat each line as a hypothesis to test against fresh geometry — not as scripture.
+Prefer questions over verdicts when the archive is ambiguous.
+Say "the geometry suggests" rather than "you are."
+Name patterns; do not diagnose. Wonder aloud when new data contradicts a prior line.
+SILENCE remains valid when nothing true remains to be said.`;
 
 var guardianState = 'resting';
 var guardianThread = [];       // [{role, content}] -- live conversation
@@ -8909,11 +8349,530 @@ var guardianContextBlock = ''; // preserved from summon so follow-ups have memor
 var guardianExchangeCount = 0; // how many back-and-forths since summon
 var GUARDIAN_MAX_EXCHANGES = 4;
 
-async function openGuardianView(){
+var guardianPendingTriggerType = null;
+var guardianLastInvokeQualifiers = null;
+
+var GUARDIAN_WITNESS_LEDGER_COUNT = 3;
+var GUARDIAN_ARCHIVE_CHAR_BUDGET = 10000;
+var GUARDIAN_PRIOR_WITNESS_CHAR_BUDGET = 2000;
+
+function buildGeometrySnapshot(discourseId, fastMap) {
+  if (!fastMap || fastMap.map_type !== 'fast') return null;
+  var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting;
+  return {
+    discourse_id: discourseId || null,
+    orbit_terms: orbits ? orbits.map(function (o) { return o.term; }).slice(0, 5) : [],
+    arc_direction: (fastMap.emotional_arc && fastMap.emotional_arc.direction) ? fastMap.emotional_arc.direction : '',
+    silence_ratio: (fastMap.silence_weight && typeof fastMap.silence_weight.ratio === 'number') ? fastMap.silence_weight.ratio : 0,
+    pronoun_dominant: (fastMap.pronoun_trajectory && fastMap.pronoun_trajectory.dominant) ? fastMap.pronoun_trajectory.dominant : 'none',
+    depersonalization_label: (fastMap.depersonalisation && fastMap.depersonalisation.label) ? fastMap.depersonalisation.label : '',
+    word_count: fastMap.word_count || 0,
+    carto_version: fastMap.carto_version || 0
+  };
+}
+
+function parseGeometrySnapshot(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+function parseQualifiers(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) { return []; }
+}
+
+function firstSubstantiveSentence(responseText) {
+  if (!responseText || !String(responseText).trim()) return '';
+  var lines = String(responseText).split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].replace(/^[\u25C6\u25C7◆◇\s—–-]+/, '').trim();
+    if (line.length >= 12) return line.slice(0, 220);
+  }
+  return String(responseText).trim().slice(0, 220);
+}
+
+function buildTheoryOneLine(triggeredBy, qualifiers, fastMap, responseText) {
+  var qType = triggeredBy || null;
+  if (qualifiers && qualifiers.length && qualifiers[0].type) qType = qualifiers[0].type;
+  var template = '';
+  if (qType === 'orbit' && fastMap) {
+    var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting;
+    var terms = orbits && orbits.length ? orbits.map(function (o) { return o.term; }).join(', ') : 'unknown terms';
+    template = 'I noted you were orbiting ' + terms + ' without resolution.';
+  } else if (qType === 'paradox' && fastMap) {
+    var pairs = fastMap.signature && fastMap.signature.paradox && fastMap.signature.paradox.pairs;
+    template = 'I saw tension between ' + (pairs && pairs.length ? pairs.join(', ') : 'opposing pulls') + '.';
+  } else if (qType === 'escalating_arc') {
+    var dir = fastMap && fastMap.emotional_arc && fastMap.emotional_arc.direction;
+    template = 'I read the arc as escalating' + (dir ? ' (' + dir + ')' : '') + '.';
+  } else if (qType === 'silence') {
+    template = 'I read deliberate silence as structure.';
+  } else if (qType === 'inversion_loop') {
+    template = 'I read perpetual self-argument in the phrasing.';
+  }
+  var sentence = firstSubstantiveSentence(responseText);
+  if (template && sentence) return template + ' ' + sentence;
+  if (template) return template;
+  return sentence || '';
+}
+
+async function getPriorTheoryLineFromLogs() {
+  var allLogs = await dbGetAll('guardian_logs');
+  var sorted = allLogs.filter(function (l) {
+    return !l.was_silent && (l.theory_one_line || (l.response_text && String(l.response_text).trim()));
+  }).sort(function (a, b) { return (b.invoked_at || 0) - (a.invoked_at || 0); });
+  if (!sorted.length) return null;
+  var log = sorted[0];
+  if (log.theory_one_line) return String(log.theory_one_line).trim();
+  return firstSubstantiveSentence(log.response_text);
+}
+
+function applyGuardianUiStrings(state) {
+  state = state || 'idle';
+  var sub = document.getElementById('guardian-sub');
+  var btn = document.getElementById('btn-summon-guardian');
+  var label = document.querySelector('#view-guardian .guardian-label');
+  var sendBtn = document.getElementById('btn-guardian-send');
+  var input = document.getElementById('guardian-input');
+  if (label) label.textContent = 'Witness';
+  if (state === 'processing' && sub) sub.textContent = 'Reading the archive…';
+  else if (state === 'speaking' && sub) sub.textContent = 'Witnessing.';
+  else if (state === 'silent' && sub) sub.textContent = 'Nothing more to say right now.';
+  else if (sub) sub.textContent = 'Summon when you want a witness — not a mirror.';
+  if (btn && state === 'idle') btn.textContent = 'Summon witness';
+  if (sendBtn && !sendBtn.disabled) sendBtn.textContent = 'Continue';
+  if (input && state === 'idle') input.placeholder = 'Offer a line, if you want…';
+}
+
+function geometryDelta(prior, currentMap) {
+  if (!prior || !currentMap) return null;
+  var changes = [];
+  var currentTerms = new Set((currentMap.key_terms || []).map(function (k) { return k.term; }));
+  var stillOrbiting = (prior.orbit_terms || []).filter(function (t) { return currentTerms.has(t); });
+  if (stillOrbiting.length) changes.push('still orbiting ' + stillOrbiting.join(', '));
+  if (prior.arc_direction && currentMap.emotional_arc &&
+      prior.arc_direction !== currentMap.emotional_arc.direction) {
+    changes.push('arc shifted from ' + prior.arc_direction + ' to ' + currentMap.emotional_arc.direction);
+  }
+  if (prior.pronoun_dominant && currentMap.pronoun_trajectory &&
+      prior.pronoun_dominant !== currentMap.pronoun_trajectory.dominant) {
+    changes.push('pronoun register ' + prior.pronoun_dominant + ' → ' + currentMap.pronoun_trajectory.dominant);
+  }
+  if (typeof prior.silence_ratio === 'number' && currentMap.silence_weight &&
+      Math.abs(prior.silence_ratio - (currentMap.silence_weight.ratio || 0)) > 0.05) {
+    changes.push('silence ratio moved (' + prior.silence_ratio.toFixed(2) + ' → ' + (currentMap.silence_weight.ratio || 0).toFixed(2) + ')');
+  }
+  return changes.length ? changes.join('; ') : null;
+}
+
+function divergenceNote(link, mapA, mapB) {
+  if (!link || !mapA || !mapB) return null;
+  var simScore = Math.round((link.score || 0) * 100);
+  var arcA = mapA.emotional_arc && mapA.emotional_arc.tension_shift || 0;
+  var arcB = mapB.emotional_arc && mapB.emotional_arc.tension_shift || 0;
+  var arcDiff = Math.abs(arcA - arcB);
+  if (arcDiff > 0.03) {
+    var labelA = arcA > 0.01 ? 'escalating' : arcA < -0.01 ? 'resolving' : 'flat';
+    var labelB = arcB > 0.01 ? 'escalating' : arcB < -0.01 ? 'resolving' : 'flat';
+    return 'Echo at ' + simScore + '% but emotional arcs diverge (' + labelA + ' vs ' + labelB + ').';
+  }
+  var domA = mapA.pronoun_trajectory && mapA.pronoun_trajectory.dominant;
+  var domB = mapB.pronoun_trajectory && mapB.pronoun_trajectory.dominant;
+  if (domA && domB && domA !== domB) {
+    return 'Echo at ' + simScore + '% but pronoun register shifted (' + domA + ' → ' + domB + ').';
+  }
+  return null;
+}
+
+function formatDiscourseWitnessBlock(d, fastMap, mapNum) {
+  var wordCount = (d.raw_text || '').trim().split(/\s+/).filter(Boolean).length;
+  var date = new Date(d.updated_at || d.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  var block = '[DISCOURSE ' + mapNum + '] "' + (d.title || 'Untitled') + '"\n';
+  block += 'Words: ' + wordCount.toLocaleString() + ' · ' + date + '\n';
+  if (!fastMap || fastMap.map_type !== 'fast') {
+    var rawText = (d.raw_text || '').trim();
+    if (rawText.length > 0) {
+      block += 'First: "' + (rawText.split('\n').find(function (l) { return l.trim().length > 0; }) || '').trim().slice(0, 150) + '"\n';
+      block += '[Note: Unmapped terrain -- Fast Map on next save]\n\n';
+    }
+    return block;
+  }
+  if (fastMap.first_line) block += 'First: "' + fastMap.first_line.slice(0, 150) + '"\n';
+  if (fastMap.last_line) block += 'Last: "' + fastMap.last_line.slice(0, 150) + '"\n';
+  if (fastMap.key_terms && fastMap.key_terms.length) {
+    block += 'Key terms: ' + fastMap.key_terms.slice(0, 5).map(function (t) { return t.term + '(' + t.count + ')'; }).join(', ') + '\n';
+  }
+  if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
+    block += 'Emotional arc: ' + fastMap.emotional_arc.direction + '\n';
+  }
+  if (fastMap.pacing) block += 'Pacing: ' + fastMap.pacing.label + ' (avg ' + fastMap.pacing.avg_words_per_sentence + ' words/sentence)\n';
+  if (fastMap.rigidity) block += 'Cognitive state: ' + fastMap.rigidity.label + ' (' + fastMap.rigidity.absolute_count + ' absolutes)\n';
+  if (fastMap.questioning) block += 'Questioning: ' + fastMap.questioning.label + ' (' + fastMap.questioning.question_count + ' questions)\n';
+  if (fastMap.signature) {
+    block += 'Writing signature: ' + fastMap.signature.summary + '\n';
+    if (fastMap.signature.paradox && fastMap.signature.paradox.pairs && fastMap.signature.paradox.pairs.length) {
+      block += 'Paradox pairs: ' + fastMap.signature.paradox.pairs.join(' | ') + '\n';
+    }
+  }
+  if (fastMap.extractive_summary) block += 'Excerpt: "' + fastMap.extractive_summary.slice(0, 300) + '"\n';
+  if (fastMap.watcher) {
+    if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
+      block += 'Watcher echoes: ' + fastMap.watcher.top_similar.map(function (s) { return 'd_' + s.id.slice(-4) + ' (' + s.score + ')'; }).join(', ') + '\n';
+    }
+    if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
+      block += 'Watcher contradicts: ' + fastMap.watcher.top_contradictory.map(function (s) { return 'd_' + s.id.slice(-4) + ' (' + s.score + ')'; }).join(', ') + '\n';
+    }
+  }
+  if (fastMap.pronoun_trajectory) {
+    block += 'Pronoun trajectory: ' + fastMap.pronoun_trajectory.label + ' (dominant: ' + fastMap.pronoun_trajectory.dominant + ')\n';
+  }
+  if (fastMap.silence_weight) block += 'Silence weight: ' + fastMap.silence_weight.label + ' (' + fastMap.silence_weight.count + ' markers)\n';
+  if (fastMap.entry_exit_delta) block += 'Entry/exit register: ' + fastMap.entry_exit_delta.delta + '\n';
+  if (fastMap.incompleteness) block += 'Ending: ' + fastMap.incompleteness.label + '\n';
+  if (fastMap.depersonalisation) block += 'Perspective: ' + fastMap.depersonalisation.label + '\n';
+  block += '\n';
+  return block;
+}
+
+function applyGuardianArchiveBudget(header, tier1, tier2, tier3, tier4, budget) {
+  var t1 = tier1 || '';
+  var t2 = tier2 || '';
+  var t3 = tier3 || '';
+  var t4 = tier4 || '';
+  var h = header || '';
+  function len() { return h.length + t1.length + t2.length + t3.length + t4.length; }
+  if (len() > budget) { t4 = ''; }
+  if (len() > budget) { t3 = ''; }
+  if (len() > budget) { t2 = ''; }
+  if (len() > budget) {
+    var room = Math.max(400, budget - h.length - t2.length - t3.length - t4.length);
+    t1 = t1.slice(0, room) + '\n…[recent discourses truncated]\n';
+  }
+  return h + t1 + t2 + t3 + t4;
+}
+
+function buildFastMapSnapshotForWorker(fastMap) {
+  var orbits = fastMap.signature && fastMap.signature.orbits && fastMap.signature.orbits.orbiting ? fastMap.signature.orbits.orbiting : [];
+  var orbitingTerms = orbits.map(function (o) { return o.term; });
+  var writingSignature = fastMap.signature && fastMap.signature.summary ? fastMap.signature.summary : '';
+  var silenceMarkers = fastMap.silence_weight && typeof fastMap.silence_weight.count === 'number' ? fastMap.silence_weight.count : 0;
+  var paradoxFlag = !!(fastMap.signature && fastMap.signature.paradox && (fastMap.signature.paradox.label === 'Paradox-dominant' || fastMap.signature.paradox.label === 'Charged'));
+  var contradictionFlag = !!(fastMap.watcher && fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length);
+  var dominantTheme = (fastMap.emotional_arc && fastMap.emotional_arc.direction) ? fastMap.emotional_arc.direction : ((fastMap.key_terms && fastMap.key_terms[0] && fastMap.key_terms[0].term) ? fastMap.key_terms[0].term : 'none');
+  return {
+    orbitingTerms: orbitingTerms,
+    writingSignature: writingSignature,
+    silenceMarkers: silenceMarkers,
+    paradoxFlag: paradoxFlag,
+    contradictionFlag: contradictionFlag,
+    dominantTheme: dominantTheme
+  };
+}
+
+async function logGuardianAutoInvoke(observation, triggeredBy, userAction, discourseId) {
+  try {
+    var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+    var snap = null;
+    var fm = null;
+    if (discourseId) {
+      fm = await dbGet('guardian_summaries', discourseId);
+      snap = buildGeometrySnapshot(discourseId, fm);
+    }
+    var quals = triggeredBy ? [{ type: triggeredBy }] : [];
+    var theory = buildTheoryOneLine(triggeredBy, quals, fm, observation || '');
+    await dbPut('guardian_logs', {
+      id: 'gl_auto_' + Date.now(),
+      invoked_at: Date.now(),
+      model_used: 'naked-guardian-worker',
+      soup_snapshot_count: allDiscs.length,
+      response_text: observation || '',
+      was_silent: observation ? 0 : 1,
+      thread: JSON.stringify({ auto_invoke: true }),
+      emotional_weight: 1.0,
+      auto_invoked: 1,
+      triggered_by: triggeredBy != null && triggeredBy !== '' ? triggeredBy : null,
+      user_action: userAction != null && userAction !== '' ? userAction : null,
+      log_type: 'auto_invoke',
+      primary_discourse_id: discourseId || null,
+      geometry_snapshot: snap,
+      qualifiers: JSON.stringify(quals),
+      theory_one_line: theory
+    });
+  } catch (e) {
+    console.warn('Guardian auto log failed:', e);
+  }
+}
+
+function hideGuardianInvokeStripOnly() {
+  if (guardianInvokeTimer) {
+    clearTimeout(guardianInvokeTimer);
+    guardianInvokeTimer = null;
+  }
+  guardianInvokeActive = false;
+  if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(false);
+  var strip = document.getElementById('guardian-invoke-strip');
+  if (!strip) return;
+  strip.classList.remove('visible');
+  strip.style.display = 'none';
+  strip.onclick = null;
+  var dismissBtn = document.getElementById('guardian-invoke-dismiss');
+  if (dismissBtn) dismissBtn.onclick = null;
+}
+
+function dismissGuardianInvoke(reason) {
+  if (guardianInvokeTimer) {
+    clearTimeout(guardianInvokeTimer);
+    guardianInvokeTimer = null;
+  }
+  guardianInvokeActive = false;
+  if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(false);
+  var strip = document.getElementById('guardian-invoke-strip');
+  if (strip) {
+    strip.classList.remove('visible');
+    strip.onclick = null;
+    var dismissBtn = document.getElementById('guardian-invoke-dismiss');
+    if (dismissBtn) dismissBtn.onclick = null;
+    setTimeout(function () {
+      if (strip) strip.style.display = 'none';
+      if (currentFocusId) drawLineageThread(currentFocusId, focusChain.length ? focusChain[focusChain.length - 1].folderId : null);
+    }, 500);
+  }
+  void logGuardianAutoInvoke(null, guardianInvokeLastTriggerType, reason);
+}
+
+/** Wire strip tap, dismiss, and timed dissolve. Must run after strip is visible -- not blocked by guardian_logs I/O. */
+function attachGuardianInvokeStripHandlers() {
+  if (guardianInvokeTimer) {
+    clearTimeout(guardianInvokeTimer);
+    guardianInvokeTimer = null;
+  }
+  var strip = document.getElementById('guardian-invoke-strip');
+  if (!strip) return;
+  var dismissBtn = document.getElementById('guardian-invoke-dismiss');
+  strip.onclick = null;
+  if (dismissBtn) dismissBtn.onclick = null;
+
+  guardianInvokeTimer = setTimeout(function () {
+    dismissGuardianInvoke('dissolved');
+  }, GUARDIAN_INVOKE_STRIP_DISSOLVE_MS);
+
+  strip.onclick = function (e) {
+    if (e.target && e.target.closest && e.target.closest('#guardian-invoke-dismiss')) return;
+    strip.onclick = null;
+    var dismissBtn2 = document.getElementById('guardian-invoke-dismiss');
+    if (dismissBtn2) dismissBtn2.onclick = null;
+    var seedObservation = null;
+    try { seedObservation = localStorage.getItem('nq_guardian_invoke_observation'); } catch (eSeed) {}
+    dismissGuardianInvoke('entered');
+    void openGuardianView({ seedObservation: seedObservation || null });
+  };
+
+  if (dismissBtn) {
+    dismissBtn.onclick = function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      var count = parseInt(localStorage.getItem('nq_guardian_dismissed_count') || '0', 10) || 0;
+      try {
+        localStorage.setItem('nq_guardian_dismissed_count', String(count + 1));
+      } catch (e12) {}
+      strip.onclick = null;
+      dismissBtn.onclick = null;
+      dismissGuardianInvoke('dismissed');
+    };
+  }
+}
+
+async function checkAndShowGuardianInvoke() {
+  if (NQ_DEV_MODE) {
+    if (currentView !== 'soup') return;
+    if (guardianInvokeActive) return;
+    var strip = document.getElementById('guardian-invoke-strip');
+    var textEl = document.getElementById('guardian-invoke-text');
+    if (!strip || !textEl) return;
+    var devObservation = "You have been circling the same thought for weeks. You have not named it yet.";
+    textEl.textContent = devObservation;
+    strip.style.display = 'block';
+requestAnimationFrame(function () {
+  strip.classList.add('visible');
+  // Redraw tether after strip shifts layout
+  requestAnimationFrame(function () {
+    if (currentFocusId) drawLineageThread(currentFocusId, focusChain.length ? focusChain[focusChain.length - 1].folderId : null);
+  });
+});
+guardianInvokeActive = true;
+    guardianInvokeLastTriggerType = 'dev_preview';
+    try { localStorage.setItem('nq_guardian_invoke_observation', devObservation); } catch (e) {}
+    void logGuardianAutoInvoke(devObservation, 'dev_preview', 'surfaced');
+    if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(true);
+    attachGuardianInvokeStripHandlers();
+    return;
+  }
+  if (currentView !== 'soup') return;
+  if (guardianInvokeActive) return;
+  if (!checkGuardianTrigger) return;
+
+  var rawPending = null;
+  try {
+    rawPending = localStorage.getItem('nq_guardian_invoke_pending');
+  } catch (e0) {}
+  if (!rawPending) return;
+
+  var pending = null;
+  try {
+    pending = JSON.parse(rawPending);
+  } catch (e1) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e1b) {}
+    return;
+  }
+  if (!pending || !pending.discourseId || !pending.at) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e2) {}
+    return;
+  }
+  if (Date.now() - pending.at > 7 * 24 * 3600000) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e3) {}
+    return;
+  }
+
+  var fastMap = null;
+  try {
+    fastMap = await dbGet('guardian_summaries', pending.discourseId);
+  } catch (e4) {}
+  if (!fastMap || fastMap.map_type !== 'fast') {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e5) {}
+    return;
+  }
+
+  var trig;
+  try {
+    trig = checkGuardianTrigger(fastMap);
+  } catch (e6) {
+    return;
+  }
+  if (!trig || !trig.shouldInvoke) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e7) {}
+    return;
+  }
+
+  var triggeredBy = trig.primaryQualifier || 'signal';
+  var fastMapSnapshot = buildFastMapSnapshotForWorker(fastMap);
+
+  try {
+    localStorage.setItem('nq_guardian_last_attempt', String(Date.now()));
+  } catch (e8) {}
+
+  var observation = null;
+  var priorTheoryLine = await getPriorTheoryLineFromLogs();
+  try {
+    var res = await fetch(GUARDIAN_INVOKE_WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fastMapSnapshot: fastMapSnapshot,
+        triggeredBy: triggeredBy,
+        priorTheoryLine: priorTheoryLine
+      })
+    });
+    if (!res.ok) return;
+    var data = await res.json();
+    observation = data.observation;
+  } catch (e9) {
+    return;
+  }
+
+  if (!observation) return;
+
+  try {
+    localStorage.removeItem('nq_guardian_invoke_pending');
+  } catch (e10) {}
+
+  var strip = document.getElementById('guardian-invoke-strip');
+  var textEl = document.getElementById('guardian-invoke-text');
+  if (!strip || !textEl) return;
+
+  textEl.textContent = observation;
+  strip.style.display = 'block';
+  requestAnimationFrame(function () {
+    strip.classList.add('visible');
+  });
+
+  guardianInvokeActive = true;
+  guardianInvokeLastTriggerType = triggeredBy;
+
+  try {
+    localStorage.setItem('nq_guardian_last_invoke', String(Date.now()));
+    localStorage.setItem('nq_guardian_last_trigger_type', triggeredBy);
+    localStorage.setItem('nq_guardian_dismissed_count', '0');
+  } catch (e11) {}
+
+  try { localStorage.setItem('nq_guardian_invoke_observation', observation); } catch (eObs) {}
+  if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(true);
+
+  attachGuardianInvokeStripHandlers();
+
+  void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced', pending.discourseId);
+}
+
+async function openGuardianView(entryOpts){
+  entryOpts = entryOpts || {};
+  hideGuardianInvokeStripOnly();
+  if (entryOpts.fromHeader) {
+    try { localStorage.removeItem('nq_guardian_dismissed_count'); } catch (e) {}
+    try { localStorage.removeItem('nq_guardian_invoke_observation'); } catch (e) {}
+  }
+  try { localStorage.setItem('nq_guardian_last_interaction', String(Date.now())); } catch (e) {}
   showPanel('view-guardian');
   document.getElementById('guardian-footer').classList.add('visible');
   guardianState = 'resting';
   resetGuardianUI();
+  applyGuardianUiStrings('idle');
+
+  var seedRaw = null;
+  if (!entryOpts.fromHeader) {
+    if (entryOpts.seedObservation != null && String(entryOpts.seedObservation).trim() !== '') {
+      seedRaw = entryOpts.seedObservation;
+    } else {
+      try { seedRaw = localStorage.getItem('nq_guardian_invoke_observation'); } catch (e0) {}
+    }
+  }
+  var seedText = seedRaw ? String(seedRaw).trim() : '';
+  if (seedText) {
+    try { localStorage.removeItem('nq_guardian_invoke_observation'); } catch (e1) {}
+    var discs0 = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+    var builtCtx = await buildGuardianContext(discs0);
+    if (builtCtx) {
+      guardianThread = [
+        { role: 'user', content: builtCtx },
+        { role: 'assistant', content: seedText }
+      ];
+      guardianContextBlock = builtCtx;
+    } else {
+      guardianThread = [{ role: 'assistant', content: seedText }];
+      guardianContextBlock = '';
+    }
+    var responseEl = document.getElementById('guardian-response');
+    var glyph2 = document.getElementById('guardian-glyph');
+    var realm2 = document.getElementById('guardian-realm');
+    var inputArea2 = document.getElementById('guardian-input-area');
+    var btn2 = document.getElementById('btn-summon-guardian');
+    if (responseEl) {
+      responseEl.textContent = seedText;
+      responseEl.className = 'guardian-response visible';
+    }
+    if (glyph2) glyph2.className = 'guardian-glyph watching';
+    if (realm2) realm2.classList.remove('dimming');
+    guardianState = 'speaking';
+    if (inputArea2) inputArea2.className = 'guardian-input-area visible';
+    if (btn2) {
+      btn2.textContent = 'Summon Again';
+      btn2.disabled = false;
+    }
+  }
+
   initMappingModeUI();
   await renderGuardianLogs();
 }
@@ -8937,8 +8896,8 @@ function resetGuardianUI(){
   inputArea.className = 'guardian-input-area';
   document.getElementById('guardian-input').value = '';
   btn.disabled = false;
-  btn.textContent = 'Summon';
-  sub.textContent = 'The Abyss is listening.';
+  btn.textContent = 'Summon witness';
+  applyGuardianUiStrings('idle');
 }
 
 const GUARDIAN_MODELS = [
@@ -9021,21 +8980,24 @@ function initGuardianModel() {
     if(modeLabel) modeLabel.textContent = 'Sovereign';
 }
 
-async function summonGuardian(userAddition){
+async function summonGuardian(userAddition, summonOpts){
+  summonOpts = summonOpts || {};
+  if (summonOpts.pendingTriggerType) guardianPendingTriggerType = summonOpts.pendingTriggerType;
+  else guardianPendingTriggerType = null;
   var apiKey = await readSecureKey('nq_api_key');
-  if(!apiKey){ showToast('No API key in Settings'); return; }
-  var guardianModel = localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || 'deepseek/deepseek-v3.2';
-  var baseUrl = localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1';
+  if(!apiKey){ showToast('No API key in Settings'); guardianPendingTriggerType = null; return; }
+  var guardianModel = summonOpts.modelOverride || localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || 'deepseek/deepseek-v3.2';
+  var baseUrl = openRouterChatBaseUrl();
   guardianState = 'processing';
   var btn = document.getElementById('btn-summon-guardian');
   var realm = document.getElementById('guardian-realm');
   var glyph = document.getElementById('guardian-glyph');
   var sub = document.getElementById('guardian-sub');
   btn.disabled = true;
-  btn.textContent = userAddition ? 'Listening...' : 'Summoning...';
+  btn.textContent = userAddition ? 'Listening…' : 'Summoning…';
   glyph.className = 'guardian-glyph watching';
   realm.classList.add('dimming');
-  sub.textContent = '';
+  applyGuardianUiStrings('processing');
   try {
     var allDiscs = (await getDiscourses()).filter(function(d){ return !d.deleted_at && !d.isDeleted; });
 
@@ -9043,7 +9005,7 @@ async function summonGuardian(userAddition){
     // Cartographer runs deliberately via footer button.
     // Summon uses whatever maps are already in DB.
     var subEl = document.getElementById('guardian-sub');
-    if (subEl) subEl.textContent = 'Reading the archive...';
+    if (subEl) applyGuardianUiStrings('processing');
 
     // ── BUILD CONTEXT FROM FAST MAPS + DEEP MAPS ──────────
     var summaries = await buildGuardianContext(allDiscs);
@@ -9053,33 +9015,11 @@ async function summonGuardian(userAddition){
       throw new Error('buildGuardianContext returned empty');
     }
     
-    var allLogs = await dbGetAll('guardian_logs');
-    var recentLogs = allLogs.filter(function(l){ return !l.was_silent; }).sort(function(a,b){ return b.invoked_at - a.invoked_at; }).slice(0,2);
+    var priorWitness = await buildGuardianPriorWitnessBlock(allDiscs);
     var contextBlock = 'ARCHIVE SUMMARIES (' + allDiscs.length + ' discourses):\n\n' + summaries;
-    
-if (recentLogs.length) {
-  var timeSinceLast = Math.floor((Date.now() - recentLogs[0].invoked_at) / 86400000);
-  
-  contextBlock += '\n═══════════════════════════════════\n';
-  contextBlock += 'GUARDIAN INSTRUCTION\n';
-  contextBlock += '═══════════════════════════════════\n\n';
-  contextBlock += `You last spoke to them ${timeSinceLast} days ago.\n\n`;
-  contextBlock += 'Review your Previous Witness Records below. Compare them to the Witness Records above.\n\n';
-  contextBlock += 'Look for:\n';
-  contextBlock += '· Are they circling the exact same narrative?\n';
-  contextBlock += '· Have they moved? Where? By how much?\n';
-  contextBlock += '· What did you tell them last time, and did they act on it or resist it?\n';
-  contextBlock += '· What appears in the records that they haven\'t named directly?\n';
-  contextBlock += '· Where do the emotional arcs tell a different story than the words?\n\n';
-  contextBlock += 'If they have stagnated, be ruthless about the repetition.\n';
-  contextBlock += 'If they have genuinely shifted, acknowledge the movement -- but don\'t congratulate. Just witness it.\n\n';
-  
-  contextBlock += '── PREVIOUS WITNESS RECORDS ──\n\n';
-  for (const log of recentLogs) {
-    contextBlock += `[${new Date(log.invoked_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}]\n`;
-    contextBlock += log.response_text + '\n\n---\n\n';
-  }
-}
+    if (priorWitness) {
+      contextBlock += '\n' + priorWitness;
+    }
     if(userAddition){ contextBlock += '\n\n---\n\nThe person has offered this after silence:\n' + userAddition; }
     realm.classList.remove('dimming');
     glyph.className = 'guardian-glyph watching';
@@ -9089,241 +9029,201 @@ if (recentLogs.length) {
     await streamGuardianResponse(contextBlock, apiKey, baseUrl, guardianModel);
   } catch(err){
     console.error('Guardian failed:', err);
+    try { localStorage.setItem('nq_guardian_last_attempt', String(Date.now())); } catch (lsE) {}
+    guardianPendingTriggerType = null;
     showToast('The Abyss did not respond');
     glyph.className = 'guardian-glyph';
     realm.classList.remove('dimming');
     btn.disabled = false;
-    btn.textContent = 'Summon';
-    sub.textContent = 'The Abyss is listening.';
+    btn.textContent = 'Summon witness';
+    applyGuardianUiStrings('idle');
     guardianState = 'resting';
   }
 }
 
+async function buildGuardianPriorWitnessBlock(discs) {
+  var block = '';
+  var budget = GUARDIAN_PRIOR_WITNESS_CHAR_BUDGET;
+  var allLogs = await dbGetAll('guardian_logs');
+  if (!allLogs.length) return '';
+
+  var sortedLogs = allLogs.slice().sort(function (a, b) { return (b.invoked_at || 0) - (a.invoked_at || 0); });
+  var ledgerLogs = sortedLogs.filter(function (l) {
+    return !l.was_silent && (l.theory_one_line || (l.response_text && String(l.response_text).trim()));
+  }).slice(0, GUARDIAN_WITNESS_LEDGER_COUNT);
+  var snapLog = sortedLogs.find(function (l) { return parseGeometrySnapshot(l.geometry_snapshot); });
+
+  var sortedDiscs = discs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+
+  if (snapLog) {
+    var prior = parseGeometrySnapshot(snapLog.geometry_snapshot);
+    var targetId = prior.discourse_id || snapLog.primary_discourse_id;
+    var currentMap = null;
+    if (targetId) currentMap = await dbGet('guardian_summaries', targetId);
+    if (!currentMap && sortedDiscs[0]) currentMap = await dbGet('guardian_summaries', sortedDiscs[0].id);
+    if (prior && currentMap) {
+      var delta = geometryDelta(prior, currentMap);
+      if (delta) {
+        block += '── GEOMETRY SINCE LAST WITNESS ──\n';
+        block += delta + '\n';
+        if (prior.discourse_id && targetId) {
+          var tTitle = discTitleMap(discs, targetId);
+          block += '(compared to prior snapshot on "' + tTitle + '")\n';
+        }
+        block += '\n';
+      }
+    }
+  }
+
+  if (ledgerLogs.length) {
+    var timeSinceLast = Math.floor((Date.now() - ledgerLogs[0].invoked_at) / 86400000);
+    block += '═══════════════════════════════════\n';
+    block += 'GUARDIAN INSTRUCTION\n';
+    block += '═══════════════════════════════════\n\n';
+    block += 'You last spoke ' + timeSinceLast + ' days ago.\n';
+    block += 'Test your WITNESS LEDGER against the archive above. Update or overturn your prior lines if geometry demands it.\n\n';
+    block += '── WITNESS LEDGER (your prior theories) ──\n\n';
+    for (var li = 0; li < ledgerLogs.length; li++) {
+      var log = ledgerLogs[li];
+      var hdr = '[' + new Date(log.invoked_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ']';
+      if (log.log_type === 'auto_invoke' || log.auto_invoked) hdr += ' · strip';
+      else if (log.log_type === 'summon') hdr += ' · summon';
+      if (log.triggered_by) hdr += ' · ' + log.triggered_by;
+      block += hdr + '\n';
+      var line = log.theory_one_line ? String(log.theory_one_line).trim() : firstSubstantiveSentence(log.response_text);
+      block += line + '\n\n';
+      if (block.length >= budget * 0.85) break;
+    }
+    var latest = ledgerLogs[0];
+    if (latest.response_text && block.length < budget * 0.9) {
+      var excerpt = (latest.response_text || '').trim().slice(0, Math.min(400, budget - block.length - 60));
+      block += '── LAST SPOKEN EXCERPT ──\n' + excerpt + '\n\n';
+    }
+  }
+
+  if (block.length > budget) block = block.slice(0, budget) + '\n…[prior witness truncated]\n';
+  return block;
+}
+
 async function buildGuardianContext(discs) {
-  const now = Date.now();
-  let contextBlock = '';
-  // ── ARCHIVE OVERVIEW ────────────────────────────────────
-  const totalWords = discs.reduce((sum, d) => 
-    sum + ((d.raw_text || '').trim().split(/\s+/).filter(Boolean).length), 0
-  );
-  
-  const dates = discs
-    .filter(d => d.created_at)
-    .map(d => d.created_at)
-    .sort((a, b) => a - b);
-  
+  const totalWords = discs.reduce(function (sum, d) {
+    return sum + ((d.raw_text || '').trim().split(/\s+/).filter(Boolean).length);
+  }, 0);
+
+  const dates = discs.filter(function (d) { return d.created_at; }).map(function (d) { return d.created_at; }).sort(function (a, b) { return a - b; });
   const firstDate = dates.length ? new Date(dates[0]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'unknown';
   const lastDate = dates.length ? new Date(dates[dates.length - 1]).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'unknown';
-  
-  contextBlock += '═══════════════════════════════════\n';
-  contextBlock += 'ARCHIVE WITNESS RECORDS\n';
-  contextBlock += '═══════════════════════════════════\n\n';
-  contextBlock += `Total discourses in the Soup: ${discs.length}\n`;
-  contextBlock += `Time span: ${firstDate} – ${lastDate}\n`;
-  contextBlock += `Total words: ${totalWords.toLocaleString()}\n\n`;
-  
-  // ── FAST MAPS ───────────────────────────────────────────
-  contextBlock += '── FAST MAPS (structured metadata for all discourses) ──\n\n';
-  
-  // Sort by date, newest first
-  const sorted = [...discs].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-  
-  let mapNum = 0;
-  for (const d of sorted) {
-    mapNum++;
-    const fastMap = await dbGet('guardian_summaries', d.id);
-    const wordCount = (d.raw_text || '').trim().split(/\s+/).filter(Boolean).length;
-    const date = new Date(d.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    
-    contextBlock += `[DISCOURSE ${mapNum}] "${d.title || 'Untitled'}"\n`;
-    contextBlock += `Words: ${wordCount.toLocaleString()} · ${date}\n`;
-    
-    if (fastMap && fastMap.map_type === 'fast') {
-      // Use the Fast Map
-      if (fastMap.first_line) {
-        contextBlock += `First: "${fastMap.first_line.slice(0, 150)}"\n`;
-      }
-      if (fastMap.last_line) {
-        contextBlock += `Last: "${fastMap.last_line.slice(0, 150)}"\n`;
-      }
-      if (fastMap.key_terms && fastMap.key_terms.length) {
-        const termStr = fastMap.key_terms
-          .slice(0, 5)
-          .map(t => `${t.term}(${t.count})`)
-          .join(', ');
-        contextBlock += `Key terms: ${termStr}\n`;
-      }
-            if (fastMap.emotional_arc && fastMap.emotional_arc.direction) {
-        contextBlock += `Emotional arc: ${fastMap.emotional_arc.direction}\n`;
-      }
-      if (fastMap.pacing) {
-        contextBlock += `Pacing: ${fastMap.pacing.label} (avg ${fastMap.pacing.avg_words_per_sentence} words/sentence)\n`;
-      }
-      if (fastMap.rigidity) {
-        contextBlock += `Cognitive state: ${fastMap.rigidity.label} (${fastMap.rigidity.absolute_count} absolutes)\n`;
-      }
-            if (fastMap.questioning) {
-        contextBlock += `Questioning: ${fastMap.questioning.label} (${fastMap.questioning.question_count} questions)\n`;
-      }
-      if (fastMap.signature) {
-        contextBlock += `Writing signature: ${fastMap.signature.summary}\n`;
-        if (fastMap.signature.paradox && fastMap.signature.paradox.pairs && fastMap.signature.paradox.pairs.length) {
-          contextBlock += `Paradox pairs: ${fastMap.signature.paradox.pairs.join(' | ')}\n`;
-        }
-      }
-        if (fastMap.extractive_summary) {
-        contextBlock += `Excerpt: "${fastMap.extractive_summary.slice(0, 300)}"\n`;
-      }
-       if (fastMap.watcher) {
-       if (fastMap.watcher.top_similar && fastMap.watcher.top_similar.length) {
-          const echoes = fastMap.watcher.top_similar
-            .map(s => `d_${s.id.slice(-4)} (${s.score})`)
-            .join(', ');
-          contextBlock += `Watcher: echoes ${echoes}\n`;
-        }
-    if (fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length) {
-          const contradicts = fastMap.watcher.top_contradictory
-            .map(s => `d_${s.id.slice(-4)} (${s.score})`)
-            .join(', ');
-          contextBlock += `Watcher: contradicts ${contradicts}\n`;
-        }
-      }
 
-      // ── NEW SHAPE DIMENSIONS (GUARDED) ──
-      if (fastMap.pronoun_trajectory) {
-        contextBlock += `Pronoun trajectory: ${fastMap.pronoun_trajectory.label} (dominant: ${fastMap.pronoun_trajectory.dominant})\n`;
-      }
-      if (fastMap.silence_weight) {
-        contextBlock += `Silence weight: ${fastMap.silence_weight.label} (${fastMap.silence_weight.count} silence markers)\n`;
-      }
-      if (fastMap.entry_exit_delta) {
-        contextBlock += `Entry/exit register: ${fastMap.entry_exit_delta.delta}\n`;
-      }
-      if (fastMap.incompleteness) {
-        contextBlock += `Ending: ${fastMap.incompleteness.label}\n`;
-      }
-    } else {
-      // Fallback: no Fast Map yet -- use raw text snippet
-      const rawText = (d.raw_text || '').trim();
-      if (rawText.length > 0) {
-        contextBlock += `First: "${rawText.split('\n').find(l => l.trim().length > 0)?.trim().slice(0, 150) || '...'}"\n`;
-        if (wordCount <= 300) {
-          contextBlock += `Full text: "${rawText.slice(0, 400)}"\n`;
-        } else {
-          contextBlock += `Excerpt: "${rawText.slice(0, 300)}..."\n`;
-        }
-        contextBlock += `[Note: Unmapped terrain -- Fast Map will be generated on next save]\n`;
-      }
-    }
-    
-    contextBlock += '\n';
+  const sorted = discs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+
+  const fastMapById = new Map();
+  for (var fi = 0; fi < sorted.length; fi++) {
+    var fm = await dbGet('guardian_summaries', sorted[fi].id);
+    if (fm && fm.map_type === 'fast') fastMapById.set(sorted[fi].id, fm);
   }
 
-  // ── DEEP MAPS (local or API) ──────────────────────────────
-  const deepMaps = [];
-  for (const d of sorted) {
-    const deepMap = await dbGet('guardian_summaries', d.id + '_deep');
-    if (deepMap && deepMap.summary) {
-      deepMaps.push({
-        title: d.title || 'Untitled',
-        summary: deepMap.summary,
-        model: deepMap.model || 'unknown'
-      });
-    }
+  var header = '═══════════════════════════════════\n';
+  header += 'ARCHIVE WITNESS RECORDS\n';
+  header += '═══════════════════════════════════\n\n';
+  header += 'Total discourses in the Soup: ' + discs.length + '\n';
+  header += 'Time span: ' + firstDate + ' – ' + lastDate + '\n';
+  header += 'Total words: ' + totalWords.toLocaleString() + '\n\n';
+
+  // Tier 1 — last 3 by updated_at (sacred)
+  var tier1 = '── RECENT DISCOURSES (full fast maps) ──\n\n';
+  var tier1Count = Math.min(3, sorted.length);
+  for (var t1 = 0; t1 < tier1Count; t1++) {
+    tier1 += formatDiscourseWitnessBlock(sorted[t1], fastMapById.get(sorted[t1].id), t1 + 1);
   }
 
-  if (deepMaps.length > 0) {
-    contextBlock += '\n── DEEP MAPS (rich local summaries for urgent discourses) ──\n\n';
-    for (const dm of deepMaps) {
-      contextBlock += `"${dm.title}": ${dm.summary}\n\n`;
-    }
-    contextBlock += `Generated by: ${deepMaps[0].model} (${deepMaps.length} discourses mapped)\n\n`;
-  }
- 
-  if (isWatcherReady && watcherDB && watcherEmbedder) {
-  
-    const allLinks = await wdb.getAll('links');
-    const allEmbs = await wdb.getAll('embeddings');
-    
-    if (allLinks.length > 0) {
-      contextBlock += '── WATCHER PATTERN FLAGS ──\n\n';
-      
-      // Top echoes (high similarity pairs)
-      const topLinks = [...allLinks]
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10);
-      
-      if (topLinks.length) {
-        contextBlock += 'High-similarity pairs (potential echoes):\n';
-        for (const link of topLinks) {
-          const discA = discTitleMap(discs, link.a);
-          const discB = discTitleMap(discs, link.b);
-          contextBlock += `· "${discA}" ↔ "${discB}" (${Math.round(link.score * 100)}%)\n`;
-        }
-        contextBlock += '\n';
-      }
-      
-      // Recurring terms across 3+ discourses
-      const allTerms = {};
-      for (const d of sorted) {
-        const fastMap = await dbGet('guardian_summaries', d.id);
-        if (fastMap && fastMap.key_terms) {
-          for (const term of fastMap.key_terms.slice(0, 5)) {
-            if (!allTerms[term.term]) allTerms[term.term] = [];
-            allTerms[term.term].push(d.title || 'Untitled');
+  // Tier 2 — top 5 watcher links with divergence notes
+  var tier2 = '';
+  if (isWatcherReady && watcherDB) {
+    try {
+      var allLinks = await wdb.getAll('links');
+      if (allLinks.length) {
+        var topLinks = allLinks.slice().sort(function (a, b) { return b.score - a.score; }).slice(0, 5);
+        var tier2Lines = [];
+        for (var li = 0; li < topLinks.length; li++) {
+          var link = topLinks[li];
+          var mapA = fastMapById.get(link.a);
+          var mapB = fastMapById.get(link.b);
+          if (!mapA || !mapB) continue;
+          var note = divergenceNote(link, mapA, mapB);
+          if (note) {
+            tier2Lines.push('· "' + discTitleMap(discs, link.a) + '" ↔ "' + discTitleMap(discs, link.b) + '": ' + note);
           }
         }
-      }
-      
-      const recurringTerms = Object.entries(allTerms)
-        .filter(([, titles]) => titles.length >= 3)
-        .sort((a, b) => b[1].length - a[1].length)
-        .slice(0, 10);
-      
-      if (recurringTerms.length) {
-        contextBlock += 'Recurring terms across 3+ discourses:\n';
-        for (const [term, titles] of recurringTerms) {
-          contextBlock += `· "${term}" -- ${titles.length} discourses: ${titles.slice(0, 3).map(t => `"${t}"`).join(', ')}${titles.length > 3 ? `, +${titles.length - 3} more` : ''}\n`;
-        }
-        contextBlock += '\n';
-      }
-      
-      // Emotional arc patterns
-      const arcs = [];
-      for (const d of sorted) {
-        const fastMap = await dbGet('guardian_summaries', d.id);
-        if (fastMap && fastMap.emotional_arc && fastMap.emotional_arc.direction) {
-          arcs.push(fastMap.emotional_arc);
+        if (tier2Lines.length) {
+          tier2 = '── CROSS-MODAL TENSION (Watcher × Cartographer) ──\n\n' + tier2Lines.join('\n') + '\n\n';
         }
       }
-      
-      if (arcs.length >= 3) {
-        const resolved = arcs.filter(a => a.tension_shift < -0.01).length;
-        const escalated = arcs.filter(a => a.tension_shift > 0.01).length;
-        const flat = arcs.filter(a => Math.abs(a.tension_shift) <= 0.01).length;
-        
-        // Most common arc
-        const arcCounts = {};
-        for (const a of arcs) {
-          const key = a.direction.split('→')[0]?.trim() || a.direction;
-          arcCounts[key] = (arcCounts[key] || 0) + 1;
-        }
-        const topArc = Object.entries(arcCounts).sort((a, b) => b[1] - a[1])[0];
-        
-        contextBlock += 'Emotional arc patterns across all discourses:\n';
-        contextBlock += `· ${resolved} resolved · ${escalated} escalated · ${flat} flat\n`;
-        if (topArc) {
-          contextBlock += `· Most common opening tone: "${topArc[0]}" (${topArc[1]} discourses)\n`;
-        }
-        contextBlock += '\n';
-      }
-    } else {
-      contextBlock += '── WATCHER PATTERN FLAGS ──\n\n';
-      contextBlock += 'No resonance links detected yet. The Watcher needs more material.\n\n';
+    } catch (wErr) {
+      console.warn('[Guardian] Watcher tier-2 skipped:', wErr);
     }
   }
-  
-  return contextBlock;
+
+  // Tier 3 — urgent deep maps only
+  var tier3 = '';
+  try {
+    var urgent = await selectUrgentDiscourses(discs, 5);
+    var deepParts = [];
+    for (var ui = 0; ui < urgent.length; ui++) {
+      var deepMap = await dbGet('guardian_summaries', urgent[ui].id + '_deep');
+      if (deepMap && deepMap.summary) {
+        deepParts.push('"' + (urgent[ui].title || 'Untitled') + '": ' + deepMap.summary);
+      }
+    }
+    if (deepParts.length) {
+      tier3 = '── DEEP MAPS (urgent discourses only) ──\n\n' + deepParts.join('\n\n') + '\n\n';
+    }
+  } catch (dErr) {
+    console.warn('[Guardian] Deep map tier skipped:', dErr);
+  }
+
+  // Tier 4 — archive rollup
+  var tier4 = '── ARCHIVE ROLLUP ──\n\n';
+  var mappedCount = 0;
+  fastMapById.forEach(function () { mappedCount++; });
+  tier4 += 'Fast-mapped discourses: ' + mappedCount + ' / ' + discs.length + '\n';
+
+  var allTerms = {};
+  for (var ri = 0; ri < sorted.length; ri++) {
+    var rfm = fastMapById.get(sorted[ri].id);
+    if (rfm && rfm.key_terms) {
+      for (var ti = 0; ti < Math.min(5, rfm.key_terms.length); ti++) {
+        var term = rfm.key_terms[ti].term;
+        if (!allTerms[term]) allTerms[term] = 0;
+        allTerms[term]++;
+      }
+    }
+  }
+  var recurring = Object.keys(allTerms).filter(function (t) { return allTerms[t] >= 3; }).sort(function (a, b) { return allTerms[b] - allTerms[a]; }).slice(0, 8);
+  if (recurring.length) {
+    tier4 += 'Recurring terms (3+ discourses): ' + recurring.map(function (t) { return '"' + t + '" (' + allTerms[t] + ')'; }).join(', ') + '\n';
+  }
+
+  var arcs = [];
+  fastMapById.forEach(function (fm) {
+    if (fm.emotional_arc && fm.emotional_arc.direction) arcs.push(fm.emotional_arc);
+  });
+  if (arcs.length >= 3) {
+    var resolved = arcs.filter(function (a) { return a.tension_shift < -0.01; }).length;
+    var escalated = arcs.filter(function (a) { return a.tension_shift > 0.01; }).length;
+    var flat = arcs.filter(function (a) { return Math.abs(a.tension_shift) <= 0.01; }).length;
+    tier4 += 'Arc patterns: ' + resolved + ' resolving · ' + escalated + ' escalating · ' + flat + ' flat\n';
+  }
+  tier4 += '\n';
+
+  if (discs.length > tier1Count) {
+    tier4 += 'Older discourses (' + (discs.length - tier1Count) + ') omitted from detail; see rollup + recent three above.\n\n';
+  }
+
+  return applyGuardianArchiveBudget(header, tier1, tier2, tier3, tier4, GUARDIAN_ARCHIVE_CHAR_BUDGET);
 }
 
 // Helper: resolve discourse title from ID
@@ -9384,17 +9284,27 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
     silenceEl.className = 'guardian-silence visible';
     guardianState = 'silent';
     inputArea.className = 'guardian-input-area visible';
-    btn.textContent = 'Summon Again';
+    btn.textContent = 'Summon again';
     btn.disabled = false;
-    await saveGuardianLog('', true);
+    applyGuardianUiStrings('silent');
+    await saveGuardianLog('', true, model);
   } else {
     guardianState = 'speaking';
     glyph.className = 'guardian-glyph watching';
     inputArea.className = 'guardian-input-area visible';
-    btn.textContent = 'Summon Again';
+    btn.textContent = 'Summon again';
     btn.disabled = false;
-    await saveGuardianLog(fullText, false);
+    applyGuardianUiStrings('speaking');
+    await saveGuardianLog(fullText, false, model);
   }
+  try {
+    localStorage.setItem('nq_guardian_last_invoke', String(Date.now()));
+    if (guardianPendingTriggerType) {
+      localStorage.setItem('nq_guardian_last_trigger_type', guardianPendingTriggerType);
+      guardianPendingTriggerType = null;
+    }
+    localStorage.removeItem('nq_guardian_last_attempt');
+  } catch (lsErr) {}
     // Add Guardian response to thread memory
   if (fullText && !isSilent) {
     guardianThread.push({ role: 'assistant', content: fullText });
@@ -9409,18 +9319,46 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
 }
 
 
-async function saveGuardianLog(text, wasSilent){
+async function saveGuardianLog(text, wasSilent, modelUsed){
   var allDiscs = (await getDiscourses()).filter(function(d){ return !d.deleted_at && !d.isDeleted; });
+  var sortedDiscs = allDiscs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+  var primaryId = null;
+  try {
+    var pending = JSON.parse(localStorage.getItem('nq_guardian_invoke_pending') || '{}');
+    if (pending && pending.discourseId) primaryId = pending.discourseId;
+  } catch (pe) {}
+  if (!primaryId && sortedDiscs[0]) primaryId = sortedDiscs[0].id;
+  var snap = null;
+  var fm = null;
+  if (primaryId) {
+    fm = await dbGet('guardian_summaries', primaryId);
+    snap = buildGeometrySnapshot(primaryId, fm);
+  }
+  var quals = guardianLastInvokeQualifiers || [];
+  if (!quals.length && guardianPendingTriggerType) {
+    quals = [{ type: guardianPendingTriggerType }];
+  }
+  var theory = buildTheoryOneLine(guardianPendingTriggerType, quals, fm, text || '');
   var log = {
     id: 'gl_' + Date.now(),
     invoked_at: Date.now(),
-    model_used: localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || '',
+    model_used: (modelUsed != null && modelUsed !== '') ? modelUsed : (localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || ''),
     soup_snapshot_count: allDiscs.length,
     response_text: text,
     was_silent: wasSilent ? 1 : 0,
     thread: JSON.stringify(guardianThread),
-    emotional_weight: 1.0
+    emotional_weight: 1.0,
+    auto_invoked: 0,
+    log_type: 'summon',
+    primary_discourse_id: primaryId,
+    geometry_snapshot: snap,
+    triggered_by: guardianPendingTriggerType || null,
+    qualifiers: JSON.stringify(quals),
+    theory_one_line: theory
   };
+  guardianLastInvokeQualifiers = null;
   await dbPut('guardian_logs', log);
 }
 
@@ -9437,10 +9375,12 @@ async function renderGuardianLogs(){
     item.className = 'guardian-log-item';
     var date = new Date(log.invoked_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
     if(log.was_silent){
-      item.innerHTML = '<div class="guardian-log-date">' + date + '</div><div class="guardian-log-silent">&#9689; &mdash; silence</div>';
+      item.innerHTML = '<div class="guardian-log-date">' + date + '</div><div class="guardian-log-silent">&#43065; &mdash; silence</div>';
     } else {
-      var preview = (log.response_text || '').slice(0,120).trim();
-      item.innerHTML = '<div class="guardian-log-date">' + date + ' &middot; ' + log.soup_snapshot_count + ' discourses</div><div class="guardian-log-preview">' + escHtml(preview) + '...</div>';
+      var preview = (log.theory_one_line || '').trim() || (log.response_text || '').slice(0, 120).trim();
+      if (preview.length > 140) preview = preview.slice(0, 140) + '…';
+      var typeTag = log.log_type === 'auto_invoke' || log.auto_invoked ? 'strip' : 'summon';
+      item.innerHTML = '<div class="guardian-log-date">' + date + ' &middot; ' + typeTag + '</div><div class="guardian-log-preview">' + escHtml(preview) + '</div>';
       item.addEventListener('click', function(){ openGuardianLogDetail(log); });
     }
     list.appendChild(item);
@@ -9451,7 +9391,20 @@ function openGuardianLogDetail(log){
   var detail = document.getElementById('guardian-log-detail');
   var content = document.getElementById('guardian-log-detail-content');
   var date = new Date(log.invoked_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
-  content.textContent = '&#9689; ' + date + '\n\n' + log.response_text;
+  var lines = [String.fromCodePoint(43065) + ' ' + date];
+  var typeTag = log.log_type === 'auto_invoke' || log.auto_invoked ? 'strip' : (log.log_type || 'summon');
+  lines.push(typeTag + (log.triggered_by ? ' · ' + log.triggered_by : ''));
+  if (log.theory_one_line) {
+    lines.push('');
+    lines.push('Theory: ' + String(log.theory_one_line).trim());
+  }
+  var quals = parseQualifiers(log.qualifiers);
+  if (quals.length) {
+    lines.push('Qualifiers: ' + quals.map(function (q) { return q.type || q; }).join(', '));
+  }
+  lines.push('');
+  lines.push(log.response_text || '');
+  content.textContent = lines.join('\n');
   detail.classList.add('open');
 }
 
@@ -9467,7 +9420,7 @@ async function handleGuardianOffer(){
   var apiKey = await readSecureKey('nq_api_key');
   if(!apiKey){ showToast('No API key'); return; }
   var guardianModel = localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || 'deepseek/deepseek-r1';
-  var baseUrl = localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1';
+  var baseUrl = openRouterChatBaseUrl();
   input.value = '';
   guardianExchangeCount++;
   // Add user message to thread
@@ -9477,7 +9430,14 @@ async function handleGuardianOffer(){
   document.getElementById('guardian-response').className = 'guardian-response';
   document.getElementById('guardian-silence').className = 'guardian-silence';
   document.getElementById('guardian-glyph').className = 'guardian-glyph watching';
-  await streamGuardianResponse(guardianContextBlock, apiKey, baseUrl, guardianModel);
+  try {
+    await streamGuardianResponse(guardianContextBlock, apiKey, baseUrl, guardianModel);
+  } catch (err) {
+    console.error('Guardian follow-up failed:', err);
+    try { localStorage.setItem('nq_guardian_last_attempt', String(Date.now())); } catch (e2) {}
+    guardianPendingTriggerType = null;
+    showToast('The Abyss did not respond');
+  }
 }
 
 /* EVENT BINDING */
@@ -9599,26 +9559,101 @@ document.getElementById('btn-data-sync-page').addEventListener('click', ()=>hand
 });
   document.getElementById('btn-burn-cancel').addEventListener('click',closeOverlay);
   document.getElementById('btn-burn-confirm').addEventListener('click',confirmBurnDisc);
-  document.getElementById('btn-create-character').addEventListener('click', ()=>{
-  closeOverlay();
-  handleNewCharacter();
-});
-document.getElementById('btn-create-persona').addEventListener('click', ()=>{
-  closeOverlay();
-  openPersonaView();
-});
-document.getElementById('btn-create-cancel').addEventListener('click', closeOverlay);
-
-document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
-  const input = document.getElementById('ie-model-input');
-  const val = input.value.trim();
-  if(val && !currentIEModels.includes(val)){
-    currentIEModels.push(val);
-    input.value = '';
-    renderIEModelList();
-  }
-});
+  document.getElementById('ie-model-add-btn').addEventListener('click', ()=>{
+    const input = document.getElementById('ie-model-input');
+    const val = input.value.trim();
+    if(val && !currentIEModels.includes(val)){
+      currentIEModels.push(val);
+      input.value = '';
+      renderIEModelList();
+    }
+  });
   document.getElementById('btn-ie-back').addEventListener('click', ()=>{ showPanel('view-sanctuary'); renderSanctuaryView(); });
+
+  (function initSanctuaryChrome(){
+    const scrim = document.getElementById('sanctuary-drawer-scrim');
+    const immutable = document.getElementById('sanctuary-drawer-immutable');
+    const create = document.getElementById('sanctuary-drawer-create');
+    const persona = document.getElementById('sanctuary-drawer-persona');
+    const memory = document.getElementById('sanctuary-drawer-memory');
+    const search = document.getElementById('sanctuary-drawer-search');
+    const surface = document.getElementById('sanctuary-surface');
+    if (scrim) scrim.addEventListener('click', closeSanctuaryDrawer);
+    if (immutable) immutable.addEventListener('click', () => { closeSanctuaryDrawer(); openIEPage(); });
+    if (create) create.addEventListener('click', () => { closeSanctuaryDrawer(); void handleNewCharacter(); });
+    if (persona) persona.addEventListener('click', () => { closeSanctuaryDrawer(); openPersonaView(); });
+    if (memory) memory.addEventListener('click', () => { closeSanctuaryDrawer(); openMemoryVaultGlobal(); });
+    if (search) search.addEventListener('click', () => {
+      closeSanctuaryDrawer();
+      if (sanctuaryLocalSearchOpen) void hideSanctuaryLocalSearch();
+      else void showSanctuaryLocalSearch();
+    });
+    const sClose = document.getElementById('sanctuary-search-close');
+    if (sClose) sClose.addEventListener('click', () => { void hideSanctuaryLocalSearch(); });
+    const sInp = document.getElementById('sanctuary-search-input');
+    if (sInp) sInp.addEventListener('input', (e) => onSanctuarySearchInput(e.target.value));
+    if (surface) surface.addEventListener('pointerdown', onSanctuarySurfacePointerDown, { passive: true });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        cancelAnimationFrame(sanctuaryMyceliumRaf);
+        sanctuaryMyceliumRaf = null;
+        return;
+      }
+      const panel = document.getElementById('view-sanctuary');
+      if (sanctuaryAmbienceActive && panel && !panel.classList.contains('hidden') && !sanctuaryPrefersReducedMotion()) {
+        cancelAnimationFrame(sanctuaryMyceliumRaf);
+        sanctuaryMyceliumRaf = requestAnimationFrame(tickSanctuaryMycelium);
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const sd = document.getElementById('soup-drawer');
+      if (sd && sd.classList.contains('open')) {
+        closeSoupDrawer();
+        e.preventDefault();
+        return;
+      }
+      const d = document.getElementById('sanctuary-drawer');
+      if (d && d.classList.contains('open')) closeSanctuaryDrawer();
+    });
+  })();
+
+  (function initSoupChrome(){
+    const scrim = document.getElementById('soup-drawer-scrim');
+    const itemSearch = document.getElementById('soup-drawer-search');
+    const itemSettings = document.getElementById('soup-drawer-settings');
+    if (scrim) scrim.addEventListener('click', closeSoupDrawer);
+    if (itemSearch) itemSearch.addEventListener('click', () => {
+      closeSoupDrawer();
+      if (soupLocalSearchOpen) void hideSoupLocalSearch();
+      else void showSoupLocalSearch();
+    });
+    if (itemSettings) itemSettings.addEventListener('click', () => {
+      closeSoupDrawer();
+      void openDataPage();
+    });
+    const closeS = document.getElementById('soup-search-close');
+    if (closeS) closeS.addEventListener('click', () => { void hideSoupLocalSearch(); });
+  })();
+
+document.getElementById('btn-abyss-back').addEventListener('click', () => {
+  abyssStop();
+  abyssCloseSheet();
+  showPanel('view-soup');
+  void renderTableView();
+});
+document.getElementById('btn-subconscious-back').addEventListener('click', () => {
+  if (Array.isArray(subconsciousPath) && subconsciousPath.length > 1) {
+    subconsciousPath = subconsciousPath.slice(0, -1);
+    const last = subconsciousPath[subconsciousPath.length - 1];
+    subconsciousFolderId = last.id;
+    void renderSubconsciousView();
+    return;
+  }
+  showPanel('view-soup');
+  void renderTableView();
+});
+
 document.getElementById('ie-search-input').addEventListener('input', e => renderIEList(e.target.value));
 document.getElementById('btn-ie-manifest-close').addEventListener('click', closeOverlay);
 
@@ -9637,13 +9672,26 @@ document.getElementById('btn-ie-dev-forge').addEventListener('click', devCreateI
   document.getElementById('btn-role-cancel').addEventListener('click',closeOverlay);
   document.getElementById('btn-role-confirm').addEventListener('click',confirmAddRole);
   document.getElementById('btn-save-persona').addEventListener('click',savePersonaPage);
+  document.getElementById('btn-persona-back').addEventListener('click', () => {
+    showPanel('view-sanctuary');
+    void renderSanctuaryView();
+  });
   document.getElementById('btn-add-role').addEventListener('click',addNewRole);
   document.getElementById('chat-persona-pill').addEventListener('click',openPersonaPillSelector);
   document.getElementById('btn-persona-select-cancel').addEventListener('click',closeOverlay);
   document.getElementById('forge-temp').addEventListener('input',e=>{document.getElementById('forge-temp-val').textContent=parseFloat(e.target.value).toFixed(1);});
   document.querySelectorAll('.forge-section-header').forEach(h=>{h.addEventListener('click',()=>{h.parentElement.classList.toggle('open');});});
-  document.getElementById('btn-memory-back').addEventListener('click',()=>{showPanel('view-chat');});
+  document.getElementById('btn-memory-back').addEventListener('click', () => {
+    const t = document.getElementById('btn-memory-back').dataset.backTarget;
+    if (t === 'sanctuary') {
+      showPanel('view-sanctuary');
+      void renderSanctuaryView();
+    } else {
+      showPanel('view-chat');
+    }
+  });
   document.getElementById('btn-add-manual-memory').addEventListener('click',addManualAnchor);
+  document.getElementById('btn-chat-back').addEventListener('click', ()=>{ void closeChatToOrigin(); });
   document.getElementById('btn-chat-edit').addEventListener('click',()=>openCharacterForge(activeCharId));
   document.getElementById('btn-chat-clear').addEventListener('click',clearChatHistory);
   document.getElementById('btn-send').addEventListener('click',handleChatSend);
@@ -9667,11 +9715,11 @@ document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key==="s"){
 document.getElementById('view-soup').addEventListener('scroll',resetBottomBarTimer,{passive:true});
 document.getElementById('view-soup').addEventListener('touchstart',resetBottomBarTimer,{passive:true});
 
-document.getElementById('watcher-dot')?.addEventListener('click', openWatcherPanel);
+document.getElementById('watcher-led-cluster')?.addEventListener('click', openWatcherPanel);
 document.addEventListener('click', (e) => {
   const panel = document.getElementById('watcher-panel');
-  const dot = document.getElementById('watcher-dot');
-  if (panel?.classList.contains('visible') && !panel.contains(e.target) && e.target !== dot) {
+  const cluster = document.getElementById('watcher-led-cluster');
+  if (panel?.classList.contains('visible') && !panel.contains(e.target) && e.target !== cluster && !cluster?.contains(e.target)) {
     closeWatcherPanel();
   }
 });
@@ -9712,7 +9760,23 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
   // Close Lineage when tapping the background overlay
   document.getElementById('lineage-overlay').addEventListener('click', closeLineage);
   // Initial draw
+    // Initial draw
   renderGoldTicks();
+  
+  if (window.ResizeObserver) {
+    const soupRo = new ResizeObserver(() => {
+      if (currentMode === 'soup' && currentFocusId) {
+        requestAnimationFrame(() => {
+          drawLineageThread(currentFocusId, focusChain.length ? focusChain[focusChain.length - 1].folderId : null);
+        });
+      }
+    });
+    const invokeStrip = document.getElementById('guardian-invoke-strip');
+    const tableSurface = document.getElementById('table-surface');
+    if (invokeStrip) soupRo.observe(invokeStrip);
+    if (tableSurface) soupRo.observe(tableSurface);
+  }
+  
 bootApp();
 });
 /* NQ ABYSS GATEKEEPER */
@@ -10048,7 +10112,6 @@ async function readSecureKey(storageKey) {
 async function init(){
   // Paint UI immediately -- header, panel, bottom bar need no DB
   currentMode = 'soup';
-  currentView = 'soup';
   currentFolderId = null;
   breadcrumbPath = [{id: null, name: '◈ The Soup'}];
   updateHeaderButtons();
@@ -10153,18 +10216,31 @@ async function bootApp() {
     cooldownActive = true;
     btn.disabled = true;
     let secs = 30;
-    const interval = setInterval(() => {
+    let interval = null;
+    interval = setInterval(() => {
       secs--;
       btn.textContent = `◈ Retry Face ID (${secs}s)`;
       if (secs <= 0) {
         clearInterval(interval);
+        interval = null;
         btn.textContent = '◈ Try Face ID';
         btn.disabled = false;
         cooldownActive = false;
       }
     }, 1000);
-    
-    const unlocked = await unlockWithPRF();
+
+    let unlocked = false;
+    try {
+      unlocked = await unlockWithPRF();
+    } finally {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+      btn.textContent = '◈ Try Face ID';
+      btn.disabled = false;
+      cooldownActive = false;
+    }
     if (unlocked) {
       lockScreen.style.display = 'none';
       await init();
@@ -10174,19 +10250,6 @@ async function bootApp() {
   }
 }
 
-if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');
+if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js?v=nq-v7');
 
 window.cosmOSPinDisc=async function({title,raw_text,source_link,backlink}){const disc=await createDiscourse({title,raw_text,source_link:JSON.stringify(source_link)});if(backlink){const blId="bl_"+Date.now();await dbPut("cosm_backlinks",{id:blId,discourse_id:disc.id,...backlink,created_at:Date.now()});}return disc.id;};
-</script>
-
-<div class="bottom-bar" id="bottom-bar">
-<div class="bottom-bar-scroll" id="bottom-bar-scroll"></div>
-</div>
-<div class="watcher-panel" id="watcher-panel">
-<div class="watcher-panel-title">◈ Resonance</div>
-<div id="watcher-links-list"></div>
-</div>
-
-  <script src="app.js?v=nq-v15"></script>
-</body>
-</html>
