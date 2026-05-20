@@ -190,21 +190,21 @@ The Abyss is the **only place that sees the whole sovereign app without reading 
 
 #### B2.1 — M3: Sanctuary presence
 
-- [ ] After guardian layer (or end of `buildAbyssObjects` try): `dbGetAll('characters')`.
-- [ ] Filter: `!c.is_deleted && !c.isDeleted` (and not soft-deleted).
-- [ ] Push `kind: 'sanctuary-presence'`: `id, name, x, y` from `abyssHash(id + 'sanctuary')`, `age` from `updated_at`, `brownianScale: 0.012`, `emergeAt: ABYSS_EMERGE.dots`.
-- [ ] **No** Watcher embed, **no** fast map, **no** threads to/from Soup dots.
-- [ ] **No** M1/M1b settle on these objects.
-- [ ] Optional rim bias same as orphans (keeps them in outer field).
+- [x] After guardian layer (or end of `buildAbyssObjects` try): `dbGetAll('characters')`.
+- [x] Filter: `!c.is_deleted && !c.isDeleted` (and not soft-deleted).
+- [x] Push `kind: 'sanctuary-presence'`: `id, name, x, y` from `abyssHash(id + 'sanctuary')`, `age` from `updated_at`, `brownianScale: 0.012`, `emergeAt: ABYSS_EMERGE.dots`.
+- [x] **No** Watcher embed, **no** fast map, **no** threads to/from Soup dots.
+- [x] **No** M1/M1b settle on these objects.
+- [x] Rim bias via `abyssBiasPresenceToRim` (shared with orphans).
 
 #### B2.2 — `abyssDraw` sanctuary branch
 
-- [ ] Smaller dot (~1.2px), `rgba(78,200,138,…)` bioluminescent green.
-- [ ] Slow outer pulse ring; no paradox rings, no arc warmth.
+- [x] Smaller dot (~1.2px), `rgba(78,200,138,…)` bioluminescent green.
+- [x] Slow outer pulse ring; no paradox rings, no arc warmth.
 
 #### B2.3 — `abyssUpdate` sanctuary physics
 
-- [ ] Change guard from `disc-dot` only to:
+- [x] Change guard from `disc-dot` only to:
 
 ```js
 if (obj.kind === 'disc-dot' || obj.kind === 'sanctuary-presence') {
@@ -213,15 +213,14 @@ if (obj.kind === 'disc-dot' || obj.kind === 'sanctuary-presence') {
 }
 ```
 
-#### B2.4 — M4: Two-step interaction
+#### B2.4 — M4: Disc-dot interaction (refined post-test)
 
-- [x] Add `abyssShowDiscTooltip(obj, tapX, tapY)` — title, type, optional `dna.arcDir`, **Enter ◈** button.
-- [x] `enterBtn.onclick` (single handler; no duplicate listeners).
-- [x] Enter → `abyssOpenSheet(obj)`.
+- [x] Tap `disc-dot` → `abyssOpenSheet(obj)` directly (no intermediate tooltip).
+- [x] Bottom sheet shows type badge (**Spark Note** for `note`, not `NOTE`), excerpt, echoes, and **Enter ◈**.
+- [x] Enter → `openDiscourse(id)` for discourse/chronicle; `openSparkEditSheet` for sparks.
 - [x] Add `abyssShowSanctuaryTooltip` — name, Sanctuary label, optional date; **no Enter button**.
-- [x] `abyssTouchEndCore`: `disc-dot` → disc tooltip; `sanctuary-presence` → sanctuary tooltip; guardian/cluster unchanged.
+- [x] `abyssTouchEndCore`: `disc-dot` → sheet; `sanctuary-presence` → sanctuary tooltip; guardian/cluster unchanged.
 - [x] Tap canvas void → `abyssHideTooltip()`.
-- [x] `abyssCloseSheet()` on tooltip show (sheet not open until Enter).
 
 #### B2.5 — Hit testing
 
@@ -353,7 +352,7 @@ After v0.21 ships, update `guardian-refinement-roadmap-blueprint.md` §9 checkbo
 |------|------|-------|
 | Blueprint pinned v0.21 | 2026-05-19 | Two batches; code review + v0.20 draft merged |
 | **Batch 1** | 2026-05-20 | M1/M1b settle, M2 DNA, M5 weather, AB1 hint, link threshold alignment |
-| **Batch 2** | | |
+| **Batch 2** | 2026-05-20 | M3 Sanctuary, M4 tooltip+Enter, edge-safe overlay positioning |
 
 ---
 
