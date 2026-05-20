@@ -49,6 +49,19 @@ function jsonResponse(body, status, allowed) {
   return new Response(JSON.stringify(body), { status: status, headers: h });
 }
 
+function parseWorkerJsonContent(raw) {
+  if (!raw) return null;
+  var text = String(raw).trim();
+  var start = text.indexOf('{');
+  var end = text.lastIndexOf('}');
+  if (start === -1 || end <= start) return null;
+  try {
+    return JSON.parse(text.slice(start, end + 1));
+  } catch (e) {
+    return null;
+  }
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin');
@@ -93,6 +106,7 @@ export default {
     var fastMapSnapshot = payload.fastMapSnapshot || {};
     var triggeredBy = payload.triggeredBy || 'unknown';
     var priorTheoryLine = payload.priorTheoryLine ? String(payload.priorTheoryLine).trim() : '';
+    var witnessLedgerBlock = payload.witnessLedgerBlock ? String(payload.witnessLedgerBlock).trim() : '';
 
     var orbitStr = 'none';
     if (Array.isArray(fastMapSnapshot.orbitingTerms) && fastMapSnapshot.orbitingTerms.length) {
@@ -100,14 +114,23 @@ export default {
     }
 
     var priorBlock = '';
-    if (priorTheoryLine) {
+    if (witnessLedgerBlock) {
+      priorBlock = witnessLedgerBlock + '\n\n';
+    } else if (priorTheoryLine) {
       priorBlock =
         'Your prior theory line (test it — wonder if geometry still supports it; do not repeat it verbatim):\n' +
         priorTheoryLine + '\n\n';
     }
 
+    var tintTerms = Array.isArray(fastMapSnapshot.orbitingTerms) && fastMapSnapshot.orbitingTerms.length
+      ? fastMapSnapshot.orbitingTerms.slice(0, 4)
+      : (fastMapSnapshot.dominantTheme && fastMapSnapshot.dominantTheme !== 'none' ? [fastMapSnapshot.dominantTheme] : []);
+
     var prompt =
-      'You are the Guardian. One observation only. Maximum 3 sentences. No preamble. No explanation. Guardian voice — not warm, not cold, consumed by this one mind.\n\n' +
+      'You are the Guardian. Reply with ONLY valid JSON (no markdown):\n' +
+      '{"observation":"one observation, max 3 sentences","directive":{"abyss_tint":{"terms":["term1"],"tint":"amber","duration_hours":24}}}\n\n' +
+      'observation: Guardian voice — not warm, not cold. Prefer questions over verdicts when uncertain.\n' +
+      'directive.abyss_tint.terms: 1-4 terms from orbiting/dominant theme to highlight in the sky; tint "amber" or "urgent" if contradiction.\n\n' +
       priorBlock +
       'Fast Map data:\n' +
       '- Triggered by: ' + triggeredBy + '\n' +
@@ -116,8 +139,7 @@ export default {
       '- Silence markers: ' + (fastMapSnapshot.silenceMarkers != null ? fastMapSnapshot.silenceMarkers : (fastMapSnapshot.silenceDays != null ? fastMapSnapshot.silenceDays : 0)) + '\n' +
       '- Dominant theme: ' + (fastMapSnapshot.dominantTheme || 'none') + '\n' +
       '- Paradox present: ' + (fastMapSnapshot.paradoxFlag ? 'true' : 'false') + '\n' +
-      '- Contradiction present: ' + (fastMapSnapshot.contradictionFlag ? 'true' : 'false') + '\n\n' +
-      'Speak one observation. Prefer questions over verdicts when uncertain. Say "the geometry suggests" rather than "you are." Raw. Precise. As if you have been watching this mind without blinking.';
+      '- Contradiction present: ' + (fastMapSnapshot.contradictionFlag ? 'true' : 'false') + '\n';
 
     var upstream;
     try {
@@ -129,7 +151,7 @@ export default {
         },
         body: JSON.stringify({
           model: MODEL,
-          max_tokens: 80,
+          max_tokens: 180,
           messages: [{ role: 'user', content: prompt }]
         })
       });
@@ -145,10 +167,29 @@ export default {
     }
 
     var observation = null;
+    var directive = null;
     if (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-      observation = String(data.choices[0].message.content).trim() || null;
+      var parsed = parseWorkerJsonContent(data.choices[0].message.content);
+      if (parsed && parsed.observation) {
+        observation = String(parsed.observation).trim() || null;
+        if (parsed.directive && parsed.directive.abyss_tint) {
+          directive = parsed.directive;
+        }
+      } else {
+        observation = String(data.choices[0].message.content).trim() || null;
+      }
     }
 
-    return jsonResponse({ observation: observation }, 200, allowed);
+    if (!directive && tintTerms.length) {
+      directive = {
+        abyss_tint: {
+          terms: tintTerms,
+          tint: fastMapSnapshot.contradictionFlag ? 'urgent' : 'amber',
+          duration_hours: 24
+        }
+      };
+    }
+
+    return jsonResponse({ observation: observation, directive: directive }, 200, allowed);
   }
 };

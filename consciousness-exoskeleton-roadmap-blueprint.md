@@ -149,18 +149,19 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 
 ## 5. Phased roadmap (implementation contract)
 
-### §5.0 — Batch register (agent clarity)
+### §5.0 — Phase 0: three passes, one PR (Kaja)
 
-**One pinned doc** (`consciousness-exoskeleton-roadmap-blueprint.md`) — do not split vision vs specs into separate files unless Phase 1 exceeds ~400 lines. Use this table per PR:
+**One PR** to `main`. Three **passes** = build order + agent checkpoints (review each pass so context does not drift). Simple **Shipped** ticks in §10 — no ceremony.
 
-| Batch | PR scope | IDs | Loop closed | Files |
-|-------|----------|-----|-------------|-------|
-| **E0** | Ledger v2 + reckoning | P0-b, P0-e | **Loop 2** | `app.js` |
-| **E1** | Abyss tint directive | P0-d | **Loop 3** (first verb) | `app.js`, `app.css`, `worker.mjs`, migration |
-| **E2** | Strip ledger slice | P0-c | Loop 2 on strip path | `app.js`, `worker.mjs` |
-| *Deferred* | Production thresholds | P0-a | — | when shipping beyond Kaja |
+| Pass | Scope | IDs | Loop | Ship when |
+|------|--------|-----|------|-----------|
+| **Pass 1** | Ledger v2 + reckoning preamble (summon) | P0-b, P0-e | **Loop 2** (summon) | Summon shows After: lines + model reckoning instruction |
+| **Pass 2** | `directive` + `abyss_tint` + `abyssDraw` expiry | P0-d | **Loop 3** | Strip/summon → matching Abyss dots tint until expiry |
+| **Pass 3** | Strip ledger slice + worker body | P0-c | Loop 2 (strip) | Worker prompt gets compact ledger; **you deploy** worker when able |
 
-**Comfortable pace:** **2–3 implementation batches for Phase 0** (E0 → E1 → E2). Phase 1 = **one batch per row** (P1-a … P1-f), six batches max — do not combine term arcs + lexicon + soup_surface in one PR.
+*Deferred:* P0-a production thresholds ( `main` stays `NQ_DEV_MODE = true` ).
+
+**CF note:** Pass 2 code ships without deploy; client **derives** `abyss_tint` if worker omits `directive`. After deploy, worker may return JSON directive too.
 
 ---
 
@@ -176,15 +177,9 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 
 **Acceptance (felt):** Guardian speaks → Abyss visibly shifts → next summon references prior theory **and** whether subsequent writing matched it.
 
-#### P0 implementation order
+#### P0 implementation order (inside one branch)
 
-| Step | Batch | Blocker? |
-|------|-------|----------|
-| **1** | **E0** — P0-b + P0-e in `app.js` | None |
-| **2** | **E1** — P0-d (`directive` + `abyssDraw` expiry) | CF Worker deploy for JSON response |
-| **3** | **E2** — P0-c strip ledger slice | After E1 if strip shares worker contract |
-
-Start **`app.js` ledger v2 (E0)** before Worker. Loop 2 does not need Cloudflare.
+Pass 1 → Pass 2 → Pass 3 → tick §10. Worker deploy is **your** step after Pass 3 merges (no laptop required to merge code).
 
 ---
 
@@ -340,10 +335,21 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 |------|------|-------|
 | Loop 1 (observe) | 2026-05 | Cartographer v5, Guardian G1–G5, Abyss v0.21 |
 | Loop 2 (ledger inject) | 2026-05 | `buildGuardianPriorWitnessBlock` — theory lines only |
-| Loop 2 v2 (outcomes) | ⏳ | Phase 0-b |
-| Loop 3 (directive) | ⏳ | Phase 0-d |
+| **P0 Pass 1** — ledger v2 + reckoning | ✅ | After blocks use `created_at`; §8 preamble |
+| **P0 Pass 2** — `abyss_tint` | ✅ | `directive` column; tint on `abyssDraw`; client derive + worker JSON |
+| **P0 Pass 3** — strip ledger | ✅ | `witnessLedgerBlock` in worker payload — **deploy worker when able** |
 | Term arcs | ⏳ | Phase 1-a |
 | Return detector | ⏳ | Phase 2-a |
+
+### §10.1 — Agent gap checkpoint (after each pass)
+
+Quick review so the next pass does not lose context:
+
+| Pass | Verify in code |
+|------|----------------|
+| **1** | `buildLedgerAfterLine` uses `created_at`; reckoning string in prior block; summon context includes After: |
+| **2** | `guardian_logs.directive` migrated; `refreshAbyssActiveTint` on open Abyss + after strip; disc-dot tint uses `dna.keyTerms` |
+| **3** | `checkAndShowGuardianInvoke` sends `witnessLedgerBlock`; worker README documents new fields |
 
 ---
 
