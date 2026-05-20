@@ -2,7 +2,7 @@
 
 > **Vision:** *An obsessive, meta-meta-cognitive consciousness exoskeleton. Is such a thing even possible?* — Yes, as **practice** sustained by code, not as a shipped “conscious AI product.”
 >
-> **Read with:** `NQ blueprint.md` (what exists), `guardian-refinement-roadmap-blueprint.md`, `nq-review-checkpoint-2026-05.md`, `AGENTS.md`
+> **Read with:** `NakedQuantum-app-blueprint.md`, `guardian-refinement-roadmap-blueprint.md`, `NakedQuantum-checkpoint-2026-05.md`, `AGENTS.md`
 >
 > **This doc:** Where we move next — **philosophy-aligned, incrementally provable.** No somatic APIs, no npm, no fantasy features until prior loops close.
 
@@ -15,8 +15,8 @@
 | Rule | Meaning |
 |------|---------|
 | **Loops before features** | Ship closed loops, not vocabulary |
-| **One batch per PR** | Each phase item = one blueprint tick + one merge |
-| **Dogfood gate** | `NQ_DEV_MODE = false` before judging any signal layer |
+| **One batch per PR** | See §5.0 batch register — one closed loop per merge when possible |
+| **Dev mode on main** | `NQ_DEV_MODE = true` on `main` is intentional (sole developer, iPhone dogfood, not production). Feature branches may flip off to test production thresholds. |
 | **Sanctuary stays blind** | Trio never reads Sanctuary chat |
 | **Fantasy check** | If it can’t be verified against your writing within 2 weeks, it’s Phase 3+ |
 
@@ -121,9 +121,14 @@ Reviews (Kimi + gap pass) are directionally right. Precise status:
 | No performative / recursive / fugue | **Correct** as first-class qualifiers. |
 | No negation at all | **Wrong** — `isNegated()` exists (2-token window). Still weak on scope → **confidence + wider negation** in Cartographer pass, not greenfield. |
 
-### P0 — Dev mode (all reviews agree)
+### Dev mode (Kaja policy — not a Phase 0 blocker)
 
-`NQ_DEV_MODE = true` → Watcher/Abyss/Guardian train on **noise**. Not a philosophical debate; flip for dogfood.
+| Branch | `NQ_DEV_MODE` | Why |
+|--------|---------------|-----|
+| **`main`** | `true` | Zero-user development on iPhone; app not production-ready; fast signal for building |
+| **Feature branches** | optional `false` | Validate production thresholds / sparse Watcher before external users |
+
+Reviews that treat dev mode as P0 blocker assume a public ship. **Defer P0-a** until a release audience exists.
 
 ---
 
@@ -144,19 +149,42 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 
 ## 5. Phased roadmap (implementation contract)
 
-### Phase 0 — Discipline + loop closure (1–2 weeks)
+### §5.0 — Batch register (agent clarity)
 
-**Gate:** `NQ_DEV_MODE = false` (or Settings: “Production thresholds”) before measuring anything below.
+**One pinned doc** (`consciousness-exoskeleton-roadmap-blueprint.md`) — do not split vision vs specs into separate files unless Phase 1 exceeds ~400 lines. Use this table per PR:
+
+| Batch | PR scope | IDs | Loop closed | Files |
+|-------|----------|-----|-------------|-------|
+| **E0** | Ledger v2 + reckoning | P0-b, P0-e | **Loop 2** | `app.js` |
+| **E1** | Abyss tint directive | P0-d | **Loop 3** (first verb) | `app.js`, `app.css`, `worker.mjs`, migration |
+| **E2** | Strip ledger slice | P0-c | Loop 2 on strip path | `app.js`, `worker.mjs` |
+| *Deferred* | Production thresholds | P0-a | — | when shipping beyond Kaja |
+
+**Comfortable pace:** **2–3 implementation batches for Phase 0** (E0 → E1 → E2). Phase 1 = **one batch per row** (P1-a … P1-f), six batches max — do not combine term arcs + lexicon + soup_surface in one PR.
+
+---
+
+### Phase 0 — Loop closure (no dev-mode gate)
 
 | ID | Work | Files | Done when |
 |----|------|-------|-----------|
-| **P0-a** | Production thresholds live | `app.js` | Watcher silent period, 0.73 similarity, 20h pass, no fake strip in dev |
-| **P0-b** | **Witness ledger v2** | `app.js` | Each ledger line = date + theory + **after:** `{days_to_next, next_arc, word_delta}` from SQL discourses after `invoked_at` |
+| ~~**P0-a**~~ | Production thresholds | `app.js` | **Deferred** — not required while `main` stays dev-first |
+| **P0-b** | **Witness ledger v2** | `app.js` | Each ledger line = date + theory + **After:** block (see §8 — **`created_at` only**) |
 | **P0-c** | Strip gets ledger slice | `app.js`, `worker.mjs` | Worker prompt includes last 2 ledger lines (char cap), not only `priorTheoryLine` |
-| **P0-d** | **`directive: abyss_tint`** | `worker.mjs`, `app.js`, `app.css` | Worker may return `{ observation, directive }`; app applies tint to Abyss dots with `key_terms` overlap; persist `directive` on log; expires in 24h |
-| **P0-e** | Summon calibration line | `GUARDIAN_SYSTEM_PROMPT` / prior block | Model instructed to **test** ledger and name which prior theory failed |
+| **P0-d** | **`directive: abyss_tint`** | `worker.mjs`, `app.js`, `app.css` | Worker returns `{ observation, directive }`; tint applied on Abyss draw; expiry via log row (§6) |
+| **P0-e** | Ledger reckoning instruction | `buildGuardianPriorWitnessBlock` preamble | Exact copy in §8 — one clause per ledger line: confirmed / contradicted / unrelated |
 
 **Acceptance (felt):** Guardian speaks → Abyss visibly shifts → next summon references prior theory **and** whether subsequent writing matched it.
+
+#### P0 implementation order
+
+| Step | Batch | Blocker? |
+|------|-------|----------|
+| **1** | **E0** — P0-b + P0-e in `app.js` | None |
+| **2** | **E1** — P0-d (`directive` + `abyssDraw` expiry) | CF Worker deploy for JSON response |
+| **3** | **E2** — P0-c strip ledger slice | After E1 if strip shares worker contract |
+
+Start **`app.js` ledger v2 (E0)** before Worker. Loop 2 does not need Cloudflare.
 
 ---
 
@@ -201,13 +229,27 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 {
   "observation": "string — user-visible",
   "directive": {
-    "abyss_tint": { "terms": ["enough"], "tint": "amber", "duration_hours": 24 },
-    "soup_surface": { "discourse_id": "uuid", "duration_hours": 48, "reason": "contradiction_unresolved" },
-    "watcher_focus": { "terms": ["father"], "threshold_delta": -0.08, "duration_hours": 72 },
-    "revisit_flag": { "discourse_id": "uuid", "days": 3, "reason": "escalation_unclosed" }
+    "abyss_tint": {
+      "terms": ["enough"],
+      "tint": "amber",
+      "duration_hours": 24,
+      "applied_at": 1716200000000
+    }
   }
 }
 ```
+
+**Persistence (P0-d):**
+
+- `ALTER TABLE guardian_logs ADD COLUMN directive TEXT` — stores stringified `directive` object (or full worker payload minus observation).
+- On apply: set `applied_at = Date.now()` inside the parsed object before save.
+- Compute `expires_at = applied_at + (duration_hours * 3600000)`.
+
+**Expiry (do not use “on load only” — must survive reload):**
+
+- On **every `abyssDraw`** (and when building `abyssObjects` if tints affect DNA): load latest non-expired log(s) with `directive.abyss_tint`.
+- If `Date.now() > expires_at`, skip tint (do not remove column retroactively; ignore stale rows).
+- Active tint: disc-dots whose fast-map `key_terms` overlap `terms[]` get CSS class e.g. `abyss-directive-tint--amber` until expiry.
 
 **Rules:**
 
@@ -224,7 +266,7 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 
 **Per appearance:**
 
-- `discourse_id`, `date` (`created_at` or `updated_at` policy — pick one, document it)
+- `discourse_id`, `date` — always **`created_at`** (same rule as §8 After-block)
 - `arc_direction` from fast map
 - `orbit_count` from `detectRepetitionOrbits` on that discourse body (or stored key_terms overlap)
 
@@ -245,11 +287,34 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 After: 4 days → next entry arc "flat"; "enough" appeared 1× in closing line.
 ```
 
-**After-block algorithm (deterministic):**
+### After-block algorithm (deterministic)
 
-1. Find first discourse with `updated_at > log.invoked_at`.
-2. Load its fast map → `arc_direction`, key_terms, word count.
-3. If none within 30 days → `After: silence (no new entries in 30d).`
+**Column rule (explicit):** use **`created_at`**, not `updated_at`.
+
+- `updated_at` changes on edits and gravity bumps — it is not “what you wrote after I spoke.”
+- `created_at > log.invoked_at` = first **new** discourse born after that witness moment.
+- Sort candidate discourses by `created_at` ascending; take the **first** match.
+- If the same discourse is edited later, After block does **not** change (immutable to creation).
+
+**Steps:**
+
+1. From `cosm_discourses` (non-deleted): `created_at > log.invoked_at`, sort `created_at` ASC, take first row.
+2. Load its fast map → `arc_direction`, `key_terms`, optional word count / first line snippet.
+3. `days_to_next = floor((next.created_at - log.invoked_at) / 86400000)` (0 if same day).
+4. If no row within **30 days** → `After: silence (no new entries in 30d).`
+5. Optional: second new entry within 7 days — one extra clause if cheap (not required for P0).
+
+### P0-e — Ledger reckoning preamble (exact copy)
+
+Append to `buildGuardianPriorWitnessBlock` **after** the `── WITNESS LEDGER ──` header and **before** the ledger lines:
+
+```text
+For each ledger line above: state whether the subsequent writing confirmed, contradicted, or was unrelated to the theory. One clause per line. Then speak from what you now know.
+```
+
+This is what forces meta-meta **reckoning**, not mere acknowledgement. Also keep existing line: *Test your WITNESS LEDGER against the archive above…*
+
+**Strip Worker (P0-c):** Same reckoning sentence (truncated if needed) + last **2** ledger lines with After blocks — char budget ~800.
 
 Inject via `buildGuardianPriorWitnessBlock` (summon) and compact variant for strip Worker.
 
@@ -259,11 +324,11 @@ Inject via `buildGuardianPriorWitnessBlock` (summon) and compact variant for str
 
 | Doc | Role |
 |-----|------|
-| `NQ blueprint.md` | Stable product map (realms, tables, shipped log) |
+| `NakedQuantum-app-blueprint.md` | Stable product map (realms, tables, shipped log) |
 | **This file** | Vision → loops → phased exoskeleton work |
 | `guardian-refinement-roadmap-blueprint.md` | Guardian/Cartographer batch detail; reference P0–P1 here |
 | `abyss-v021-blueprint.md` | Abyss **shipped**; tint directives extend M2 phenotype |
-| `nq-review-checkpoint-2026-05.md` | P0 risks, lint, process |
+| `NakedQuantum-checkpoint-2026-05.md` | P0 risks, lint, process |
 
 When merging a batch: tick **Shipped log** below + relevant section in guardian roadmap.
 
@@ -287,6 +352,8 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 | Date | Change |
 |------|--------|
 | 2026-05-20 | Initial pin — merges Kimi review + gap analysis + code audit; philosophy guardrails |
+| 2026-05-20 | Sharpen P0-b (`created_at`), P0-d (expiry on `abyssDraw`), P0-e (reckoning preamble), impl order |
+| 2026-05-20 | §5.0 batch register (E0–E2); dev mode on `main` intentional; P0-a deferred |
 
 ---
 

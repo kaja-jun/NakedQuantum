@@ -203,7 +203,7 @@ Use this as the **default queue**; override only with explicit Kaja decision.
 
 | Priority | Item | Why now | How |
 |----------|------|---------|-----|
-| 1 | **Exoskeleton Phase 0** | Closes meta-meta + first state loop | `consciousness-exoskeleton-roadmap-blueprint.md` — ledger v2, `abyss_tint`, `NQ_DEV_MODE` off |
+| 1 | **Exoskeleton E0→E2** | Closes Loops 2–3 | `consciousness-exoskeleton-roadmap-blueprint.md` — E0 ledger v2, E1 `abyss_tint`, E2 strip ledger (`main` stays dev mode) |
 | 2 | **Rest / glyphs / onboarding** | Kaja chose to wait | No code required |
 | 3 | **A1 — Production thresholds** | Prevents strip spam before wider use | Overlaps exoskeleton P0-a |
 | 3 | **A2 — Settings + onboarding** | Ethics + sovereignty | `nq_guardian_auto_invoke_enabled`; explain strip; master toggle |
