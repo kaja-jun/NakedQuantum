@@ -857,6 +857,8 @@ const WATCHER_FOCUS_DEFAULT_THRESHOLD = 0.58;
 const WATCHER_FOCUS_DEFAULT_HOURS = 72;
 const REVISIT_CHECK_LS = 'nq_revisit_check_day';
 const PERSISTENT_ORBIT_GRAVITY_BOOST = 18;
+const GUARDIAN_DEFAULT_COOLDOWN_MS = 6 * 60 * 1000;
+const GUARDIAN_PRODUCTION_COOLDOWN_MS = 72 * 60 * 60 * 1000;
 
 function isGuardianAutoInvokeEnabled() {
   try {
@@ -873,13 +875,67 @@ function isGuardianStrictInvokeEnabled() {
   return false;
 }
 
+const EPISTEMIC_MOOD_LS = 'nq_epistemic_mood_cache';
+
+function getEpistemicMoodCached() {
+  try {
+    var raw = localStorage.getItem(EPISTEMIC_MOOD_LS);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
+}
+
+async function refreshEpistemicMoodCache() {
+  try {
+    var logs = (await dbGetAll('guardian_logs')).filter(function (l) {
+      return l.log_type === 'summon' && l.prediction_outcome;
+    }).slice(-10);
+    var hits = 0;
+    for (var i = 0; i < logs.length; i++) {
+      if (logs[i].prediction_outcome === 'hit') hits++;
+    }
+    var accuracy = logs.length ? hits / logs.length : 0.5;
+    var discs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+    var lastWrite = 0;
+    for (var di = 0; di < discs.length; di++) {
+      var t = discs[di].updated_at || discs[di].created_at || 0;
+      if (t > lastWrite) lastWrite = t;
+    }
+    var daysSinceWrite = lastWrite ? (Date.now() - lastWrite) / 86400000 : 99;
+    var guardianCooldownMultiplier = accuracy < 0.35 ? 1.5 : (accuracy > 0.65 ? 0.8 : 1);
+    var watcherPassHours = W_PASS_COOLDOWN_HOURS;
+    if (daysSinceWrite > 10) watcherPassHours = Math.max(4, W_PASS_COOLDOWN_HOURS * 0.65);
+    if (daysSinceWrite > 21) watcherPassHours = Math.min(6, watcherPassHours);
+    localStorage.setItem(EPISTEMIC_MOOD_LS, JSON.stringify({
+      accuracy: parseFloat(accuracy.toFixed(2)),
+      daysSinceWrite: parseFloat(daysSinceWrite.toFixed(1)),
+      guardianCooldownMultiplier: guardianCooldownMultiplier,
+      watcherPassHours: watcherPassHours,
+      updated_at: Date.now()
+    }));
+  } catch (e) {
+    console.warn('[Epistemic] mood cache:', e);
+  }
+}
+
 function getGuardianTriggerOptions() {
-  if (NQ_DEV_MODE || !isGuardianStrictInvokeEnabled()) return {};
+  var mood = getEpistemicMoodCached();
+  if (NQ_DEV_MODE || !isGuardianStrictInvokeEnabled()) {
+    if (mood && mood.guardianCooldownMultiplier && mood.guardianCooldownMultiplier > 1) {
+      return { cooldownMs: Math.round(GUARDIAN_DEFAULT_COOLDOWN_MS * mood.guardianCooldownMultiplier) };
+    }
+    return {};
+  }
+  var cooldownMs = GUARDIAN_PRODUCTION_COOLDOWN_MS;
+  if (mood && mood.guardianCooldownMultiplier) {
+    cooldownMs = Math.round(cooldownMs * mood.guardianCooldownMultiplier);
+  }
   return {
     strictProduction: true,
     requireConsensus: true,
     requireWatcherEcho: true,
-    minWatcherScore: 0.72
+    minWatcherScore: 0.72,
+    cooldownMs: cooldownMs
   };
 }
 
@@ -1236,7 +1292,9 @@ function scheduleWatcherPass() {
   if (!isWatcherSoupContext()) return;
   const lastRun = parseInt(localStorage.getItem('nq_watcher_last_pass') || '0');
   const hoursSince = (Date.now() - lastRun) / 3600000;
-  if (hoursSince > W_PASS_COOLDOWN_HOURS) {
+  const mood = getEpistemicMoodCached();
+  const passHours = mood && typeof mood.watcherPassHours === 'number' ? mood.watcherPassHours : W_PASS_COOLDOWN_HOURS;
+  if (hoursSince > passHours) {
     setTimeout(() => runSimilarityPassMain(), 10000);
   }
 }
@@ -3094,6 +3152,11 @@ async function _executeRenderTableView() {
     const recentChronicles = allActive.filter(d => d.item_type === 'chronicle');
 
             const allMesh = [...recentDiscourses, ...recentSparks, ...recentChronicles];
+    for (const meshD of allMesh) {
+      let meshFm = null;
+      try { meshFm = await dbGet('guardian_summaries', meshD.id); } catch (eMeshFm) {}
+      meshD._sortGravity = discourseEffectiveGravity(meshD, meshFm);
+    }
     allMesh.sort(compareSoupMeshDiscourses);
     const mesh = document.getElementById('soup-mesh');
     for(const d of allMesh) {
@@ -3842,16 +3905,30 @@ function soupSurfaceBoostActiveFor(discourseId) {
   return discourseId === soupSurfaceBoost.discourse_id && Date.now() < soupSurfaceBoost.expires_at;
 }
 
-function discourseEffectiveGravity(d) {
+function discourseHasPersistentOrbit(fastMap) {
+  if (!fastMap || fastMap.map_type !== 'fast') return false;
+  var sig = fastMap.signature;
+  if (typeof sig === 'string') {
+    try { sig = JSON.parse(sig); } catch (e) { sig = null; }
+  }
+  if (!sig || !sig.orbits) return false;
+  if (sig.orbits.label === 'Multi-orbit') return true;
+  return !!(sig.orbits.orbiting && sig.orbits.orbiting.some(function (o) { return (o.count || 0) >= 5; }));
+}
+
+function discourseEffectiveGravity(d, fastMap) {
   var g = (d && d.gravity) || 0;
-  if (!d || !d.id || !soupSurfaceBoostActiveFor(d.id)) return g;
-  return g + (soupSurfaceBoost.gravity_boost || SOUP_SURFACE_GRAVITY_BOOST);
+  if (!d || !d.id) return g;
+  if (soupSurfaceBoostActiveFor(d.id)) g += (soupSurfaceBoost.gravity_boost || SOUP_SURFACE_GRAVITY_BOOST);
+  if (discourseHasPersistentOrbit(fastMap)) g += PERSISTENT_ORBIT_GRAVITY_BOOST;
+  return g;
 }
 
 function compareSoupMeshDiscourses(a, b) {
   var fav = (b.is_favourite || 0) - (a.is_favourite || 0);
   if (fav) return fav;
-  var grav = discourseEffectiveGravity(b) - discourseEffectiveGravity(a);
+  var grav = (b._sortGravity != null ? b._sortGravity : discourseEffectiveGravity(b)) -
+    (a._sortGravity != null ? a._sortGravity : discourseEffectiveGravity(a));
   if (grav) return grav;
   return (b.updated_at || 0) - (a.updated_at || 0);
 }
@@ -3875,9 +3952,13 @@ async function buildDiscourseCard(d){
     card.dataset.id = d.id;
   card.dataset.folderId = d.folder_id || '';
   card.dataset.fav = d.is_favourite || 0;
-  card.dataset.gravity = discourseEffectiveGravity(d);
+  var cardFm = null;
+  try { cardFm = await dbGet('guardian_summaries', d.id); } catch (eFm) {}
+  var effGrav = discourseEffectiveGravity(d, cardFm);
+  card.dataset.gravity = effGrav;
   card.dataset.time = d.updated_at || d.created_at || 0;
   if (soupSurfaceBoostActiveFor(d.id)) card.classList.add('soup-surface-boost');
+  if (discourseHasPersistentOrbit(cardFm)) card.classList.add('persistent-orbit-boost');
   if (typeof selectedItems !== 'undefined' && selectedItems.has(d.id)) card.classList.add('card-selected');
   card.innerHTML = `
     <div class="nq-card-head">
@@ -8882,6 +8963,20 @@ function formatReturnDetectionsTier(detections, topN) {
   return '── RETURN DETECTIONS (semantic cluster, shifted register) ──\n\n' + lines.join('\n') + '\n\n';
 }
 
+function formatInterSessionSilenceTier(arcsMap) {
+  var dormant = Object.keys(arcsMap).map(function (k) {
+    return { term: k, arc: arcsMap[k] };
+  }).filter(function (e) {
+    return e.arc.last_seen_days_ago >= 21 && (e.arc.trajectory === 'declining' || e.arc.trajectory === 'dormant');
+  });
+  if (!dormant.length) return '';
+  dormant.sort(function (a, b) { return b.arc.last_seen_days_ago - a.arc.last_seen_days_ago; });
+  var lines = dormant.slice(0, 6).map(function (e) {
+    return '· "' + e.term + '" — absent ' + e.arc.last_seen_days_ago + 'd (' + e.arc.trajectory + ')';
+  });
+  return '── INTER-SESSION SILENCE (topics that went quiet) ──\n\n' + lines.join('\n') + '\n\n';
+}
+
 function formatSilentAttractorsTier(arcsMap, topN) {
   topN = topN || 5;
   var entries = Object.keys(arcsMap).map(function (k) {
@@ -8948,6 +9043,7 @@ async function scoreGuardianPredictionsOnSave(discourseId, fastMap) {
     var outcome = scorePredictionOutcome(log.prediction_tag, snap, fastMap);
     log.prediction_outcome = outcome;
     await dbPut('guardian_logs', log);
+    void refreshEpistemicMoodCache();
     break;
   }
 }
@@ -10041,6 +10137,7 @@ async function buildGuardianContext(discs) {
   // Tier 4 — temporal corpus + return witness
   var tier4 = formatReturnDetectionsTier(returnDetections, 4);
   tier4 += formatSilentAttractorsTier(corpusArcs, 5);
+  tier4 += formatInterSessionSilenceTier(corpusArcs);
   tier4 += formatCorpusTermArcsTier(corpusArcs, 5);
 
   // Tier 5 — archive rollup
@@ -10221,6 +10318,7 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
   };
   guardianLastInvokeQualifiers = null;
   await dbPut('guardian_logs', log);
+  void refreshEpistemicMoodCache();
 }
 
 async function renderGuardianLogs(){
@@ -11003,6 +11101,7 @@ async function init(){
   initWatcher();
   initGuardianModel();
   void runDailyRevisitCheck();
+  void refreshEpistemicMoodCache();
 }
 
 // BOOTUP

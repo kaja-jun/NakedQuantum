@@ -343,8 +343,9 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 | **P1 Pass 1** — term arcs + cognitive modes + Guardian UI | ✅ | #48 |
 | **P1 Pass 2** — per-field confidence + negation scope | ✅ | P1-c, P1-d |
 | **P1 Pass 3** — `soup_surface` + A1–A3 ethics | ✅ | P1-e, P1-f; Settings toggles |
-| **P2 Pass 1** — return + revisit + silent attractors + watcher_focus + prediction | ⏳ | This PR |
-| Return detector | ⏳ | Phase 2-a (in P2 PR) |
+| **P2 Pass 1** — return + revisit + silent attractors + watcher_focus + prediction | ✅ | Phase 2 PR |
+| **P3 Pass 1** — persistent orbit, epistemic mood, silence tier | ✅ | Phase 3 PR |
+| Return detector | ✅ | P2-a |
 
 ### §10.1 — Phase 0 gap checkpoint
 
@@ -369,6 +370,14 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 | **P2-1** | RETURN DETECTIONS + SILENT ATTRACTORS tiers in summon; `computeReturnDetections` |
 | **P2-2** | Daily `runDailyRevisitCheck` → `revisit_flag` strip; `prediction_tag` / `prediction_outcome` on summon + fast-map save |
 | **P2-3** | `watcher_focus` in directive; `getWatcherSimilarityThreshold()` on Watcher pass |
+
+### §10.4 — Phase 3 gap checkpoint
+
+| Pass | Verify |
+|------|--------|
+| **P3-1** | Multi-orbit discourses get mesh gravity + `persistent-orbit-boost` card class |
+| **P3-2** | `refreshEpistemicMoodCache` adjusts strict cooldown + `scheduleWatcherPass` hours |
+| **P3-3** | INTER-SESSION SILENCE tier in summon context |
 
 ---
 
