@@ -32,7 +32,10 @@ Public URL (production): **https://naked-guardian.gazajar.workers.dev** — the 
 
 `POST /` or `POST /guardian-invoke`  
 `Content-Type: application/json`  
-Body: `{ "fastMapSnapshot": { ... }, "triggeredBy": "orbit" }`  
-Response: `{ "observation": "..." }` or `{ "observation": null }`
+Body: `{ "fastMapSnapshot": { ... }, "triggeredBy": "orbit", "priorTheoryLine": "...", "witnessLedgerBlock": "..." }`  
+Response: `{ "observation": "...", "directive": { "abyss_tint": { "terms": [], "tint": "amber", "duration_hours": 24 } } }` or `{ "observation": null }`
+
+`witnessLedgerBlock` — compact ledger + reckoning instruction (Phase 0).  
+`directive` — optional; PWA also derives tint client-side if worker not redeployed yet.
 
 No logging on the worker (by design).
