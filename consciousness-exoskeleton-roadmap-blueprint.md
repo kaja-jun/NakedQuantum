@@ -30,7 +30,7 @@ An **exoskeleton** does not comfort you. It **changes how you can move** — wha
 |-------|------------|-------------------|
 | **Cognition** | You think in writing | Sparks, discourses, chronicles, Sanctuary |
 | **Meta** | System notices patterns | Watcher geometry, Cartographer fast maps, Guardian witness |
-| **Meta-meta** | System notices when its noticing was wrong | **Partial** — theory lines stored; **outcomes not scored**; **state rarely mutates** |
+| **Meta-meta** | System notices when its noticing was wrong | **Wired (Ph 0–3)** — ledger After + `prediction_outcome`; practice proof still on you |
 
 **The product is the recursive loop:**
 
@@ -68,8 +68,8 @@ flowchart LR
 | Loop | Status (May 2026) | Blocker |
 |------|-------------------|---------|
 | **1 — Observation** | **Closed** | — |
-| **2 — Self-correction** | **Half-closed** | Ledger thin; no post-theory outcomes; strip gets 1 line only |
-| **3 — State mutation** | **Open** | No `directive` parser; Guardian output = text only |
+| **2 — Self-correction** | **Closed (arch.)** | Dogfood proof; worker redeploy optional |
+| **3 — State mutation** | **Closed (arch.)** | `abyss_tint`, `soup_surface`, `watcher_focus`, `revisit_flag` shipped |
 
 **Target:** Close Loop 2 and Loop 3 **before** Watcher 2.0 ML, body sensors, or “epistemic moods” everywhere.
 
