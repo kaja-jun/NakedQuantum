@@ -2,7 +2,7 @@
 
 > **Vision:** *An obsessive, meta-meta-cognitive consciousness exoskeleton. Is such a thing even possible?* — Yes, as **practice** sustained by code, not as a shipped “conscious AI product.”
 >
-> **Read with:** `NQ blueprint.md` (what exists), `guardian-refinement-roadmap-blueprint.md`, `nq-review-checkpoint-2026-05.md`, `AGENTS.md`
+> **Read with:** `NakedQuantum-app-blueprint.md`, `guardian-refinement-roadmap-blueprint.md`, `NakedQuantum-checkpoint-2026-05.md`, `AGENTS.md`
 >
 > **This doc:** Where we move next — **philosophy-aligned, incrementally provable.** No somatic APIs, no npm, no fantasy features until prior loops close.
 
@@ -15,8 +15,8 @@
 | Rule | Meaning |
 |------|---------|
 | **Loops before features** | Ship closed loops, not vocabulary |
-| **One batch per PR** | Each phase item = one blueprint tick + one merge |
-| **Dogfood gate** | `NQ_DEV_MODE = false` before judging any signal layer |
+| **One batch per PR** | See §5.0 batch register — one closed loop per merge when possible |
+| **Dev mode on main** | `NQ_DEV_MODE = true` on `main` is intentional (sole developer, iPhone dogfood, not production). Feature branches may flip off to test production thresholds. |
 | **Sanctuary stays blind** | Trio never reads Sanctuary chat |
 | **Fantasy check** | If it can’t be verified against your writing within 2 weeks, it’s Phase 3+ |
 
@@ -121,9 +121,14 @@ Reviews (Kimi + gap pass) are directionally right. Precise status:
 | No performative / recursive / fugue | **Correct** as first-class qualifiers. |
 | No negation at all | **Wrong** — `isNegated()` exists (2-token window). Still weak on scope → **confidence + wider negation** in Cartographer pass, not greenfield. |
 
-### P0 — Dev mode (all reviews agree)
+### Dev mode (Kaja policy — not a Phase 0 blocker)
 
-`NQ_DEV_MODE = true` → Watcher/Abyss/Guardian train on **noise**. Not a philosophical debate; flip for dogfood.
+| Branch | `NQ_DEV_MODE` | Why |
+|--------|---------------|-----|
+| **`main`** | `true` | Zero-user development on iPhone; app not production-ready; fast signal for building |
+| **Feature branches** | optional `false` | Validate production thresholds / sparse Watcher before external users |
+
+Reviews that treat dev mode as P0 blocker assume a public ship. **Defer P0-a** until a release audience exists.
 
 ---
 
@@ -144,13 +149,26 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 
 ## 5. Phased roadmap (implementation contract)
 
-### Phase 0 — Discipline + loop closure (1–2 weeks)
+### §5.0 — Batch register (agent clarity)
 
-**Gate:** `NQ_DEV_MODE = false` (or Settings: “Production thresholds”) before measuring anything below.
+**One pinned doc** (`consciousness-exoskeleton-roadmap-blueprint.md`) — do not split vision vs specs into separate files unless Phase 1 exceeds ~400 lines. Use this table per PR:
+
+| Batch | PR scope | IDs | Loop closed | Files |
+|-------|----------|-----|-------------|-------|
+| **E0** | Ledger v2 + reckoning | P0-b, P0-e | **Loop 2** | `app.js` |
+| **E1** | Abyss tint directive | P0-d | **Loop 3** (first verb) | `app.js`, `app.css`, `worker.mjs`, migration |
+| **E2** | Strip ledger slice | P0-c | Loop 2 on strip path | `app.js`, `worker.mjs` |
+| *Deferred* | Production thresholds | P0-a | — | when shipping beyond Kaja |
+
+**Comfortable pace:** **2–3 implementation batches for Phase 0** (E0 → E1 → E2). Phase 1 = **one batch per row** (P1-a … P1-f), six batches max — do not combine term arcs + lexicon + soup_surface in one PR.
+
+---
+
+### Phase 0 — Loop closure (no dev-mode gate)
 
 | ID | Work | Files | Done when |
 |----|------|-------|-----------|
-| **P0-a** | Production thresholds live | `app.js` | Watcher silent period, 0.73 similarity, 20h pass, no fake strip in dev |
+| ~~**P0-a**~~ | Production thresholds | `app.js` | **Deferred** — not required while `main` stays dev-first |
 | **P0-b** | **Witness ledger v2** | `app.js` | Each ledger line = date + theory + **After:** block (see §8 — **`created_at` only**) |
 | **P0-c** | Strip gets ledger slice | `app.js`, `worker.mjs` | Worker prompt includes last 2 ledger lines (char cap), not only `priorTheoryLine` |
 | **P0-d** | **`directive: abyss_tint`** | `worker.mjs`, `app.js`, `app.css` | Worker returns `{ observation, directive }`; tint applied on Abyss draw; expiry via log row (§6) |
@@ -158,16 +176,15 @@ Do **not** batch these until Loops 2–3 prove value in daily use:
 
 **Acceptance (felt):** Guardian speaks → Abyss visibly shifts → next summon references prior theory **and** whether subsequent writing matched it.
 
-#### P0 implementation order (recommended)
+#### P0 implementation order
 
-| Step | Work | Blocker? |
-|------|------|----------|
-| **1** | **P0-b + P0-e** — ledger v2 + reckoning preamble in `app.js` | None — pure client JS + summon path |
-| **2** | **P0-a** — `NQ_DEV_MODE` off (or Settings toggle) | None |
-| **3** | **P0-d** — `directive` column, parser, Abyss tint on draw | **CF Worker deploy** for JSON response shape |
-| **4** | **P0-c** — strip Worker gets ledger slice | Depends on step 3 deploy if strip returns directives too |
+| Step | Batch | Blocker? |
+|------|-------|----------|
+| **1** | **E0** — P0-b + P0-e in `app.js` | None |
+| **2** | **E1** — P0-d (`directive` + `abyssDraw` expiry) | CF Worker deploy for JSON response |
+| **3** | **E2** — P0-c strip ledger slice | After E1 if strip shares worker contract |
 
-**Answer:** Start **`app.js` ledger v2 first**, not Worker access. Worker is the blocker only for **Loop 3** (`abyss_tint`); Loop 2 closure ships without redeploying Cloudflare.
+Start **`app.js` ledger v2 (E0)** before Worker. Loop 2 does not need Cloudflare.
 
 ---
 
@@ -336,6 +353,7 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 |------|--------|
 | 2026-05-20 | Initial pin — merges Kimi review + gap analysis + code audit; philosophy guardrails |
 | 2026-05-20 | Sharpen P0-b (`created_at`), P0-d (expiry on `abyssDraw`), P0-e (reckoning preamble), impl order |
+| 2026-05-20 | §5.0 batch register (E0–E2); dev mode on `main` intentional; P0-a deferred |
 
 ---
 
