@@ -410,6 +410,68 @@ const confidence = sentences.length < 2 ? 0 : clampConf(Math.abs(ratio - 0.5), 0
 return { label, ratio: parseFloat(ratio.toFixed(3)), confidence };
 }
 
+const META_RECURSIVE = new Set([
+  'writing', 'write', 'written', 'think', 'thinking', 'thought', 'notice', 'noticing',
+  'watch', 'watching', 'observe', 'observing', 'aware', 'awareness', 'mind', 'again',
+  'this', 'here', 'meta', 'witness', 'guardian', 'discourse', 'word', 'words'
+]);
+
+function detectPerformativeMode(text, optTokens) {
+  const words = optTokens || tokenize(text);
+  if (words.length < 40) return { label: 'Too short', confidence: 0 };
+  let audience = 0;
+  let confessional = 0;
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    if (w === 'you' || w === 'we' || w === 'your' || w === 'our' || w === 'they' || w === 'one') audience++;
+    if (SENTIMENT.confessional.has(w) && !isNegated(words, i)) confessional++;
+  }
+  const audRate = audience / words.length;
+  const confRate = confessional / words.length;
+  const hit = audRate >= 0.018 && confRate < 0.006;
+  const confidence = hit ? clampConf(audRate, 0.018, 0.04) * (1 - clampConf(confRate, 0, 0.008)) : 0.25;
+  return {
+    label: hit ? 'Performative' : 'Interior',
+    confidence: parseFloat(Math.min(1, confidence).toFixed(3)),
+    audience_rate: parseFloat(audRate.toFixed(4))
+  };
+}
+
+function detectRecursiveMode(text, optTokens) {
+  const words = optTokens || tokenize(text);
+  if (words.length < 35) return { label: 'Too short', confidence: 0 };
+  let meta = 0;
+  for (let i = 0; i < words.length; i++) {
+    if (META_RECURSIVE.has(words[i])) meta++;
+  }
+  const rate = meta / words.length;
+  const hit = rate >= 0.04;
+  const confidence = hit ? clampConf(rate, 0.04, 0.09) : clampConf(rate, 0.02, 0.04);
+  return {
+    label: hit ? 'Recursive' : 'Direct',
+    confidence: parseFloat(Math.min(1, confidence).toFixed(3)),
+    meta_rate: parseFloat(rate.toFixed(4))
+  };
+}
+
+function detectFugueMode(text, optTokens) {
+  const trimmed = (text || '').trim();
+  const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+  const arc = detectEmotionalArc(trimmed, optTokens);
+  const frag = detectFragmentRatio(trimmed);
+  const flatArc = arc.direction && (arc.direction.indexOf('flat') !== -1 || arc.direction === 'too short');
+  const flatShift = typeof arc.tension_shift === 'number' && Math.abs(arc.tension_shift) <= 0.01;
+  const long = wordCount >= 350;
+  const fragmented = frag.label === 'Shards' || frag.label === 'Fragmented';
+  const hit = long && fragmented && (flatArc || flatShift);
+  const confidence = hit ? 0.42 : 0.28;
+  return {
+    label: hit ? 'Fugue' : 'Coherent',
+    confidence: parseFloat(confidence.toFixed(3)),
+    word_count: wordCount
+  };
+}
+
 function detectWritingSignature(text, optTokens) {
 const inversion  = detectInversionDensity(text);
 const paradox    = detectParadoxProximity(text, optTokens);
@@ -901,6 +963,9 @@ const silence_weight     = detectSilenceWeight(trimmed);
 const entry_exit_delta   = detectEntryExitDelta(trimmed);
 const incompleteness     = detectIncompleteness(trimmed);
 const depersonalisation  = detectDepersonalization(trimmed, tokens);
+const performative_mode  = detectPerformativeMode(trimmed, tokens);
+const recursive_mode     = detectRecursiveMode(trimmed, tokens);
+const fugue_mode         = detectFugueMode(trimmed, tokens);
 
 return {
 // Core
@@ -921,7 +986,10 @@ pronoun_trajectory,
 silence_weight,
 entry_exit_delta,
 incompleteness,
-depersonalisation
+depersonalisation,
+performative_mode,
+recursive_mode,
+fugue_mode
 };
 }
 
@@ -1018,6 +1086,18 @@ const arc = map.emotional_arc;
 const arcConf = detectorConfidence(arc);
 if (arc && typeof arc.direction === 'string' && arc.direction.indexOf('escalating') !== -1 && arcConf >= MIN_QUALIFIER_CONFIDENCE) {
 q.push({ type: 'escalating_arc', direction: arc.direction, confidence: arcConf });
+}
+var perf = map.performative_mode;
+if (perf && perf.label === 'Performative' && detectorConfidence(perf) >= MIN_QUALIFIER_CONFIDENCE) {
+q.push({ type: 'performative', label: perf.label, confidence: detectorConfidence(perf) });
+}
+var rec = map.recursive_mode;
+if (rec && rec.label === 'Recursive' && detectorConfidence(rec) >= MIN_QUALIFIER_CONFIDENCE) {
+q.push({ type: 'recursive', label: rec.label, confidence: detectorConfidence(rec) });
+}
+var fug = map.fugue_mode;
+if (fug && fug.label === 'Fugue' && detectorConfidence(fug) >= 0.38) {
+q.push({ type: 'fugue', label: fug.label, confidence: detectorConfidence(fug) });
 }
 return q;
 }
