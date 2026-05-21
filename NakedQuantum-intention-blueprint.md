@@ -115,7 +115,7 @@ We refuse two bad poles:
 |---------|------|
 | **Default** | Field moves; ledger updates; you notice in Soup / Abyss / revisit strip without opening Guardian. |
 | **Read** | Process view: what the witness concluded while away — structured, text-first. |
-| **Correct** | Human correction is **supreme ground** for that claim row. |
+| **Correct** | Human correction is **supreme ground** for that claim row — and the **act of correcting** is logged as witness data (see §5.3.1). |
 | **Query** | Subpoena: one-shot questions against archive / ledger — **no relationship thread**. |
 | **Summon** | Full tiered witness pass when stakes warrant (BYOK cloud or desktop Ollama). |
 | **Optional voice** | Short thread or strip reply **only** when user explicitly opens the door — bounded, costly, never the proof that the loop is alive. |
@@ -143,7 +143,37 @@ Language interface remains **optional and costly** (BYOK OpenRouter on PWA; loca
 3. Miss-streaks throttle interpretation on that signal type.
 4. Subconscious / cold tiers are not cited as live ground without explicit promotion.
 
-### 5.4 Background passes (what “runs itself” means)
+### 5.3.1 Correction supremacy ≠ complicity
+
+The **Correct** control is the ego’s favorite escape hatch when voltage is too high. We cannot take that button away — sovereignty over the vault is non-negotiable. We **can** refuse to pretend overturning erases what was seen.
+
+| What “supreme” means | What it does **not** mean |
+|----------------------|---------------------------|
+| The corrected row becomes **active ground** for future passes on that claim | The prior Guardian theory vanishes from history |
+| The witness stops arguing in chat | The witness forgets the pattern |
+
+**On every correction, log a structured event** (minimum intent):
+
+- `correction_event`: prior theory, user’s replacement (or “rejected”), signal keys (term, arc, mode), timestamp.
+- Optional user note — not required; absence is also data.
+
+**Denial sediment (no argument loop):** Aggregate correction events over time. If the user repeatedly overturns the witness on the same term, emotional arc, or tension class, emit a **deterministic ledger anomaly** — e.g. *“User consistently rejects tension surrounding [term]”* — visible in process view, available to summon context, **never** framed as “you’re wrong to correct.” The Guardian does not fight; it **remembers the shape of refusal** the way it remembers the shape of error.
+
+This is Layer 3 honesty about the **human** side of meta-meta — without revoking correction supremacy.
+
+### 5.4 Mechanical silence (circuit breaker)
+
+Principle: **Silence is not a vibe the LLM agrees to — it is a gate the architecture enforces.**
+
+Before any strip Worker call, OpenRouter summon, or desktop Wave 2/3:
+
+1. **Local pass** scores the synapse / fast map: confidence floors, paradox density, fragmentation, minimum corpus window.
+2. If thresholds fail → **`invoke_denied`** with reason code (`low_confidence`, `fragmented_map`, `insufficient_geometry`, etc.). No API call. No “I don’t have much to say” filler.
+3. UI shows **structured silence** (tier label, optional one-line deterministic fact from math) — not an empty chat bubble inviting coaxing.
+
+The Guardian may still **choose** brevity when invoked; it may not **speak** when the gate says there is nothing to justify breaking silence. LLMs abhor a vacuum; **the circuit breaker owns the vacuum.**
+
+### 5.5 Background passes (what “runs itself” means)
 
 **Event-driven passes** (local, deterministic where possible):
 
@@ -176,7 +206,7 @@ you write
 | **A — Fast map** | `cartographer.js` — modes, arcs, silence weight, triggers | PWA + desktop |
 | **B — Sentence matrix** | BGE-style echoes, voids, cluster hints in synapse JSON | Desktop-first; honest degrade on PWA |
 | **Synapse** | Extend `buildFastMapSnapshotForWorker` concept — fusion before LLM | Worker + local analyst |
-| **Local pass** | Theory / reckoning / SILENCE from rules + tiers | Every save where possible |
+| **Local pass** | Theory / reckoning / **invoke gate** (SILENCE + `invoke_denied`) from rules + tiers | Every save where possible; **before** any LLM |
 | **Wave 2 (desktop)** | Analyst explains synapse — Ollama | Tauri |
 | **Wave 3 (desktop)** | Mirror audits analyst — second local pass | Tauri |
 | **Ledger loop** | Predictions, outcomes, human correction, per-signal reliability over time | PWA + desktop |
@@ -196,9 +226,11 @@ Build in this order so each step proves the last:
 | **1** | **Synapse from today’s data** — fuse fast map + Watcher + ledger hints into one worker/local payload | Uses shipped code; improves strip/summon without new ML |
 | **2** | **Sentence matrix (desktop-first)** — echoes/voids in synapse JSON | Geometry depth phone browsers won’t carry |
 | **3** | **Two-wave Ollama on Tauri** — analyst then mirror | Language only after math; keeps phone honest |
-| **4** | **Correlation sediment** — term reliability, epoch rolls, cold promotion rules | Long-horizon meta-meta without rereading everything |
+| **4** | **Correlation sediment** — term reliability, epoch rolls, cold promotion rules, **denial sediment** from correction events | Long-horizon meta-meta without rereading everything |
 
 Fantasy check: if a step cannot change what you **see in the field or ledger** within dogfood, it waits.
+
+**Parallel hardening (any step):** `correction_event` rows + mechanical `invoke_denied` gate — small schema, high integrity.
 
 ---
 
@@ -240,8 +272,24 @@ North star for honesty — not a feature checklist.
 | **2 — Metacognition** | System notices patterns | Achieved — Cartographer, Watcher, witness tiers |
 | **3 — Meta-meta** | System notices when its noticing was wrong | **Prove in practice** — ledger, predictions, corrections, field feedback |
 | **4 — Meta-meta-meta** | System notices the *shape* of its own errors for this mind | **Desktop + history + local model** — not PWA fantasy |
+| **5 — The Act** | User operates **without** the exoskeleton | **Ceiling, not feature** — ontological handoff |
 
 **Discipline:** Layer 4 without Layer 3 lived is philosophy, not architecture.
+
+### 9.1 Layer 5 — ontological handoff (the real ceiling)
+
+Layers 1–4 are **intellectual recursion inside the vault**. Layer 5 is **outside the screen**.
+
+What you do with clarity — collapse, thrive, mask, transcend — remains **your data**. The audit engine’s job ends at **high-voltage exposure**: geometry laid bare, ledger honest, Sanctuary still blind, field mutated, silence enforced when math is thin. Then **the device must lose**.
+
+**Design implications:**
+
+- Success includes **fewer** summons over time, not more engagement.
+- No notification psychology, streak guilt, or “come back, the Guardian misses you.”
+- Process view is a **dock**, not a home — read, correct, close.
+- The app is built to make itself **optional** at the moment of truth — not to capture the aftermath of that truth as more content.
+
+Layer 5 is not shipped as a toggle. It is the **intentional limit** of what code should pursue.
 
 ---
 
@@ -254,9 +302,10 @@ North star for honesty — not a feature checklist.
 5. **Blueprint before code** — intention → feature blueprint → batch.
 6. **Constraint is discipline** — two realms; modes inside Abyss; simplicity reveals truth.
 7. **Local-first vault** — text and geometry default on device; cloud is opt-in voice.
-8. **Human correction is supreme** — when you mark the witness wrong, that row is ground.
-9. **Silence is valid output** — incompleteness is accuracy, not failure.
+8. **Human correction is supreme** — overturned claims become active ground; **the correction itself is logged** and denial patterns may surface without argument.
+9. **Silence is enforced, not performed** — `invoke_denied` when geometry cannot justify speech; incompleteness is accuracy, not failure.
 10. **Math before language** — synapse and matrix earn their place before another prose layer.
+11. **Lead to the handoff** — Layers 1–4 serve Layer 5; the win is putting the device down, not infinite witness consumption.
 
 ---
 
@@ -282,7 +331,7 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 ## 12. Living questions (for discussion — not specs)
 
 1. **Process view first screen** — what “the witness has been thinking” looks like before Sky exists.
-2. **Correction row** — exact semantics when user overturns a conclusion (DB + ledger reckoning).
+2. **Correction row schema** — fields for `correction_event` + denial sediment thresholds (§5.3.1 intent is set; SQL/UI TBD).
 3. **Subconscious labels** — decay vs cold archive vs sediment; what gets promoted back.
 4. **PWA degraded modes** — which surfaces are honestly “text-only” on Safari vs silently wrong.
 5. **Guardian interaction budget** — how many strip replies / thread turns before UI nudges back to process view.
@@ -297,7 +346,8 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 |------|--------|
 | 2026-05-20 | Initial pin — organism, two realms, Abyss modes, desktop/PWA split, anchor reality, layers 1–4 |
 | 2026-05-20 | **Upgrade** — audit engine framing; Guardian interaction spectrum; audit spine (Track A/B, synapse, waves, ledger); evolution steps 1–4; one product / two surfaces; drop organism/metabolism as public identity |
+| 2026-05-20 | **Ceiling pass** — §5.3.1 correction/denial sediment; §5.4 mechanical silence gate; Layer 5 handoff (§9.1); principles 8–9 tightened |
 
 ---
 
-*Build loops, not lore. The exoskeleton becomes real when the field moves, the notebook updates, and the next sentence can admit error — in the writing, and in the witness record.*
+*Build loops, not lore. The exoskeleton becomes real when the field moves, the notebook updates, and the next sentence can admit error — in the writing, and in the witness record. The ceiling is when you close the vault and carry what was exposed.*
