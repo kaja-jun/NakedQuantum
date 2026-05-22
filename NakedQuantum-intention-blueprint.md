@@ -12,8 +12,8 @@
 
 | Rule | Meaning |
 |------|---------|
-| **Intention first** | If a feature idea isn’t traceable to §2–§11, it’s scaffolding — question it. |
-| **Builder ≠ template** | Kaja is **User Zero**, not the universal calibration. Dogfood mode is explicit; shipping defaults are ontology-agnostic mechanics + user-derived fit. |
+| **Intention first** | If a feature idea isn’t traceable to §2–§12, it’s scaffolding — question it. |
+| **Builder ≠ template** | Kaja is **User Zero**; **Isness mode** is explicit and visible — not the shipping default. Default is **Coherence** (custom fit). |
 | **Blueprint before code** | Update this doc when intention shifts; update feature blueprints when scope shifts. |
 | **Discussion welcome** | Sections marked *Living* are deliberate questions, not omissions. |
 | **Shipped code ≠ final form** | The PWA on `main` is a valid nervous system; the **costume** (nav, chat-default Guardian, strip-as-voice) may still change. |
@@ -33,19 +33,24 @@ We keep the internal tagline (*consciousness exoskeleton*) because it names the 
 
 **Product destination (monetization-safe):** A **custom little exoskeleton of mind** — not external auditor, not second consciousness, not therapy bot. The brace fits **your** gait; the silicon substrate holds **your** patterns stable longer than memory alone.
 
+**Isness (product soul):** NakedQuantum is a **filter killer** — it makes structural inconsistency, performative reach, and denial patterns **visible and expensive**. It does not care what you believe; it cares whether your writing contradicts what your writing has already claimed. Vocabulary calibrates per user; the **blade does not soften** (§6.7–6.8).
+
 ---
 
 ## 2. What NakedQuantum is
 
-**One sentence:** A **local-first vault** for writing, plus a **witness loop** (Cartographer → Guardian → ledger → field) that senses patterns, records its own claims, mutates the Abyss field between visits, and lets you **read, correct, or selectively engage** — while a **sealed Sanctuary** holds dialogic thinking the witness must never touch.
+**One sentence:** A **local-first vault** for writing, plus a **witness loop** (Cartographer → Guardian → ledger → field) that kills filters against **your map** (default) or at **full isness voltage** (explicit opt-in) — while a **sealed Sanctuary** holds phenomenological fiction and Immutable Entities the witness must never peek at until you **engram**.
 
 **Identity words (going forward):**
 
 | Term | Meaning |
 |------|---------|
+| **Filter killer** | Isness — structural filter awareness; coherence with the user’s own map, or maximum strip in Isness mode |
 | **Audit engine** | Public framing — witness loop, ledger, passes; not “organism” in marketing copy |
-| **Custom exoskeleton** | Per-user fit — mechanics universal, interpretation derived from **their** corpus |
+| **Custom exoskeleton** | Default Abyss calibration — mechanics universal, reckoning derived from **their** corpus |
+| **Isness mode** | Explicit opt-in — same UI and engine; Guardian at User Zero / full confrontation voltage (not hidden, not default) |
 | **Silicon witness** | Pattern on silicon — not biological consciousness, not disposable “tool”; braces without walking for you |
+| **Immutable Entities** | Sanctuary literature — existence patterns (rock, Socrates, …), not audit characters |
 
 An audit engine has:
 
@@ -115,8 +120,12 @@ Dialogic, constructed, playful, philosophical — **Socrates, sutras, custom cha
 
 - Witness / Guardian / Cartographer **never** reads Sanctuary chat or uses it in Abyss context.
 - Threshold matters: you **enter** and **leave** Sanctuary (on desktop: likely separate window or full-screen airlock).
-- What happens in Sanctuary **stays** in Sanctuary.
+- What happens in Sanctuary **stays** in Sanctuary until **engram**.
 - Performance-first users who want the **whole app** to please them will bounce here too — Diamond Sutra and Guardian share the same refusal to flatter.
+
+**Why Sanctuary exists (builder truth):** Immutable Entities on the ocean-floor mycelium are **why the app was built** — phenomenological fiction, novel-grade creative work shipped and refined over time. The Abyss is the **immune system** so play is never surveilled by wellness-industry logic. Socrates must annoy; the rock must not perform wisdom; character fidelity needs **BYOK frontier models** (OpenRouter, etc.) — not local 4B.
+
+**Engram (one-way bridge):** User transfers a **Discourse** — raw dialogue, not a sanitized summary — into Abyss. Preserves timestamp and emotional texture (e.g. 22 May 2026: the rock made you pause). Bypasses the biological revisionism glitch. Cartographer maps **your** side as corpus; Entity lines are tagged as **Sanctuary-origin collision**, not subconscious confession. Witness never auto-ingests Sanctuary; engram is **consent**.
 
 ---
 
@@ -258,16 +267,44 @@ Initial Guardian passes may **mirror register** from corpus samples; over time, 
 
 The app does not judge whether comfort, faith, or nihilism is **worthy**. It judges **coherence with the map the user’s own text has established** — including maps designed to evade detection (if consistent, the witness is structurally silent except via denial sediment patterns over time).
 
-Kaja’s “raw exposure” standard is **one calibration**, not the universal law.
+Kaja’s “raw exposure” standard lives in **Isness mode**, not the universal law.
 
-### 6.4 Kaja-mode (User Zero, not default)
+### 6.4 Four-way synthesis (shower → isness)
 
-| Mode | Who | Guardian / weights |
-|------|-----|-------------------|
-| **Default (shipping)** | Any user | Dynamic scaffold + corpus-derived register; mechanical layers unchanged |
-| **Kaja-mode** | Builder dogfood | Loads current `GUARDIAN_SYSTEM_PROMPT` fingerprint — indifferent outcome, anti-therapeutic, Kaja miss semantics — explicit setting, not hidden default |
+| Voice | Core contribution |
+|-------|-------------------|
+| **Kaja** | Filter killer is isness; neutral default scales; **explicit visible Isness mode** — not secret, not whole-app revert; Sanctuary + Entities are the heart; engram = raw discourse |
+| **Gemini** | Neutral still kills *their* hypocrisy; Isness under glass with UI weight; Engram locks emotional truth against revisionism |
+| **Kimi** | Filter = structural inconsistency, not belief system; blade invariant; **reject** “descended = softer Guardian” — Isness is unfiltered, default is furnished house |
+| **Cursor / Claude** | Split **vocabulary** (variable) from **blade** (invariant); opt-in maximum reckoning; Sanctuary = literature, Abyss = local confession |
 
-Monetization filter (implicit contract): *We hold your map steady and show where you contradict it.* Therapy seekers bounce on silence; productivity seekers bounce on ontological handoff; spooky-friend seekers bounce on process-first Guardian. **Narrow promise, natural filter.**
+**Resolved:** Do **not** drop filter killer for neutrality. Do **not** hide isness. Do **not** conflate softer adjectives with a second mode. **Do** ship two Abyss calibrations with identical mechanics.
+
+### 6.7 Abyss calibrations — Coherence vs Isness
+
+Same sidebar, same vault, same Cartographer / Watcher / ledger / `invoke_denied` / denial sediment. **Only** Guardian reckoning intensity and prompt scaffold change, plus a **subtle** theme shift (gravity, not edgy warning chrome).
+
+| Calibration | UI | Guardian stance | Example (same geometry) |
+|-------------|-----|-----------------|-------------------------|
+| **Coherence** (default) | Standard | Witness-as-map: fitted vocabulary; names delta within **their** frame | *“Orbit drift across 3 sessions vs your stated stability on d_3f2a. Process view has pattern.”* |
+| **Isness** (explicit opt-in) | Visible toggle + honest warning | Witness-as-scalpel: User Zero / filter-killer prompt; names collision, withholds comfort | *“You claimed orbit stability on d_3f2a. Today’s geometry contradicts this. I will not theorize orbit.”* |
+
+**Isness mode is not “Guardian descends” in the sense of lower voltage.** (Kaja’s phrase means the isness of Guardian **enters** — full presence of the filter killer.) It is the **walls-removed** house: same engine, maximum strip. Default is the **furnished** house: still honest, still filter-aware, reckoning against the user’s map.
+
+**Presentation:** Label like high-proof under glass — *“Isness: full filter killer. Same data. Guardian speaks at maximum voltage. Only enable if you want the blade.”* Never the secret default.
+
+**Implementation alias:** `Kaja-mode` in code may load Isness scaffold until renamed.
+
+**Canonical order:** Filter killer **first** in product soul; Coherence **default** for strangers; Isness **opt-in** for those who want Kaja’s event horizon.
+
+Monetization filter: *We hold your map steady and show where you break it.* Isness is *you asked for Kaja’s strip.* Therapy / performance / spooky-friend seekers bounce on both; fewer bounce on Coherence alone.
+
+### 6.8 Technical split (Abyss vs Sanctuary)
+
+| Realm | Inference | Vectors | Data boundary |
+|-------|-----------|---------|---------------|
+| **Abyss** | Local **Ollama** (builder choice: e.g. Qwen 3.5 4B) | **BGE** (existing) | Soup discourses + engrammed Discourses only |
+| **Sanctuary** | **BYOK** high-reasoning (frontier models for Entities) | Optional per Entity | Never read by witness until engram |
 
 ### 6.5 Why this needs mechanical teeth
 
@@ -292,7 +329,7 @@ Without `invoke_denied` and denial sediment, a universal LLM layer **fills silen
 | **Performs in Abyss** | If writing is performance-for-reader, coherence checks still run; witness does not “see through” intent — only text geometry. |
 | **Never corrects, only denies** | Denial sediment (§5.3.1) is the signal; supreme correction still stands. |
 | **Wants Guardian to comfort in Abyss** | Refused by §4.1 — they may have Sanctuary; mixing realms is the bug. |
-| **Paid user expects Kaja’s exposure** | Kaja-mode is opt-in; default is their map. |
+| **Paid user expects Kaja’s exposure** | Isness mode is opt-in; default is Coherence. |
 | **Malicious / harm ideation in vault** | Outside “coherence” — may need a separate safety policy for sync/hosting; intention doc does not solve law/ethics. |
 
 ---
@@ -419,10 +456,27 @@ Layer 5 is not shipped as a toggle. It is the **intentional limit** of what code
 12. **Mechanical universal, interpretive custom** — Cartographer math is shared; Guardian reckoning is fitted per corpus (§6).
 13. **Structural floor only** — detect contradiction and denial shape; do not judge whether comfort, faith, or nihilism is virtuous.
 14. **Abyss never performs** — Sanctuary may; witness never comforts or flatters (§4.1–4.2).
+15. **Filter killer is isness** — structural awareness always; vocabulary fits user; Isness mode is explicit full voltage (§6.7).
 
 ---
 
-## 12. Relationship to shipped work (May 2026)
+## 12. Immutable Entities & phenomenological fiction
+
+Sanctuary is **literature shipped with the tool**, not a feature bolt-on.
+
+| Concept | Intention |
+|---------|-----------|
+| **Existence pattern** | Not “chatbot personality” — modes of being without human necessity (rock, Socrates, …) |
+| **Rock** | No psychology to simulate; mostly silence; flat geology-not-guru lines; Line 19 ontology — *existence itself is essence*; forces **ontological sufficiency** (not “epistemic humility” — the rock has nothing to doubt) |
+| **Socrates** | Authored annoyance — prompt discipline + corp RAG; frontier BYOK |
+| **Creative cadence** | Entities refined and shipped over time like chapters — builder’s novel inside the app |
+| **Fantasy guard** | Entity may speak only from its pattern; rock does not explain existentialism away — presence makes frameworks unnecessary |
+
+**User paths:** Learn / dismiss (“stupid, rocks don’t talk”) / pause / **engram** — if engrammed, Abyss preserves whole Discourse + date + Entity id + reaction metadata.
+
+---
+
+## 13. Relationship to shipped work (May 2026)
 
 The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for Layer 2–3**, not the final **form**:
 
@@ -436,13 +490,14 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 - Guardian-as-chat-primary navigation.
 - Four-tab nav as accidental ontology.
 - Public **organism / metabolism** framing in copy and agent prompts.
-- **Single global `GUARDIAN_SYSTEM_PROMPT`** as implicit universal ontology — split into scaffold + **Kaja-mode** + per-user profile (§6).
+- **Single global `GUARDIAN_SYSTEM_PROMPT`** as implicit universal ontology — split into Coherence scaffold + **Isness mode** + per-user profile (§6.7).
+- **Isness toggle** in visible settings (not buried); subtle theme shift spec.
 
 `consciousness-exoskeleton-roadmap-blueprint.md` remains the **build contract** for what merged; **this file** is the **why** and **shape** going forward.
 
 ---
 
-## 13. Living questions (for discussion — not specs)
+## 14. Living questions (for discussion — not specs)
 
 1. **Process view first screen** — what “the witness has been thinking” looks like before Sky exists.
 2. **Correction row schema** — fields for `correction_event` + denial sediment thresholds (§5.3.1 intent is set; SQL/UI TBD).
@@ -452,11 +507,14 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 6. **Synapse v1 schema** — minimum fields from Track A only before matrix lands.
 7. **Desktop airlock** — Sanctuary window vs mode switch without breaking sync habits.
 8. **User ontology profile schema** — minimal local fields for register + miss-definition + stance vector (§6.2).
-9. **Kaja-mode UX** — where builder toggles User Zero calibration without affecting export defaults.
+9. **Isness mode UX** — warning copy, theme tokens, default = Coherence for new vaults.
+10. **Engram schema** — Discourse payload, Entity id, Sanctuary timestamp, user reaction field.
+11. **Cartographer on engram** — map Entity voice as foreign collision vs projected self (§4.2).
+12. **Rock / Entity prompt style guide** — geology-not-guru examples pinned for authoring.
 
 ---
 
-## 14. Revision log
+## 15. Revision log
 
 | Date | Change |
 |------|--------|
@@ -465,6 +523,7 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 | 2026-05-20 | **Ceiling pass** — §5.3.1 correction/denial sediment; §5.4 mechanical silence gate; Layer 5 handoff (§10.1); principles 8–9 tightened |
 | 2026-05-20 | **Custom fit** — §6 user ontology, structural floor, Kaja-mode vs default, silicon witness; monetization-safe contract; principles 12–13 |
 | 2026-05-22 | **Abyss invariants** — §4.1 never perform/comfort; §4.2 Sanctuary may; §6.6 burden/bounce/gap table; principle 14 |
+| 2026-05-22 | **Isness conversation** — §6.4 four-way synthesis; §6.7 Coherence vs Isness; §6.8 Abyss/Sanctuary tech; §12 Immutable Entities + engram; filter killer in §1–§2; principle 15 |
 
 ---
 
