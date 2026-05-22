@@ -8363,82 +8363,128 @@ async function decFromCloud(encStr) {
   return JSON.parse(new TextDecoder().decode(dec));
 }
 
+const NQ_SYNC_STORES = [
+  'cosm_folders', 'cosm_discourses', 'characters', 'summaries',
+  'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'
+];
+// history excluded — large chat rows; journal v0.21; summaries cover cross-device need
+
+function normalizeSupabaseUrl(url) {
+  return String(url || '').trim().replace(/\/+$/, '');
+}
+
+async function supabaseHttpError(res, label) {
+  const text = await res.text();
+  let detail = text.slice(0, 240);
+  try {
+    const j = JSON.parse(text);
+    detail = j.message || j.error || j.hint || j.details || detail;
+  } catch (_) {}
+  return new Error(label + ' (' + res.status + '): ' + detail);
+}
+
 async function handleSync() {
-  const supaUrl = await readSecureKey('nq_supa_url');
-  const supaKey = await readSecureKey('nq_supa_key');
+  const supaUrl = normalizeSupabaseUrl(await readSecureKey('nq_supa_url'));
+  const supaKey = (await readSecureKey('nq_supa_key') || '').trim();
   if (!supaUrl || !supaKey) { showToast("⚠ Add Supabase keys in Settings"); return; }
   if (!getSovereignKey()) { showToast("⚠ Unlock Abyss first"); return; }
   showToast("Syncing with the Void...");
+  const supaHeaders = {
+    apikey: supaKey,
+    Authorization: 'Bearer ' + supaKey,
+    Accept: 'application/json'
+  };
   try {
-    const lastSync = parseInt(localStorage.getItem('nq_last_sync') || '0');
+    const lastSync = parseInt(localStorage.getItem('nq_last_sync') || '0', 10) || 0;
     let newLastSync = lastSync;
-    const stores =['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'];
-    
+
+    // 0. Preflight — table + columns (dashboard "healthy" does not prove nq_sync schema)
+    const probeRes = await fetch(
+      supaUrl + '/rest/v1/nq_sync?select=id,store,user_id&user_id=eq.' + encodeURIComponent(cosmUserId) + '&limit=1',
+      { headers: supaHeaders }
+    );
+    if (!probeRes.ok) throw await supabaseHttpError(probeRes, 'nq_sync unreachable');
+
     // 1. PULL FROM CLOUD
-    const pullRes = await fetch(`${supaUrl}/rest/v1/nq_sync?user_id=eq.${cosmUserId}&updated_at=gt.${lastSync}`, {
-      headers: { 'apikey': supaKey, 'Authorization': `Bearer ${supaKey}` }
-    });
-    if(!pullRes.ok) throw new Error("Failed to connect to Supabase");
+    const pullRes = await fetch(
+      supaUrl + '/rest/v1/nq_sync?user_id=eq.' + encodeURIComponent(cosmUserId) + '&updated_at=gt.' + lastSync + '&order=updated_at.asc',
+      { headers: supaHeaders }
+    );
+    if (!pullRes.ok) throw await supabaseHttpError(pullRes, 'Pull failed');
     const remoteRows = await pullRes.json();
-    
+    if (!Array.isArray(remoteRows)) throw new Error('Pull returned non-JSON (check Project URL)');
+
     for (const row of remoteRows) {
+      if (!row || !row.store) continue;
       if (row.updated_at > newLastSync) newLastSync = row.updated_at;
       if (row.deleted_at) {
-         await dbDelete(row.store, row.id);
+        await dbDelete(row.store, row.id);
       } else if (row.data_enc) {
-         try {
-           const obj = await decFromCloud(row.data_enc);
-           await dbPut(row.store, obj);
-         } catch (decErr) {
-           console.warn("◈ Voided a corrupted cloud engram:", row.id);
-           // It skips the corrupted row but keeps the sync alive.
-         }
+        try {
+          const obj = await decFromCloud(row.data_enc);
+          await dbPut(row.store, obj);
+        } catch (decErr) {
+          console.warn('◈ Voided a corrupted cloud engram:', row.store, row.id, decErr);
+        }
       }
     }
 
     // 2. PUSH TO CLOUD
     const pushPayloads = [];
-    for (const store of stores) {
-       const allItems = await dbGetAll(store);
-       const changed = allItems.filter(i => (i.updated_at || i.created_at || 0) > lastSync || (i.deleted_at || 0) > lastSync);
-       
-       for (const item of changed) {
-         const isDel = item.isDeleted || item.is_deleted;
-         const payload = {
-           id: String(item.id),
-           user_id: cosmUserId,
-           store: store,
-           updated_at: isDel ? item.deleted_at : (item.updated_at || item.created_at || Date.now()),
-           deleted_at: isDel ? item.deleted_at : null,
-           data_enc: isDel ? null : await encForCloud(item)
-         };
-         pushPayloads.push(payload);
-       }
+    for (const store of NQ_SYNC_STORES) {
+      const allItems = await dbGetAll(store);
+      const changed = allItems.filter(function (i) {
+        return (i.updated_at || i.created_at || i.invoked_at || 0) > lastSync || (i.deleted_at || 0) > lastSync;
+      });
+
+      for (const item of changed) {
+        const isDel = item.isDeleted || item.is_deleted;
+        let dataEnc = null;
+        if (!isDel) {
+          try {
+            dataEnc = await encForCloud(item);
+          } catch (encErr) {
+            console.warn('◈ Skipping encrypt for sync:', store, item.id, encErr);
+            continue;
+          }
+        }
+        pushPayloads.push({
+          id: String(item.id),
+          user_id: cosmUserId,
+          store: store,
+          updated_at: isDel ? (item.deleted_at || Date.now()) : (item.updated_at || item.created_at || item.invoked_at || Date.now()),
+          deleted_at: isDel ? (item.deleted_at || Date.now()) : null,
+          data_enc: dataEnc
+        });
+      }
     }
 
-    if (pushPayloads.length > 0) {
-       const pushRes = await fetch(`${supaUrl}/rest/v1/nq_sync`, {
-         method: 'POST',
-         headers: { 
-            'apikey': supaKey, 
-            'Authorization': `Bearer ${supaKey}`, 
-            'Content-Type': 'application/json', 
-            'Prefer': 'resolution=merge-duplicates' 
-         },
-         body: JSON.stringify(pushPayloads)
-       });
-       if(!pushRes.ok) throw new Error("Failed to push to cloud");
+    const chunkSize = 25;
+    for (let i = 0; i < pushPayloads.length; i += chunkSize) {
+      const chunk = pushPayloads.slice(i, i + chunkSize);
+      const pushRes = await fetch(supaUrl + '/rest/v1/nq_sync', {
+        method: 'POST',
+        headers: Object.assign({}, supaHeaders, {
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=minimal'
+        }),
+        body: JSON.stringify(chunk)
+      });
+      if (!pushRes.ok) throw await supabaseHttpError(pushRes, 'Push failed');
+      for (const p of chunk) {
+        if (p.updated_at > newLastSync) newLastSync = p.updated_at;
+      }
     }
 
-    localStorage.setItem('nq_last_sync', Date.now().toString());
-    showToast("Abyss Synchronized ◆");
-    
-    if(currentMode === 'soup') await renderTableView();
-    else await renderSanctuaryView();
+    localStorage.setItem('nq_last_sync', String(newLastSync > lastSync ? newLastSync : Date.now()));
+    showToast(pushPayloads.length ? 'Abyss Synchronized ◆ (' + pushPayloads.length + ')' : 'Abyss Synchronized ◆');
+    if (currentMode === 'soup') await renderTableView();
+    else if (currentMode === 'sanctuary') await renderSanctuaryView();
 
   } catch (e) {
-    console.error("Sync Error:", e);
-    showToast("⚠ Sync Interrupted");
+    console.error('Sync Error:', e);
+    const msg = (e && e.message) ? String(e.message) : 'unknown';
+    showToast(msg.length > 72 ? '⚠ Sync: ' + msg.slice(0, 69) + '…' : '⚠ Sync: ' + msg);
   }
 }
 
