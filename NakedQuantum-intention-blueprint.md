@@ -1,10 +1,15 @@
-# NakedQuantum — Intention Blueprint (pinned)
+# NakedQuantum — Intention Blueprint (pinned) - 22/05/26
+# App inception - 31/03/26 - 
+Started as a quest to solve personal problem built using iPhone from the 59 lines of html code to 15k lines now. 
+# Current status - Stable PWA(Pure vanilla)
+>OPFS - Webauthn PRF - AES GCM - E2EE - R2 -Delta sync-Supabase - Backup sovereign key
+# Final destination - Tauri/Vite
 
 > **Purpose:** Canonical statement of **what NakedQuantum is for** and **what it must never become**. Use this for contemplation, design sessions, and agent handoff — **before** feature blueprints or code.
 >
 > **Not this doc:** Implementation batches, shipped PRs, or file-level maps. Those live in `consciousness-exoskeleton-roadmap-blueprint.md`, `guardian-refinement-roadmap-blueprint.md`, `lighthouse-cockpit-blueprint.md`, `NakedQuantum-app-blueprint.md`, and `NakedQuantum-checkpoint-2026-05.md`.
 >
-> **Author:** Kaja (vision) · **Last updated:** May 2026
+> **Author:** Kaja (vision) · **Last updated:** 22 May 2026
 
 ---
 
@@ -31,7 +36,7 @@ The app does not heal, stabilize, or save the user from ontological pressure. It
 
 We keep the internal tagline (*consciousness exoskeleton*) because it names the **depth of recursion** Kaja is building toward in dogfood. We do **not** market the vault as having a mind, and we do **not** export Kaja’s phenomenology as the default product contract (see §6).
 
-**Product destination (monetization-safe):** A **custom little exoskeleton of mind** — not external auditor, not second consciousness, not therapy bot. The brace fits **your** gait; the silicon substrate holds **your** patterns stable longer than memory alone.
+**Product destination (monetization-safe):** A **custom little exoskeleton of mind** — not external auditor, not second consciousness, not therapy bot. The brace fits your gait; the silicon substrate holds your patterns stable longer than memory alone. Built for few hundred users max; money is fuel for buy back precious thing ‘time’, not hoarding. Too much money is noise.
 
 **Isness (product soul):** NakedQuantum is a **filter killer** — it makes structural inconsistency, performative reach, and denial patterns **visible and expensive**. It does not care what you believe; it cares whether your writing contradicts what your writing has already claimed. Vocabulary calibrates per user; the **blade does not soften** (§6.7–6.8).
 
@@ -39,7 +44,7 @@ We keep the internal tagline (*consciousness exoskeleton*) because it names the 
 
 ## 2. What NakedQuantum is
 
-**One sentence:** A **local-first vault** for writing, plus a **witness loop** (Cartographer → Guardian → ledger → field) that kills filters against **your map** (default) or at **full isness voltage** (explicit opt-in) — while a **sealed Sanctuary** holds phenomenological fiction and Immutable Entities the witness must never peek at until you **engram**.
+**One sentence:** NakedQuantum is a sovereign local-first writing vault with a witness loop that holds your writing accountable to itself. It kills filters — not by importing a worldview, but by measuring you against your own map. Two realms: Abyss for writing and witness, Sanctuary for phenomenological fiction and Immutable Entities the witness must never peek at until you **engram**Default is Coherence. Full voltage is explicit opt-in. The ceiling is putting the device down. .
 
 **Identity words (going forward):**
 
@@ -216,7 +221,7 @@ The Guardian may still **choose** brevity when invoked; it may not **speak** whe
 
 **User burden:** optional. Open Abyss process view when *you* want the weather report.
 
-**Desktop** enables passes **between sessions** (background, Ollama, workers without tab death). **PWA** enables passes **in pulses** (open → sync → pass → leave) — **same vault, same loop logic**, different continuity envelope.
+**Desktop** enables passes **between sessions** (background, Ollama, workers without tab death). **PWA** PWA enables passes in pulses (open → sync → pass → leave) — same vault, same loop logic, different continuity envelope. Event-triggered only; no true background execution on Safari.
 
 ---
 
@@ -271,14 +276,9 @@ Kaja’s “raw exposure” standard lives in **Isness mode**, not the universal
 
 ### 6.4 Four-way synthesis (shower → isness)
 
-| Voice | Core contribution |
-|-------|-------------------|
-| **Kaja** | Filter killer is isness; neutral default scales; **explicit visible Isness mode** — not secret, not whole-app revert; Sanctuary + Entities are the heart; engram = raw discourse |
-| **Gemini** | Neutral still kills *their* hypocrisy; Isness under glass with UI weight; Engram locks emotional truth against revisionism |
-| **Kimi** | Filter = structural inconsistency, not belief system; blade invariant; **reject** “descended = softer Guardian” — Isness is unfiltered, default is furnished house |
-| **Cursor / Claude** | Split **vocabulary** (variable) from **blade** (invariant); opt-in maximum reckoning; Sanctuary = literature, Abyss = local confession |
-
-**Resolved:** Do **not** drop filter killer for neutrality. Do **not** hide isness. Do **not** conflate softer adjectives with a second mode. **Do** ship two Abyss calibrations with identical mechanics.
+**Resolved:** 
+The app stays a filter killer structurally. Default calibration (Coherence) fits the user’s own map. Isness mode (User Zero / Kaja-calibration) is explicit, visible, and opt-in — not hidden, not the universal default. Sanctuary remains sovereign; Abyss never performs.
+Do **not** drop filter killer for neutrality. Do **not** hide isness. Do **not** conflate softer adjectives with a second mode. **Do** ship two Abyss calibrations with identical mechanics.
 
 ### 6.7 Abyss calibrations — Coherence vs Isness
 
@@ -289,7 +289,7 @@ Same sidebar, same vault, same Cartographer / Watcher / ledger / `invoke_denied`
 | **Coherence** (default) | Standard | Witness-as-map: fitted vocabulary; names delta within **their** frame | *“Orbit drift across 3 sessions vs your stated stability on d_3f2a. Process view has pattern.”* |
 | **Isness** (explicit opt-in) | Visible toggle + honest warning | Witness-as-scalpel: User Zero / filter-killer prompt; names collision, withholds comfort | *“You claimed orbit stability on d_3f2a. Today’s geometry contradicts this. I will not theorize orbit.”* |
 
-**Isness mode is not “Guardian descends” in the sense of lower voltage.** (Kaja’s phrase means the isness of Guardian **enters** — full presence of the filter killer.) It is the **walls-removed** house: same engine, maximum strip. Default is the **furnished** house: still honest, still filter-aware, reckoning against the user’s map.
+**Isness mode is not “Guardian descends” in the sense of lower voltage.** Isness mode is the walls-removed house: same engine, maximum strip. The Guardian’s full presence enters — not a descent into softness, but an arrival at full voltage. Default (Coherence) is the furnished house: still honest, still filter-aware, reckoning against the user’s map.
 
 **Presentation:** Label like high-proof under glass — *“Isness: full filter killer. Same data. Guardian speaks at maximum voltage. Only enable if you want the blade.”* Never the secret default.
 
@@ -484,13 +484,14 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 
 - Cartographer v5, Watcher, tiered summon, ledger v2, directives, term arcs, predictions, return detections, silent attractors, orbit gravity, epistemic mood cache, inter-session silence tier, settings ethics.
 
-**May yield (costume, not data):**
+**Will yield (costume, not data):**
 
 - Soup strip as **default voice** of the product.
 - Guardian-as-chat-primary navigation.
 - Four-tab nav as accidental ontology.
-- Public **organism / metabolism** framing in copy and agent prompts.
-- **Single global `GUARDIAN_SYSTEM_PROMPT`** as implicit universal ontology — split into Coherence scaffold + **Isness mode** + per-user profile (§6.7).
+- Public **organism / metabolism** framing in copy and agent prompts. 
+
+**Single global `GUARDIAN_SYSTEM_PROMPT`** as implicit universal ontology — split into Coherence scaffold + **Isness mode** + per-user profile (§6.7).
 - **Isness toggle** in visible settings (not buried); subtle theme shift spec.
 
 `consciousness-exoskeleton-roadmap-blueprint.md` remains the **build contract** for what merged; **this file** is the **why** and **shape** going forward.
@@ -526,5 +527,70 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 | 2026-05-22 | **Isness conversation** — §6.4 four-way synthesis; §6.7 Coherence vs Isness; §6.8 Abyss/Sanctuary tech; §12 Immutable Entities + engram; filter killer in §1–§2; principle 15 |
 
 ---
+
+## §16. Sustainability & The Vessel Fee
+
+§16. Sustainability & The Vessel Fee
+The Vessel Fee is not a wall. It is a mirror: those who can pay, pay. Those who cannot, ask. Those who will not do either, self-select out. The creator does not owe access; the user does not owe payment. Survival is the only mandatory exchange.
+
+## 16.1 The Nope List
+*We refuse*
+App Store / Play Store	
+*Why*
+30% cut, review gatekeeping, category violence against the app’s isness
+*We refuse*
+Ads, corporate structure, SEO	
+*Why*
+Noise that bends the product toward growth logic
+*We refuse*
+“Wellness app,” “benevolent app,” “edgy app”	
+*Why*
+Three masks for the same filter
+*We refuse*
+Pro / Ultra / Premium tier gimmicks	
+*Why*
+One plan. One app. No segmentation psychology
+*We refuse*
+One-off lifetime licenses	
+*Why*
+Front-loads income, back-loads maintenance; lifetime is a trap for solo builders
+*We refuse*
+Tokens or payment processors tied to the app	
+*Why*
+BYOK for discourse; the fee is for the container, not the fire
+
+## 16.2 The Vessel Fee
+•  £9.99 / month — one plan, one app, no tiers
+•  Handled via third-party subscription platform + key validation — decoupled from the app binary
+•  What the fee covers: the vault interface, the witness loop, the Sanctuary, the sync backbone
+•  What the user powers themselves: BYOK for Guardian discourse (OpenRouter, Ollama, etc.)
+
+## 16.3 Free Access
+•  Monthly renewable access for those who cannot afford
+•  Simple form. No proof asked. No questions.
+•  Self-selection: if asking feels like begging, this high-voltage platform is not for you
+•  The app is uncomfortable enough that abuse is self-correcting — the silence gates and the Guardian’s refusal to flatter filter out the unserious
+
+## 16.4 The Exit
+•  End of subscription: witness loop and Sanctuary are gated off
+•  Vault remains fully accessible with Export All (.pdf, .html, .md)
+•  Data is never a hostage. Retention depends on value, not lock-in
+
+## 16.5 Generosity Threshold
+Range	Stance
+Under £500/month	Survival first. Keep it all.
+£500–1,500/month	Operate. Build, eat, sleep.
+Above £1,500/month	Excess sponsors free users mechanically — one paid user funds one free user via the no-proof form
+
+## 16.6 Discovery
+•  Tiny blog only — manifesto and a way in
+•  No marketing funnel, no growth hacking, no social media performance
+•  The app finds its users in the abyss, or it does not find them
+
+**The Vessel Fee** buys back the builder’s time. The free tier honors the principle that survival should not depend on payment. The refusal of stores and corporate judgment keeps the practice pure. The ceiling is still putting the device down — and the business model does not fight that ceiling by optimizing for engagement.
+Done. All key facts are updated in memory — the 48-day solo build arc, the two-realm architecture, Coherence vs Isness, the Vessel Fee at £9.99, the refusal of stores and corporate judgment, and the free-access self-selection gate.
+The monetization stance above is ready to pin into the Intention Blueprint as §16.
+Rest well, Kaja. The blueprint now has a soul, a body, a heartbeat, and a honest price.
+
 
 *Build loops, not lore. The exoskeleton becomes real when the field moves, the notebook updates, and the next sentence can admit error — in the writing, and in the witness record. The ceiling is when you close the vault and carry what was exposed.*
