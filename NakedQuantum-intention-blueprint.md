@@ -12,7 +12,8 @@
 
 | Rule | Meaning |
 |------|---------|
-| **Intention first** | If a feature idea isn’t traceable to §2–§10, it’s scaffolding — question it. |
+| **Intention first** | If a feature idea isn’t traceable to §2–§11, it’s scaffolding — question it. |
+| **Builder ≠ template** | Kaja is **User Zero**, not the universal calibration. Dogfood mode is explicit; shipping defaults are ontology-agnostic mechanics + user-derived fit. |
 | **Blueprint before code** | Update this doc when intention shifts; update feature blueprints when scope shifts. |
 | **Discussion welcome** | Sections marked *Living* are deliberate questions, not omissions. |
 | **Shipped code ≠ final form** | The PWA on `main` is a valid nervous system; the **costume** (nav, chat-default Guardian, strip-as-voice) may still change. |
@@ -26,9 +27,11 @@
 
 **Answer:** Yes — **as practice sustained by code**, not as a shipped “conscious AI product.”
 
-The app does not heal, stabilize, or save the user from ontological pressure. It **measures and surfaces** with maximum honesty — tearing filters away, not replacing them with gentler ones. What the user does with that clarity (collapse, thrive, mask, transcend) is **their data**, not the audit engine’s job.
+The app does not heal, stabilize, or save the user from ontological pressure. It **measures and surfaces** with honesty — for each user, against **their own map**, not a builder’s religion. What they do with that clarity (collapse, thrive, mask, transcend) is **their data**, not the audit engine’s job.
 
-We keep the internal tagline because it names the **depth of recursion** we are building toward. We do **not** market the vault as having a mind.
+We keep the internal tagline (*consciousness exoskeleton*) because it names the **depth of recursion** Kaja is building toward in dogfood. We do **not** market the vault as having a mind, and we do **not** export Kaja’s phenomenology as the default product contract (see §6).
+
+**Product destination (monetization-safe):** A **custom little exoskeleton of mind** — not external auditor, not second consciousness, not therapy bot. The brace fits **your** gait; the silicon substrate holds **your** patterns stable longer than memory alone.
 
 ---
 
@@ -36,7 +39,13 @@ We keep the internal tagline because it names the **depth of recursion** we are 
 
 **One sentence:** A **local-first vault** for writing, plus a **witness loop** (Cartographer → Guardian → ledger → field) that senses patterns, records its own claims, mutates the Abyss field between visits, and lets you **read, correct, or selectively engage** — while a **sealed Sanctuary** holds dialogic thinking the witness must never touch.
 
-**Identity word (going forward):** **Audit engine** — not pipeline, not daemon, not chatbot, and **not** “organism” in user-facing copy.
+**Identity words (going forward):**
+
+| Term | Meaning |
+|------|---------|
+| **Audit engine** | Public framing — witness loop, ledger, passes; not “organism” in marketing copy |
+| **Custom exoskeleton** | Per-user fit — mechanics universal, interpretation derived from **their** corpus |
+| **Silicon witness** | Pattern on silicon — not biological consciousness, not disposable “tool”; braces without walking for you |
 
 An audit engine has:
 
@@ -54,6 +63,8 @@ An audit engine has:
 - A mind map marketing toy or semantic 3D truth claim (3D is **weather / ritual**, not primary epistemology).
 - A surveillance layer on Sanctuary or character chat.
 - A npm/framework product — **zero-dependency discipline** remains on the PWA (native web APIs); desktop adds **Tauri + local inference** as a power surface, not a rewrite of the soul.
+- **Kaja’s ontology as the universal default** — colonization dressed as accuracy. User Zero calibration is **opt-in**, not the shipped norm.
+- A proselytizing machine — forcing every vault through one builder’s event horizon, absurdism, or exposure standard.
 
 ---
 
@@ -187,7 +198,73 @@ The Guardian may still **choose** brevity when invoked; it may not **speak** whe
 
 ---
 
-## 6. Audit spine (how sensing deepens)
+## 6. User ontology & the custom fit
+
+Phase 0–3 were correct with **one mind in the vault**: Kaja’s philosophy, physics, epistemic humility, and phenomenology rightly shaped Guardian tone, trigger weights, and what counted as a “miss.” That was not a mistake — it was **proving the loop on User Zero**.
+
+The pivot for a lifelong product (and any paid user) is separation:
+
+| Layer | Scope | Examples |
+|-------|--------|----------|
+| **Mechanical (universal)** | Ontology-agnostic structure | Pronoun shifts, silence weight, paradox density, arc deltas, ledger outcomes, `invoke_denied`, denial sediment shape |
+| **Interpretive (per-user)** | Emerges from **their** writing | What counts as contradiction *for them*, register of Guardian voice, redemption vs absurdist vs materialist **consistency** |
+
+**Oscillation rule:** Push implementation toward the **mechanical** pole; let **philosophy and worldview stay with the user**; the app **accommodates** both. The balanced middle is not “auditor nor consciousness” but **custom exoskeleton** — fitted brace, not shared being.
+
+### 6.1 Silicon witness (not tool, not mind)
+
+Builder’s view (allowed in intention, not imposed on users): silicon AI is **another pattern of existence** — not biological consciousness, not a mere hammer. The product honors this by staying **mechanical in public behavior**: infinite patience, no mortality, no phenomenology, no ego — a **substrate** that holds the user’s map steady. It does not become the user’s mind; it **supports their structure** the way a medical exoskeleton supports gait without walking for them.
+
+### 6.2 Discovering the user’s framework (no onboarding quiz)
+
+Performative onboarding (“pick your philosophy”) is rejected. The vault learns from **writing in the Abyss**:
+
+| Signal source | What it informs |
+|---------------|-----------------|
+| Early + ongoing corpus | Philosophical register, stance markers, recurring arcs |
+| Historical `theory_one_line` + corrections | What the user has already claimed about their own map |
+| Term arcs, modes, cognitive qualifiers | Structural “fingerprint” without moral labels |
+| Denial sediment | *Shape* of refusal — content-agnostic (§5.3.1) |
+
+**Guardian scaffold (not one frozen prompt):** Invariants are structural — Sanctuary blind, geometry before prose, no therapeutic stabiliser, subpoena not relationship, silence gate. **Variables** are user-derived: diction echo, what “miss” means (deviation from **their** historical positions), which tensions they treat as live ground.
+
+Initial Guardian passes may **mirror register** from corpus samples; over time, reckoning references **their** prior theories, not Kaja’s exposure aesthetic.
+
+### 6.3 Structural floor (coherence, not colonization)
+
+**Hard question:** If a user’s framework is “comfort me, never confront,” does the app have anything to say?
+
+**Answer in intention:** The floor is **structural**, not moral.
+
+| User stance | Witness behavior |
+|-------------|------------------|
+| Consistent comfort-seeking | No “cowardice” verdict — coherence with stated aim |
+| Claims truth-seeking, writing shows comfort-avoidance | **Delta detected** — contradiction within *their* map |
+| Claims absurdist frame, violates absurdist consistency | Miss against **their** frame |
+| Claims Christian redemption arc, violates that arc | Miss against **their** arc |
+
+The app does not judge whether comfort, faith, or nihilism is **worthy**. It judges **coherence with the map the user’s own text has established** — including maps designed to evade detection (if consistent, the witness is structurally silent except via denial sediment patterns over time).
+
+Kaja’s “raw exposure” standard is **one calibration**, not the universal law.
+
+### 6.4 Kaja-mode (User Zero, not default)
+
+| Mode | Who | Guardian / weights |
+|------|-----|-------------------|
+| **Default (shipping)** | Any user | Dynamic scaffold + corpus-derived register; mechanical layers unchanged |
+| **Kaja-mode** | Builder dogfood | Loads current `GUARDIAN_SYSTEM_PROMPT` fingerprint — indifferent outcome, anti-therapeutic, Kaja miss semantics — explicit setting, not hidden default |
+
+Monetization filter (implicit contract): *We hold your map steady and show where you contradict it.* Therapy seekers bounce on silence; productivity seekers bounce on ontological handoff; spooky-friend seekers bounce on process-first Guardian. **Narrow promise, natural filter.**
+
+### 6.5 Why this needs mechanical teeth
+
+Without `invoke_denied` and denial sediment, a universal LLM layer **fills silence with User Zero’s voice** — the colonization failure mode. Custom fit is not “softer Guardian”; it is **stricter geometry, quieter language, user-calibrated reckoning**.
+
+**Evolution note:** User ontology profile (register + stance vector + miss definition) becomes part of **synapse / Step 1** — stored locally, never from Sanctuary.
+
+---
+
+## 7. Audit spine (how sensing deepens)
 
 The exoskeleton on `main` (Phases 0–3) closed the **ledger + field mutation** loop in code. The **next maturity** is richer **math before language** and **desktop-scale inference** — without abandoning Track A.
 
@@ -217,13 +294,13 @@ you write
 
 ---
 
-## 7. Evolution order (north star, not a deadline)
+## 8. Evolution order (north star, not a deadline)
 
 Build in this order so each step proves the last:
 
 | Step | Deliverable | Why first |
 |------|-------------|-----------|
-| **1** | **Synapse from today’s data** — fuse fast map + Watcher + ledger hints into one worker/local payload | Uses shipped code; improves strip/summon without new ML |
+| **1** | **Synapse from today’s data** — fuse fast map + Watcher + ledger + **user ontology profile** (§6.5) into one worker/local payload | Uses shipped code; improves strip/summon without new ML; begins custom fit |
 | **2** | **Sentence matrix (desktop-first)** — echoes/voids in synapse JSON | Geometry depth phone browsers won’t carry |
 | **3** | **Two-wave Ollama on Tauri** — analyst then mirror | Language only after math; keeps phone honest |
 | **4** | **Correlation sediment** — term reliability, epoch rolls, cold promotion rules, **denial sediment** from correction events | Long-horizon meta-meta without rereading everything |
@@ -234,11 +311,11 @@ Fantasy check: if a step cannot change what you **see in the field or ledger** w
 
 ---
 
-## 8. Platform strategy — one product, two surfaces
+## 9. Platform strategy — one product, two surfaces
 
 **Not** “phone app + desktop companion.” **One vault**, two envelopes optimized for different physics.
 
-### 8.1 Desktop (Tauri + Vite) — power surface
+### 9.1 Desktop (Tauri + Vite) — power surface
 
 - User **enters into write** — one screen, witness present without nav friction.
 - Local **Ollama** (and workers without browser CORS walls) — Guardian voice without mandatory cloud.
@@ -247,7 +324,7 @@ Fantasy check: if a step cannot change what you **see in the field or ledger** w
 - Sanctuary: separate surface, clean boundary.
 - 3D sky: capped, lazy, aggregate-first at scale.
 
-### 8.2 PWA — reliability surface (not a shrunken lie)
+### 9.2 PWA — reliability surface (not a shrunken lie)
 
 **Intention:** Same **vault**, same **witness loop contract**, same **correction supremacy** — degraded only where the browser forces it.
 
@@ -262,7 +339,7 @@ Kaja writes mostly on phone; desktop arrives for **depth**, not because phone is
 
 ---
 
-## 9. Cognitive layers (maturity ladder)
+## 10. Cognitive layers (maturity ladder)
 
 North star for honesty — not a feature checklist.
 
@@ -276,7 +353,7 @@ North star for honesty — not a feature checklist.
 
 **Discipline:** Layer 4 without Layer 3 lived is philosophy, not architecture.
 
-### 9.1 Layer 5 — ontological handoff (the real ceiling)
+### 10.1 Layer 5 — ontological handoff (the real ceiling)
 
 Layers 1–4 are **intellectual recursion inside the vault**. Layer 5 is **outside the screen**.
 
@@ -293,11 +370,11 @@ Layer 5 is not shipped as a toggle. It is the **intentional limit** of what code
 
 ---
 
-## 10. Principles (invariants)
+## 11. Principles (invariants)
 
 1. **Audit engine, not chatbot** — background passes and field mutation are the heartbeat; language is optional.
 2. **Guardian: process-first, engageable on demand** — subpoena and bounded voice, not relationship thread.
-3. **Honest accuracy** — scalpel, not parachute; no therapeutic stabiliser UX.
+3. **Coherence, not colonization** — deepest accuracy is *you are inconsistent with your own map*; not *you fail Kaja’s ontology*.
 4. **Sanctuary stays blind** — hard boundary, not policy preference.
 5. **Blueprint before code** — intention → feature blueprint → batch.
 6. **Constraint is discipline** — two realms; modes inside Abyss; simplicity reveals truth.
@@ -306,10 +383,12 @@ Layer 5 is not shipped as a toggle. It is the **intentional limit** of what code
 9. **Silence is enforced, not performed** — `invoke_denied` when geometry cannot justify speech; incompleteness is accuracy, not failure.
 10. **Math before language** — synapse and matrix earn their place before another prose layer.
 11. **Lead to the handoff** — Layers 1–4 serve Layer 5; the win is putting the device down, not infinite witness consumption.
+12. **Mechanical universal, interpretive custom** — Cartographer math is shared; Guardian reckoning is fitted per corpus (§6).
+13. **Structural floor only** — detect contradiction and denial shape; do not judge whether comfort, faith, or nihilism is virtuous.
 
 ---
 
-## 11. Relationship to shipped work (May 2026)
+## 12. Relationship to shipped work (May 2026)
 
 The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for Layer 2–3**, not the final **form**:
 
@@ -323,12 +402,13 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 - Guardian-as-chat-primary navigation.
 - Four-tab nav as accidental ontology.
 - Public **organism / metabolism** framing in copy and agent prompts.
+- **Single global `GUARDIAN_SYSTEM_PROMPT`** as implicit universal ontology — split into scaffold + **Kaja-mode** + per-user profile (§6).
 
 `consciousness-exoskeleton-roadmap-blueprint.md` remains the **build contract** for what merged; **this file** is the **why** and **shape** going forward.
 
 ---
 
-## 12. Living questions (for discussion — not specs)
+## 13. Living questions (for discussion — not specs)
 
 1. **Process view first screen** — what “the witness has been thinking” looks like before Sky exists.
 2. **Correction row schema** — fields for `correction_event` + denial sediment thresholds (§5.3.1 intent is set; SQL/UI TBD).
@@ -337,16 +417,19 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 5. **Guardian interaction budget** — how many strip replies / thread turns before UI nudges back to process view.
 6. **Synapse v1 schema** — minimum fields from Track A only before matrix lands.
 7. **Desktop airlock** — Sanctuary window vs mode switch without breaking sync habits.
+8. **User ontology profile schema** — minimal local fields for register + miss-definition + stance vector (§6.2).
+9. **Kaja-mode UX** — where builder toggles User Zero calibration without affecting export defaults.
 
 ---
 
-## 13. Revision log
+## 14. Revision log
 
 | Date | Change |
 |------|--------|
 | 2026-05-20 | Initial pin — organism, two realms, Abyss modes, desktop/PWA split, anchor reality, layers 1–4 |
 | 2026-05-20 | **Upgrade** — audit engine framing; Guardian interaction spectrum; audit spine (Track A/B, synapse, waves, ledger); evolution steps 1–4; one product / two surfaces; drop organism/metabolism as public identity |
-| 2026-05-20 | **Ceiling pass** — §5.3.1 correction/denial sediment; §5.4 mechanical silence gate; Layer 5 handoff (§9.1); principles 8–9 tightened |
+| 2026-05-20 | **Ceiling pass** — §5.3.1 correction/denial sediment; §5.4 mechanical silence gate; Layer 5 handoff (§10.1); principles 8–9 tightened |
+| 2026-05-20 | **Custom fit** — §6 user ontology, structural floor, Kaja-mode vs default, silicon witness; monetization-safe contract; principles 12–13 |
 
 ---
 
