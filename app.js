@@ -846,8 +846,8 @@ function initWorker(){
 /* ── WATCHER ENGINE (MAIN THREAD SHADOW QUEUE) ──────────────── */
 // DEV MODE: flip to false before shipping to production
 /* Set false for production builds (relaxes watcher thresholds and skips lock screen). */
-const NQ_DEV_MODE = true;
-//const NQ_DEV_MODE = false;
+//const NQ_DEV_MODE = true;
+const NQ_DEV_MODE = false;
 
 const GUARDIAN_LS_AUTO_INVOKE = 'nq_guardian_auto_invoke_enabled';
 const GUARDIAN_LS_STRICT_INVOKE = 'nq_guardian_strict_invoke';
