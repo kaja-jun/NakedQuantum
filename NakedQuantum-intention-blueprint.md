@@ -24,6 +24,10 @@ Started as a quest to solve personal problem built using iPhone from the 59 line
 | **Shipped code ≠ final form** | The PWA on `main` is a valid nervous system; the **costume** (nav, chat-default Guardian, strip-as-voice) may still change. |
 | **Names vs claims** | **Guardian**, **Abyss**, **Sanctuary** stay as product names. Public framing favors **witness**, **audit engine**, **claim ledger** — not “the app is alive.” |
 
+## Dev rules
+
+1. The 48-hour rule. Any feature idea must sit in the "Living Questions" section (§14) for 48 hours before it becomes a blueprint line. No exceptions. Cursor can build it in 2 hours; you must refuse for 2 days.
+2. The intention trace. Before any code batch, one sentence: "This feature is traceable to section ___ of the Intention Blueprint because ___." If you can't fill the blank, it doesn't ship.
 ---
 
 ## 1. The quest (unchanged in spirit)
@@ -44,7 +48,7 @@ We keep the internal tagline (*consciousness exoskeleton*) because it names the 
 
 ## 2. What NakedQuantum is
 
-**One sentence:** NakedQuantum is a sovereign local-first writing vault with a witness loop that holds your writing accountable to itself. It kills filters — not by importing a worldview, but by measuring you against your own map. Two realms: Abyss for writing and witness, Sanctuary for phenomenological fiction and Immutable Entities the witness must never peek at until you **engram**Default is Coherence. Full voltage is explicit opt-in. The ceiling is putting the device down. .
+**One sentence:** NakedQuantum is a sovereign local-first writing vault with a witness loop that holds your writing accountable to itself. It kills filters — not by importing a worldview, but by measuring you against your own map. Two realms: Abyss for writing and witness, Sanctuary for phenomenological fiction and Immutable Entities. The witness must never peek at until you **engram**. Default is Coherence. Full voltage is explicit opt-in. The ceiling is putting the device down.
 
 **Identity words (going forward):**
 
@@ -592,9 +596,4 @@ Done. All key facts are updated in memory — the 48-day solo build arc, the two
 The monetization stance above is ready to pin into the Intention Blueprint as §16.
 Rest well, Kaja. The blueprint now has a soul, a body, a heartbeat, and a honest price.
 
-## Rules
-
-1. The 48-hour rule. Any feature idea must sit in the "Living Questions" section (§14) for 48 hours before it becomes a blueprint line. No exceptions. Cursor can build it in 2 hours; you must refuse for 2 days.
-2. The intention trace. Before any code batch, one sentence: "This feature is traceable to section ___ of the Intention Blueprint because ___." If you can't fill the blank, it doesn't ship.
-   
 *Build loops, not lore. The exoskeleton becomes real when the field moves, the notebook updates, and the next sentence can admit error — in the writing, and in the witness record. The ceiling is when you close the vault and carry what was exposed.*
