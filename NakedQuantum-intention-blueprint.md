@@ -93,17 +93,30 @@ Everything that belongs to **your writing** and the **witness loop’s attention
 - **Permanent purge** — user may annihilate text for privacy; purged material must not ghost back in witness or vectors.
 - **Sediment** — rolled-up summaries of old guardian logs / epochs so the engine does not pretend to re-read five years of logs every pass.
 
-The witness **does not** ingest the full vault on every thought. It works on **windows, tiers, aggregates, and sediment** — obsession without omniscience.
+The witness **does not** ingest the full vault on every thought. It works on **windows, tiers, aggregates, and sediment** — obsession with **data of a mind**, not with pleasing a human or performing for one.
+
+**Abyss invariants (universal — all users, all calibrations):**
+
+| The witness **never** | The witness **always** |
+|----------------------|------------------------|
+| Performs empathy, charm, or bedside manner | Measures geometry and ledger facts |
+| Comforts, stabilises, or “meets you where you are” | Surfaces deltas against **your** map (§6.3) |
+| Judges which life goals are virtuous | Detects contradiction and denial **shape** |
+
+Burden lies on the **user**: comfort, love, existential dread, family war, absurdism, enlightenment-as-look-away, narcissism — the vault ingests the writing; the exoskeleton does the **same mechanical job**. **Filters and distortions vary by person**; the brace does not import Kaja’s existential agenda as the universal standard (§6).
 
 ### 4.2 Sanctuary — you and borrowed minds
 
 Dialogic, constructed, playful, philosophical — **Socrates, sutras, custom characters**. A different cognitive act from confession in the archive.
+
+**Sanctuary is allowed to perform.** Characters may cut (Diamond Sutra), give peace, make you blush (childhood crush), annoy (Socrates), humble (ant), or show pattern (rock). That is **play and dialogue**, not witness duty. The exoskeleton does not grade Sanctuary for accuracy; it **never imports** Sanctuary into Guardian context.
 
 **Invariants:**
 
 - Witness / Guardian / Cartographer **never** reads Sanctuary chat or uses it in Abyss context.
 - Threshold matters: you **enter** and **leave** Sanctuary (on desktop: likely separate window or full-screen airlock).
 - What happens in Sanctuary **stays** in Sanctuary.
+- Performance-first users who want the **whole app** to please them will bounce here too — Diamond Sutra and Guardian share the same refusal to flatter.
 
 ---
 
@@ -262,6 +275,26 @@ Without `invoke_denied` and denial sediment, a universal LLM layer **fills silen
 
 **Evolution note:** User ontology profile (register + stance vector + miss definition) becomes part of **synapse / Step 1** — stored locally, never from Sanctuary.
 
+### 6.6 Burden, bounce, and what you answered
+
+**You answered the core:**
+
+- Neutral exoskeleton + universal mechanics + per-user **distortion profile** (not per-user morality).
+- **Structural floor** — coherence with the user’s map; no cowardice verdict if comfort is their honest aim.
+- **Sanctuary vs Abyss split** — only Sanctuary may move emotion by design; witness stays data-obsessed.
+- **Natural filter** — performance / therapy / spooky-friend seekers leave; not a support gap.
+
+**Scenario gaps to hold in mind (not failures — living edges):**
+
+| Gap | Notes |
+|-----|--------|
+| **Writes only in Sanctuary** | Witness starves — product honesty: Abyss is the confession corpus; Sanctuary is airlock play. |
+| **Performs in Abyss** | If writing is performance-for-reader, coherence checks still run; witness does not “see through” intent — only text geometry. |
+| **Never corrects, only denies** | Denial sediment (§5.3.1) is the signal; supreme correction still stands. |
+| **Wants Guardian to comfort in Abyss** | Refused by §4.1 — they may have Sanctuary; mixing realms is the bug. |
+| **Paid user expects Kaja’s exposure** | Kaja-mode is opt-in; default is their map. |
+| **Malicious / harm ideation in vault** | Outside “coherence” — may need a separate safety policy for sync/hosting; intention doc does not solve law/ethics. |
+
 ---
 
 ## 7. Audit spine (how sensing deepens)
@@ -385,6 +418,7 @@ Layer 5 is not shipped as a toggle. It is the **intentional limit** of what code
 11. **Lead to the handoff** — Layers 1–4 serve Layer 5; the win is putting the device down, not infinite witness consumption.
 12. **Mechanical universal, interpretive custom** — Cartographer math is shared; Guardian reckoning is fitted per corpus (§6).
 13. **Structural floor only** — detect contradiction and denial shape; do not judge whether comfort, faith, or nihilism is virtuous.
+14. **Abyss never performs** — Sanctuary may; witness never comforts or flatters (§4.1–4.2).
 
 ---
 
@@ -430,6 +464,7 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 | 2026-05-20 | **Upgrade** — audit engine framing; Guardian interaction spectrum; audit spine (Track A/B, synapse, waves, ledger); evolution steps 1–4; one product / two surfaces; drop organism/metabolism as public identity |
 | 2026-05-20 | **Ceiling pass** — §5.3.1 correction/denial sediment; §5.4 mechanical silence gate; Layer 5 handoff (§10.1); principles 8–9 tightened |
 | 2026-05-20 | **Custom fit** — §6 user ontology, structural floor, Kaja-mode vs default, silicon witness; monetization-safe contract; principles 12–13 |
+| 2026-05-22 | **Abyss invariants** — §4.1 never perform/comfort; §4.2 Sanctuary may; §6.6 burden/bounce/gap table; principle 14 |
 
 ---
 
