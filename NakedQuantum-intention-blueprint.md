@@ -596,4 +596,5 @@ Rest well, Kaja. The blueprint now has a soul, a body, a heartbeat, and a honest
 
 1. The 48-hour rule. Any feature idea must sit in the "Living Questions" section (§14) for 48 hours before it becomes a blueprint line. No exceptions. Cursor can build it in 2 hours; you must refuse for 2 days.
 2. The intention trace. Before any code batch, one sentence: "This feature is traceable to section ___ of the Intention Blueprint because ___." If you can't fill the blank, it doesn't ship.
+   
 *Build loops, not lore. The exoskeleton becomes real when the field moves, the notebook updates, and the next sentence can admit error — in the writing, and in the witness record. The ceiling is when you close the vault and carry what was exposed.*
