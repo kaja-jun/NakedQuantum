@@ -8373,6 +8373,28 @@ function normalizeSupabaseUrl(url) {
   return String(url || '').trim().replace(/\/+$/, '');
 }
 
+/** Cloud row id — avoids PK(id) collisions (e.g. discourse d_x vs guardian_summaries d_x). */
+function nqSyncCloudId(store, localId) {
+  return store + '::' + String(localId);
+}
+
+function nqSyncLocalId(cloudId, store) {
+  const prefix = store + '::';
+  const s = String(cloudId);
+  if (s.startsWith(prefix)) return s.slice(prefix.length);
+  return s;
+}
+
+function dedupeSyncPayloads(rows) {
+  const byKey = new Map();
+  for (const row of rows) {
+    const key = row.store + '\0' + row.id;
+    const prev = byKey.get(key);
+    if (!prev || (row.updated_at || 0) >= (prev.updated_at || 0)) byKey.set(key, row);
+  }
+  return Array.from(byKey.values());
+}
+
 async function supabaseHttpError(res, label) {
   const text = await res.text();
   let detail = text.slice(0, 240);
@@ -8418,7 +8440,7 @@ async function handleSync() {
       if (!row || !row.store) continue;
       if (row.updated_at > newLastSync) newLastSync = row.updated_at;
       if (row.deleted_at) {
-        await dbDelete(row.store, row.id);
+        await dbDelete(row.store, nqSyncLocalId(row.id, row.store));
       } else if (row.data_enc) {
         try {
           const obj = await decFromCloud(row.data_enc);
@@ -8449,7 +8471,7 @@ async function handleSync() {
           }
         }
         pushPayloads.push({
-          id: String(item.id),
+          id: nqSyncCloudId(store, item.id),
           user_id: cosmUserId,
           store: store,
           updated_at: isDel ? (item.deleted_at || Date.now()) : (item.updated_at || item.created_at || item.invoked_at || Date.now()),
@@ -8459,9 +8481,10 @@ async function handleSync() {
       }
     }
 
+    const pushDeduped = dedupeSyncPayloads(pushPayloads);
     const chunkSize = 25;
-    for (let i = 0; i < pushPayloads.length; i += chunkSize) {
-      const chunk = pushPayloads.slice(i, i + chunkSize);
+    for (let i = 0; i < pushDeduped.length; i += chunkSize) {
+      const chunk = pushDeduped.slice(i, i + chunkSize);
       const pushRes = await fetch(supaUrl + '/rest/v1/nq_sync', {
         method: 'POST',
         headers: Object.assign({}, supaHeaders, {
@@ -8477,7 +8500,7 @@ async function handleSync() {
     }
 
     localStorage.setItem('nq_last_sync', String(newLastSync > lastSync ? newLastSync : Date.now()));
-    showToast(pushPayloads.length ? 'Abyss Synchronized ◆ (' + pushPayloads.length + ')' : 'Abyss Synchronized ◆');
+    showToast(pushDeduped.length ? 'Abyss Synchronized ◆ (' + pushDeduped.length + ')' : 'Abyss Synchronized ◆');
     if (currentMode === 'soup') await renderTableView();
     else if (currentMode === 'sanctuary') await renderSanctuaryView();
 
