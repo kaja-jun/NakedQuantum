@@ -138,6 +138,13 @@ Dialogic, constructed, playful, philosophical — **Socrates, sutras, custom cha
 
 ---
 
+### 4.3 The Audio Airlock (Voice as Inscription)
+Voice bypasses the biological brain glitch — the instinct to backspace and sanitize a thought before it hits the database. It captures raw cognitive weather (3 AM exhaustion, emotional floods, or physical inability to type).
+**The Mechanic:** Voice is an input vector, never a conversation.
+ * **Ear, Not Mouth:** A local model (Whisper) transcribes speech to raw text, then immediately unloads from the queue. The app never speaks back.
+ * **The Airlock:** Spoken text does not automatically trigger the witness loop. A sleep-deprived mumble, a spike of transient heat-of-the-moment anger, or a fragmented thought isn’t necessarily a structural claim about their existence—it is just cognitive weather. It enters a “Wait for Review” state. 
+ * **The Reckoning of the Edit:** The user must approve, edit, or void the transcript. If they choose to erase their hesitation or rewrite their raw truth to sound smarter, the app allows it. The physical friction of rewriting one’s own reality *is* the reckoning.
+
 ## 5. Guardian & the witness loop (behavioural contract)
 
 Guardian is the **language layer** of the audit engine — rare, costly, dismissible. Geometry (Cartographer + Watcher) is always-on signal; Guardian prose is **evidence and theory**, not the default relationship.
