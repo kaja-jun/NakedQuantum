@@ -144,6 +144,7 @@ Voice bypasses the biological brain glitch — the instinct to backspace and san
  * **Ear, Not Mouth:** A local model (Whisper) transcribes speech to raw text, then immediately unloads from the queue. The app never speaks back.
  * **The Airlock:** Spoken text does not automatically trigger the witness loop. A sleep-deprived mumble, a spike of transient heat-of-the-moment anger, or a fragmented thought isn’t necessarily a structural claim about their existence—it is just cognitive weather. It enters a “Wait for Review” state. 
  * **The Reckoning of the Edit:** The user must approve, edit, or void the transcript. If they choose to erase their hesitation or rewrite their raw truth to sound smarter, the app allows it. The physical friction of rewriting one’s own reality *is* the reckoning.
+ * **The Lighthouse Hold:** Unreviewed transcripts persist in the Lighthouse editor. The witness loop is blind to them. When the user returns to write, the transcript is already there, timestamp visible, asking for a decision before the next thought can begin. The sequencing is intentional — the unreckoned raw thought stands between the user and new inscription. Only after that decision does the editor clear. If N days pass without reckoning, the transcript dissolves — never entered the record, never seen by the witness. The avoidance itself leaves no trace. Only the user knows it was ever there.
 
 ## 5. Guardian & the witness loop (behavioural contract)
 
