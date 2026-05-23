@@ -300,7 +300,7 @@ The app does not judge whether comfort, faith, or nihilism is **worthy**. It jud
 
 Kaja’s “raw exposure” standard lives in **Isness mode**, not the universal law.
 
-### 6.4 Four-way synthesis (shower → isness)
+### 6.4 Synthesis (shower → isness)
 
 **Resolved:** 
 The app stays a filter killer structurally. Default calibration (Coherence) fits the user’s own map. Isness mode (User Zero / Kaja-calibration) is explicit, visible, and opt-in — not hidden, not the universal default. Sanctuary remains sovereign; Abyss never performs.
@@ -574,38 +574,32 @@ Ties to **§4.4** (sovereign exit): payment gates **ongoing practice**, not **yo
 | Tokens or payment processors tied to the app | BYOK for discourse; the fee is for the container, not the fire |
 
 ### 16.2 The Vessel Fee
+
 •  £9.99 / month — one plan, one app, no tiers
 •  Handled via third-party subscription platform + key validation — decoupled from the app binary
 •  What the fee covers: the vault interface, the witness loop, the Sanctuary, the sync backbone
 •  What the user powers themselves: BYOK for Guardian discourse (OpenRouter, Ollama, etc.)
+•  The Vessel fee buys back the builder’s time. The free tier honors the principle that survival should not depend on payment. The refusal of stores and corporate judgment keeps the practice pure. The ceiling is still putting the device down — and the business model does not fight that ceiling by optimizing for engagement.
 
 ### 16.3 Free Access
 
 •  Free one month trial before subscribe
 •  Monthly renewable access for those who cannot afford
-•  Simple form. No proof asked. No questions.
+•  Simple request inside the app. No proof asked. One question as abuse filter.
 •  Self-selection: if asking feels like begging, this high-voltage platform is not for you
 •  The app is uncomfortable enough that abuse is self-correcting — the silence gates and the Guardian’s refusal to flatter filter out the unserious
 
 ### 16.4 The Exit
+
 •  End of subscription: witness loop and Sanctuary are gated off
 •  Vault remains fully accessible with export (.pdf, .html, .md, json) and Export All button
 •  Data is never a hostage. Retention depends on value, not lock-in
 
-### 16.5 Generosity threshold
+### 16.5 Discovery
 
-| Range | Stance |
-|-------|--------|
-| Under £500/month | Survival first. Keep it all. |
-| £500–1,500/month | Operate. Build, eat, sleep. |
-| Above £1,500/month | Excess sponsors free users mechanically — one paid user funds one free user via the no-proof form |
-
-### 16.6 Discovery
 •  Tiny blog only — manifesto and a way in
 •  No marketing funnel, no growth hacking, no social media performance
 •  The app finds its users in the abyss, or it does not find them
-
-**The Vessel Fee** buys back the builder’s time. The free tier honors the principle that survival should not depend on payment. The refusal of stores and corporate judgment keeps the practice pure. The ceiling is still putting the device down — and the business model does not fight that ceiling by optimizing for engagement.
 
 ---
 
