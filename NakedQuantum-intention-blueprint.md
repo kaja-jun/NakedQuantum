@@ -17,7 +17,7 @@ Started as a quest to solve personal problem built using iPhone from the 59 line
 
 | Rule | Meaning |
 |------|---------|
-| **Intention first** | If a feature idea isn’t traceable to §2–§12, it’s scaffolding — question it. |
+| **Intention first** | If a feature idea isn’t traceable to §2–§16, it’s scaffolding — question it. |
 | **Builder ≠ template** | Kaja is **User Zero**; **Isness mode** is explicit and visible — not the shipping default. Default is **Coherence** (custom fit). |
 | **Blueprint before code** | Update this doc when intention shifts; update feature blueprints when scope shifts. |
 | **Discussion welcome** | Sections marked *Living* are deliberate questions, not omissions. |
@@ -136,8 +136,6 @@ Dialogic, constructed, playful, philosophical — **Socrates, sutras, custom cha
 
 **Engram (one-way bridge):** User transfers a **Discourse** — raw dialogue, not a sanitized summary — into Abyss. Preserves timestamp and emotional texture (e.g. 22 May 2026: the rock made you pause). Bypasses the biological revisionism glitch. Cartographer maps **your** side as corpus; Entity lines are tagged as **Sanctuary-origin collision**, not subconscious confession. Witness never auto-ingests Sanctuary; engram is **consent**.
 
----
-
 ### 4.3 The Audio Airlock (Voice as Inscription)
 Voice bypasses the biological brain glitch — the instinct to backspace and sanitize a thought before it hits the database. It captures raw cognitive weather (3 AM exhaustion, emotional floods, or physical inability to type).
 **The Mechanic:** Voice is an input vector, never a conversation.
@@ -145,6 +143,22 @@ Voice bypasses the biological brain glitch — the instinct to backspace and san
  * **The Airlock:** Spoken text does not automatically trigger the witness loop. A sleep-deprived mumble, a spike of transient heat-of-the-moment anger, or a fragmented thought isn’t necessarily a structural claim about their existence—it is just cognitive weather. It enters a “Wait for Review” state. 
  * **The Reckoning of the Edit:** The user must approve, edit, or void the transcript. If they choose to erase their hesitation or rewrite their raw truth to sound smarter, the app allows it. The physical friction of rewriting one’s own reality *is* the reckoning.
  * **The Lighthouse Hold:** Unreviewed transcripts persist in the Lighthouse editor. The witness loop is blind to them. When the user returns to write, the transcript is already there, timestamp visible, asking for a decision before the next thought can begin. The sequencing is intentional — the unreckoned raw thought stands between the user and new inscription. Only after that decision does the editor clear. If N days pass without reckoning, the transcript dissolves — never entered the record, never seen by the witness. The avoidance itself leaves no trace. Only the user knows it was ever there.
+
+**Living (48h gate):** N for transcript dissolve; Whisper on PWA vs desktop-only for v1.
+
+### 4.4 Sovereign exit (subscription ≠ hostage)
+
+Monetization must not violate the two-realm contract. **The vault is always yours** — even when the witness loop or Sanctuary access is gated (see §16).
+
+| State | What stays open | What may gate |
+|-------|-----------------|---------------|
+| **Paid / granted free access** | Full app per plan | — |
+| **Lapsed subscription** | Read vault, **Export All** (.md, .html, .pdf, .json), local OPFS | Witness loop, Sanctuary entry, cloud sync (optional policy) |
+| **Never subscribed** | Local-first use as shipped; export | Paid surfaces only if we gate at all |
+
+**Invariants:** Data never held hostage; export first-class; gating targets **ongoing witness / play**, not **ownership of past writing**. Aligns with Layer 5 (§10.1).
+
+---
 
 ## 5. Guardian & the witness loop (behavioural contract)
 
@@ -501,9 +515,8 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 - Soup strip as **default voice** of the product.
 - Guardian-as-chat-primary navigation.
 - Four-tab nav as accidental ontology.
-- Public **organism / metabolism** framing in copy and agent prompts. 
-
-**Single global `GUARDIAN_SYSTEM_PROMPT`** as implicit universal ontology — split into Coherence scaffold + **Isness mode** + per-user profile (§6.7).
+- Public **organism / metabolism** framing in copy and agent prompts.
+- **Single global `GUARDIAN_SYSTEM_PROMPT`** as implicit universal ontology — split into Coherence scaffold + **Isness mode** + per-user profile (§6.7).
 - **Isness toggle** in visible settings (not buried); subtle theme shift spec.
 
 `consciousness-exoskeleton-roadmap-blueprint.md` remains the **build contract** for what merged; **this file** is the **why** and **shape** going forward.
@@ -524,6 +537,7 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 10. **Engram schema** — Discourse payload, Entity id, Sanctuary timestamp, user reaction field.
 11. **Cartographer on engram** — map Entity voice as foreign collision vs projected self (§4.2).
 12. **Rock / Entity prompt style guide** — geology-not-guru examples pinned for authoring.
+13. **Audio Airlock** — Whisper scope (PWA vs desktop); N-day transcript dissolve (§4.3).
 
 ---
 
@@ -537,64 +551,62 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 | 2026-05-20 | **Custom fit** — §6 user ontology, structural floor, Kaja-mode vs default, silicon witness; monetization-safe contract; principles 12–13 |
 | 2026-05-22 | **Abyss invariants** — §4.1 never perform/comfort; §4.2 Sanctuary may; §6.6 burden/bounce/gap table; principle 14 |
 | 2026-05-22 | **Isness conversation** — §6.4 four-way synthesis; §6.7 Coherence vs Isness; §6.8 Abyss/Sanctuary tech; §12 Immutable Entities + engram; filter killer in §1–§2; principle 15 |
+| 2026-05-22 | **Kaja pass** — header/dev rules; §1 monetization cap; §2 one-sentence; §16 Vessel Fee; 48h living-Q gate |
+| 2026-05-22 | **Pin pass** — §4.3 Audio Airlock; §4.4 sovereign exit; §16 formatted; trial month; §13 list fix |
 
 ---
 
-## §16. Sustainability & The Vessel Fee
+## 16. Sustainability & the Vessel Fee
 
-§16. Sustainability & The Vessel Fee
 The Vessel Fee is not a wall. It is a mirror: those who can pay, pay. Those who cannot, ask. Those who will not do either, self-select out. The creator does not owe access; the user does not owe payment. Survival is the only mandatory exchange.
 
-## 16.1 The Nope List
-*We refuse*
-App Store / Play Store	
-*Why*
-30% cut, review gatekeeping, category violence against the app’s isness
-*We refuse*
-Ads, corporate structure, SEO	
-*Why*
-Noise that bends the product toward growth logic
-*We refuse*
-“Wellness app,” “benevolent app,” “edgy app”	
-*Why*
-Three masks for the same filter
-*We refuse*
-Pro / Ultra / Premium tier gimmicks	
-*Why*
-One plan. One app. No segmentation psychology
-*We refuse*
-One-off lifetime licenses	
-*Why*
-Front-loads income, back-loads maintenance; lifetime is a trap for solo builders
-*We refuse*
-Tokens or payment processors tied to the app	
-*Why*
-BYOK for discourse; the fee is for the container, not the fire
+Ties to **§4.4** (sovereign exit): payment gates **ongoing practice**, not **your archive**.
 
-## 16.2 The Vessel Fee
+### 16.1 The Nope List
+
+| We refuse | Why |
+|-----------|-----|
+| App Store / Play Store | 30% cut, review gatekeeping, category violence against the app’s isness |
+| Ads, corporate structure, SEO | Noise that bends the product toward growth logic |
+| “Wellness app,” “benevolent app,” “edgy app” | Three masks for the same filter |
+| Pro / Ultra / Premium tier gimmicks | One plan. One app. No segmentation psychology |
+| One-off lifetime licenses | Front-loads income, back-loads maintenance; lifetime is a trap for solo builders |
+| Tokens or payment processors tied to the app | BYOK for discourse; the fee is for the container, not the fire |
+
+### 16.2 The Vessel Fee
 •  £9.99 / month — one plan, one app, no tiers
 •  Handled via third-party subscription platform + key validation — decoupled from the app binary
 •  What the fee covers: the vault interface, the witness loop, the Sanctuary, the sync backbone
 •  What the user powers themselves: BYOK for Guardian discourse (OpenRouter, Ollama, etc.)
 
-## 16.3 Free Access
+### 16.3 Free Access
+
 •  Free one month trial before subscribe
 •  Monthly renewable access for those who cannot afford
 •  Simple form. No proof asked. No questions.
 •  Self-selection: if asking feels like begging, this high-voltage platform is not for you
 •  The app is uncomfortable enough that abuse is self-correcting — the silence gates and the Guardian’s refusal to flatter filter out the unserious
 
-## 16.4 The Exit
+### 16.4 The Exit
 •  End of subscription: witness loop and Sanctuary are gated off
 •  Vault remains fully accessible with export (.pdf, .html, .md, json) and Export All button
 •  Data is never a hostage. Retention depends on value, not lock-in
 
-## 16.5 Discovery
+### 16.5 Generosity threshold
+
+| Range | Stance |
+|-------|--------|
+| Under £500/month | Survival first. Keep it all. |
+| £500–1,500/month | Operate. Build, eat, sleep. |
+| Above £1,500/month | Excess sponsors free users mechanically — one paid user funds one free user via the no-proof form |
+
+### 16.6 Discovery
 •  Tiny blog only — manifesto and a way in
 •  No marketing funnel, no growth hacking, no social media performance
 •  The app finds its users in the abyss, or it does not find them
 
 **The Vessel Fee** buys back the builder’s time. The free tier honors the principle that survival should not depend on payment. The refusal of stores and corporate judgment keeps the practice pure. The ceiling is still putting the device down — and the business model does not fight that ceiling by optimizing for engagement.
-Done.
+
+---
 
 *Build loops, not lore. The exoskeleton becomes real when the field moves, the notebook updates, and the next sentence can admit error — in the writing, and in the witness record. The ceiling is when you close the vault and carry what was exposed.*
