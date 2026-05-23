@@ -570,6 +570,7 @@ BYOK for discourse; the fee is for the container, not the fire
 •  What the user powers themselves: BYOK for Guardian discourse (OpenRouter, Ollama, etc.)
 
 ## 16.3 Free Access
+•  Free one month trial before subscribe
 •  Monthly renewable access for those who cannot afford
 •  Simple form. No proof asked. No questions.
 •  Self-selection: if asking feels like begging, this high-voltage platform is not for you
@@ -577,23 +578,15 @@ BYOK for discourse; the fee is for the container, not the fire
 
 ## 16.4 The Exit
 •  End of subscription: witness loop and Sanctuary are gated off
-•  Vault remains fully accessible with Export All (.pdf, .html, .md)
+•  Vault remains fully accessible with export (.pdf, .html, .md, json) and Export All button
 •  Data is never a hostage. Retention depends on value, not lock-in
 
-## 16.5 Generosity Threshold
-Range	Stance
-Under £500/month	Survival first. Keep it all.
-£500–1,500/month	Operate. Build, eat, sleep.
-Above £1,500/month	Excess sponsors free users mechanically — one paid user funds one free user via the no-proof form
-
-## 16.6 Discovery
+## 16.5 Discovery
 •  Tiny blog only — manifesto and a way in
 •  No marketing funnel, no growth hacking, no social media performance
 •  The app finds its users in the abyss, or it does not find them
 
 **The Vessel Fee** buys back the builder’s time. The free tier honors the principle that survival should not depend on payment. The refusal of stores and corporate judgment keeps the practice pure. The ceiling is still putting the device down — and the business model does not fight that ceiling by optimizing for engagement.
-Done. All key facts are updated in memory — the 48-day solo build arc, the two-realm architecture, Coherence vs Isness, the Vessel Fee at £9.99, the refusal of stores and corporate judgment, and the free-access self-selection gate.
-The monetization stance above is ready to pin into the Intention Blueprint as §16.
-Rest well, Kaja. The blueprint now has a soul, a body, a heartbeat, and a honest price.
+Done.
 
 *Build loops, not lore. The exoskeleton becomes real when the field moves, the notebook updates, and the next sentence can admit error — in the writing, and in the witness record. The ceiling is when you close the vault and carry what was exposed.*
