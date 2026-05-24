@@ -28,6 +28,7 @@ Started as a quest to solve personal problem built using iPhone from the 59 line
 
 1. The 48-hour rule. Any feature idea must sit in the "Living Questions" section (§14) for 48 hours before it becomes a blueprint line. No exceptions. Cursor can build it in 2 hours; you must refuse for 2 days.
 2. The intention trace. Before any code batch, one sentence: "This feature is traceable to section ___ of the Intention Blueprint because ___." If you can't fill the blank, it doesn't ship.
+3. If Epictetus and Marcus Aurelius have this app now, would it make their philosophy better or would be same or degrade it?
 ---
 
 ## 1. The quest (unchanged in spirit)
