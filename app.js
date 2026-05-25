@@ -651,6 +651,8 @@ db.run("CREATE TABLE IF NOT EXISTS cosm_discourses(id TEXT PRIMARY KEY, title TE
   db.run("CREATE TABLE IF NOT EXISTS guardian_logs(id TEXT PRIMARY KEY, invoked_at INTEGER, model_used TEXT, soup_snapshot_count INTEGER, response_text TEXT, was_silent INTEGER DEFAULT 0, thread TEXT, emotional_weight REAL DEFAULT 1.0)");
 db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoked_at INTEGER, model_used TEXT, soup_snapshot_count INTEGER, ciphertext TEXT, iv TEXT, was_silent INTEGER DEFAULT 0, thread TEXT, emotional_weight REAL DEFAULT 1.0)");
   db.run("CREATE TABLE IF NOT EXISTS guardian_summaries_enc(id TEXT PRIMARY KEY, enc TEXT)");
+  db.run("CREATE TABLE IF NOT EXISTS bridge_rows(id TEXT PRIMARY KEY, opened_at INTEGER, source_log_id TEXT, prior_theory TEXT, user_action TEXT, user_note TEXT, signal_keys TEXT, geometry_at_open TEXT, status TEXT, checks INTEGER DEFAULT 0, last_check_at INTEGER, closed_at INTEGER, closure_reason TEXT)");
+  db.run("CREATE TABLE IF NOT EXISTS bridge_rows_enc(id TEXT PRIMARY KEY, enc TEXT)");
 
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN auto_invoked INTEGER DEFAULT 0"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN triggered_by TEXT"); } catch (e) {}
@@ -664,7 +666,7 @@ db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoke
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN prediction_tag TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN prediction_outcome TEXT"); } catch (e) {}
 
-  ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'].forEach
+  ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities', 'bridge_rows'].forEach
 (t => {
     try {
       const info = db.exec("PRAGMA table_info(" + t + ")");
@@ -5226,6 +5228,9 @@ let fastMap = {
     try { await scoreGuardianPredictionsOnSave(discourseId, fastMap); } catch (predErr) {
       console.warn('[Guardian] prediction score:', predErr);
     }
+    try { await refreshWitnessSubstrate(); } catch (wSub) {
+      console.warn('[Witness] refresh after map:', wSub);
+    }
 
     if (!mapOpts.skipAutoInvite && isGuardianAutoInvokeEnabled() && checkGuardianTrigger) {
       try {
@@ -8239,9 +8244,9 @@ async function exportDiscourseMarkdown(id){const d=await getDiscourse(id);if(!d)
 
 async function exportFolderContents(fId){const discs=(await dbGetByIndex("cosm_discourses","folder_id",fId)).filter(d=>!d.isDeleted);if(!discs.length){showToast("No discourses to export ◆");return;}let md=`# Folder Export\n\n`;for(const d of discs){const t=await getMosaicTile(d.id);md+=`## ${d.title}\n\n`;if(t&&t.anchors&&t.anchors.length)md+=`> **Mosaic**\n${t.anchors.map(a=>`> - ${a}`).join('\n')}\n\n`;md+=d.raw_text||" ";md+=`\n\n---\n\n`;}const blob=new Blob([md],{type:"text/markdown"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`folder_export_${new Date().toISOString().slice(0,10)}.md`;a.click();URL.revokeObjectURL(url);showToast(`Exported ${discs.length} discourse(s)`);}
 
-async function exportJSON(){const f=await dbGetAll("cosm_folders"),d=await dbGetAll("cosm_discourses"),m=await dbGetAll("cosm_mosaic_tiles"),b=await dbGetAll("cosm_backlinks"),c=await dbGetAll("characters"),h=await dbGetAll("history"),s=await dbGetAll("summaries"),gl=await dbGetAll("guardian_logs"),gs=await dbGetAll("guardian_summaries"),ie=await dbGetAll("immutable_entities");const payload={version:"NakedQuantum",exported_at:new Date().toISOString(),cosm_folders:f,cosm_discourses:d,cosm_mosaic_tiles:m,cosm_backlinks:b,characters:c,history:h,summaries:s,guardian_logs:gl,guardian_summaries:gs,immutable_entities:ie};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`NQ_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);showToast("Backup exported ◆");}
+async function exportJSON(){const f=await dbGetAll("cosm_folders"),d=await dbGetAll("cosm_discourses"),m=await dbGetAll("cosm_mosaic_tiles"),b=await dbGetAll("cosm_backlinks"),c=await dbGetAll("characters"),h=await dbGetAll("history"),s=await dbGetAll("summaries"),gl=await dbGetAll("guardian_logs"),gs=await dbGetAll("guardian_summaries"),ie=await dbGetAll("immutable_entities"),br=await dbGetAll("bridge_rows");const payload={version:"NakedQuantum",exported_at:new Date().toISOString(),cosm_folders:f,cosm_discourses:d,cosm_mosaic_tiles:m,cosm_backlinks:b,characters:c,history:h,summaries:s,guardian_logs:gl,guardian_summaries:gs,immutable_entities:ie,bridge_rows:br};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`NQ_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);showToast("Backup exported ◆");}
 
-async function importJSON(event){const file=event.target.files[0];if(!file)return;if(!confirm("Import will merge with existing data. Continue?")){event.target.value='';return;}try{const text=await file.text();const payload=JSON.parse(text);const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store]))for(const item of payload[store])await dbPut(store,item);}mosaicCache={};if(currentMode==='soup')await renderTableView();else await renderSanctuaryView();showToast("Import complete ✓");}catch(err){console.error(err);showToast("Import failed");}event.target.value='';}
+async function importJSON(event){const file=event.target.files[0];if(!file)return;if(!confirm("Import will merge with existing data. Continue?")){event.target.value='';return;}try{const text=await file.text();const payload=JSON.parse(text);const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store]))for(const item of payload[store])await dbPut(store,item);}mosaicCache={};if(currentMode==='soup')await renderTableView();else await renderSanctuaryView();showToast("Import complete ✓");}catch(err){console.error(err);showToast("Import failed");}event.target.value='';}
 
 /* MOSAIC EXTRACT */
 async function extractMemory(){
@@ -8283,8 +8288,8 @@ async function saveSupaFromDataPage(){
 }
 
 /* AKASHIC */
-async function backupToAkashic(){try{const payload={version:"NakedQuantum",exported_at:new Date().toISOString(),cosm_folders:await dbGetAll("cosm_folders"),cosm_discourses:await dbGetAll("cosm_discourses"),cosm_mosaic_tiles:await dbGetAll("cosm_mosaic_tiles"),cosm_backlinks:await dbGetAll("cosm_backlinks"),characters:await dbGetAll("characters"),history:await dbGetAll("history"),summaries:await dbGetAll("summaries"),guardian_logs:await dbGetAll("guardian_logs"),guardian_summaries:await dbGetAll("guardian_summaries"),immutable_entities:await dbGetAll("immutable_entities")};const res=await fetch(`${AKASHIC_URL}/backup`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:cosmUserId,data:JSON.stringify(payload)})});if(res.ok)showToast('Akashic Synced ◆');}catch(e){console.error(e);}}
-async function restoreFromAkashic(){if(!confirm("Pull from Akashic? This will overwrite local fragments."))return;try{const res=await fetch(`${AKASHIC_URL}/backup/latest?user_id=${cosmUserId}`);if(!res.ok)throw new Error('No backup');const payload=JSON.parse(await res.text());const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store])){const all=await dbGetAll(store);for(const item of all)await dbDelete(store,item.id);for(const item of payload[store])await dbPut(store,item);}}showToast('Sanctuary Restored ◆');setTimeout(()=>location.reload(),1200);}catch(e){console.error(e);showToast('Akashic offline ◆');}}
+async function backupToAkashic(){try{const payload={version:"NakedQuantum",exported_at:new Date().toISOString(),cosm_folders:await dbGetAll("cosm_folders"),cosm_discourses:await dbGetAll("cosm_discourses"),cosm_mosaic_tiles:await dbGetAll("cosm_mosaic_tiles"),cosm_backlinks:await dbGetAll("cosm_backlinks"),characters:await dbGetAll("characters"),history:await dbGetAll("history"),summaries:await dbGetAll("summaries"),guardian_logs:await dbGetAll("guardian_logs"),guardian_summaries:await dbGetAll("guardian_summaries"),immutable_entities:await dbGetAll("immutable_entities"),bridge_rows:await dbGetAll("bridge_rows")};const res=await fetch(`${AKASHIC_URL}/backup`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:cosmUserId,data:JSON.stringify(payload)})});if(res.ok)showToast('Akashic Synced ◆');}catch(e){console.error(e);}}
+async function restoreFromAkashic(){if(!confirm("Pull from Akashic? This will overwrite local fragments."))return;try{const res=await fetch(`${AKASHIC_URL}/backup/latest?user_id=${cosmUserId}`);if(!res.ok)throw new Error('No backup');const payload=JSON.parse(await res.text());const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store])){const all=await dbGetAll(store);for(const item of all)await dbDelete(store,item.id);for(const item of payload[store])await dbPut(store,item);}}showToast('Sanctuary Restored ◆');setTimeout(()=>location.reload(),1200);}catch(e){console.error(e);showToast('Akashic offline ◆');}}
 
 /* LONG PRESS */
 function startLP(e,card,item){
@@ -8365,7 +8370,7 @@ async function decFromCloud(encStr) {
 
 const NQ_SYNC_STORES = [
   'cosm_folders', 'cosm_discourses', 'characters', 'summaries',
-  'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities'
+  'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities', 'bridge_rows'
 ];
 // history excluded — large chat rows; journal v0.21; summaries cover cross-device need
 
@@ -9066,6 +9071,407 @@ function formatSilentAttractorsTier(arcsMap, topN) {
   return '── SILENT ATTRACTORS (absent but recurring) ──\n\n' + lines.join('\n') + '\n\n';
 }
 
+/* ── WITNESS SUBSTRATE (W1) ───────────────────────────────── */
+var SYNAPSE_VERSION = '1';
+var SYNAPSE_LS = 'nq_synapse_latest';
+var BRIDGE_MAX_CHECKS = 5;
+var BRIDGE_MAX_OPEN_MS = 14 * 86400000;
+var WITNESS_RESISTANCE_LEXICON = ['refuse', 'deny', 'wrong', 'against', 'resist', 'defend', 'never', 'always', 'must', 'should', 'ought', 'fight', 'no '];
+
+var NQ_WITNESS_FLAGS = {
+  enabled: true,
+  bridges: true,
+  synapse: true,
+  invoke_gate: true,
+  process_panel: true
+};
+
+function isWitnessSubstrateEnabled() {
+  return NQ_WITNESS_FLAGS.enabled !== false;
+}
+
+function parseJsonField(raw, fallback) {
+  if (raw == null) return fallback;
+  if (typeof raw === 'object') return raw;
+  try { return JSON.parse(raw); } catch (e) { return fallback; }
+}
+
+function parseSynapseSnapshot(raw) {
+  if (!raw) return null;
+  var blob = typeof raw === 'string' ? parseJsonField(raw, null) : raw;
+  if (!blob || blob.synapse_version !== SYNAPSE_VERSION) return null;
+  return blob;
+}
+
+function getSynapseSnapshot() {
+  if (!isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.synapse === false) return null;
+  try {
+    var stored = localStorage.getItem(SYNAPSE_LS);
+    var parsed = parseSynapseSnapshot(stored);
+    if (parsed) return parsed;
+  } catch (eLs) {}
+  return null;
+}
+
+async function loadWitnessCorpusMaps() {
+  var discs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
+  var fastMapById = new Map();
+  for (var i = 0; i < discs.length; i++) {
+    var fm = await dbGet('guardian_summaries', discs[i].id);
+    if (fm && fm.map_type === 'fast') fastMapById.set(discs[i].id, fm);
+  }
+  return { discs: discs, fastMapById: fastMapById };
+}
+
+function detectPerpetualOrbitTerms(arcsMap) {
+  var out = [];
+  Object.keys(arcsMap || {}).forEach(function (term) {
+    var arc = arcsMap[term];
+    if (!arc || arc.appearances.length < 3) return;
+    if (arc.register_shift) return;
+    if (arc.last_seen_days_ago > 21) return;
+    var first = arc.appearances[0];
+    var last = arc.appearances[arc.appearances.length - 1];
+    if (last.orbit_count >= 2 && last.orbit_count >= first.orbit_count * 0.7) {
+      out.push(term);
+    }
+  });
+  return out;
+}
+
+function computeTermHalfLife(arcsMap) {
+  var now = Date.now();
+  var lambda = 0.05;
+  var terms = {};
+  Object.keys(arcsMap || {}).forEach(function (term) {
+    var arc = arcsMap[term];
+    if (!arc.appearances.length) return;
+    var last = arc.appearances[arc.appearances.length - 1];
+    var days = Math.max(0, (now - (last.date || now)) / 86400000);
+    var weight = Math.exp(-lambda * days);
+    terms[term] = { weight: parseFloat(weight.toFixed(3)), last_reinforced_at: last.date || now };
+  });
+  return { terms: terms };
+}
+
+function computeDenialSediment(bridgeRows) {
+  var counts = {};
+  (bridgeRows || []).forEach(function (br) {
+    if (br.user_action !== 'reject') return;
+    var keys = parseJsonField(br.signal_keys, {});
+    (keys.terms || []).forEach(function (t) {
+      var term = String(t).toLowerCase();
+      if (!term) return;
+      counts[term] = (counts[term] || 0) + 1;
+    });
+  });
+  var anomalies = [];
+  Object.keys(counts).forEach(function (t) {
+    if (counts[t] >= 3) anomalies.push('denial_sediment:' + t);
+  });
+  return anomalies;
+}
+
+function computePostureVector(discs, fastMapById, arcsMap) {
+  var selfHits = 0;
+  var pronounHits = 0;
+  var resistanceHits = 0;
+  var resistanceTotal = 0;
+  var termCounts = {};
+  var mapped = 0;
+  fastMapById.forEach(function (fm) {
+    mapped++;
+    var text = '';
+    if (fm.pronoun_trajectory && fm.pronoun_trajectory.dominant) {
+      var dom = String(fm.pronoun_trajectory.dominant).toLowerCase();
+      if (dom === 'i' || dom === 'me' || dom === 'my') selfHits++;
+      pronounHits++;
+    }
+    var disc = null;
+    for (var di = 0; di < discs.length; di++) {
+      if (discs[di].id === fm.id || discs[di].id === fm.discourse_id) { disc = discs[di]; break; }
+    }
+    if (disc && disc.raw_text) {
+      var lower = disc.raw_text.toLowerCase();
+      resistanceTotal += Math.min(lower.length, 4000);
+      for (var ri = 0; ri < WITNESS_RESISTANCE_LEXICON.length; ri++) {
+        if (lower.indexOf(WITNESS_RESISTANCE_LEXICON[ri]) !== -1) resistanceHits++;
+      }
+    }
+    parseFastMapKeyTermStrings(fm).slice(0, 5).forEach(function (t) {
+      termCounts[t] = (termCounts[t] || 0) + 1;
+    });
+  });
+  var topTermN = 0;
+  var totalTermN = 0;
+  Object.keys(termCounts).forEach(function (t) {
+    totalTermN += termCounts[t];
+    if (termCounts[t] > topTermN) topTermN = termCounts[t];
+  });
+  var attractor = totalTermN ? topTermN / totalTermN : 0;
+  var selfRef = pronounHits ? selfHits / pronounHits : 0;
+  var resistance = resistanceTotal ? Math.min(1, resistanceHits / 12) : 0;
+  var coherence = mapped ? Math.min(1, mapped / Math.max(1, discs.length)) : 0;
+  if (Object.keys(arcsMap || {}).length >= 4) coherence = Math.min(1, coherence + 0.15);
+  return {
+    coherence: parseFloat(coherence.toFixed(2)),
+    resistance: parseFloat(resistance.toFixed(2)),
+    self_ref_ratio: parseFloat(selfRef.toFixed(2)),
+    attractor_concentration: parseFloat(attractor.toFixed(2))
+  };
+}
+
+function collectWitnessAnomalies(arcsMap, perpetual, bridgeRows) {
+  var anomalies = computeDenialSediment(bridgeRows);
+  perpetual.forEach(function (t) { anomalies.push('perpetual_orbit:' + t); });
+  Object.keys(arcsMap || {}).forEach(function (term) {
+    var arc = arcsMap[term];
+    if (arc && arc.last_seen_days_ago >= 21 && arc.appearances.length >= 3) {
+      anomalies.push('silent_attractor:' + term);
+    }
+  });
+  return anomalies;
+}
+
+function buildSaccadeLogV1(discs, fastMapById) {
+  var sorted = discs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+  var fixation = sorted.slice(0, 2).map(function (d) { return d.id; });
+  var mapped = 0;
+  fastMapById.forEach(function () { mapped++; });
+  var blind = mapped < discs.length ? 'unmapped_discourses' : null;
+  return {
+    fixation_ids: fixation,
+    blind_spot: blind,
+    reason: blind ? 'not_all_fast_mapped' : 'none'
+  };
+}
+
+async function buildSynapseSnapshot() {
+  if (!isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.synapse === false) return null;
+  var corpus = await loadWitnessCorpusMaps();
+  var discs = corpus.discs;
+  var fastMapById = corpus.fastMapById;
+  var arcsMap = computeCorpusTermArcs(discs, fastMapById);
+  var bridgeRows = NQ_WITNESS_FLAGS.bridges === false ? [] : await dbGetAll('bridge_rows');
+  var perpetual = detectPerpetualOrbitTerms(arcsMap);
+  var posture = computePostureVector(discs, fastMapById, arcsMap);
+  var halfLife = computeTermHalfLife(arcsMap);
+  var openBridges = bridgeRows.filter(function (br) { return br.status === 'open'; }).map(function (br) {
+    var keys = parseJsonField(br.signal_keys, {});
+    return { id: br.id, status: br.status, terms: keys.terms || [] };
+  });
+  var anomalies = collectWitnessAnomalies(arcsMap, perpetual, bridgeRows);
+  var synapse = {
+    synapse_version: SYNAPSE_VERSION,
+    built_at: Date.now(),
+    posture_vector: posture,
+    half_life: halfLife,
+    perpetual_orbit_terms: perpetual,
+    open_bridges: openBridges,
+    elaboration_delta: null,
+    saccade_log: buildSaccadeLogV1(discs, fastMapById),
+    anomalies: anomalies,
+    local_pass: { invoke_denied: false, graduation_quiet: false, deny_reason: null }
+  };
+  synapse.local_pass = runLocalPass(synapse, discs, fastMapById);
+  try {
+    localStorage.setItem(SYNAPSE_LS, JSON.stringify(synapse));
+  } catch (eStore) {}
+  if (NQ_DEV_MODE) console.log('[Witness] synapse', synapse);
+  return synapse;
+}
+
+function runLocalPass(synapse, discs, fastMapById) {
+  var out = { invoke_denied: false, graduation_quiet: false, deny_reason: null };
+  if (!isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.invoke_gate === false) return out;
+  if (NQ_DEV_MODE) return out;
+  var mapped = 0;
+  fastMapById.forEach(function () { mapped++; });
+  var minRich = W_MIN_RICH_DISCOURSES;
+  if (mapped < minRich) {
+    out.invoke_denied = true;
+    out.deny_reason = 'thin_map';
+    return out;
+  }
+  var posture = synapse.posture_vector || {};
+  if ((posture.coherence || 0) >= 0.85 && (synapse.open_bridges || []).length === 0 && (posture.resistance || 0) < 0.25) {
+    out.graduation_quiet = true;
+  }
+  return out;
+}
+
+function isGuardianInvokeDeniedBySynapse() {
+  if (!isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.invoke_gate === false) return { denied: false };
+  var syn = getSynapseSnapshot();
+  if (!syn || !syn.local_pass) return { denied: false };
+  if (syn.local_pass.invoke_denied) {
+    return { denied: true, reason: syn.local_pass.deny_reason || 'thin_map' };
+  }
+  return { denied: false };
+}
+
+function signalKeysFromLog(log, fastMap) {
+  var terms = parseFastMapKeyTermStrings(fastMap).slice(0, 6);
+  if (!terms.length && log.theory_one_line) {
+    var words = String(log.theory_one_line).toLowerCase().match(/[a-z]{4,}/g) || [];
+    terms = words.slice(0, 4);
+  }
+  var discourseIds = log.primary_discourse_id ? [log.primary_discourse_id] : [];
+  return { terms: terms, discourse_ids: discourseIds };
+}
+
+async function openBridgeRow(sourceLog, userAction, userNote) {
+  if (!isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.bridges === false) return null;
+  var fm = null;
+  if (sourceLog.primary_discourse_id) {
+    fm = await dbGet('guardian_summaries', sourceLog.primary_discourse_id);
+  }
+  var openSame = (await dbGetAll('bridge_rows')).filter(function (br) {
+    return br.status === 'open' && br.source_log_id === sourceLog.id;
+  });
+  if (openSame.length) return openSame[0];
+  var keys = signalKeysFromLog(sourceLog, fm);
+  var geom = buildGeometrySnapshot(sourceLog.primary_discourse_id, fm);
+  var row = {
+    id: 'br_' + Date.now(),
+    opened_at: Date.now(),
+    source_log_id: sourceLog.id,
+    prior_theory: sourceLog.theory_one_line || '',
+    user_action: userAction,
+    user_note: userNote || '',
+    signal_keys: JSON.stringify(keys),
+    geometry_at_open: JSON.stringify(geom || {}),
+    status: 'open',
+    checks: 0,
+    last_check_at: Date.now(),
+    closed_at: null,
+    closure_reason: null
+  };
+  await dbPut('bridge_rows', row);
+  await refreshWitnessSubstrate();
+  return row;
+}
+
+async function closeBridgeRow(row, status, reason) {
+  row.status = status;
+  row.closure_reason = reason || status;
+  row.closed_at = Date.now();
+  await dbPut('bridge_rows', row);
+}
+
+async function evaluateBridgeRelapse() {
+  if (!isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.bridges === false) return;
+  var corpus = await loadWitnessCorpusMaps();
+  var arcsMap = computeCorpusTermArcs(corpus.discs, corpus.fastMapById);
+  var perpetual = detectPerpetualOrbitTerms(arcsMap);
+  var rows = await dbGetAll('bridge_rows');
+  var now = Date.now();
+  for (var i = 0; i < rows.length; i++) {
+    var br = rows[i];
+    if (br.status !== 'open') continue;
+    br.checks = (br.checks || 0) + 1;
+    br.last_check_at = now;
+    var keys = parseJsonField(br.signal_keys, {});
+    var terms = keys.terms || [];
+    var termRelapse = terms.some(function (t) { return perpetual.indexOf(String(t).toLowerCase()) !== -1; });
+    var shifted = terms.some(function (t) {
+      var arc = arcsMap[String(t).toLowerCase()];
+      return arc && arc.register_shift;
+    });
+    if (br.user_action === 'correct' && shifted) {
+      await closeBridgeRow(br, 'verified', 'geometry_shift');
+      continue;
+    }
+    if (br.user_action === 'reject' && !termRelapse && br.checks >= 2) {
+      await closeBridgeRow(br, 'verified', 'reject_hold');
+      continue;
+    }
+    if (termRelapse && br.checks >= 2) {
+      await closeBridgeRow(br, 'relapsed', 'attractor_returned');
+      continue;
+    }
+    if (br.checks >= BRIDGE_MAX_CHECKS || (now - (br.opened_at || now)) > BRIDGE_MAX_OPEN_MS) {
+      await closeBridgeRow(br, 'relapsed', 'window_exhausted');
+      continue;
+    }
+    await dbPut('bridge_rows', br);
+  }
+}
+
+async function refreshWitnessSubstrate() {
+  if (!isWitnessSubstrateEnabled()) return null;
+  try {
+    await evaluateBridgeRelapse();
+  } catch (eBr) {
+    console.warn('[Witness] bridge evaluate:', eBr);
+  }
+  try {
+    return await buildSynapseSnapshot();
+  } catch (eSyn) {
+    console.warn('[Witness] synapse:', eSyn);
+    return null;
+  }
+}
+
+async function renderWitnessProcessPanel() {
+  var panel = document.getElementById('witness-process-content');
+  if (!panel || !isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.process_panel === false) return;
+  var syn = getSynapseSnapshot();
+  if (!syn) syn = await refreshWitnessSubstrate();
+  var bridges = await dbGetAll('bridge_rows');
+  var openN = bridges.filter(function (b) { return b.status === 'open'; }).length;
+  var html = '';
+  if (!syn) {
+    panel.innerHTML = '<div class="witness-process-line muted">Substrate not built yet.</div>';
+    return;
+  }
+  var pv = syn.posture_vector || {};
+  html += '<div class="witness-process-section"><div class="witness-process-h">Posture</div>';
+  html += '<div class="witness-process-line">coherence ' + (pv.coherence != null ? pv.coherence : '—') +
+    ' · resistance ' + (pv.resistance != null ? pv.resistance : '—') +
+    ' · self-ref ' + (pv.self_ref_ratio != null ? pv.self_ref_ratio : '—') +
+    ' · attractor ' + (pv.attractor_concentration != null ? pv.attractor_concentration : '—') + '</div></div>';
+  if (syn.local_pass && syn.local_pass.invoke_denied) {
+    html += '<div class="witness-process-section witness-process-deny"><div class="witness-process-h">Invoke gate</div>';
+    html += '<div class="witness-process-line">denied — ' + escHtml(syn.local_pass.deny_reason || 'thin_map') + '</div></div>';
+  } else if (syn.local_pass && syn.local_pass.graduation_quiet) {
+    html += '<div class="witness-process-section"><div class="witness-process-h">Invoke gate</div>';
+    html += '<div class="witness-process-line">graduation quiet (map stable)</div></div>';
+  }
+  html += '<div class="witness-process-section"><div class="witness-process-h">Bridges</div>';
+  html += '<div class="witness-process-line">' + openN + ' open · ' + bridges.length + ' total</div></div>';
+  if (syn.perpetual_orbit_terms && syn.perpetual_orbit_terms.length) {
+    html += '<div class="witness-process-section"><div class="witness-process-h">Perpetual orbit</div>';
+    html += '<div class="witness-process-line">' + escHtml(syn.perpetual_orbit_terms.join(', ')) + '</div></div>';
+  }
+  if (syn.anomalies && syn.anomalies.length) {
+    html += '<div class="witness-process-section"><div class="witness-process-h">Anomalies</div>';
+    html += '<div class="witness-process-line">' + escHtml(syn.anomalies.slice(0, 8).join(' · ')) + '</div></div>';
+  }
+  var recent = bridges.slice().sort(function (a, b) { return (b.opened_at || 0) - (a.opened_at || 0); }).slice(0, 4);
+  if (recent.length) {
+    html += '<div class="witness-process-section"><div class="witness-process-h">Recent bridges</div>';
+    recent.forEach(function (br) {
+      html += '<div class="witness-process-line">' + escHtml(br.status) + ' · ' + escHtml(br.user_action || '') +
+        (br.prior_theory ? ' — ' + escHtml(String(br.prior_theory).slice(0, 60)) : '') + '</div>';
+    });
+    html += '</div>';
+  }
+  panel.innerHTML = html;
+}
+
+var _witnessDetailLog = null;
+
+async function handleWitnessBridgeAction(action) {
+  if (!_witnessDetailLog) return;
+  await openBridgeRow(_witnessDetailLog, action, '');
+  showToast(action === 'correct' ? 'Bridge opened (correct) ◆' : 'Bridge opened (reject) ◆');
+  closeGuardianLogDetail();
+  void renderWitnessProcessPanel();
+}
+
 function derivePredictionTag(triggeredBy, qualifiers, fastMap) {
   var q = triggeredBy || (qualifiers && qualifiers[0] && qualifiers[0].type) || '';
   if (q === 'escalating_arc' || q === 'paradox') return 'next_escalating';
@@ -9403,6 +9809,12 @@ guardianInvokeActive = true;
     fastMap = await dbGet('guardian_summaries', pending.discourseId);
   } catch (e4) {}
 
+  var synGateEarly = isGuardianInvokeDeniedBySynapse();
+  if (synGateEarly.denied) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (eGateR) {}
+    return;
+  }
+
   if (pending.revisit && pending.observation) {
     var revisitObs = String(pending.observation).trim();
     if (!revisitObs) {
@@ -9447,6 +9859,13 @@ guardianInvokeActive = true;
   }
   if (!trig || !trig.shouldInvoke) {
     try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e7) {}
+    return;
+  }
+
+  var synGate = isGuardianInvokeDeniedBySynapse();
+  if (synGate.denied) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (eGate) {}
+    if (NQ_DEV_MODE) console.log('[Witness] strip blocked:', synGate.reason);
     return;
   }
 
@@ -9695,6 +10114,15 @@ async function summonGuardian(userAddition, summonOpts){
   summonOpts = summonOpts || {};
   if (summonOpts.pendingTriggerType) guardianPendingTriggerType = summonOpts.pendingTriggerType;
   else guardianPendingTriggerType = null;
+  var gate = isGuardianInvokeDeniedBySynapse();
+  if (gate.denied) {
+    showToast('Witness gate: map too thin — write more before summon ◆');
+    applyGuardianUiStrings('idle');
+    var subGate = document.getElementById('guardian-sub');
+    if (subGate) subGate.textContent = 'Invoke withheld — corpus below witness floor.';
+    guardianPendingTriggerType = null;
+    return;
+  }
   var apiKey = await readSecureKey('nq_api_key');
   if(!apiKey){ showToast('No API key in Settings'); guardianPendingTriggerType = null; return; }
   var guardianModel = summonOpts.modelOverride || localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || 'deepseek/deepseek-v3.2';
@@ -10416,33 +10844,48 @@ async function renderGuardianLogs(){
 }
 
 function openGuardianLogDetail(log){
+  _witnessDetailLog = log;
   var detail = document.getElementById('guardian-log-detail');
   var content = document.getElementById('guardian-log-detail-content');
   var date = new Date(log.invoked_at).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
-  var lines = [String.fromCodePoint(43065) + ' ' + date];
+  var html = '<div class="guardian-log-detail-text">';
+  html += '<div>' + escHtml(String.fromCodePoint(43065) + ' ' + date) + '</div>';
   var typeTag = log.log_type === 'auto_invoke' || log.auto_invoked ? 'strip' : (log.log_type || 'summon');
-  lines.push(typeTag + (log.triggered_by ? ' · ' + log.triggered_by : ''));
+  html += '<div>' + escHtml(typeTag + (log.triggered_by ? ' · ' + log.triggered_by : '')) + '</div>';
   if (log.theory_one_line) {
-    lines.push('');
-    lines.push('Theory: ' + String(log.theory_one_line).trim());
+    html += '<div class="witness-theory-line"><strong>Theory:</strong> ' + escHtml(String(log.theory_one_line).trim()) + '</div>';
   }
   if (log.prediction_tag) {
     var predLine = 'Prediction: ' + log.prediction_tag;
     if (log.prediction_outcome) predLine += ' → ' + log.prediction_outcome;
     else predLine += ' (pending)';
-    lines.push(predLine);
+    html += '<div>' + escHtml(predLine) + '</div>';
   }
   var quals = parseQualifiers(log.qualifiers);
   if (quals.length) {
-    lines.push('Qualifiers: ' + quals.map(function (q) { return q.type || q; }).join(', '));
+    html += '<div>' + escHtml('Qualifiers: ' + quals.map(function (q) { return q.type || q; }).join(', ')) + '</div>';
   }
-  lines.push('');
-  lines.push(log.response_text || '');
-  content.textContent = lines.join('\n');
+  if (isWitnessSubstrateEnabled() && NQ_WITNESS_FLAGS.bridges !== false && log.theory_one_line && typeTag === 'summon') {
+    html += '<div class="witness-bridge-actions">';
+    html += '<button type="button" class="witness-bridge-btn" data-witness-action="correct">Correct</button>';
+    html += '<button type="button" class="witness-bridge-btn" data-witness-action="reject">Reject</button>';
+    html += '</div>';
+  }
+  html += '<pre class="guardian-log-body">' + escHtml(log.response_text || '') + '</pre>';
+  html += '</div>';
+  content.innerHTML = html;
+  content.querySelectorAll('[data-witness-action]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var act = btn.getAttribute('data-witness-action');
+      if (act === 'correct' || act === 'reject') void handleWitnessBridgeAction(act);
+    });
+  });
   detail.classList.add('open');
 }
 
 function closeGuardianLogDetail(){
+  _witnessDetailLog = null;
   document.getElementById('guardian-log-detail').classList.remove('open');
 }
 
@@ -10774,6 +11217,8 @@ document.getElementById('btn-carto-deep').addEventListener('click', function() {
 // Logs overlay
 document.getElementById('btn-guardian-logs-open').addEventListener('click', function() {
   document.getElementById('guardian-logs-overlay').classList.add('open');
+  void renderGuardianLogs();
+  void renderWitnessProcessPanel();
 });
 document.getElementById('btn-guardian-logs-close').addEventListener('click', function() {
   document.getElementById('guardian-logs-overlay').classList.remove('open');
@@ -11171,6 +11616,7 @@ async function init(){
   initGuardianModel();
   void runDailyRevisitCheck();
   void refreshEpistemicMoodCache();
+  void refreshWitnessSubstrate();
 }
 
 // BOOTUP
