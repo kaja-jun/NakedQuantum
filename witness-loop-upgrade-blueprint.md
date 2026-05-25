@@ -113,6 +113,45 @@ Aggregate `user_action === 'reject'` on same `signal_keys` → process anomaly l
 
 **Storage v1:** `localStorage` key `nq_synapse_latest` + optional `witness_anomalies` rows later. No new table required until Phase B.
 
+### 4.1 Synapse blob contract (versioned — cheap insurance)
+
+The blob is the **runtime contract** between local pass, process view, and strip worker. If P6 ships without versioning and P8 adds fields, old blobs can make P8 read `undefined` and behave randomly.
+
+**Rules:**
+
+| Rule | Behavior |
+|------|----------|
+| **`synapse_version` required** | Top-level string, e.g. `"1"` — bump on breaking shape changes |
+| **Unknown version** | `parseSynapseSnapshot(raw)` returns `null` → recompute fresh; never trust partial blob |
+| **Same major version, new optional fields** | Readers use `blob.posture_vector?.coherence ?? 0` — graceful degrade |
+| **Breaking change** | Bump version; old blob discarded on next `buildSynapseSnapshot()` |
+| **Never gate unlock** | Bad blob must not block vault; worst case = one extra recompute |
+
+**Minimal v1 shape:**
+
+```json
+{
+  "synapse_version": "1",
+  "built_at": 1730000000000,
+  "posture_vector": { "coherence": 0.82, "resistance": 0.31, "self_ref_ratio": 0.44, "attractor_concentration": 0.71 },
+  "half_life": { "terms": { "fear": { "weight": 0.4, "last_reinforced_at": 1730 } } },
+  "perpetual_orbit_terms": ["void", "mother"],
+  "open_bridges": [{ "id": "br_…", "status": "open", "terms": ["void"] }],
+  "elaboration_delta": null,
+  "saccade_log": { "fixation_ids": ["d_1", "d_2"], "blind_spot": "cold_archive", "reason": "tier_excluded" },
+  "anomalies": ["perpetual_orbit:void", "denial_sediment:mother"],
+  "local_pass": { "invoke_denied": false, "graduation_quiet": false, "deny_reason": null }
+}
+```
+
+**API (app.js):**
+
+- `buildSynapseSnapshot()` → always writes current version  
+- `parseSynapseSnapshot(stored)` → version check + safe defaults  
+- `getSynapseSnapshot()` → parse LS or rebuild if stale/missing  
+
+P6 and P8 both call `parseSynapseSnapshot`; P8 never reads raw `localStorage` JSON.
+
 ---
 
 ## 5. Posture → sequenced truth (strip/summon order)
@@ -157,10 +196,36 @@ Guardian **voice** unchanged in Coherence; Isness mode unchanged.
 
 ## 7. Implementation passes (register)
 
-**Minimum shippable witness upgrade: 4 passes (P1–P2, P6–P7).**  
-**Full Phase A (recommended): 8 passes (P1–P8).**  
-**Phase A+ polish: +2 (P9–P10).**  
-**Phase B desktop: +4–5 (P12–P16).**
+### 7.0 Two tracks (pick one)
+
+| Track | Passes | Who |
+|-------|--------|-----|
+| **Conservative** (Claude guard) | 8–11 PRs | Minimize debug pain when mirror feels wrong |
+| **Aggressive** (Kaja dogfood) | **3 PRs** | Ship Phase A, amend or tear away — **default May 2026** |
+
+**Minimum shippable (either track):** bridge + synapse + invoke gate.
+
+---
+
+### 7A. Conservative — granular (reference only)
+
+8–11 passes P1–P11 as listed below. Use if a scalar lies after merge.
+
+---
+
+### 7B. Aggressive — 3 passes (dogfood default)
+
+| Aggressive pass | Absorbs | PR theme | Still testable alone |
+|----------------|---------|----------|----------------------|
+| **A1** | P1–P5 | `witness-foundation` — `bridge_rows`, Correct/Reject, relapse, orbit anomaly, posture, half-life, process panel | Bridge list + anomalies section |
+| **A2** | P6–P7 | `witness-synapse` — versioned blob, `buildSynapseSnapshot`, `parseSynapseSnapshot`, `runLocalPass`, `invoke_denied` UI | Console/log blob; strip blocked when thin |
+| **A3** | P8–P11 | `witness-wire` — tier order, saccade in worker payload, elaboration, denial sediment, graduation quiet | Strip order + worker redeploy note |
+
+**Inside each PR:** implement sub-features with **named fields in blob + process UI sections** so you can still see which scalar lies (Claude guard as code structure, not git history).
+
+**Phase B desktop:** still +4–5 passes later (P12–P16) — not in aggressive PWA batch.
+
+**Tear-away policy:** feature flags in one object `NQ_WITNESS_FLAGS` — flip off without reverting whole PR.
 
 ### Phase A — PWA
 
@@ -208,7 +273,8 @@ P8  → only then strip order
 P9–P11 → optional polish
 ```
 
-**Forbidden:** “synapse-temporal-v1” single PR touching P1–P8.
+**Conservative track forbids:** one PR touching P1–P8.  
+**Aggressive track allows:** A1→A2→A3 only — synapse_version required before A2 merges.
 
 ---
 
@@ -234,17 +300,10 @@ P9–P11 → optional polish
 
 | Pass | Status | PR |
 |------|--------|-----|
-| P1 Bridge schema | ☐ | |
-| P2 Bridge + relapse | ☐ | |
-| P3 Perpetual orbit | ☐ | |
-| P4 Posture vector | ☐ | |
-| P5 Half-life | ☐ | |
-| P6 Synapse snapshot | ☐ | |
-| P7 invoke_denied | ☐ | |
-| P8 Sequenced strip | ☐ | |
-| P9 Elaboration delta | ☐ | |
-| P10 Denial sediment | ☐ | |
-| P11 Graduation quiet | ☐ | |
+| A1 Foundation (P1–P5) | ☐ | |
+| A2 Synapse + gate (P6–P7) | ☐ | |
+| A3 Wire (P8–P11) | ☐ | |
+| *(granular P1–P11)* | — | use only if splitting A1–A3 |
 
 ---
 
@@ -253,6 +312,7 @@ P9–P11 → optional polish
 | Date | Change |
 |------|--------|
 | 2026-05-23 | Initial pin — unified clusters + tiers + bridge_rows schema + 11 PWA passes |
+| 2026-05-23 | §4.1 synapse_version contract; §7B aggressive 3-pass track (A1–A3) |
 
 ---
 
