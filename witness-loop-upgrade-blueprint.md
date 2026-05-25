@@ -196,14 +196,15 @@ Guardian **voice** unchanged in Coherence; Isness mode unchanged.
 
 ## 7. Implementation passes (register)
 
-### 7.0 Two tracks (pick one)
+### 7.0 Tracks (pick one)
 
 | Track | Passes | Who |
 |-------|--------|-----|
 | **Conservative** (Claude guard) | 8–11 PRs | Minimize debug pain when mirror feels wrong |
-| **Aggressive** (Kaja dogfood) | **3 PRs** | Ship Phase A, amend or tear away — **default May 2026** |
+| **Aggressive — 2 PRs** | **2** | **Default May 2026** — substrate then wire |
+| **Aggressive — 3 PRs** | 3 | Same scope as 2-pass; extra git seam between synapse and gate |
 
-**Minimum shippable (either track):** bridge + synapse + invoke gate.
+**Minimum shippable (any track):** bridge + synapse + invoke gate.
 
 ---
 
@@ -213,19 +214,34 @@ Guardian **voice** unchanged in Coherence; Isness mode unchanged.
 
 ---
 
-### 7B. Aggressive — 3 passes (dogfood default)
+### 7B. Aggressive — 2 passes (dogfood default)
 
-| Aggressive pass | Absorbs | PR theme | Still testable alone |
-|----------------|---------|----------|----------------------|
-| **A1** | P1–P5 | `witness-foundation` — `bridge_rows`, Correct/Reject, relapse, orbit anomaly, posture, half-life, process panel | Bridge list + anomalies section |
-| **A2** | P6–P7 | `witness-synapse` — versioned blob, `buildSynapseSnapshot`, `parseSynapseSnapshot`, `runLocalPass`, `invoke_denied` UI | Console/log blob; strip blocked when thin |
-| **A3** | P8–P11 | `witness-wire` — tier order, saccade in worker payload, elaboration, denial sediment, graduation quiet | Strip order + worker redeploy note |
+| Pass | Absorbs | PR theme | Acceptance |
+|------|---------|----------|------------|
+| **W1** | P1–P7 | `witness-substrate` — `bridge_rows`, Correct/Reject, relapse, orbit, posture, half-life, process panel, **versioned** `buildSynapseSnapshot` / `parseSynapseSnapshot`, `runLocalPass`, `invoke_denied` | Bridges + anomalies + synapse blob visible; strip **unchanged**; thin map blocks invoke |
+| **W2** | P8–P11 | `witness-wire` — tier order from posture, `saccade_log` in worker payload, elaboration, denial sediment, graduation quiet | Strip order shifts by posture; worker redeploy note in PR |
 
-**Inside each PR:** implement sub-features with **named fields in blob + process UI sections** so you can still see which scalar lies (Claude guard as code structure, not git history).
+**Why two is enough:** The only hard seam is **observable + gate (P1–P7)** vs **Guardian entangle (P8–P11)**. Merging P1–P5 without P6–P7 leaves no single contract object; merging P6–P7 with P8 in pass 2 is fine **after** `synapse_version` exists in W1.
+
+**Inside W1:** named blob fields + process UI sections per scalar (Claude guard as code structure, not git history).
 
 **Phase B desktop:** still +4–5 passes later (P12–P16) — not in aggressive PWA batch.
 
 **Tear-away policy:** feature flags in one object `NQ_WITNESS_FLAGS` — flip off without reverting whole PR.
+
+---
+
+### 7C. Aggressive — 3 passes (optional split)
+
+Same as §7B but W1 split into **A1** (P1–P5) + **A2** (P6–P7); **A3** = W2. Use only if W1 feels too large in one review or one dogfood week.
+
+| Pass | Absorbs | PR theme |
+|------|---------|----------|
+| **A1** | P1–P5 | `witness-foundation` |
+| **A2** | P6–P7 | `witness-synapse` |
+| **A3** | P8–P11 | `witness-wire` (= W2) |
+
+**Do not** merge A3 before A2 lands `synapse_version` on `main`.
 
 ### Phase A — PWA
 
@@ -274,7 +290,8 @@ P9–P11 → optional polish
 ```
 
 **Conservative track forbids:** one PR touching P1–P8.  
-**Aggressive track allows:** A1→A2→A3 only — synapse_version required before A2 merges.
+**Aggressive 2-pass:** W1 must finish P1–P7 (including `synapse_version`) before W2 touches strip/worker.  
+**Aggressive 3-pass:** A3 only after A2 merges `synapse_version`.
 
 ---
 
@@ -300,10 +317,10 @@ P9–P11 → optional polish
 
 | Pass | Status | PR |
 |------|--------|-----|
-| A1 Foundation (P1–P5) | ☐ | |
-| A2 Synapse + gate (P6–P7) | ☐ | |
-| A3 Wire (P8–P11) | ☐ | |
-| *(granular P1–P11)* | — | use only if splitting A1–A3 |
+| **W1** Substrate (P1–P7) | ☐ | |
+| **W2** Wire (P8–P11) | ☐ | |
+| *(optional A1–A3 split of W1/W2)* | — | §7C |
+| *(granular P1–P11)* | — | §7A |
 
 ---
 
@@ -313,6 +330,7 @@ P9–P11 → optional polish
 |------|--------|
 | 2026-05-23 | Initial pin — unified clusters + tiers + bridge_rows schema + 11 PWA passes |
 | 2026-05-23 | §4.1 synapse_version contract; §7B aggressive 3-pass track (A1–A3) |
+| 2026-05-23 | §7B default → **2-pass** (W1 substrate / W2 wire); §7C optional 3-pass |
 
 ---
 
