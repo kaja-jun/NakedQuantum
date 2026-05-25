@@ -317,7 +317,7 @@ P9–P11 → optional polish
 
 | Pass | Status | PR |
 |------|--------|-----|
-| **W1** Substrate (P1–P7) | ☐ | |
+| **W1** Substrate (P1–P7) | ☑ | witness-substrate PR |
 | **W2** Wire (P8–P11) | ☐ | |
 | *(optional A1–A3 split of W1/W2)* | — | §7C |
 | *(granular P1–P11)* | — | §7A |
