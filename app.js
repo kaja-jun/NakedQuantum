@@ -620,6 +620,7 @@ db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoke
   db.run("CREATE TABLE IF NOT EXISTS guardian_summaries_enc(id TEXT PRIMARY KEY, enc TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS bridge_rows(id TEXT PRIMARY KEY, opened_at INTEGER, source_log_id TEXT, prior_theory TEXT, user_action TEXT, user_note TEXT, signal_keys TEXT, geometry_at_open TEXT, status TEXT, checks INTEGER DEFAULT 0, last_check_at INTEGER, closed_at INTEGER, closure_reason TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS bridge_rows_enc(id TEXT PRIMARY KEY, enc TEXT)");
+  db.run("CREATE TABLE IF NOT EXISTS witness_ledger_chain(id TEXT PRIMARY KEY, seq INTEGER NOT NULL, event_type TEXT NOT NULL, event_id TEXT NOT NULL, payload_hash TEXT NOT NULL, prev_hash TEXT NOT NULL, link_hash TEXT NOT NULL, created_at INTEGER NOT NULL)");
 
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN auto_invoked INTEGER DEFAULT 0"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN triggered_by TEXT"); } catch (e) {}
@@ -633,7 +634,7 @@ db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoke
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN prediction_tag TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN prediction_outcome TEXT"); } catch (e) {}
 
-  ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities', 'bridge_rows'].forEach
+  ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities', 'bridge_rows', 'witness_ledger_chain'].forEach
 (t => {
     try {
       const info = db.exec("PRAGMA table_info(" + t + ")");
@@ -8146,7 +8147,7 @@ async function exportFolderContents(fId){const discs=(await dbGetByIndex("cosm_d
 
 async function exportJSON(){const f=await dbGetAll("cosm_folders"),d=await dbGetAll("cosm_discourses"),m=await dbGetAll("cosm_mosaic_tiles"),b=await dbGetAll("cosm_backlinks"),c=await dbGetAll("characters"),h=await dbGetAll("history"),s=await dbGetAll("summaries"),gl=await dbGetAll("guardian_logs"),gs=await dbGetAll("guardian_summaries"),ie=await dbGetAll("immutable_entities"),br=await dbGetAll("bridge_rows");const payload={version:"NakedQuantum",exported_at:new Date().toISOString(),cosm_folders:f,cosm_discourses:d,cosm_mosaic_tiles:m,cosm_backlinks:b,characters:c,history:h,summaries:s,guardian_logs:gl,guardian_summaries:gs,immutable_entities:ie,bridge_rows:br};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`NQ_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);showToast("Backup exported ◆");}
 
-async function importJSON(event){const file=event.target.files[0];if(!file)return;if(!confirm("Import will merge with existing data. Continue?")){event.target.value='';return;}try{const text=await file.text();const payload=JSON.parse(text);const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store]))for(const item of payload[store])await dbPut(store,item);}mosaicCache={};if(currentMode==='soup')await renderTableView();else await renderSanctuaryView();showToast("Import complete ✓");}catch(err){console.error(err);showToast("Import failed");}event.target.value='';}
+async function importJSON(event){const file=event.target.files[0];if(!file)return;if(!confirm("Import will merge with existing data. Continue?")){event.target.value='';return;}try{const text=await file.text();const payload=JSON.parse(text);const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store]))for(const item of payload[store])await dbPut(store,item);}await resetWitnessLedgerChain('import');mosaicCache={};if(currentMode==='soup')await renderTableView();else await renderSanctuaryView();showToast("Import complete ✓");}catch(err){console.error(err);showToast("Import failed");}event.target.value='';}
 
 /* MOSAIC EXTRACT */
 async function extractMemory(){
@@ -8189,7 +8190,7 @@ async function saveSupaFromDataPage(){
 
 /* AKASHIC */
 async function backupToAkashic(){try{const payload={version:"NakedQuantum",exported_at:new Date().toISOString(),cosm_folders:await dbGetAll("cosm_folders"),cosm_discourses:await dbGetAll("cosm_discourses"),cosm_mosaic_tiles:await dbGetAll("cosm_mosaic_tiles"),cosm_backlinks:await dbGetAll("cosm_backlinks"),characters:await dbGetAll("characters"),history:await dbGetAll("history"),summaries:await dbGetAll("summaries"),guardian_logs:await dbGetAll("guardian_logs"),guardian_summaries:await dbGetAll("guardian_summaries"),immutable_entities:await dbGetAll("immutable_entities"),bridge_rows:await dbGetAll("bridge_rows")};const res=await fetch(`${AKASHIC_URL}/backup`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:cosmUserId,data:JSON.stringify(payload)})});if(res.ok)showToast('Akashic Synced ◆');}catch(e){console.error(e);}}
-async function restoreFromAkashic(){if(!confirm("Pull from Akashic? This will overwrite local fragments."))return;try{const res=await fetch(`${AKASHIC_URL}/backup/latest?user_id=${cosmUserId}`);if(!res.ok)throw new Error('No backup');const payload=JSON.parse(await res.text());const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store])){const all=await dbGetAll(store);for(const item of all)await dbDelete(store,item.id);for(const item of payload[store])await dbPut(store,item);}}showToast('Sanctuary Restored ◆');setTimeout(()=>location.reload(),1200);}catch(e){console.error(e);showToast('Akashic offline ◆');}}
+async function restoreFromAkashic(){if(!confirm("Pull from Akashic? This will overwrite local fragments."))return;try{const res=await fetch(`${AKASHIC_URL}/backup/latest?user_id=${cosmUserId}`);if(!res.ok)throw new Error('No backup');const payload=JSON.parse(await res.text());const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store])){const all=await dbGetAll(store);for(const item of all)await dbDelete(store,item.id);for(const item of payload[store])await dbPut(store,item);}}await resetWitnessLedgerChain('akashic_restore');showToast('Sanctuary Restored ◆');setTimeout(()=>location.reload(),1200);}catch(e){console.error(e);showToast('Akashic offline ◆');}}
 
 /* LONG PRESS */
 function startLP(e,card,item){
@@ -8984,8 +8985,12 @@ var NQ_WITNESS_FLAGS = {
   synapse: true,
   invoke_gate: true,
   process_panel: true,
-  wire: true
+  wire: true,
+  ledger_chain: true
 };
+var WITNESS_CHAIN_LS_ID = 'nq_witness_chain_id';
+var WITNESS_CHAIN_GENESIS_AT = 'nq_witness_chain_genesis_at';
+var _witnessLedgerStatus = { ok: null, length: 0, breakAt: null, dormant: false, reanchored: false };
 
 function isWitnessSubstrateEnabled() {
   return NQ_WITNESS_FLAGS.enabled !== false;
@@ -9094,6 +9099,207 @@ function formatHalfLifePanelLines(halfLife) {
     top: top5.map(function (e) { return '"' + e.term + '" (' + e.weight + ')'; }).join(', '),
     bottom: bottom3.map(function (e) { return '"' + e.term + '" (' + e.weight + ')'; }).join(', ')
   };
+}
+
+function isWitnessLedgerChainEnabled() {
+  return isWitnessSubstrateEnabled() && NQ_WITNESS_FLAGS.ledger_chain !== false;
+}
+
+function stableWitnessStringify(obj) {
+  if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+  if (Array.isArray(obj)) return '[' + obj.map(stableWitnessStringify).join(',') + ']';
+  var keys = Object.keys(obj).sort();
+  return '{' + keys.map(function (k) {
+    return JSON.stringify(k) + ':' + stableWitnessStringify(obj[k]);
+  }).join(',') + '}';
+}
+
+async function witnessSha256Hex(text) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(text)));
+  return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+async function getWitnessLedgerHmacKey() {
+  var sk = getSovereignKey();
+  if (!sk) return null;
+  return crypto.subtle.importKey('raw', sk, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+}
+
+async function witnessHmacSha256Hex(message) {
+  var key = await getWitnessLedgerHmacKey();
+  if (!key) return null;
+  var sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(String(message)));
+  return Array.from(new Uint8Array(sig)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+function ensureWitnessChainId() {
+  try {
+    var id = localStorage.getItem(WITNESS_CHAIN_LS_ID);
+    if (id) return id;
+    id = 'wc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem(WITNESS_CHAIN_LS_ID, id);
+    return id;
+  } catch (e) {
+    return 'wc_local';
+  }
+}
+
+async function getWitnessChainGenesisHash() {
+  return witnessSha256Hex('nq-witness-genesis:' + ensureWitnessChainId());
+}
+
+function canonicalWitnessLogPayload(row) {
+  var evt = row.log_type === 'witness_field' ? 'witness_field' : 'summon';
+  return {
+    event_type: evt,
+    id: row.id,
+    invoked_at: row.invoked_at || 0,
+    was_silent: row.was_silent ? 1 : 0,
+    theory_one_line: String(row.theory_one_line || ''),
+    primary_discourse_id: row.primary_discourse_id || null,
+    triggered_by: row.triggered_by || null,
+    prediction_tag: row.prediction_tag || null
+  };
+}
+
+function canonicalWitnessBridgeOpenPayload(row) {
+  return {
+    event_type: 'bridge_open',
+    id: row.id,
+    opened_at: row.opened_at || 0,
+    source_log_id: row.source_log_id || null,
+    user_action: row.user_action || '',
+    prior_theory: String(row.prior_theory || ''),
+    status: row.status || 'open'
+  };
+}
+
+function canonicalWitnessBridgeClosePayload(row) {
+  return {
+    event_type: 'bridge_close',
+    id: row.id,
+    status: row.status || '',
+    closed_at: row.closed_at || 0,
+    closure_reason: row.closure_reason || null
+  };
+}
+
+function witnessCanonicalPayload(eventType, row) {
+  if (eventType === 'bridge_open') return canonicalWitnessBridgeOpenPayload(row);
+  if (eventType === 'bridge_close') return canonicalWitnessBridgeClosePayload(row);
+  if (eventType === 'witness_field') return canonicalWitnessLogPayload(row);
+  return canonicalWitnessLogPayload(row);
+}
+
+async function getWitnessLedgerChainSorted() {
+  var rows = await dbGetAll('witness_ledger_chain');
+  return rows.slice().sort(function (a, b) { return (a.seq || 0) - (b.seq || 0); });
+}
+
+async function resetWitnessLedgerChain(reason) {
+  if (!isWitnessLedgerChainEnabled()) return;
+  try {
+    var rows = await dbGetAll('witness_ledger_chain');
+    for (var i = 0; i < rows.length; i++) {
+      await dbDelete('witness_ledger_chain', rows[i].id);
+    }
+    localStorage.removeItem(WITNESS_CHAIN_LS_ID);
+    localStorage.removeItem(WITNESS_CHAIN_GENESIS_AT);
+    _witnessLedgerStatus = { ok: null, length: 0, breakAt: null, dormant: false, reanchored: true, reason: reason || null };
+  } catch (eReset) {
+    console.warn('[Witness] ledger reset:', eReset);
+  }
+}
+
+async function appendWitnessLedgerLink(eventType, eventId, row) {
+  if (!isWitnessLedgerChainEnabled() || !getSovereignKey()) return null;
+  try {
+    var chain = await getWitnessLedgerChainSorted();
+    for (var ci = 0; ci < chain.length; ci++) {
+      if (chain[ci].event_id === eventId) return chain[ci];
+    }
+    var payload = witnessCanonicalPayload(eventType, row);
+    var payloadHash = await witnessSha256Hex(stableWitnessStringify(payload));
+    var prevHash = chain.length ? chain[chain.length - 1].link_hash : await getWitnessChainGenesisHash();
+    var seq = chain.length ? (chain[chain.length - 1].seq + 1) : 1;
+    if (seq === 1) {
+      try { localStorage.setItem(WITNESS_CHAIN_GENESIS_AT, String(Date.now())); } catch (eGen) {}
+    }
+    var linkMsg = seq + '|' + eventType + '|' + eventId + '|' + payloadHash + '|' + prevHash;
+    var linkHash = await witnessHmacSha256Hex(linkMsg);
+    if (!linkHash) return null;
+    var link = {
+      id: 'wlc_' + seq,
+      seq: seq,
+      event_type: eventType,
+      event_id: eventId,
+      payload_hash: payloadHash,
+      prev_hash: prevHash,
+      link_hash: linkHash,
+      created_at: Date.now()
+    };
+    await dbPut('witness_ledger_chain', link);
+    _witnessLedgerStatus.ok = true;
+    _witnessLedgerStatus.length = seq;
+    _witnessLedgerStatus.breakAt = null;
+    _witnessLedgerStatus.dormant = false;
+    _witnessLedgerStatus.reanchored = false;
+    return link;
+  } catch (eAppend) {
+    console.warn('[Witness] ledger append:', eAppend);
+    return null;
+  }
+}
+
+async function verifyWitnessLedgerChain() {
+  if (!isWitnessLedgerChainEnabled()) {
+    _witnessLedgerStatus = { ok: null, length: 0, breakAt: null, dormant: true, reanchored: false };
+    return _witnessLedgerStatus;
+  }
+  if (!getSovereignKey()) {
+    _witnessLedgerStatus = { ok: null, length: 0, breakAt: null, dormant: true, reanchored: false };
+    return _witnessLedgerStatus;
+  }
+  try {
+    var chain = await getWitnessLedgerChainSorted();
+    if (!chain.length) {
+      _witnessLedgerStatus = { ok: true, length: 0, breakAt: null, dormant: false, reanchored: false };
+      return _witnessLedgerStatus;
+    }
+    var expectedPrev = await getWitnessChainGenesisHash();
+    for (var i = 0; i < chain.length; i++) {
+      var link = chain[i];
+      if (link.prev_hash !== expectedPrev) {
+        _witnessLedgerStatus = { ok: false, length: chain.length, breakAt: link.seq, dormant: false, reanchored: false };
+        return _witnessLedgerStatus;
+      }
+      var linkMsg = link.seq + '|' + link.event_type + '|' + link.event_id + '|' + link.payload_hash + '|' + link.prev_hash;
+      var expectedLink = await witnessHmacSha256Hex(linkMsg);
+      if (!expectedLink || expectedLink !== link.link_hash) {
+        _witnessLedgerStatus = { ok: false, length: chain.length, breakAt: link.seq, dormant: false, reanchored: false };
+        return _witnessLedgerStatus;
+      }
+      expectedPrev = link.link_hash;
+    }
+    _witnessLedgerStatus = { ok: true, length: chain.length, breakAt: null, dormant: false, reanchored: false };
+    return _witnessLedgerStatus;
+  } catch (eVerify) {
+    console.warn('[Witness] ledger verify:', eVerify);
+    _witnessLedgerStatus = { ok: false, length: 0, breakAt: null, dormant: false, reanchored: false };
+    return _witnessLedgerStatus;
+  }
+}
+
+function formatWitnessLedgerStatusLine() {
+  var st = _witnessLedgerStatus || {};
+  if (st.dormant) return 'ledger: dormant — unlock required';
+  if (st.reanchored) return 'ledger: re-anchored after import — pre-chain history unlinked';
+  if (st.length === 0 && st.ok) return 'ledger: 0 links · verified (pre-chain logs unlinked)';
+  if (st.ok === false && st.breakAt) {
+    return 'ledger: break at seq ' + st.breakAt + ' — import or manual edit?';
+  }
+  if (st.ok) return 'ledger: ' + st.length + ' links · verified';
+  return 'ledger: pending verify';
 }
 
 function computeDenialSediment(bridgeRows) {
@@ -9512,6 +9718,7 @@ async function openBridgeRow(sourceLog, userAction, userNote) {
     closure_reason: null
   };
   await dbPut('bridge_rows', row);
+  await appendWitnessLedgerLink('bridge_open', row.id, row);
   await refreshWitnessSubstrate();
   return row;
 }
@@ -9521,6 +9728,7 @@ async function closeBridgeRow(row, status, reason) {
   row.closure_reason = reason || status;
   row.closed_at = Date.now();
   await dbPut('bridge_rows', row);
+  await appendWitnessLedgerLink('bridge_close', row.id + '_close_' + (row.closed_at || Date.now()), row);
 }
 
 async function evaluateBridgeRelapse() {
@@ -9646,6 +9854,10 @@ async function renderWitnessProcessPanel() {
   html += '<div class="witness-process-section"><div class="witness-process-h">Half-life</div>';
   html += '<div class="witness-process-line">top: ' + escHtml(hl.top) + '</div>';
   html += '<div class="witness-process-line">decayed: ' + escHtml(hl.bottom) + '</div></div>';
+  if (isWitnessLedgerChainEnabled()) {
+    html += '<div class="witness-process-section"><div class="witness-process-h">Ledger chain</div>';
+    html += '<div class="witness-process-line">' + escHtml(formatWitnessLedgerStatusLine()) + '</div></div>';
+  }
   var recent = bridges.slice().sort(function (a, b) { return (b.opened_at || 0) - (a.opened_at || 0); }).slice(0, 4);
   html += '<div class="witness-process-section"><div class="witness-process-h">Recent bridges</div>';
   if (recent.length) {
@@ -9809,8 +10021,9 @@ async function persistWitnessDirectiveLog(directiveRoot, meta) {
     var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
     var directiveStr = null;
     try { directiveStr = JSON.stringify(directiveRoot); } catch (eDir) { return; }
-    await dbPut('guardian_logs', {
-      id: 'gl_witness_' + Date.now(),
+    var logId = 'gl_witness_' + Date.now();
+    var log = {
+      id: logId,
       invoked_at: Date.now(),
       model_used: 'witness-local',
       soup_snapshot_count: allDiscs.length,
@@ -9827,7 +10040,9 @@ async function persistWitnessDirectiveLog(directiveRoot, meta) {
       qualifiers: '[]',
       theory_one_line: meta.theory_one_line || '',
       directive: directiveStr
-    });
+    };
+    await dbPut('guardian_logs', log);
+    await appendWitnessLedgerLink('witness_field', logId, log);
     await refreshAbyssActiveTint();
     await refreshSoupSurfaceBoost();
     await refreshWatcherFocus();
@@ -10700,6 +10915,7 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
   };
   guardianLastInvokeQualifiers = null;
   await dbPut('guardian_logs', log);
+  await appendWitnessLedgerLink(log.log_type === 'witness_field' ? 'witness_field' : 'summon', log.id, log);
   void refreshEpistemicMoodCache();
   return log;
 }
@@ -11505,6 +11721,7 @@ async function init(){
   } catch (eStripLs) {}
   void runDailyRevisitCheck();
   void refreshEpistemicMoodCache();
+  void verifyWitnessLedgerChain().then(function () { void renderWitnessProcessPanel(); });
   void refreshWitnessSubstrate();
 }
 

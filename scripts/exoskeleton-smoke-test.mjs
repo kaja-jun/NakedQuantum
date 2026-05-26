@@ -55,6 +55,9 @@ assert(appSrc.includes('ALTER TABLE guardian_logs ADD COLUMN prediction_tag'), '
 assert(appSrc.includes('mergeCorpusBaseline'), 'corpus_baseline merge helper');
 assert(appSrc.includes('corpus_baseline'), 'corpus_baseline on synapse');
 assert(appSrc.includes('showWitnessSummonBridgePrompt'), 'inline bridge prompt after summon');
+assert(appSrc.includes('witness_ledger_chain'), 'witness ledger chain table');
+assert(appSrc.includes('appendWitnessLedgerLink'), 'ledger chain append helper');
+assert(appSrc.includes('verifyWitnessLedgerChain'), 'ledger chain verify helper');
 
 console.log('\nSmoke: ' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed > 0 ? 1 : 0);
