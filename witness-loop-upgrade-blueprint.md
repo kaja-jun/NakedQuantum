@@ -310,6 +310,8 @@ Guardian **voice** unchanged in Coherence; Isness mode unchanged.
 
 **Not chained (v1):** `prediction_outcome` updates, `evaluateBridgeRelapse` check mutations — derived state, not ledger ground.
 
+**W4.6 (deferred — pin):** **`reanchorWitnessLedgerChain()`** — signed `chain_close` under old SK, archive old chain, new genesis under new SK; interim key fingerprint for “key changed” vs “tamper”. Full spec: **`NakedQuantum-quantum-fortress.md` §18.7**. Do not auto-reset on verify fail.
+
 **Out of scope:** full-DB hash, sync merge, export carry chain, `correction_event` table (future).
 
 ---
@@ -426,6 +428,7 @@ P9–P11 → optional polish
 | **W3** Substrate honesty | ☑ | §7D — resistance normalize, corpus_baseline, SUBSTRATE empty states, half-life surface, summon bridge prompt |
 | **W4** Witness ledger chain | ☑ | §7E — HMAC chain on summon + bridge events; import re-anchor |
 | **W5** Bridge practice | ☐ | §7F — after W4 + real friction |
+| **W4.6** Ledger re-anchor ceremony | ☐ | fortress §18.7 — migration vs tamper |
 | **W6** Temporal compare | ☐ | §7G — after bridge |
 | *(optional A1–A3 split of W1/W2)* | — | §7C |
 | *(granular P1–P11)* | — | §7A |
@@ -444,6 +447,7 @@ P9–P11 → optional polish
 | 2026-05-26 | **W3 shipped** — W3-2 resistance normalize; W3-1 corpus_baseline; W3-3 empty states; W3-4 half-life panel; W3-5 inline bridge prompt |
 | 2026-05-26 | **Register rename** — old W4 bridge practice → **W5**; old W5 temporal → **W6**; new **W4** = witness ledger chain (§7E) |
 | 2026-05-26 | **W4 shipped** — witness_ledger_chain table; HMAC links; append hooks; verify on unlock; SUBSTRATE ledger line; import re-anchor |
+| 2026-05-26 | **W4.6 register** — ledger migration / re-anchor deferred; pin fortress §18.7 |
 
 ---
 

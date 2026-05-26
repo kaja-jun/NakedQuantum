@@ -270,6 +270,8 @@ Not all bytes pass through the SQL worker encrypt path.
 
 **Import / Akashic restore:** chain cleared + re-anchored (honest fork — pre-import history unlinked).
 
+**Device migration / key change:** see **`NakedQuantum-quantum-fortress.md` §18.7** — v1 per-device chain; break vs tamper when chain copied under different key; `reanchorWitnessLedgerChain()` deferred.
+
 **Dormant without key:** same as encryption — no HMAC without sovereign key in RAM.
 
 ---
@@ -485,6 +487,40 @@ Also: `navigator.storage.persist()` on init (request, not OS guarantee on iOS).
 
 External reviews (e.g. generic PWA audits) may miss: **realm isolation**, **PWA → Tauri migration**, and **interim Akashic**. This section is the contract when those reviews disagree with shipped code.
 
+### 18.7 Witness ledger — device migration & re-anchor (deferred, pin)
+
+**Problem:** `link_hash` is **HMAC-SHA256 keyed by sovereign key bytes**. `verifyWitnessLedgerChain()` uses **`getSovereignKey()` now**. If chain rows exist but the unlock key **differs** from the key that wrote them, verify fails (usually **break at seq 1**) — **indistinguishable from tampering** in v1.
+
+**What v1 does today (honest):**
+
+| Path | Chain moves? | Typical result |
+|------|--------------|----------------|
+| Supabase sync | **No** — `witness_ledger_chain` excluded | Per-device forward chain; **0 links · verified** on new device |
+| Backup key → new device | No (chain not in sync/export) | Fresh chain; `guardian_logs` may be pre-chain unlinked |
+| JSON / Akashic restore | Cleared via `resetWitnessLedgerChain()` | SUBSTRATE: **re-anchored after import** |
+| Same device, Face ID rebind (`nq_wrapped_sk`) | Unchanged | **Still verifies** — same sovereign key bytes |
+| Copy `nq.db` chain + **different** sovereign key | Yes | **Break** — looks like tamper (real gap) |
+
+**`resetWitnessLedgerChain(reason)` today:** deletes chain + clears `nq_witness_chain_id` — **does not** archive old links or record a signed handoff.
+
+**Do not (until ceremony ships):**
+
+- Auto-reset on verify fail (silent erase).
+- Sync chain across devices without merge spec.
+- Claim migration is “verified” when only vault synced, not chain.
+
+**Target: `reanchorWitnessLedgerChain()` (future pass — Tauri or post-W5):**
+
+1. User unlocks with **old key** (backup key ceremony) — old key must be in RAM.
+2. Append final link: `event_type: chain_close` — payload `{ reason, old_chain_id, tail_hash, new_key_fingerprint, migrated_at }` — last HMAC under **old SK**.
+3. **Archive** old rows → `witness_ledger_chain_archive` (read-only; verifiable offline with old key if needed).
+4. New `chain_id` + genesis under **new SK**; optional `chain_open` link referencing `old_chain_id`.
+5. SUBSTRATE: **`ledger: migrated · new chain · old archived (N links)`** — not “break”.
+
+**Interim UX (cheap, before full ceremony):** persist `nq_sovereign_key_fp = SHA256(SK)` at first append; on verify fail, if fingerprint ≠ stored → **`ledger: key changed — re-anchor or reset`** vs **`break at seq N — possible tamper`**.
+
+**Cross-ref:** `witness-loop-upgrade-blueprint.md` §7E footnote · W4.6 register below.
+
 ---
 
 ## 19. Revision log
@@ -493,6 +529,7 @@ External reviews (e.g. generic PWA audits) may miss: **realm isolation**, **PWA 
 |------|--------|
 | 2026-05-26 | Initial pin — full fortress pipeline after W4 ledger chain |
 | 2026-05-26 | §18 phased hardening contract — PWA shippable / not perfect / Tauri Layer 4 / Akashic truth |
+| 2026-05-26 | §18.7 witness ledger migration + re-anchor ceremony (deferred) — key mismatch vs tamper |
 
 ---
 

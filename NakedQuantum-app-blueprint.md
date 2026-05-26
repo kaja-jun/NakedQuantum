@@ -84,7 +84,7 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 
 ### 4.3 Crypto & sync
 
-- **Full pipeline:** **`NakedQuantum-quantum-fortress.md`** — eight layers, honest gaps, **§18 what to do when**.
+- **Full pipeline:** **`NakedQuantum-quantum-fortress.md`** — eight layers, honest gaps, **§18 what to do when**, **§18.7 ledger migration (deferred)**.
 - **Shippable for PWA phase; not perfect** — Layer 4 gaps + Akashic interim documented; Tauri thickens walls later.
 - **AES-GCM** at rest when encryption path enabled; WebAuthn **PRF** derives key (memory only).
 - **Supabase:** E2EE delta sync (`data_enc`). **Akashic/R2:** cold backup — not client-E2EE yet (update fortress when `.nq` upload lands).
@@ -292,8 +292,8 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 ## 17. Encryption, sync, backup
 
 - Encrypt on write when enabled → `*_enc` tables.
-- **Supabase:** row-level encrypted blobs; last-write-wins on `updated_at`.
-- **R2:** weekly encrypted `.nq`; disaster recovery, not daily sync.
+- **Supabase:** row-level encrypted blobs (`data_enc`); last-write-wins on `updated_at`.
+- **R2 / Akashic:** cold disaster recovery, not daily sync — **client `.nq` E2EE before upload** (planned; interim plaintext JSON today — see fortress §18).
 - **Read-only lapse** (future monetisation): view + export always; no new writes.
 
 ---
@@ -346,6 +346,7 @@ No ads, SEO theatre, or performance marketing.
 | 2026-04-30 | v1 — Metila + Kaja initial full map |
 | 2026-05-20 | **v2** — Mesh Soup, unified `cosm_discourses`, Cartographer v5, Guardian G1–G5, Abyss v0.21, file split, document index, shipped log; removed obsolete anti-favorites line |
 | 2026-05-26 | **`NakedQuantum-quantum-fortress.md`** + §4.3 truth — Supabase E2EE sync; Akashic interim; PWA→Tauri note; §18 phased contract in fortress doc |
+| 2026-05-26 | Fortress §18.7 — witness ledger migration / re-anchor ceremony (W4.6 deferred) |
 
 ---
 
