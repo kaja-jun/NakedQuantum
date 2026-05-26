@@ -2500,6 +2500,10 @@ select.cosm-input {
 .witness-process-line { font-size: 12px; line-height: 1.5; color: var(--g-text); opacity: 0.85; }
 .witness-process-line.muted { opacity: 0.45; }
 .witness-process-deny .witness-process-line { color: var(--g-accent); opacity: 0.9; }
+.witness-process-footer { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--g-border); }
+.witness-summon-bridge-prompt { width: 100%; max-width: 640px; margin-top: 20px; opacity: 1; transition: opacity 0.4s ease; }
+.witness-summon-bridge-prompt.hidden { display: none; }
+.witness-summon-bridge-line { font-size: 11px; letter-spacing: 1.5px; color: var(--g-muted); opacity: 0.75; margin-bottom: 10px; text-transform: lowercase; }
 .witness-bridge-actions { display: flex; gap: 10px; margin: 16px 0 8px; }
 .witness-bridge-btn { flex: 1; background: none; border: 1px solid var(--g-accent-dim); color: var(--g-accent); font-size: 10px; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; padding: 10px 12px; border-radius: 8px; cursor: pointer; }
 .witness-bridge-btn:active { opacity: 0.6; }

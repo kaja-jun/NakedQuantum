@@ -9055,6 +9055,47 @@ function computeTermHalfLife(arcsMap) {
   return { terms: terms };
 }
 
+function mergeCorpusBaseline(prevBaseline, totalDiscourses) {
+  var baseline = prevBaseline || {};
+  var builtAt = baseline.built_at || Date.now();
+  var prevTotal = baseline.total_discourses || 0;
+  var organicSince = baseline.organic_writes_since || 0;
+  if (totalDiscourses > prevTotal) {
+    organicSince += (totalDiscourses - prevTotal);
+  }
+  return {
+    built_at: builtAt,
+    total_discourses: totalDiscourses,
+    organic_writes_since: organicSince
+  };
+}
+
+function formatSynapseAgeRelative(ts) {
+  if (!ts) return 'unknown';
+  var ms = Date.now() - ts;
+  if (ms < 60000) return 'just now';
+  if (ms < 3600000) return Math.floor(ms / 60000) + 'm ago';
+  if (ms < 86400000) return Math.floor(ms / 3600000) + 'h ago';
+  return Math.floor(ms / 86400000) + 'd ago';
+}
+
+function formatHalfLifePanelLines(halfLife) {
+  var terms = halfLife && halfLife.terms ? halfLife.terms : {};
+  var entries = Object.keys(terms).map(function (t) {
+    return { term: t, weight: terms[t].weight != null ? terms[t].weight : 0 };
+  });
+  if (!entries.length) {
+    return { top: 'no term weights yet — need mapped discourses with arcs', bottom: 'no decayed orbits yet' };
+  }
+  entries.sort(function (a, b) { return b.weight - a.weight; });
+  var top5 = entries.slice(0, 5);
+  var bottom3 = entries.slice(Math.max(0, entries.length - 3));
+  return {
+    top: top5.map(function (e) { return '"' + e.term + '" (' + e.weight + ')'; }).join(', '),
+    bottom: bottom3.map(function (e) { return '"' + e.term + '" (' + e.weight + ')'; }).join(', ')
+  };
+}
+
 function computeDenialSediment(bridgeRows) {
   var counts = {};
   (bridgeRows || []).forEach(function (br) {
@@ -9111,7 +9152,8 @@ function computePostureVector(discs, fastMapById, arcsMap) {
   });
   var attractor = totalTermN ? topTermN / totalTermN : 0;
   var selfRef = pronounHits ? selfHits / pronounHits : 0;
-  var resistance = resistanceTotal ? Math.min(1, resistanceHits / 12) : 0;
+  var resistanceDenom = Math.max(12, mapped * 1.5);
+  var resistance = resistanceTotal ? Math.min(1, resistanceHits / resistanceDenom) : 0;
   var coherence = mapped ? Math.min(1, mapped / Math.max(1, discs.length)) : 0;
   if (Object.keys(arcsMap || {}).length >= 4) coherence = Math.min(1, coherence + 0.15);
   return {
@@ -9165,9 +9207,17 @@ async function buildSynapseSnapshot() {
   });
   var elaborationDelta = computeElaborationDelta(discs, bridgeRows);
   var anomalies = collectWitnessAnomalies(arcsMap, perpetual, bridgeRows);
+  var prevBaseline = null;
+  try {
+    var prevStored = localStorage.getItem(SYNAPSE_LS);
+    var prevSyn = parseSynapseSnapshot(prevStored);
+    if (prevSyn && prevSyn.corpus_baseline) prevBaseline = prevSyn.corpus_baseline;
+  } catch (ePrev) {}
+  var corpusBaseline = mergeCorpusBaseline(prevBaseline, discs.length);
   var synapse = {
     synapse_version: SYNAPSE_VERSION,
     built_at: Date.now(),
+    corpus_baseline: corpusBaseline,
     posture_vector: posture,
     half_life: halfLife,
     perpetual_orbit_terms: perpetual,
@@ -9539,19 +9589,25 @@ async function renderWitnessProcessPanel() {
     panel.innerHTML = '<div class="witness-process-line muted">Substrate not built yet.</div>';
     return;
   }
+  var cb = syn.corpus_baseline || {};
+  html += '<div class="witness-process-section"><div class="witness-process-h">Baseline</div>';
+  html += '<div class="witness-process-line">baseline: ' + (cb.total_discourses != null ? cb.total_discourses : '—') +
+    ' discourses · ' + (cb.organic_writes_since != null ? cb.organic_writes_since : '0') + ' organic since</div></div>';
   var pv = syn.posture_vector || {};
   html += '<div class="witness-process-section"><div class="witness-process-h">Posture</div>';
   html += '<div class="witness-process-line">coherence ' + (pv.coherence != null ? pv.coherence : '—') +
     ' · resistance ' + (pv.resistance != null ? pv.resistance : '—') +
     ' · self-ref ' + (pv.self_ref_ratio != null ? pv.self_ref_ratio : '—') +
     ' · attractor ' + (pv.attractor_concentration != null ? pv.attractor_concentration : '—') + '</div></div>';
+  html += '<div class="witness-process-section"><div class="witness-process-h">Invoke gate</div>';
   if (syn.local_pass && syn.local_pass.invoke_denied) {
-    html += '<div class="witness-process-section witness-process-deny"><div class="witness-process-h">Invoke gate</div>';
-    html += '<div class="witness-process-line">denied — ' + escHtml(syn.local_pass.deny_reason || 'thin_map') + '</div></div>';
+    html += '<div class="witness-process-line witness-process-deny">denied — ' + escHtml(syn.local_pass.deny_reason || 'thin_map') + '</div>';
   } else if (syn.local_pass && syn.local_pass.graduation_quiet) {
-    html += '<div class="witness-process-section"><div class="witness-process-h">Invoke gate</div>';
-    html += '<div class="witness-process-line">graduation quiet — map stable; voluntary summon only</div></div>';
+    html += '<div class="witness-process-line">graduation quiet — map stable; voluntary summon only</div>';
+  } else {
+    html += '<div class="witness-process-line">open — voluntary summon available</div>';
   }
+  html += '</div>';
   if (NQ_WITNESS_FLAGS.wire !== false) {
     var prof = getWitnessPostureProfile(syn);
     html += '<div class="witness-process-section"><div class="witness-process-h">Wire (W2)</div>';
@@ -9560,37 +9616,91 @@ async function renderWitnessProcessPanel() {
     if (syn.elaboration_delta) {
       html += '<div class="witness-process-line">elaboration ×' + syn.elaboration_delta.ratio +
         (syn.elaboration_delta.spike ? ' (spike)' : '') + '</div>';
+    } else {
+      html += '<div class="witness-process-line muted">no elaboration delta — no open bridge window</div>';
     }
     html += '</div>';
   }
   html += '<div class="witness-process-section"><div class="witness-process-h">Bridges</div>';
-  html += '<div class="witness-process-line">' + openN + ' open · ' + bridges.length + ' total</div></div>';
+  if (openN || bridges.length) {
+    html += '<div class="witness-process-line">' + openN + ' open · ' + bridges.length + ' total</div>';
+  } else {
+    html += '<div class="witness-process-line muted">0 open · 0 total — correction loop dormant</div>';
+  }
+  html += '</div>';
+  html += '<div class="witness-process-section"><div class="witness-process-h">Perpetual orbit</div>';
   if (syn.perpetual_orbit_terms && syn.perpetual_orbit_terms.length) {
-    html += '<div class="witness-process-section"><div class="witness-process-h">Perpetual orbit</div>';
-    html += '<div class="witness-process-line">' + escHtml(syn.perpetual_orbit_terms.join(', ')) + '</div></div>';
+    html += '<div class="witness-process-line">' + escHtml(syn.perpetual_orbit_terms.join(', ')) + '</div>';
+  } else {
+    html += '<div class="witness-process-line muted">no orbit yet — need 3+ cross-discourse appearances</div>';
   }
+  html += '</div>';
+  html += '<div class="witness-process-section"><div class="witness-process-h">Anomalies</div>';
   if (syn.anomalies && syn.anomalies.length) {
-    html += '<div class="witness-process-section"><div class="witness-process-h">Anomalies</div>';
-    html += '<div class="witness-process-line">' + escHtml(syn.anomalies.slice(0, 8).join(' · ')) + '</div></div>';
+    html += '<div class="witness-process-line">' + escHtml(syn.anomalies.slice(0, 8).join(' · ')) + '</div>';
+  } else {
+    html += '<div class="witness-process-line muted">no anomalies — map reading clean</div>';
   }
+  html += '</div>';
+  var hl = formatHalfLifePanelLines(syn.half_life);
+  html += '<div class="witness-process-section"><div class="witness-process-h">Half-life</div>';
+  html += '<div class="witness-process-line">top: ' + escHtml(hl.top) + '</div>';
+  html += '<div class="witness-process-line">decayed: ' + escHtml(hl.bottom) + '</div></div>';
   var recent = bridges.slice().sort(function (a, b) { return (b.opened_at || 0) - (a.opened_at || 0); }).slice(0, 4);
+  html += '<div class="witness-process-section"><div class="witness-process-h">Recent bridges</div>';
   if (recent.length) {
-    html += '<div class="witness-process-section"><div class="witness-process-h">Recent bridges</div>';
     recent.forEach(function (br) {
       html += '<div class="witness-process-line">' + escHtml(br.status) + ' · ' + escHtml(br.user_action || '') +
         (br.prior_theory ? ' — ' + escHtml(String(br.prior_theory).slice(0, 60)) : '') + '</div>';
     });
-    html += '</div>';
+  } else {
+    html += '<div class="witness-process-line muted">none yet — summon friction unlocks mythril</div>';
   }
+  html += '</div>';
+  html += '<div class="witness-process-section witness-process-footer"><div class="witness-process-line muted">synapse built: ' +
+    escHtml(formatSynapseAgeRelative(syn.built_at)) + '</div></div>';
   panel.innerHTML = html;
 }
 
 var _witnessDetailLog = null;
+var _witnessSummonLog = null;
+
+function hideWitnessSummonBridgePrompt() {
+  _witnessSummonLog = null;
+  var el = document.getElementById('witness-summon-bridge-prompt');
+  if (!el) return;
+  el.classList.add('hidden');
+  el.innerHTML = '';
+}
+
+function showWitnessSummonBridgePrompt(log) {
+  if (!isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.bridges === false) return;
+  if (!log || !log.theory_one_line) return;
+  if (log.log_type === 'auto_invoke' || log.auto_invoked) return;
+  var el = document.getElementById('witness-summon-bridge-prompt');
+  if (!el) return;
+  _witnessSummonLog = log;
+  el.innerHTML = '<div class="witness-summon-bridge-line">theory logged · correct or reject?</div>' +
+    '<div class="witness-bridge-actions">' +
+    '<button type="button" class="witness-bridge-btn" data-witness-action="correct">Correct</button>' +
+    '<button type="button" class="witness-bridge-btn" data-witness-action="reject">Reject</button>' +
+    '</div>';
+  el.classList.remove('hidden');
+  el.querySelectorAll('[data-witness-action]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var act = btn.getAttribute('data-witness-action');
+      if (act === 'correct' || act === 'reject') void handleWitnessBridgeAction(act);
+    });
+  });
+}
 
 async function handleWitnessBridgeAction(action) {
-  if (!_witnessDetailLog) return;
-  await openBridgeRow(_witnessDetailLog, action, '');
+  var log = _witnessDetailLog || _witnessSummonLog;
+  if (!log) return;
+  await openBridgeRow(log, action, '');
   showToast(action === 'correct' ? 'Bridge opened (correct) ◆' : 'Bridge opened (reject) ◆');
+  hideWitnessSummonBridgePrompt();
   closeGuardianLogDetail();
   void renderWitnessProcessPanel();
 }
@@ -9827,6 +9937,7 @@ function resetGuardianUI(){
   realm.classList.remove('dimming');
   response.className = 'guardian-response';
   response.textContent = '';
+  hideWitnessSummonBridgePrompt();
   silence.className = 'guardian-silence';
   inputArea.className = 'guardian-input-area';
   document.getElementById('guardian-input').value = '';
@@ -9933,6 +10044,7 @@ async function summonGuardian(userAddition, summonOpts){
   var guardianModel = summonOpts.modelOverride || localStorage.getItem('nq_guardian_model') || localStorage.getItem('nq_model') || 'deepseek/deepseek-v3.2';
   var baseUrl = openRouterChatBaseUrl();
   guardianState = 'processing';
+  hideWitnessSummonBridgePrompt();
   var btn = document.getElementById('btn-summon-guardian');
   var realm = document.getElementById('guardian-realm');
   var glyph = document.getElementById('guardian-glyph');
@@ -10524,7 +10636,8 @@ async function streamGuardianResponse(contextBlock, apiKey, baseUrl, model){
     btn.textContent = 'Summon again';
     btn.disabled = false;
     applyGuardianUiStrings('speaking');
-    await saveGuardianLog(fullText, false, model);
+    var savedLog = await saveGuardianLog(fullText, false, model);
+    if (savedLog && savedLog.theory_one_line) showWitnessSummonBridgePrompt(savedLog);
   }
   try {
     localStorage.setItem('nq_guardian_last_invoke', String(Date.now()));
@@ -10588,6 +10701,7 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
   guardianLastInvokeQualifiers = null;
   await dbPut('guardian_logs', log);
   void refreshEpistemicMoodCache();
+  return log;
 }
 
 async function renderGuardianLogs(){
@@ -10677,6 +10791,7 @@ async function handleGuardianOffer(){
   document.getElementById('guardian-input-area').className = 'guardian-input-area';
   document.getElementById('guardian-response').textContent = '';
   document.getElementById('guardian-response').className = 'guardian-response';
+  hideWitnessSummonBridgePrompt();
   document.getElementById('guardian-silence').className = 'guardian-silence';
   document.getElementById('guardian-glyph').className = 'guardian-glyph watching';
   try {
