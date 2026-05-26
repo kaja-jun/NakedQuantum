@@ -15,8 +15,8 @@
 | **Intention trace** | Every pass: *“Traceable to intention §___ because ___.”* |
 | **48-hour gate** | New mechanics sit in intention §14 Living Q first unless this doc marks them **approved**. |
 | **One pass = one PR** | Observable layer per pass when possible — never bridge + posture + invoke in one merge. |
-| **Guardian last** | Layers 0–5 read-only in process view before strip/summon behavior changes. |
-| **Worker redeploy** | Strip contract changes need `workers/guardian-invoke/` deploy note in PR. |
+| **Guardian last** | Layers 0–5 read-only in process view before summon behavior changes. |
+| **No auto strip** | Soup auto-invoke strip + `naked-guardian` worker **retired May 2026** — witness loop + voluntary summon only. |
 
 ---
 
@@ -45,7 +45,7 @@ WRITE (Abyss)
         ├─ elaboration_delta (if open bridge)
         └─ saccade_log (this pass)
   → runLocalPass(synapse)           // invoke_denied?, graduation_quiet?
-  → [if allowed] Guardian strip / summon  // tier ORDER from posture
+  → [optional] voluntary Guardian summon  // tier ORDER from posture (BYOK)
   → bridge_rows / guardian_logs update
   → field mutation (directives, revisit) — existing Ph 0–3
 ```
@@ -301,7 +301,7 @@ P9–P11 → optional polish
 |------|--------|
 | `app.js` | P1–P11 (worker schema, synapse, local pass, process UI, Guardian order) |
 | `cartographer.js` | Only if perpetual orbit needs intra-map helper |
-| `workers/guardian-invoke/worker.mjs` | P8 strip prompt order / snapshot fields |
+| — | *(auto strip worker retired — see `workers/guardian-invoke/RETIRED.md`)* |
 | `index.html` / `app.css` | Process view, bridge UI, anomaly strip |
 | `docs/supabase-nq_sync.sql` | Unchanged |
 
@@ -331,6 +331,7 @@ P9–P11 → optional polish
 | 2026-05-23 | Initial pin — unified clusters + tiers + bridge_rows schema + 11 PWA passes |
 | 2026-05-23 | §4.1 synapse_version contract; §7B aggressive 3-pass track (A1–A3) |
 | 2026-05-23 | §7B default → **2-pass** (W1 substrate / W2 wire); §7C optional 3-pass |
+| 2026-05-23 | Auto-invoke strip + worker retired; loop = synapse + voluntary summon |
 
 ---
 

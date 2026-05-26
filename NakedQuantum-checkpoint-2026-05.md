@@ -27,7 +27,7 @@
 
 | Check | Result |
 |-------|--------|
-| `node --check` on `app.js`, `cartographer.js`, `sw.js`, `workers/guardian-invoke/worker.mjs` | Pass |
+| `node --check` on `app.js`, `cartographer.js`, `sw.js` | Pass |
 | `jshint` (es11, browser) | Warnings only — mostly loop closures and ternary line breaks; no blocking errors |
 | Blueprint vs code | Mostly aligned; minor doc drift (§6) |
 | Manual trace: Guardian 3-path, summon tiers, strip worker, DB migrations | Coherent |
@@ -43,7 +43,7 @@
 | File | Lines (approx.) | Role |
 |------|-----------------|------|
 | `app.js` | ~9,800 | DB worker, Soup/Sanctuary/Abyss, Watcher, Guardian, sync, UI |
-| `cartographer.js` | ~1,210 | Fast map pipeline + `checkGuardianTrigger` |
+| `cartographer.js` | ~1,000 | Fast map pipeline (auto strip trigger retired May 2026) |
 | `app.css` | ~2,600 | Visual system |
 | `index.html` | ~670 | Shell markup |
 | `sw.js` | ~70 | PWA cache `nq-v15`, network-first `app.js` / `app.css` |
@@ -54,7 +54,7 @@
 |-----|-------|-----------|
 | `CARTO_VERSION` | **5** | Lexicon/schema breaking change in `cartographer.js` |
 | Service worker | `nq-v15` | Meaningful shell/asset change |
-| Guardian worker | `workers/guardian-invoke/worker.mjs` | Strip prompt/contract change — **redeploy separately** |
+| Guardian worker | `workers/guardian-invoke/RETIRED.md` | Auto strip removed; voluntary summon only |
 
 ### 2.3 Shipped roadmap (high level)
 

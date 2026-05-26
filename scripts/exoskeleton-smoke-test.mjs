@@ -30,26 +30,13 @@ const negText = Array(40).fill('I am not happy but I feel joy enough thought').j
 const negMap = carto.generateFastMapData(negText);
 assert(negMap && negMap.word_count >= 35, 'negation sample has enough words');
 
-// CARTO: checkGuardianTrigger returns shape
-const longText = Array(50).fill('enough thought orbit paradox silence recursive performative').join(' ');
-const trig = carto.checkGuardianTrigger(longText);
-assert(trig && typeof trig.shouldInvoke === 'boolean', 'checkGuardianTrigger shape');
-assert(Array.isArray(trig.qualifiers), 'qualifiers array');
-
-const trigStrict = carto.checkGuardianTrigger(longText, {
-  strictProduction: true,
-  requireConsensus: true,
-  requireWatcherEcho: true,
-  minWatcherScore: 0.72
-});
-// Strict may still invoke on strong qualifier even without watcher echo (by design).
-assert(typeof trigStrict.reason === 'string', 'strict mode returns a reason string');
-
 // Read app.js snippets via regex for function presence (not executing browser app)
 const appSrc = readFileSync(join(root, 'app.js'), 'utf8');
 const wiring = [
   'computeReturnDetections',
   'runDailyRevisitCheck',
+  'persistWitnessDirectiveLog',
+  'buildSynapseSnapshot',
   'scoreGuardianPredictionsOnSave',
   'refreshWatcherFocus',
   'refreshEpistemicMoodCache',
@@ -58,7 +45,7 @@ const wiring = [
   'buildGuardianDirectiveRoot',
   'GUARDIAN_LEDGER_RECKONING_INSTRUCTION',
   'refreshAbyssActiveTint',
-  'witnessLedgerBlock'
+  'buildWitnessLedgerCompactBlock'
 ];
 for (const name of wiring) {
   assert(appSrc.includes(name), 'app.js contains ' + name);

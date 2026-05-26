@@ -69,7 +69,7 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 - **NLP / fast maps:** `cartographer.js` ES module (`CARTO_VERSION = 5`).
 - **Styles:** `app.css` (~2.6k lines).
 - **Offline:** `sw.js` cache `nq-v15`; network-first for `app.js` / `app.css`.
-- **Guardian strip:** `workers/guardian-invoke/worker.mjs` (deploy separately from Pages).
+- **Guardian summon:** BYOK OpenRouter only (auto-invoke strip worker retired — `workers/guardian-invoke/RETIRED.md`).
 
 ### 4.2 Storage
 
@@ -174,7 +174,7 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 - **`cartographer.js`** — fast map on save (≥30 words, stale `carto_version`).
 - NLP markers + extractive summary + emotional arc + qualifiers.
 - Output → `guardian_summaries` (`map_type: 'fast'`, id = discourse id).
-- **`checkGuardianTrigger`** — qualifier gate for **strip** path (worker); summon uses tiered context separately.
+- **Witness substrate** — `buildSynapseSnapshot`, bridges, ◇ SUBSTRATE; voluntary summon uses posture-ordered archive context.
 - Version bumps: `CARTO_VERSION` — remaps when lexicon breaks.
 
 ---

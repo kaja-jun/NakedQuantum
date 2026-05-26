@@ -44,7 +44,7 @@ jshint --config <(echo '{"esversion":11,"browser":true}') app.js cartographer.js
 
 | Service | Purpose | Configuration |
 |---|---|---|
-| OpenRouter API | AI features (Guardian, character chat) | BYOK — user enters key in Settings UI |
+| OpenRouter API | Voluntary Guardian summon, character chat | BYOK — user enters key in Settings UI |
 | Supabase | Cross-device delta sync | User enters URL + anon key in Settings UI |
 | Cloudflare R2 (Akashic Worker) | Cold backup/restore | Hardcoded worker URL in app |
 

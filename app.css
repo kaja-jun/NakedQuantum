@@ -2548,65 +2548,6 @@ select.cosm-input {
   100% { transform: rotate(360deg); }
 }
 
-/* Guardian worker invoke strip (Soup under-header; 6 min auto-dissolve) */
-.guardian-invoke-strip {
-  width: 100%;
-  overflow: hidden;
-  max-height: 0;
-  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  background: #06060a;
-  border-bottom: 1px solid #1a1a2e;
-  position: relative;
-  z-index: 1001;
-}
-
-.guardian-invoke-strip.visible {
-  max-height: 140px;
-}
-
-.guardian-invoke-inner {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
-
-.guardian-invoke-glyph {
-  color: var(--accent);
-  font-size: 10px;
-  margin-top: 3px;
-  flex-shrink: 0;
-  opacity: 0.6;
-}
-
-.guardian-invoke-text {
-  flex: 1;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #a0aab4;
-  font-style: italic;
-  letter-spacing: 0.01em;
-  margin: 0;
-}
-
-.guardian-invoke-dismiss {
-  background: none;
-  border: none;
-  color: #3a3a4a;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 8px 12px;
-  flex-shrink: 0;
-  margin-top: 1px;
-  transition: color 0.2s;
-}
-
-.guardian-invoke-dismiss:hover {
-  color: #6a6a7a;
-}
 /* GUARDIAN MODEL SELECTOR -- ghost pill */
 .guardian-model-selector { display: none; }
 

@@ -1,5 +1,7 @@
 # Guardian & Cartographer Refinement — Roadmap Blueprint
 
+> **Retired May 2026:** Track **A — Auto strip** (Soup banner + `naked-guardian` Cloudflare Worker) is **removed from the PWA**. Witness substrate + voluntary summon replace it. See `workers/guardian-invoke/RETIRED.md` and `witness-loop-upgrade-blueprint.md`. Historical `auto_invoke` logs remain in vault.
+
 > **Canonical roadmap** for evolving Guardian from *accurate mirror* toward *obsessive meta‑meta cognition* — and hardening Cartographer so the mirror does not lie at the sensory layer.
 >
 > Consolidates: co-creator Guardian architecture session (May 2026), Kimi 2.6 honest review, cartographer v0.3 merge (PR #31), and Kaja’s production/dev intent.

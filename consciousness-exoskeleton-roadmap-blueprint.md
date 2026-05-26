@@ -353,7 +353,7 @@ When merging a batch: tick **Shipped log** below + relevant section in guardian 
 |------|----------------|
 | **1** | `buildLedgerAfterLine` uses `created_at`; reckoning string in prior block; summon context includes After: |
 | **2** | `guardian_logs.directive` migrated; `refreshAbyssActiveTint` on open Abyss + after strip; disc-dot tint uses `dna.keyTerms` |
-| **3** | `checkAndShowGuardianInvoke` sends `witnessLedgerBlock`; worker README documents new fields |
+| **3** | *(retired)* auto strip — witness substrate + voluntary summon |
 
 ### §10.2 — Phase 1 gap checkpoint
 

@@ -1,11 +1,9 @@
 let generateFastMapData = null;
-let checkGuardianTrigger = null;
 (async () => {
   const btn = document.getElementById('btn-run-cartographer');
   if (btn) btn.disabled = true;
   const mod = await import('./cartographer.js');
   generateFastMapData = mod.generateFastMapData;
-  checkGuardianTrigger = mod.checkGuardianTrigger;
   if (btn) btn.disabled = false;
 })();
 
@@ -14,12 +12,10 @@ let checkGuardianTrigger = null;
 let db=null,currentMode='soup',currentDiscourseId=null,currentFolderId=null,
 breadcrumbPath=[{id:null,name:'◈  The soup'}],editorMode='write',currentView='table',mosaicCache={},searchQuery='',activeCharId=null,sanctuarySearchQuery='';
 const AKASHIC_URL='https://wandering-violet-964a.gazajar.workers.dev';
-/** Guardian auto-invoke micro-observation (server key). Must match deployed Worker + CORS allowlist. */
-const GUARDIAN_INVOKE_WORKER_URL = 'https://naked-guardian.gazajar.workers.dev';
 let cosmUserId=localStorage.getItem('cosm_user_id')||crypto.randomUUID();
 localStorage.setItem('cosm_user_id',cosmUserId);
 
-/** BYOK OpenRouter API base from Settings. Guardian micro-invoke uses `workers/guardian-invoke` (server key), not this URL. */
+/** BYOK OpenRouter API base from Settings (voluntary Guardian summon only). */
 function openRouterChatBaseUrl() {
   try {
     return (localStorage.getItem('nq_base_url') || 'https://openrouter.ai/api/v1').trim().replace(/\/+$/, '');
@@ -46,7 +42,6 @@ let selectMode=false, selectedItems=new Set();
 let subconsciousFolderId = null;
 let subconsciousPath = [{id: null, name: 'Subconscious'}];
 let soupLocalSearchOpen = false;
-var guardianSoupInvokeScheduleTimer = null;
 let sanctuaryLocalSearchOpen = false;
 let chatReturnPanel = 'view-soup';
 /** Clears THE SOUP / HOME pill when leaving the Soup grid or cancelling a pending hide. */
@@ -376,13 +371,6 @@ function savePersonaRoles(roles){
   localStorage.setItem('nq_persona_roles',JSON.stringify(roles));
 }
 
-/** Guardian Soup invoke strip -- timer + active flag (declared before FF so RAF can read safely at boot). */
-var guardianInvokeTimer = null;
-var guardianInvokeActive = false;
-var guardianInvokeLastTriggerType = null;
-/** Auto-dismiss strip after this many ms (Batch 3 typo: minutes, not hours). */
-var GUARDIAN_INVOKE_STRIP_DISSOLVE_MS = 6 * 60 * 1000;
-
 /* FIREFLY -- Soup-only atmosphere (canvas is fixed; off-Soup we stop drawing so it never bleeds through) */
 class FF {
   constructor() {
@@ -443,30 +431,9 @@ class FF {
       });
     }
     if (this.p.length > this.d) this.p.splice(this.d);
-            var _gr = null;
-    if (guardianInvokeActive) {
-      var _gs = document.getElementById('guardian-invoke-strip');
-      if (_gs && _gs.classList.contains('visible')) _gr = _gs.getBoundingClientRect();
-    }
     this.p.forEach(p => {
       p.x += p.vx;
       p.y += p.vy;
-      if (_gr && _gr.width > 0) {
-        var tgx = _gr.left + _gr.width * 0.5;
-        var tgy = _gr.top + _gr.height * 0.5;
-        var gdx = tgx - p.x;
-        var gdy = tgy - p.y;
-        var glen = Math.sqrt(gdx * gdx + gdy * gdy);
-        if (glen > 60) {
-          p.x += (gdx / glen) * 0.3;
-          p.y += (gdy / glen) * 0.3;
-        } else {
-          p.vx *= 0.88;
-          p.vy *= 0.88;
-        
-          
-        }
-      }
       p.a += p.p;
       if (p.a > 0.6 || p.a < 0.1) p.p *= -1;
       if (p.x < 0) p.x = this.canvas.width;
@@ -851,32 +818,12 @@ function initWorker(){
 //const NQ_DEV_MODE = true;
 const NQ_DEV_MODE = false;
 
-const GUARDIAN_LS_AUTO_INVOKE = 'nq_guardian_auto_invoke_enabled';
-const GUARDIAN_LS_STRICT_INVOKE = 'nq_guardian_strict_invoke';
 const SOUP_SURFACE_GRAVITY_BOOST = 40;
 const SOUP_SURFACE_DEFAULT_HOURS = 48;
 const WATCHER_FOCUS_DEFAULT_THRESHOLD = 0.58;
 const WATCHER_FOCUS_DEFAULT_HOURS = 72;
 const REVISIT_CHECK_LS = 'nq_revisit_check_day';
 const PERSISTENT_ORBIT_GRAVITY_BOOST = 18;
-const GUARDIAN_DEFAULT_COOLDOWN_MS = 6 * 60 * 1000;
-const GUARDIAN_PRODUCTION_COOLDOWN_MS = 72 * 60 * 60 * 1000;
-
-function isGuardianAutoInvokeEnabled() {
-  try {
-    var v = localStorage.getItem(GUARDIAN_LS_AUTO_INVOKE);
-    if (v === 'false') return false;
-  } catch (e) {}
-  return true;
-}
-
-function isGuardianStrictInvokeEnabled() {
-  try {
-    return localStorage.getItem(GUARDIAN_LS_STRICT_INVOKE) === 'true';
-  } catch (e) {}
-  return false;
-}
-
 const EPISTEMIC_MOOD_LS = 'nq_epistemic_mood_cache';
 
 function getEpistemicMoodCached() {
@@ -918,31 +865,6 @@ async function refreshEpistemicMoodCache() {
   } catch (e) {
     console.warn('[Epistemic] mood cache:', e);
   }
-}
-
-function getGuardianTriggerOptions() {
-  var mood = getEpistemicMoodCached();
-  var syn = getSynapseSnapshot();
-  var gradMul = (syn && syn.local_pass && syn.local_pass.graduation_quiet && NQ_WITNESS_FLAGS.wire !== false) ? 2 : 1;
-  if (NQ_DEV_MODE || !isGuardianStrictInvokeEnabled()) {
-    if (mood && mood.guardianCooldownMultiplier && mood.guardianCooldownMultiplier > 1) {
-      return { cooldownMs: Math.round(GUARDIAN_DEFAULT_COOLDOWN_MS * mood.guardianCooldownMultiplier * gradMul) };
-    }
-    if (gradMul > 1) return { cooldownMs: Math.round(GUARDIAN_DEFAULT_COOLDOWN_MS * gradMul) };
-    return {};
-  }
-  var cooldownMs = GUARDIAN_PRODUCTION_COOLDOWN_MS;
-  if (mood && mood.guardianCooldownMultiplier) {
-    cooldownMs = Math.round(cooldownMs * mood.guardianCooldownMultiplier);
-  }
-  cooldownMs = Math.round(cooldownMs * gradMul);
-  return {
-    strictProduction: true,
-    requireConsensus: true,
-    requireWatcherEcho: true,
-    minWatcherScore: 0.72,
-    cooldownMs: cooldownMs
-  };
 }
 
 const W_MODEL_ID = 'Xenova/bge-base-en-v1.5';
@@ -2872,14 +2794,6 @@ function showPanel(id){
     syncNqHeaderForCurrentPanel(id);
   }
 
-  if (id !== 'view-soup') {
-    if (guardianSoupInvokeScheduleTimer) {
-      clearTimeout(guardianSoupInvokeScheduleTimer);
-      guardianSoupInvokeScheduleTimer = null;
-    }
-    hideGuardianInvokeStripOnly();
-  }
-
   if (typeof firefly !== 'undefined' && firefly.setSoupActive) {
     firefly.setSoupActive(id === 'view-soup');
     if (id === 'view-soup') {
@@ -2916,13 +2830,6 @@ function showPanel(id){
     scheduleWatcherPass();
   }
 
-  if (id === 'view-soup') {
-    if (guardianSoupInvokeScheduleTimer) clearTimeout(guardianSoupInvokeScheduleTimer);
-    guardianSoupInvokeScheduleTimer = setTimeout(function () {
-      guardianSoupInvokeScheduleTimer = null;
-      void checkAndShowGuardianInvoke();
-    }, 3000);
-  }
 }
 
 /* HEADER BUTTONS */
@@ -5236,17 +5143,6 @@ let fastMap = {
       console.warn('[Witness] refresh after map:', wSub);
     }
 
-    if (!mapOpts.skipAutoInvite && isGuardianAutoInvokeEnabled() && checkGuardianTrigger) {
-      try {
-        const trig2 = checkGuardianTrigger(fastMap, getGuardianTriggerOptions());
-        if (trig2.shouldInvoke) {
-          guardianLastInvokeQualifiers = trig2.qualifiers || [];
-          try {
-            localStorage.setItem('nq_guardian_invoke_pending', JSON.stringify({ discourseId: discourseId, at: Date.now() }));
-          } catch (pe) {}
-        }
-      } catch (autoErr) { console.warn('[Guardian auto]', autoErr); }
-    }
   } catch (err) {
     console.error('Fast Map error:', err);
   }
@@ -9318,12 +9214,6 @@ function isGuardianInvokeDeniedBySynapse() {
   return { denied: false };
 }
 
-function isGuardianStripSuppressedBySynapse() {
-  if (!isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.wire === false) return false;
-  var syn = getSynapseSnapshot();
-  return !!(syn && syn.local_pass && syn.local_pass.graduation_quiet);
-}
-
 function discourseSentenceComplexity(rawText) {
   var text = String(rawText || '').trim();
   if (!text) return 0;
@@ -9405,22 +9295,6 @@ function getWitnessStripReadOrder(profile, synapse) {
   var d = ['term_arcs_summary', 'open_bridges', 'prior_witness', 'orbiting_terms', 'returns_hint'];
   if (synapse && synapse.saccade_log && synapse.saccade_log.blind_spot) d.push('blind_spot');
   return d;
-}
-
-function buildSynapseStripPayload(synapse, fastMapSnapshot) {
-  if (!synapse || NQ_WITNESS_FLAGS.wire === false) return null;
-  var profile = getWitnessPostureProfile(synapse);
-  return {
-    posture_profile: profile,
-    posture_vector: synapse.posture_vector,
-    open_bridges: synapse.open_bridges || [],
-    elaboration_delta: synapse.elaboration_delta,
-    perpetual_orbit_terms: synapse.perpetual_orbit_terms || [],
-    saccade_log: synapse.saccade_log,
-    anomalies: (synapse.anomalies || []).slice(0, 8),
-    strip_read_order: getWitnessStripReadOrder(profile, synapse),
-    fast_map: fastMapSnapshot
-  };
 }
 
 function formatWitnessOpenBridgesTier(openRows) {
@@ -9676,7 +9550,7 @@ async function renderWitnessProcessPanel() {
     html += '<div class="witness-process-line">denied — ' + escHtml(syn.local_pass.deny_reason || 'thin_map') + '</div></div>';
   } else if (syn.local_pass && syn.local_pass.graduation_quiet) {
     html += '<div class="witness-process-section"><div class="witness-process-h">Invoke gate</div>';
-    html += '<div class="witness-process-line">graduation quiet — auto strip suppressed, summon cooldown ×2</div></div>';
+    html += '<div class="witness-process-line">graduation quiet — map stable; voluntary summon only</div></div>';
   }
   if (NQ_WITNESS_FLAGS.wire !== false) {
     var prof = getWitnessPostureProfile(syn);
@@ -9817,143 +9691,39 @@ function applyGuardianArchiveBudget(header, tier1, tier2, tier3, tier4, budget) 
   return h + t1 + t2 + t3 + t4;
 }
 
-function buildFastMapSnapshotForWorker(fastMap) {
-  var sig = fastMap.signature;
-  if (typeof sig === 'string') {
-    try { sig = JSON.parse(sig); } catch (eSig) { sig = null; }
-  }
-  var orbits = sig && sig.orbits && sig.orbits.orbiting ? sig.orbits.orbiting : [];
-  var orbitingTerms = orbits.map(function (o) { return o.term; });
-  var writingSignature = fastMap.signature && fastMap.signature.summary ? fastMap.signature.summary : '';
-  var silenceMarkers = fastMap.silence_weight && typeof fastMap.silence_weight.count === 'number' ? fastMap.silence_weight.count : 0;
-  var paradoxFlag = !!(fastMap.signature && fastMap.signature.paradox && (fastMap.signature.paradox.label === 'Paradox-dominant' || fastMap.signature.paradox.label === 'Charged'));
-  var contradictionFlag = !!(fastMap.watcher && fastMap.watcher.top_contradictory && fastMap.watcher.top_contradictory.length);
-  var dominantTheme = (fastMap.emotional_arc && fastMap.emotional_arc.direction) ? fastMap.emotional_arc.direction : ((fastMap.key_terms && fastMap.key_terms[0] && fastMap.key_terms[0].term) ? fastMap.key_terms[0].term : 'none');
-  return {
-    orbitingTerms: orbitingTerms,
-    writingSignature: writingSignature,
-    silenceMarkers: silenceMarkers,
-    paradoxFlag: paradoxFlag,
-    contradictionFlag: contradictionFlag,
-    dominantTheme: dominantTheme
-  };
-}
-
-async function logGuardianAutoInvoke(observation, triggeredBy, userAction, discourseId, directiveRoot) {
+/** Persist field directives (tint, revisit, watcher focus) without LLM strip/summon prose. */
+async function persistWitnessDirectiveLog(directiveRoot, meta) {
+  meta = meta || {};
+  if (!directiveRoot || !Object.keys(directiveRoot).length) return;
   try {
     var allDiscs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
-    var snap = null;
-    var fm = null;
-    if (discourseId) {
-      fm = await dbGet('guardian_summaries', discourseId);
-      snap = buildGeometrySnapshot(discourseId, fm);
-    }
-    var quals = triggeredBy ? [{ type: triggeredBy }] : [];
-    var theory = buildTheoryOneLine(triggeredBy, quals, fm, observation || '');
     var directiveStr = null;
-    if (directiveRoot) {
-      try { directiveStr = JSON.stringify(directiveRoot); } catch (eDir) { directiveStr = null; }
-    }
+    try { directiveStr = JSON.stringify(directiveRoot); } catch (eDir) { return; }
     await dbPut('guardian_logs', {
-      id: 'gl_auto_' + Date.now(),
+      id: 'gl_witness_' + Date.now(),
       invoked_at: Date.now(),
-      model_used: 'naked-guardian-worker',
+      model_used: 'witness-local',
       soup_snapshot_count: allDiscs.length,
-      response_text: observation || '',
-      was_silent: observation ? 0 : 1,
-      thread: JSON.stringify({ auto_invoke: true }),
+      response_text: '',
+      was_silent: 1,
+      thread: '[]',
       emotional_weight: 1.0,
-      auto_invoked: 1,
-      triggered_by: triggeredBy != null && triggeredBy !== '' ? triggeredBy : null,
-      user_action: userAction != null && userAction !== '' ? userAction : null,
-      log_type: 'auto_invoke',
-      primary_discourse_id: discourseId || null,
-      geometry_snapshot: snap,
-      qualifiers: JSON.stringify(quals),
-      theory_one_line: theory,
+      auto_invoked: 0,
+      triggered_by: meta.triggered_by || null,
+      user_action: null,
+      log_type: meta.log_type || 'witness_field',
+      primary_discourse_id: meta.discourse_id || null,
+      geometry_snapshot: meta.geometry_snapshot || null,
+      qualifiers: '[]',
+      theory_one_line: meta.theory_one_line || '',
       directive: directiveStr
     });
+    await refreshAbyssActiveTint();
+    await refreshSoupSurfaceBoost();
+    await refreshWatcherFocus();
+    if (currentMode === 'soup' && currentView === 'soup') void renderTableView();
   } catch (e) {
-    console.warn('Guardian auto log failed:', e);
-  }
-}
-
-function hideGuardianInvokeStripOnly() {
-  if (guardianInvokeTimer) {
-    clearTimeout(guardianInvokeTimer);
-    guardianInvokeTimer = null;
-  }
-  guardianInvokeActive = false;
-  if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(false);
-  var strip = document.getElementById('guardian-invoke-strip');
-  if (!strip) return;
-  strip.classList.remove('visible');
-  strip.style.display = 'none';
-  strip.onclick = null;
-  var dismissBtn = document.getElementById('guardian-invoke-dismiss');
-  if (dismissBtn) dismissBtn.onclick = null;
-}
-
-function dismissGuardianInvoke(reason) {
-  if (guardianInvokeTimer) {
-    clearTimeout(guardianInvokeTimer);
-    guardianInvokeTimer = null;
-  }
-  guardianInvokeActive = false;
-  if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(false);
-  var strip = document.getElementById('guardian-invoke-strip');
-  if (strip) {
-    strip.classList.remove('visible');
-    strip.onclick = null;
-    var dismissBtn = document.getElementById('guardian-invoke-dismiss');
-    if (dismissBtn) dismissBtn.onclick = null;
-    setTimeout(function () {
-      if (strip) strip.style.display = 'none';
-      if (currentFocusId) drawLineageThread(currentFocusId, focusChain.length ? focusChain[focusChain.length - 1].folderId : null);
-    }, 500);
-  }
-  void logGuardianAutoInvoke(null, guardianInvokeLastTriggerType, reason);
-}
-
-/** Wire strip tap, dismiss, and timed dissolve. Must run after strip is visible -- not blocked by guardian_logs I/O. */
-function attachGuardianInvokeStripHandlers() {
-  if (guardianInvokeTimer) {
-    clearTimeout(guardianInvokeTimer);
-    guardianInvokeTimer = null;
-  }
-  var strip = document.getElementById('guardian-invoke-strip');
-  if (!strip) return;
-  var dismissBtn = document.getElementById('guardian-invoke-dismiss');
-  strip.onclick = null;
-  if (dismissBtn) dismissBtn.onclick = null;
-
-  guardianInvokeTimer = setTimeout(function () {
-    dismissGuardianInvoke('dissolved');
-  }, GUARDIAN_INVOKE_STRIP_DISSOLVE_MS);
-
-  strip.onclick = function (e) {
-    if (e.target && e.target.closest && e.target.closest('#guardian-invoke-dismiss')) return;
-    strip.onclick = null;
-    var dismissBtn2 = document.getElementById('guardian-invoke-dismiss');
-    if (dismissBtn2) dismissBtn2.onclick = null;
-    var seedObservation = null;
-    try { seedObservation = localStorage.getItem('nq_guardian_invoke_observation'); } catch (eSeed) {}
-    dismissGuardianInvoke('entered');
-    void openGuardianView({ seedObservation: seedObservation || null });
-  };
-
-  if (dismissBtn) {
-    dismissBtn.onclick = function (e) {
-      e.stopPropagation();
-      e.preventDefault();
-      var count = parseInt(localStorage.getItem('nq_guardian_dismissed_count') || '0', 10) || 0;
-      try {
-        localStorage.setItem('nq_guardian_dismissed_count', String(count + 1));
-      } catch (e12) {}
-      strip.onclick = null;
-      dismissBtn.onclick = null;
-      dismissGuardianInvoke('dismissed');
-    };
+    console.warn('[Witness] directive log:', e);
   }
 }
 
@@ -9963,11 +9733,7 @@ async function runDailyRevisitCheck() {
     if (localStorage.getItem(REVISIT_CHECK_LS) === day) return;
     localStorage.setItem(REVISIT_CHECK_LS, day);
   } catch (eDay) { return; }
-  if (!isGuardianAutoInvokeEnabled() || NQ_DEV_MODE) return;
-  if (guardianInvokeActive) return;
-  try {
-    if (localStorage.getItem('nq_guardian_invoke_pending')) return;
-  } catch (ePend) {}
+  if (NQ_DEV_MODE) return;
   var discs = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
   if (discs.length < 2) return;
   var fastMapById = new Map();
@@ -9983,226 +9749,21 @@ async function runDailyRevisitCheck() {
   if (!hits.length) return;
   var hit = hits[0];
   var targetId = hit.discourse_id_b;
-  var d = await getDiscourse(targetId);
-  var title = (d && d.title) ? d.title : 'Untitled';
-  var observation = 'You returned to "' + title + '": ' + hit.reason + '.';
-  try {
-    localStorage.setItem('nq_guardian_invoke_pending', JSON.stringify({
-      discourseId: targetId,
-      at: Date.now(),
-      revisit: true,
-      reason: hit.reason,
-      observation: observation
-    }));
-  } catch (eStore) {}
-}
-
-async function checkAndShowGuardianInvoke() {
-  if (!NQ_DEV_MODE && !isGuardianAutoInvokeEnabled()) return;
-  if (NQ_DEV_MODE) {
-    if (currentView !== 'soup') return;
-    if (guardianInvokeActive) return;
-    var strip = document.getElementById('guardian-invoke-strip');
-    var textEl = document.getElementById('guardian-invoke-text');
-    if (!strip || !textEl) return;
-    var devObservation = "You have been circling the same thought for weeks. You have not named it yet.";
-    textEl.textContent = devObservation;
-    strip.style.display = 'block';
-requestAnimationFrame(function () {
-  strip.classList.add('visible');
-  // Redraw tether after strip shifts layout
-  requestAnimationFrame(function () {
-    if (currentFocusId) drawLineageThread(currentFocusId, focusChain.length ? focusChain[focusChain.length - 1].folderId : null);
+  var fm = await dbGet('guardian_summaries', targetId);
+  var directiveRoot = buildGuardianDirectiveRoot(null, fm, 'revisit', targetId, deriveRevisitFlagDirective(targetId, hit.reason));
+  await persistWitnessDirectiveLog(directiveRoot, {
+    log_type: 'witness_revisit',
+    triggered_by: 'revisit',
+    discourse_id: targetId,
+    geometry_snapshot: buildGeometrySnapshot(targetId, fm),
+    theory_one_line: 'Return detected: ' + hit.reason
   });
-});
-guardianInvokeActive = true;
-    guardianInvokeLastTriggerType = 'dev_preview';
-    try { localStorage.setItem('nq_guardian_invoke_observation', devObservation); } catch (e) {}
-    var devDirective = {
-      abyss_tint: { terms: ['thought'], tint: 'amber', duration_hours: 24, applied_at: Date.now() }
-    };
-    void logGuardianAutoInvoke(devObservation, 'dev_preview', 'surfaced', null, devDirective);
-    await refreshAbyssActiveTint();
-    if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(true);
-    attachGuardianInvokeStripHandlers();
-    return;
-  }
-  if (currentView !== 'soup') return;
-  if (guardianInvokeActive) return;
-  if (!checkGuardianTrigger) return;
-
-  var rawPending = null;
-  try {
-    rawPending = localStorage.getItem('nq_guardian_invoke_pending');
-  } catch (e0) {}
-  if (!rawPending) return;
-
-  var pending = null;
-  try {
-    pending = JSON.parse(rawPending);
-  } catch (e1) {
-    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e1b) {}
-    return;
-  }
-  if (!pending || !pending.discourseId || !pending.at) {
-    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e2) {}
-    return;
-  }
-  if (Date.now() - pending.at > 7 * 24 * 3600000) {
-    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e3) {}
-    return;
-  }
-
-  var fastMap = null;
-  try {
-    fastMap = await dbGet('guardian_summaries', pending.discourseId);
-  } catch (e4) {}
-
-  var synGateEarly = isGuardianInvokeDeniedBySynapse();
-  if (synGateEarly.denied) {
-    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (eGateR) {}
-    return;
-  }
-  if (isGuardianStripSuppressedBySynapse() && !pending.revisit) {
-    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (eGateG) {}
-    if (NQ_DEV_MODE) console.log('[Witness] strip suppressed — graduation quiet');
-    return;
-  }
-
-  if (pending.revisit && pending.observation) {
-    var revisitObs = String(pending.observation).trim();
-    if (!revisitObs) {
-      try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (eRev0) {}
-      return;
-    }
-    var stripR = document.getElementById('guardian-invoke-strip');
-    var textElR = document.getElementById('guardian-invoke-text');
-    if (!stripR || !textElR) return;
-    textElR.textContent = revisitObs;
-    stripR.style.display = 'block';
-    requestAnimationFrame(function () { stripR.classList.add('visible'); });
-    guardianInvokeActive = true;
-    guardianInvokeLastTriggerType = 'revisit';
-    try {
-      localStorage.setItem('nq_guardian_last_invoke', String(Date.now()));
-      localStorage.setItem('nq_guardian_last_trigger_type', 'revisit');
-      localStorage.removeItem('nq_guardian_invoke_pending');
-      localStorage.setItem('nq_guardian_invoke_observation', revisitObs);
-    } catch (eRev1) {}
-    if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(true);
-    attachGuardianInvokeStripHandlers();
-    var revDir = buildGuardianDirectiveRoot(null, fastMap, 'revisit', pending.discourseId, deriveRevisitFlagDirective(pending.discourseId, pending.reason));
-    void logGuardianAutoInvoke(revisitObs, 'revisit', 'surfaced', pending.discourseId, revDir);
-    await refreshAbyssActiveTint();
-    await refreshSoupSurfaceBoost();
-    await refreshWatcherFocus();
-    if (currentMode === 'soup' && currentView === 'soup') void renderTableView();
-    return;
-  }
-
-  if (!fastMap || fastMap.map_type !== 'fast') {
-    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e5) {}
-    return;
-  }
-
-  var trig;
-  try {
-    trig = checkGuardianTrigger(fastMap, getGuardianTriggerOptions());
-  } catch (e6) {
-    return;
-  }
-  if (!trig || !trig.shouldInvoke) {
-    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (e7) {}
-    return;
-  }
-
-  var synGate = isGuardianInvokeDeniedBySynapse();
-  if (synGate.denied) {
-    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (eGate) {}
-    if (NQ_DEV_MODE) console.log('[Witness] strip blocked:', synGate.reason);
-    return;
-  }
-
-  var triggeredBy = trig.primaryQualifier || 'signal';
-  var fastMapSnapshot = buildFastMapSnapshotForWorker(fastMap);
-  var synapseForStrip = getSynapseSnapshot();
-  if (!synapseForStrip) {
-    try { synapseForStrip = await buildSynapseSnapshot(); } catch (eSynStrip) {}
-  }
-  var synapseStrip = buildSynapseStripPayload(synapseForStrip, fastMapSnapshot);
-
-  try {
-    localStorage.setItem('nq_guardian_last_attempt', String(Date.now()));
-  } catch (e8) {}
-
-  var observation = null;
-  var priorTheoryLine = await getPriorTheoryLineFromLogs();
-  var witnessLedgerBlock = await buildWitnessLedgerCompactBlock(800);
-  var workerDirective = null;
-  try {
-    var res = await fetch(GUARDIAN_INVOKE_WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fastMapSnapshot: fastMapSnapshot,
-        triggeredBy: triggeredBy,
-        priorTheoryLine: priorTheoryLine,
-        witnessLedgerBlock: witnessLedgerBlock,
-        synapseStrip: synapseStrip
-      })
-    });
-    if (!res.ok) return;
-    var data = await res.json();
-    observation = data.observation;
-    if (data.directive) workerDirective = data.directive;
-  } catch (e9) {
-    return;
-  }
-
-  if (!observation) return;
-
-  try {
-    localStorage.removeItem('nq_guardian_invoke_pending');
-  } catch (e10) {}
-
-  var strip = document.getElementById('guardian-invoke-strip');
-  var textEl = document.getElementById('guardian-invoke-text');
-  if (!strip || !textEl) return;
-
-  textEl.textContent = observation;
-  strip.style.display = 'block';
-  requestAnimationFrame(function () {
-    strip.classList.add('visible');
-  });
-
-  guardianInvokeActive = true;
-  guardianInvokeLastTriggerType = triggeredBy;
-
-  try {
-    localStorage.setItem('nq_guardian_last_invoke', String(Date.now()));
-    localStorage.setItem('nq_guardian_last_trigger_type', triggeredBy);
-    localStorage.setItem('nq_guardian_dismissed_count', '0');
-  } catch (e11) {}
-
-  try { localStorage.setItem('nq_guardian_invoke_observation', observation); } catch (eObs) {}
-  if (typeof firefly !== 'undefined' && firefly.setGuardianMode) firefly.setGuardianMode(true);
-
-  attachGuardianInvokeStripHandlers();
-
-  var directiveRoot = buildGuardianDirectiveRoot(workerDirective, fastMap, triggeredBy, pending.discourseId);
-  void logGuardianAutoInvoke(observation, triggeredBy, 'surfaced', pending.discourseId, directiveRoot);
-  await refreshAbyssActiveTint();
-  await refreshSoupSurfaceBoost();
-  await refreshWatcherFocus();
-  if (currentMode === 'soup' && currentView === 'soup') void renderTableView();
 }
 
 async function openGuardianView(entryOpts){
   entryOpts = entryOpts || {};
-  hideGuardianInvokeStripOnly();
   if (entryOpts.fromHeader) {
     try { localStorage.removeItem('nq_guardian_dismissed_count'); } catch (e) {}
-    try { localStorage.removeItem('nq_guardian_invoke_observation'); } catch (e) {}
   }
   try { localStorage.setItem('nq_guardian_last_interaction', String(Date.now())); } catch (e) {}
   showPanel('view-guardian');
@@ -10211,17 +9772,11 @@ async function openGuardianView(entryOpts){
   resetGuardianUI();
   applyGuardianUiStrings('idle');
 
-  var seedRaw = null;
-  if (!entryOpts.fromHeader) {
-    if (entryOpts.seedObservation != null && String(entryOpts.seedObservation).trim() !== '') {
-      seedRaw = entryOpts.seedObservation;
-    } else {
-      try { seedRaw = localStorage.getItem('nq_guardian_invoke_observation'); } catch (e0) {}
-    }
+  var seedText = '';
+  if (!entryOpts.fromHeader && entryOpts.seedObservation != null) {
+    seedText = String(entryOpts.seedObservation).trim();
   }
-  var seedText = seedRaw ? String(seedRaw).trim() : '';
   if (seedText) {
-    try { localStorage.removeItem('nq_guardian_invoke_observation'); } catch (e1) {}
     var discs0 = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
     var builtCtx = await buildGuardianContext(discs0);
     if (builtCtx) {
@@ -10318,10 +9873,6 @@ function openGuardianSettingsModal() {
   });
 
   updateCartoButtons();
-  var autoCb = document.getElementById('guardian-setting-auto-invoke');
-  var strictCb = document.getElementById('guardian-setting-strict-invoke');
-  if (autoCb) autoCb.checked = isGuardianAutoInvokeEnabled();
-  if (strictCb) strictCb.checked = isGuardianStrictInvokeEnabled();
   document.getElementById('guardian-settings-modal').classList.add('visible');
   document.getElementById('cosm-overlay').classList.add('active');
 }
@@ -10347,12 +9898,6 @@ function applyGuardianSettings() {
     const label = document.getElementById('mapping-toggle-label');
     if(label) label.textContent = pendingMappingMode === 'sovereign' ? 'Sovereign' : 'Deep';
   }
-  var autoCb = document.getElementById('guardian-setting-auto-invoke');
-  var strictCb = document.getElementById('guardian-setting-strict-invoke');
-  try {
-    if (autoCb) localStorage.setItem(GUARDIAN_LS_AUTO_INVOKE, autoCb.checked ? 'true' : 'false');
-    if (strictCb) localStorage.setItem(GUARDIAN_LS_STRICT_INVOKE, strictCb.checked ? 'true' : 'false');
-  } catch (eLs) {}
   closeOverlay();
 }
 
@@ -11008,12 +10553,7 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
   var sortedDiscs = allDiscs.slice().sort(function (a, b) {
     return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
   });
-  var primaryId = null;
-  try {
-    var pending = JSON.parse(localStorage.getItem('nq_guardian_invoke_pending') || '{}');
-    if (pending && pending.discourseId) primaryId = pending.discourseId;
-  } catch (pe) {}
-  if (!primaryId && sortedDiscs[0]) primaryId = sortedDiscs[0].id;
+  var primaryId = currentDiscourseId || (sortedDiscs[0] ? sortedDiscs[0].id : null);
   var snap = null;
   var fm = null;
   if (primaryId) {
@@ -11482,9 +11022,7 @@ document.getElementById('btn-guardian-log-close').addEventListener('click', clos
         });
       }
     });
-    const invokeStrip = document.getElementById('guardian-invoke-strip');
     const tableSurface = document.getElementById('table-surface');
-    if (invokeStrip) soupRo.observe(invokeStrip);
     if (tableSurface) soupRo.observe(tableSurface);
   }
   
@@ -11846,6 +11384,10 @@ async function init(){
   document.getElementById('input-model').value=localStorage.getItem('nq_model')||'deepseek/deepseek-v4-flash';
   initWatcher();
   initGuardianModel();
+  try {
+    localStorage.removeItem('nq_guardian_invoke_pending');
+    localStorage.removeItem('nq_guardian_invoke_observation');
+  } catch (eStripLs) {}
   void runDailyRevisitCheck();
   void refreshEpistemicMoodCache();
   void refreshWitnessSubstrate();

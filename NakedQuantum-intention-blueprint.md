@@ -230,7 +230,7 @@ This is Layer 3 honesty about the **human** side of meta-meta — without revoki
 
 Principle: **Silence is not a vibe the LLM agrees to — it is a gate the architecture enforces.**
 
-Before any strip Worker call, OpenRouter summon, or desktop Wave 2/3:
+Before any **voluntary** OpenRouter summon or desktop Wave 2/3 (auto-invoke Soup strip retired May 2026):
 
 1. **Local pass** scores the synapse / fast map: confidence floors, paradox density, fragmentation, minimum corpus window.
 2. If thresholds fail → **`invoke_denied`** with reason code (`low_confidence`, `fragmented_map`, `insufficient_geometry`, etc.). No API call. No “I don’t have much to say” filler.
@@ -244,7 +244,7 @@ The Guardian may still **choose** brevity when invoked; it may not **speak** whe
 
 - On fast-map save, Watcher pass, day rollover, app open.
 - Updates ledger, predictions, return detections, field directives, process log.
-- Does **not** require the user to open chat or read a strip.
+- Does **not** require the user to open chat or summon Guardian.
 
 **User burden:** optional. Open Abyss process view when *you* want the weather report.
 
@@ -546,6 +546,7 @@ The exoskeleton **mechanical** phases (0–3) on `main` are **infrastructure for
 
 | Date | Change |
 |------|--------|
+| 2026-05-23 | **Retired** auto-invoke Soup strip + `naked-guardian` worker; witness loop always-on; summon voluntary only |
 | 2026-05-20 | Initial pin — organism, two realms, Abyss modes, desktop/PWA split, anchor reality, layers 1–4 |
 | 2026-05-20 | **Upgrade** — audit engine framing; Guardian interaction spectrum; audit spine (Track A/B, synapse, waves, ledger); evolution steps 1–4; one product / two surfaces; drop organism/metabolism as public identity |
 | 2026-05-20 | **Ceiling pass** — §5.3.1 correction/denial sediment; §5.4 mechanical silence gate; Layer 5 handoff (§10.1); principles 8–9 tightened |
