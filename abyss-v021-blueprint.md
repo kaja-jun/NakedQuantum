@@ -46,7 +46,7 @@ The Abyss is the **only place that sees the whole sovereign app without reading 
 | **L1** | Hash x/y implies spatial meaning | **M1 + M1b** — force-settle before emerge (Batch 1) |
 | **L2** | Every disc-dot looks identical | **M2** — dot DNA from fast map (Batch 1) |
 | **L3** | Sanctuary invisible | **M3** — presence dots only (Batch 2) |
-| **L4** | Tap disc-dot → sheet immediately | **M4** — tooltip + Enter ◈ (Batch 2) |
+| **L4** | Tap disc-dot → sheet immediately (no preview step) | **M4** — sheet on tap; **Enter ◈** in sheet (PR #38) |
 
 ### Soul to keep
 
@@ -310,7 +310,7 @@ Live `abyssUpdate` thread pulls stay **weaker** than settle. If dots drift back 
 - M2 DNA on guardian nodes
 - npm force-layout libraries
 - Marketing Abyss as “semantic mind map” without AB1 line
-- Sheet on first disc-dot tap (Batch 2 fixes)
+- Tooltip + Enter as mandatory middle step (superseded by sheet-first + Enter in sheet, PR #38)
 
 ---
 
@@ -352,7 +352,8 @@ After v0.21 ships, update `guardian-refinement-roadmap-blueprint.md` §9 checkbo
 |------|------|-------|
 | Blueprint pinned v0.21 | 2026-05-19 | Two batches; code review + v0.20 draft merged |
 | **Batch 1** | 2026-05-20 | M1/M1b settle, M2 DNA, M5 weather, AB1 hint, link threshold alignment |
-| **Batch 2** | 2026-05-20 | M3 Sanctuary, M4 tooltip+Enter, edge-safe overlay positioning |
+| **Batch 2** | 2026-05-20 | M3 Sanctuary, M4 sheet+Enter (tooltip path), edge-safe overlays |
+| **M4 refine** | 2026-05-20 | PR #38 — sheet on dot tap; Enter in sheet; Spark Note label |
 
 ---
 

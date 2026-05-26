@@ -2,7 +2,7 @@
 
 > **Purpose:** Single base document after the Cartographer v0.5 + Guardian G1–G5 push. Use it before the next batch to decide **what to do**, **what not to do**, and **how to work**.
 >
-> **Read with:** `guardian-refinement-roadmap-blueprint.md`, `AGENTS.md`, `lighthouse-cockpit-blueprint.md`.
+> **Read with:** `consciousness-exoskeleton-roadmap-blueprint.md`, `guardian-refinement-roadmap-blueprint.md`, `AGENTS.md`, `lighthouse-cockpit-blueprint.md`.
 
 ---
 
@@ -27,7 +27,7 @@
 
 | Check | Result |
 |-------|--------|
-| `node --check` on `app.js`, `cartographer.js`, `sw.js`, `workers/guardian-invoke/worker.mjs` | Pass |
+| `node --check` on `app.js`, `cartographer.js`, `sw.js` | Pass |
 | `jshint` (es11, browser) | Warnings only — mostly loop closures and ternary line breaks; no blocking errors |
 | Blueprint vs code | Mostly aligned; minor doc drift (§6) |
 | Manual trace: Guardian 3-path, summon tiers, strip worker, DB migrations | Coherent |
@@ -43,7 +43,7 @@
 | File | Lines (approx.) | Role |
 |------|-----------------|------|
 | `app.js` | ~9,800 | DB worker, Soup/Sanctuary/Abyss, Watcher, Guardian, sync, UI |
-| `cartographer.js` | ~1,210 | Fast map pipeline + `checkGuardianTrigger` |
+| `cartographer.js` | ~1,000 | Fast map pipeline (auto strip trigger retired May 2026) |
 | `app.css` | ~2,600 | Visual system |
 | `index.html` | ~670 | Shell markup |
 | `sw.js` | ~70 | PWA cache `nq-v15`, network-first `app.js` / `app.css` |
@@ -54,7 +54,7 @@
 |-----|-------|-----------|
 | `CARTO_VERSION` | **5** | Lexicon/schema breaking change in `cartographer.js` |
 | Service worker | `nq-v15` | Meaningful shell/asset change |
-| Guardian worker | `workers/guardian-invoke/worker.mjs` | Strip prompt/contract change — **redeploy separately** |
+| Guardian worker | `workers/guardian-invoke/RETIRED.md` | Auto strip removed; voluntary summon only |
 
 ### 2.3 Shipped roadmap (high level)
 
@@ -64,7 +64,7 @@
 | Guardian G0–G5, X1 (divergence in Tier 2) | Shipped on main |
 | Guardian G6 (desktop cockpit) | Deferred → `lighthouse-cockpit-blueprint.md` |
 | Auto-invoke A1–A3, onboarding A2 | **Not shipped** (intentionally waiting) |
-| Abyss AB1–AB3 | Not shipped |
+| Abyss v0.21 (AB1, M1–M5, sheet Enter UX) | **Shipped** — see `abyss-v021-blueprint.md` |
 | `app.js` module split (ARCH) | Deferred |
 
 ---
@@ -203,11 +203,12 @@ Use this as the **default queue**; override only with explicit Kaja decision.
 
 | Priority | Item | Why now | How |
 |----------|------|---------|-----|
-| 1 | **Rest / glyphs / onboarding** | Kaja chose to wait | No code required |
-| 2 | **A1 — Production thresholds** | Prevents strip spam before wider use | Centralize knobs: cooldown, `MIN_QUALIFIER_CONFIDENCE`, watcher threshold; keep dev override flag |
+| 1 | **Exoskeleton E0→E2** | Closes Loops 2–3 | `consciousness-exoskeleton-roadmap-blueprint.md` — E0 ledger v2, E1 `abyss_tint`, E2 strip ledger (`main` stays dev mode) |
+| 2 | **Rest / glyphs / onboarding** | Kaja chose to wait | No code required |
+| 3 | **A1 — Production thresholds** | Prevents strip spam before wider use | Overlaps exoskeleton P0-a |
 | 3 | **A2 — Settings + onboarding** | Ethics + sovereignty | `nq_guardian_auto_invoke_enabled`; explain strip; master toggle |
 | 4 | **A3 — Qualifier consensus** | Reduces false invokes | 2+ qualifiers or one “strong” signal in `checkGuardianTrigger` |
-| 5 | **Abyss v0.21** | Active | See `abyss-v021-blueprint.md` — Batch 1 then Batch 2 |
+| 5 | **Abyss v0.21** | ✅ Shipped | Maintenance only unless AB2/3D vision returns |
 | 6 | **P1 cleanup** | Hygiene | `renderGuardianLogs` vars; blueprint X1 ticks |
 | 7 | **G6 + ARCH** | Laptop / Tauri | `lighthouse-cockpit-blueprint.md` |
 
@@ -244,6 +245,7 @@ Use this as the **default queue**; override only with explicit Kaja decision.
 
 ```bash
 node --check app.js cartographer.js sw.js workers/guardian-invoke/worker.mjs
+node scripts/exoskeleton-smoke-test.mjs
 jshint --config <(echo '{"esversion":11,"browser":true}') app.js cartographer.js sw.js
 python3 -m http.server 3000 --directory /workspace
 ```
@@ -261,8 +263,99 @@ WebAuthn bypass for VM testing: see `AGENTS.md`.
 | `abyss-v021-blueprint.md` | **Abyss** — honest sky (two batches) |
 | `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6) |
 | `AGENTS.md` | Agent runbook, dev server, lint |
-| `NQ blueprint.md` | Product-wide architecture |
+| `NakedQuantum-app-blueprint.md` | App blueprint v2 — product-wide architecture |
+| `consciousness-exoskeleton-roadmap-blueprint.md` | Exoskeleton loops + phased roadmap |
 | `Watcher implementation.md` | Watcher history/notes |
+
+---
+
+## 12. Exoskeleton Phases 0–3 — integration review (post #49–#51)
+
+**Baseline:** `origin/main` @ merge **#51** (Phases 0–3 exoskeleton track complete in code).
+
+### 12.1 Automated checks (this session)
+
+| Check | Result |
+|-------|--------|
+| `node --check` — `app.js`, `cartographer.js`, `workers/guardian-invoke/worker.mjs` | Pass |
+| `jshint` (es11, browser) on `app.js`, `cartographer.js` | Warnings only (pre-existing style) |
+| `node scripts/exoskeleton-smoke-test.mjs` | **17/17** — Cartographer export + wiring symbols in `app.js` |
+| Headless browser / WebAuthn / iPhone soak | Not run (VM + dogfood device) |
+
+### 12.2 Three loops — updated truth (code, not old blueprint §2 table)
+
+| Loop | Status after #47–#51 | Evidence |
+|------|----------------------|----------|
+| **1 — Observation** | **Closed** | Cartographer v5, Watcher links, tiered summon |
+| **2 — Self-correction** | **Architecturally closed** | Ledger v2 + After (`created_at`), reckoning preamble, `prediction_tag` → `prediction_outcome`, return detections in context |
+| **3 — State mutation** | **Architecturally closed** | `directive` on `guardian_logs`: `abyss_tint`, `soup_surface`, `watcher_focus`, `revisit_flag`; Soup mesh gravity + Abyss tint |
+
+**Maturity gap:** Loops are **wired**, not yet **proven in daily practice**. Meta-meta still needs you to write *about* the witness being wrong — code enables it.
+
+**Doc drift:** `consciousness-exoskeleton-roadmap-blueprint.md` §1 table still says Loop 2 “half-closed” and Loop 3 “open” — update that table on next doc pass.
+
+### 12.3 Wiring matrix (phase → runtime)
+
+| Phase | Feature | Entry point | Persists | UI surface |
+|-------|---------|-------------|----------|------------|
+| P0 | Ledger v2 + reckoning | `buildGuardianPriorWitnessBlock`, `buildWitnessLedgerCompactBlock` | `guardian_logs` | Summon + strip worker payload |
+| P0 | `abyss_tint` | `refreshAbyssActiveTint`, `abyssDraw` | `directive` JSON | Abyss disc-dots |
+| P1 | Term arcs + modes | `buildGuardianContext` tier 4 | — | Summon context |
+| P1 | `soup_surface` | `refreshSoupSurfaceBoost`, `discourseEffectiveGravity` | `directive` + LS cache | Soup mesh sort + card ring |
+| P1 | Auto-invoke ethics | `getGuardianTriggerOptions`, Settings modal | `nq_guardian_*` LS | Strip (non-dev) |
+| P2 | Return detector | `computeReturnDetections` | — | Summon tier |
+| P2 | `revisit_flag` | `runDailyRevisitCheck` → pending → strip | `directive` | Soup strip (no worker) |
+| P2 | Silent attractors | `formatSilentAttractorsTier` | — | Summon tier |
+| P2 | `watcher_focus` | `refreshWatcherFocus`, `getWatcherSimilarityThreshold` | `directive` | Watcher pass threshold (global 72h) |
+| P2 | Prediction ledger | `saveGuardianLog`, `scoreGuardianPredictionsOnSave` | `prediction_*` columns | Log detail |
+| P3 | Persistent orbit | `discourseHasPersistentOrbit` | — | Mesh sort + card class |
+| P3 | Epistemic mood | `refreshEpistemicMoodCache` | `nq_epistemic_mood_cache` | Strict cooldown + Watcher pass hours |
+| P3 | Inter-session silence | `formatInterSessionSilenceTier` | — | Summon tier |
+
+### 12.4 Soft wires & known gaps (nothing blocking merge)
+
+| Item | Severity | Notes |
+|------|----------|-------|
+| **`watcher_focus` not term-targeted** | Low | Lowers **global** similarity threshold for 72h; does not filter cosine pass by `terms[]` only. Good enough for v1; tighten later if needed. |
+| **`revisit_flag` not re-read for UI** | Low | Stored in `directive`; surfacing is the **strip + pending** path, not a separate revisit badge. |
+| **Prediction scores on “next new discourse”** | By design | `scoreGuardianPredictionsOnSave` scores when the saved discourse is the first `created_at > invoke` entry (or `primary_discourse_id`). Editing an old discourse does not score. |
+| **Worker contract** | Ops | Strip worker documents `witnessLedgerBlock` + `abyss_tint`; **redeploy** when on laptop. Client derives `soup_surface`, `watcher_focus`, `revisit_flag` locally. |
+| **`NQ_DEV_MODE = true`** | Intentional | Fake strip, soft Watcher, no daily revisit — flip off on a branch to dogfood production paths. |
+| **Encrypted `guardian_logs_enc`** | Unverified | `prediction_*` / `directive` columns may not exist on enc path if encryption enabled (P2-5 still applies). |
+| **Summon context size** | Watch | Tier 4 grew (returns + silent + silence + arcs); `applyGuardianArchiveBudget` drops tier 4 → 3 → 2 if over ~10k chars — Tier 1 sacred. |
+| **Folder drill sort** | Low | Persistent orbit / soup boost precompute on **root mesh**; folder views use card `dataset.gravity` at build time (orbit boost still applied per card). |
+
+### 12.5 Manual dogfood checklist (iPhone / Safari)
+
+Use with `NQ_DEV_MODE = false` on a **branch** (not `main` unless you flip it).
+
+1. **Loop 3:** Save rich discourse → strip or summon → Abyss tint visible; boosted discourse rises on Soup mesh (48h).
+2. **Loop 2:** Summon → read ledger After lines → write new discourse → re-summon; Guardian should reference prior theory + After.
+3. **P2:** Two discourses in same cluster with different arcs → RETURN DETECTIONS in summon; next day (or clear `nq_revisit_check_day`) revisit strip.
+4. **P2e:** Summon → new discourse save → Guardian log shows `prediction_tag → hit|miss|partial`.
+5. **Settings:** Strict invoke on → only strong patterns after 72h cooldown; auto-invoke off → no pending strip.
+6. **P3:** Multi-orbit discourse gets subtle second ring; after several predictions, inspect `localStorage.nq_epistemic_mood_cache`.
+
+### 12.6 How close to the vision?
+
+| Vision claim | Proximity |
+|--------------|-----------|
+| *Consciousness exoskeleton as practice* | **High** — architecture matches philosophy; not a chatbot bolt-on. |
+| *Meta-meta (witness wrong → field changes → reckoning)* | **Medium-high** — prediction outcomes + return detections + directives; still needs **your** writing habit to close the loop. |
+| *Obsessive / interruptive* | **Low on main** — dev strip + ethics toggles; production cadence is intentionally restrained until you opt in. |
+| *Fantasy features deferred* | **High** — no biometrics, no full mood OS, no JSON operator Guardian. |
+
+**Honest summary:** We are **past blueprint build** for Phases 0–3. The next milestone is **practice proof** (2 weeks dogfood with dev off + optional worker deploy), then a **doc-only tick** on exoskeleton blueprint §2 loop table and this checkpoint §7 queue.
+
+### 12.7 Suggested §7 queue after this checkpoint
+
+| Priority | Item |
+|----------|------|
+| 1 | **Dogfood** — branch with `NQ_DEV_MODE = false`, strict/auto settings as you want |
+| 2 | **Deploy** `workers/guardian-invoke` when laptop available |
+| 3 | **Doc sync** — exoskeleton blueprint §2 loop status; guardian roadmap A1–A3 shipped ticks |
+| 4 | **Optional** — term-scoped `watcher_focus`; P2-e score on primary discourse re-map |
+| 5 | **Later** — Lighthouse G6, ARCH split, Abyss AB2 |
 
 ---
 
@@ -271,7 +364,9 @@ WebAuthn bypass for VM testing: see `AGENTS.md`.
 | Date | Author | Change |
 |------|--------|--------|
 | 2026-05-18 | Code review session | Initial checkpoint after PR #33 merge on main |
+| 2026-05-20 | Blueprint pass | `NQ blueprint.md` → v2; Abyss v0.21 marked shipped |
+| 2026-05-20 | Exoskeleton review | §12 post #49–#51; smoke test script; loop status + dogfood checklist |
 
 ---
 
-*We built a witness with memory shape, not a mirror with amnesia. The next work is mostly **ethics and knobs**, not **philosophy**.*
+*We built a witness with memory shape, not a mirror with amnesia. Phases 0–3 are in the code; the exoskeleton becomes **real** when the field moves and the next sentence admits the error — in your writing, not only in ours.*

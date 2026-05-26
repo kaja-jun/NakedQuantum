@@ -146,7 +146,13 @@ const NEGATORS = new Set([
   'not', 'never', 'no', 'nor', 'neither', 'none', 'without', 'hardly', 'barely',
   'cannot', 'cant', 'dont', 'doesnt', 'didnt', 'wont', 'wouldnt', 'couldnt',
   'shouldnt', 'isnt', 'arent', 'wasnt', 'werent', 'hasnt', 'havent', 'hadnt',
-  'mustnt', 'neednt', 'aint'
+  'mustnt', 'neednt', 'aint', 'nothing', 'nobody', 'nowhere'
+]);
+
+/** Clause hedges that often flip polarity for the following phrase (P1-d). */
+const NEGATION_SCOPE_MARKERS = new Set([
+  'but', 'though', 'although', 'yet', 'unless', 'except', 'rather', 'instead',
+  'seldom', 'rarely', 'scarcely'
 ]);
 
 function buildLexiconWords() {
@@ -213,8 +219,11 @@ function normalizeToken(raw) {
 }
 
 function isNegated(words, index) {
-  for (let k = Math.max(0, index - 2); k < index; k++) {
+  const start = Math.max(0, index - 6);
+  for (let k = start; k < index; k++) {
     if (NEGATORS.has(words[k])) return true;
+    if (NEGATION_SCOPE_MARKERS.has(words[k])) return true;
+    if (words[k] === 'no' && k + 1 < index && words[k + 1] === 'longer') return true;
   }
   return false;
 }
@@ -408,6 +417,68 @@ else if (ratio < 0.7) label = 'Fragmented';
 else                  label = 'Shards';
 const confidence = sentences.length < 2 ? 0 : clampConf(Math.abs(ratio - 0.5), 0, 0.5);
 return { label, ratio: parseFloat(ratio.toFixed(3)), confidence };
+}
+
+const META_RECURSIVE = new Set([
+  'writing', 'write', 'written', 'think', 'thinking', 'thought', 'notice', 'noticing',
+  'watch', 'watching', 'observe', 'observing', 'aware', 'awareness', 'mind', 'again',
+  'this', 'here', 'meta', 'witness', 'guardian', 'discourse', 'word', 'words'
+]);
+
+function detectPerformativeMode(text, optTokens) {
+  const words = optTokens || tokenize(text);
+  if (words.length < 40) return { label: 'Too short', confidence: 0 };
+  let audience = 0;
+  let confessional = 0;
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    if (w === 'you' || w === 'we' || w === 'your' || w === 'our' || w === 'they' || w === 'one') audience++;
+    if (SENTIMENT.confessional.has(w) && !isNegated(words, i)) confessional++;
+  }
+  const audRate = audience / words.length;
+  const confRate = confessional / words.length;
+  const hit = audRate >= 0.018 && confRate < 0.006;
+  const confidence = hit ? clampConf(audRate, 0.018, 0.04) * (1 - clampConf(confRate, 0, 0.008)) : 0.25;
+  return {
+    label: hit ? 'Performative' : 'Interior',
+    confidence: parseFloat(Math.min(1, confidence).toFixed(3)),
+    audience_rate: parseFloat(audRate.toFixed(4))
+  };
+}
+
+function detectRecursiveMode(text, optTokens) {
+  const words = optTokens || tokenize(text);
+  if (words.length < 35) return { label: 'Too short', confidence: 0 };
+  let meta = 0;
+  for (let i = 0; i < words.length; i++) {
+    if (META_RECURSIVE.has(words[i])) meta++;
+  }
+  const rate = meta / words.length;
+  const hit = rate >= 0.04;
+  const confidence = hit ? clampConf(rate, 0.04, 0.09) : clampConf(rate, 0.02, 0.04);
+  return {
+    label: hit ? 'Recursive' : 'Direct',
+    confidence: parseFloat(Math.min(1, confidence).toFixed(3)),
+    meta_rate: parseFloat(rate.toFixed(4))
+  };
+}
+
+function detectFugueMode(text, optTokens) {
+  const trimmed = (text || '').trim();
+  const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+  const arc = detectEmotionalArc(trimmed, optTokens);
+  const frag = detectFragmentRatio(trimmed);
+  const flatArc = arc.direction && (arc.direction.indexOf('flat') !== -1 || arc.direction === 'too short');
+  const flatShift = typeof arc.tension_shift === 'number' && Math.abs(arc.tension_shift) <= 0.01;
+  const long = wordCount >= 350;
+  const fragmented = frag.label === 'Shards' || frag.label === 'Fragmented';
+  const hit = long && fragmented && (flatArc || flatShift);
+  const confidence = hit ? 0.42 : 0.28;
+  return {
+    label: hit ? 'Fugue' : 'Coherent',
+    confidence: parseFloat(confidence.toFixed(3)),
+    word_count: wordCount
+  };
 }
 
 function detectWritingSignature(text, optTokens) {
@@ -901,6 +972,9 @@ const silence_weight     = detectSilenceWeight(trimmed);
 const entry_exit_delta   = detectEntryExitDelta(trimmed);
 const incompleteness     = detectIncompleteness(trimmed);
 const depersonalisation  = detectDepersonalization(trimmed, tokens);
+const performative_mode  = detectPerformativeMode(trimmed, tokens);
+const recursive_mode     = detectRecursiveMode(trimmed, tokens);
+const fugue_mode         = detectFugueMode(trimmed, tokens);
 
 return {
 // Core
@@ -921,289 +995,11 @@ pronoun_trajectory,
 silence_weight,
 entry_exit_delta,
 incompleteness,
-depersonalisation
+depersonalisation,
+performative_mode,
+recursive_mode,
+fugue_mode
 };
 }
 
-// ── GUARDIAN AUTO-TRIGGER (Batch 1) ───────────────────────────────────────────
-// Read-only: inspects localStorage clocks (when present) and Fast Map geometry.
-// Later batches own writes to these keys; this function never mutates storage.
-
-const GUARDIAN_TRIGGER_LS = {
-last_entry: 'nq_last_entry_timestamp',
-last_interaction: 'nq_guardian_last_interaction',
-last_invoke: 'nq_guardian_last_invoke',
-last_attempt: 'nq_guardian_last_attempt',
-dismissed_count: 'nq_guardian_dismissed_count',
-last_trigger_type: 'nq_guardian_last_trigger_type'
-};
-
-const GUARDIAN_DEFAULT_COOLDOWN_MS = 6 * 60 * 1000;
-const GUARDIAN_POST_ATTEMPT_MS = 2 * 60 * 1000;
-const GUARDIAN_POST_USER_SESSION_MS = 90 * 1000;
-const GUARDIAN_MIN_WORDS = 35;
-
-function parseGuardianStoredMs(raw) {
-if (raw == null) return null;
-if (typeof raw === 'number' && Number.isFinite(raw)) {
-return raw > 0 && raw < 1e11 ? raw * 1000 : raw;
-}
-const s = String(raw).trim();
-if (!s) return null;
-const n = Number(s);
-if (Number.isFinite(n) && n > 0) return n < 1e11 ? n * 1000 : n;
-const d = Date.parse(s);
-return Number.isFinite(d) ? d : null;
-}
-
-function readGuardianTriggerLocalStorage() {
-const out = {
-last_entry_ms: null,
-last_interaction_ms: null,
-last_invoke_ms: null,
-last_attempt_ms: null,
-dismissed_count: 0,
-last_trigger_type: ''
-};
-if (typeof localStorage === 'undefined' || !localStorage) return out;
-try {
-out.last_entry_ms = parseGuardianStoredMs(localStorage.getItem(GUARDIAN_TRIGGER_LS.last_entry));
-out.last_interaction_ms = parseGuardianStoredMs(localStorage.getItem(GUARDIAN_TRIGGER_LS.last_interaction));
-out.last_invoke_ms = parseGuardianStoredMs(localStorage.getItem(GUARDIAN_TRIGGER_LS.last_invoke));
-out.last_attempt_ms = parseGuardianStoredMs(localStorage.getItem(GUARDIAN_TRIGGER_LS.last_attempt));
-const dc = localStorage.getItem(GUARDIAN_TRIGGER_LS.dismissed_count);
-out.dismissed_count = dc == null || dc === '' ? 0 : Math.max(0, parseInt(dc, 10) || 0);
-out.last_trigger_type = String(localStorage.getItem(GUARDIAN_TRIGGER_LS.last_trigger_type) || '').trim();
-} catch (e) {
-/* private mode / blocked storage */
-}
-return out;
-}
-
-function detectorConfidence(obj) {
-  if (!obj || typeof obj.confidence !== 'number') return 0.5;
-  return obj.confidence;
-}
-
-function collectFastMapQualifiers(map) {
-const q = [];
-const sig = map.signature;
-if (sig && sig.orbits) {
-const orb = sig.orbits;
-const heavy = orb.orbiting && orb.orbiting.some(function (o) { return o.count >= 5; });
-const orbConf = detectorConfidence(orb);
-if ((orb.label === 'Multi-orbit' || heavy) && orbConf >= MIN_QUALIFIER_CONFIDENCE) {
-q.push({ type: 'orbit', label: orb.label, orbiting: orb.orbiting, confidence: orbConf });
-}
-}
-if (sig && sig.paradox) {
-const px = sig.paradox;
-const pxConf = detectorConfidence(px);
-if ((px.label === 'Paradox-dominant' || px.label === 'Charged') && pxConf >= MIN_QUALIFIER_CONFIDENCE) {
-q.push({ type: 'paradox', label: px.label, count: px.count, confidence: pxConf });
-}
-}
-if (sig && sig.inversion && sig.inversion.label === 'Perpetual self-argument') {
-const invConf = detectorConfidence(sig.inversion);
-if (invConf >= MIN_QUALIFIER_CONFIDENCE) {
-q.push({ type: 'inversion_loop', label: sig.inversion.label, confidence: invConf });
-}
-}
-const sw = map.silence_weight;
-const swConf = detectorConfidence(sw);
-if (sw && (sw.label === 'Silence as structure' || (typeof sw.ratio === 'number' && sw.ratio >= 0.12)) && swConf >= MIN_QUALIFIER_CONFIDENCE) {
-q.push({ type: 'silence', label: sw.label, ratio: sw.ratio, count: sw.count, confidence: swConf });
-}
-const arc = map.emotional_arc;
-const arcConf = detectorConfidence(arc);
-if (arc && typeof arc.direction === 'string' && arc.direction.indexOf('escalating') !== -1 && arcConf >= MIN_QUALIFIER_CONFIDENCE) {
-q.push({ type: 'escalating_arc', direction: arc.direction, confidence: arcConf });
-}
-return q;
-}
-
-/**
-
-- checkGuardianTrigger(fastMapOrText, options?)
-- 
-- Decides whether an automatic Guardian pass is warranted from **geometry alone**
-- plus optional **read-only** clock keys (localStorage) when available in the host.
-- 
-- `fastMapOrText`: raw entry string **or** an object already shaped like
-- `generateFastMapData` output (must include `word_count`).
-- `options`: `{ cooldownMs, minWords, requireFreshEntryMs }` — all optional.
-- 
-- Returns `{ shouldInvoke, reason, qualifiers, primaryQualifier, fastMap, clocks }`.
-- Never writes to storage. Does not call network.
-  */
-export function checkGuardianTrigger(fastMapOrText, options) {
-const opts = options || {};
-var cooldownMs = GUARDIAN_DEFAULT_COOLDOWN_MS;
-if (typeof opts.cooldownMs === 'number' && opts.cooldownMs >= 0) cooldownMs = opts.cooldownMs;
-var minWords = GUARDIAN_MIN_WORDS;
-if (typeof opts.minWords === 'number' && opts.minWords >= 0) minWords = opts.minWords;
-var requireFreshEntryMs = null;
-if (typeof opts.requireFreshEntryMs === 'number' && opts.requireFreshEntryMs > 0) {
-requireFreshEntryMs = opts.requireFreshEntryMs;
-}
-
-const now = Date.now();
-const clocks = readGuardianTriggerLocalStorage();
-
-if (clocks.last_invoke_ms != null && now - clocks.last_invoke_ms < cooldownMs) {
-return {
-shouldInvoke: false,
-reason: 'cooldown',
-qualifiers: [],
-primaryQualifier: null,
-fastMap: null,
-clocks,
-meta: { ms_until_cooldown: cooldownMs - (now - clocks.last_invoke_ms) }
-};
-}
-
-if (clocks.last_interaction_ms != null && now - clocks.last_interaction_ms < GUARDIAN_POST_USER_SESSION_MS) {
-return {
-shouldInvoke: false,
-reason: 'recent_user_guardian_session',
-qualifiers: [],
-primaryQualifier: null,
-fastMap: null,
-clocks,
-meta: {}
-};
-}
-
-if (clocks.last_attempt_ms != null && now - clocks.last_attempt_ms < GUARDIAN_POST_ATTEMPT_MS) {
-return {
-shouldInvoke: false,
-reason: 'recent_attempt_backoff',
-qualifiers: [],
-primaryQualifier: null,
-fastMap: null,
-clocks,
-meta: { ms_until_backoff: GUARDIAN_POST_ATTEMPT_MS - (now - clocks.last_attempt_ms) }
-};
-}
-
-if (requireFreshEntryMs != null && clocks.last_entry_ms != null) {
-if (now - clocks.last_entry_ms > requireFreshEntryMs) {
-return {
-shouldInvoke: false,
-reason: 'stale_entry_timestamp',
-qualifiers: [],
-primaryQualifier: null,
-fastMap: null,
-clocks,
-meta: {}
-};
-}
-}
-
-var fastMap = null;
-if (typeof fastMapOrText === 'string') {
-var trimmed = fastMapOrText.trim();
-if (!trimmed.length) {
-return {
-shouldInvoke: false,
-reason: 'empty_text',
-qualifiers: [],
-primaryQualifier: null,
-fastMap: null,
-clocks,
-meta: {}
-};
-}
-fastMap = generateFastMapData(trimmed);
-} else if (fastMapOrText && typeof fastMapOrText === 'object' && typeof fastMapOrText.word_count === 'number') {
-fastMap = fastMapOrText;
-} else {
-return {
-shouldInvoke: false,
-reason: 'invalid_input',
-qualifiers: [],
-primaryQualifier: null,
-fastMap: null,
-clocks,
-meta: {}
-};
-}
-
-if (fastMap.word_count < minWords) {
-return {
-shouldInvoke: false,
-reason: 'too_short',
-qualifiers: [],
-primaryQualifier: null,
-fastMap,
-clocks,
-meta: { word_count: fastMap.word_count, minWords }
-};
-}
-
-var qualifiers = collectFastMapQualifiers(fastMap);
-var dismissed = clocks.dismissed_count;
-
-if (dismissed >= 10) {
-return {
-shouldInvoke: false,
-reason: 'dismissed_cap',
-qualifiers,
-primaryQualifier: null,
-fastMap,
-clocks,
-meta: { dismissed_count: dismissed }
-};
-}
-if (dismissed >= 5 && qualifiers.length < 2) {
-return {
-shouldInvoke: false,
-reason: 'dismissed_backoff',
-qualifiers,
-primaryQualifier: null,
-fastMap,
-clocks,
-meta: { dismissed_count: dismissed }
-};
-}
-
-var shouldInvoke = qualifiers.length > 0;
-var primaryQualifier = shouldInvoke && qualifiers[0] ? qualifiers[0].type : null;
-
-if (shouldInvoke && clocks.last_trigger_type) {
-if (qualifiers.length === 1 && primaryQualifier === clocks.last_trigger_type) {
-return {
-shouldInvoke: false,
-reason: 'repeat_trigger_type',
-qualifiers: qualifiers,
-primaryQualifier: null,
-fastMap: fastMap,
-clocks: clocks,
-meta: {
-word_count: fastMap.word_count,
-cooldownMs: cooldownMs,
-last_trigger_type: clocks.last_trigger_type
-}
-};
-}
-if (primaryQualifier === clocks.last_trigger_type) {
-var qi = 1;
-while (qi < qualifiers.length && qualifiers[qi].type === clocks.last_trigger_type) qi++;
-if (qi < qualifiers.length) primaryQualifier = qualifiers[qi].type;
-}
-}
-
-return {
-shouldInvoke: shouldInvoke,
-reason: shouldInvoke ? 'qualified' : 'no_signal',
-qualifiers: qualifiers,
-primaryQualifier: primaryQualifier,
-fastMap: fastMap,
-clocks: clocks,
-meta: {
-word_count: fastMap.word_count,
-cooldownMs: cooldownMs,
-last_trigger_type: clocks.last_trigger_type
-}
-};
-}
+// Guardian auto-invoke strip retired May 2026 — witness substrate + voluntary summon only.
