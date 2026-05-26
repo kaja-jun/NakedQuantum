@@ -403,7 +403,7 @@ P9–P11 → optional polish
 |------|--------|-----|
 | **W1** Substrate (P1–P7) | ☑ | witness-substrate PR |
 | **W2** Wire (P8–P11) | ☑ | witness-wire PR |
-| **W3** Substrate honesty | ☐ | §7D — next |
+| **W3** Substrate honesty | ☑ | §7D — resistance normalize, corpus_baseline, SUBSTRATE empty states, half-life surface, summon bridge prompt |
 | **W4** Bridge practice | ☐ | §7E — after W3 + real friction |
 | **W5** Temporal compare | ☐ | §7F — after bridge |
 | *(optional A1–A3 split of W1/W2)* | — | §7C |
@@ -420,6 +420,7 @@ P9–P11 → optional polish
 | 2026-05-23 | §7B default → **2-pass** (W1 substrate / W2 wire); §7C optional 3-pass |
 | 2026-05-23 | Auto-invoke strip + worker retired; loop = synapse + voluntary summon |
 | 2026-05-26 | §2.1 User Zero constraints; §2.2 reference case 26/5; §7D–7F W3–W5 register (iPhone-first) |
+| 2026-05-26 | **W3 shipped** — W3-2 resistance normalize; W3-1 corpus_baseline; W3-3 empty states; W3-4 half-life panel; W3-5 inline bridge prompt |
 
 ---
 
