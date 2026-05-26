@@ -424,7 +424,7 @@ P9–P11 → optional polish
 | **W1** Substrate (P1–P7) | ☑ | witness-substrate PR |
 | **W2** Wire (P8–P11) | ☑ | witness-wire PR |
 | **W3** Substrate honesty | ☑ | §7D — resistance normalize, corpus_baseline, SUBSTRATE empty states, half-life surface, summon bridge prompt |
-| **W4** Witness ledger chain | ☐ | §7E — HMAC chain on summon + bridge events |
+| **W4** Witness ledger chain | ☑ | §7E — HMAC chain on summon + bridge events; import re-anchor |
 | **W5** Bridge practice | ☐ | §7F — after W4 + real friction |
 | **W6** Temporal compare | ☐ | §7G — after bridge |
 | *(optional A1–A3 split of W1/W2)* | — | §7C |
