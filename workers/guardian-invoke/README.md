@@ -32,10 +32,11 @@ Public URL (production): **https://naked-guardian.gazajar.workers.dev** — the 
 
 `POST /` or `POST /guardian-invoke`  
 `Content-Type: application/json`  
-Body: `{ "fastMapSnapshot": { ... }, "triggeredBy": "orbit", "priorTheoryLine": "...", "witnessLedgerBlock": "..." }`  
+Body: `{ "fastMapSnapshot": { ... }, "triggeredBy": "orbit", "priorTheoryLine": "...", "witnessLedgerBlock": "...", "synapseStrip": { ... } }`  
 Response: `{ "observation": "...", "directive": { "abyss_tint": { "terms": [], "tint": "amber", "duration_hours": 24 } } }` or `{ "observation": null }`
 
 `witnessLedgerBlock` — compact ledger + reckoning instruction (Phase 0).  
+`synapseStrip` — **W2 witness wire**: posture profile, `strip_read_order`, open bridges, elaboration delta, saccade blind spot. Redeploy worker after W2 merge for sequenced strip prompts.  
 `directive` — optional; PWA also derives tint client-side if worker not redeployed yet.
 
 No logging on the worker (by design).
