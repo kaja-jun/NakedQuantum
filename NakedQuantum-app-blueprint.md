@@ -35,6 +35,7 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 | Document | Scope |
 |----------|--------|
 | **`NakedQuantum-app-blueprint.md`** (this file) | Product-wide architecture, realms, data, UI language |
+| **`NakedQuantum-quantum-fortress.md`** | Security pipeline (8 layers + PWA shell); **§18 phased hardening contract** |
 | `consciousness-exoskeleton-roadmap-blueprint.md` | Vision → three loops → phased exoskeleton (philosophy, not fantasy) |
 | `NakedQuantum-checkpoint-2026-05.md` | Code review base, risks, **what to do next** |
 | `guardian-refinement-roadmap-blueprint.md` | Guardian G0–G6, Cartographer C1–C8, auto-invoke A1–A3 |
@@ -63,7 +64,7 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 
 ### 4.1 Deployment & runtime
 
-- **PWA** on Cloudflare Pages. **No build step**, no `package.json` dependencies.
+- **PWA** on Cloudflare Pages (**interim shell** — **Tauri desktop** is the next vessel; see `lighthouse-cockpit-blueprint.md`). **No build step**, no `package.json` dependencies.
 - **Shell:** `index.html` (markup only).
 - **Logic:** `app.js` (~10.2k lines) — DB worker, all realms, sync, crypto hooks.
 - **NLP / fast maps:** `cartographer.js` ES module (`CARTO_VERSION = 5`).
@@ -79,14 +80,16 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 | **IndexedDB `nq_watcher`** | Embedding vectors + similarity links (speed) |
 | **localStorage** | Settings, sovereign flags, Guardian invoke clocks |
 | **Optional Supabase** | Per-row encrypted deltas (BYOK URL + anon key in Settings) |
-| **Optional R2 (Akashic)** | Weekly cold `.nq` backup |
+| **Optional R2 (Akashic)** | Cold backup via worker — **interim plaintext JSON** until client `.nq` E2EE ships |
 
 ### 4.3 Crypto & sync
 
+- **Full pipeline:** **`NakedQuantum-quantum-fortress.md`** — eight layers, honest gaps, **§18 what to do when**.
+- **Shippable for PWA phase; not perfect** — Layer 4 gaps + Akashic interim documented; Tauri thickens walls later.
 - **AES-GCM** at rest when encryption path enabled; WebAuthn **PRF** derives key (memory only).
+- **Supabase:** E2EE delta sync (`data_enc`). **Akashic/R2:** cold backup — not client-E2EE yet (update fortress when `.nq` upload lands).
 - **Backup key** export in Settings — user responsibility.
-- **Sync:** encrypt → `syncPush` / `syncPull` by `updated_at`; tombstones via `deleted_at`.
-- **Exports:** `.md`, `.pdf`, `.docx`, `.html`, `.json`, `.nq` (see Data realm).
+- **Exports:** `.md`, `.pdf`, `.docx`, `.html`, `.json` (see Data realm).
 
 ### 4.4 Dev vs production knobs
 
@@ -342,6 +345,7 @@ No ads, SEO theatre, or performance marketing.
 |------|--------|
 | 2026-04-30 | v1 — Metila + Kaja initial full map |
 | 2026-05-20 | **v2** — Mesh Soup, unified `cosm_discourses`, Cartographer v5, Guardian G1–G5, Abyss v0.21, file split, document index, shipped log; removed obsolete anti-favorites line |
+| 2026-05-26 | **`NakedQuantum-quantum-fortress.md`** + §4.3 truth — Supabase E2EE sync; Akashic interim; PWA→Tauri note; §18 phased contract in fortress doc |
 
 ---
 
