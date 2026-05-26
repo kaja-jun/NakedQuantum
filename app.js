@@ -922,16 +922,20 @@ async function refreshEpistemicMoodCache() {
 
 function getGuardianTriggerOptions() {
   var mood = getEpistemicMoodCached();
+  var syn = getSynapseSnapshot();
+  var gradMul = (syn && syn.local_pass && syn.local_pass.graduation_quiet && NQ_WITNESS_FLAGS.wire !== false) ? 2 : 1;
   if (NQ_DEV_MODE || !isGuardianStrictInvokeEnabled()) {
     if (mood && mood.guardianCooldownMultiplier && mood.guardianCooldownMultiplier > 1) {
-      return { cooldownMs: Math.round(GUARDIAN_DEFAULT_COOLDOWN_MS * mood.guardianCooldownMultiplier) };
+      return { cooldownMs: Math.round(GUARDIAN_DEFAULT_COOLDOWN_MS * mood.guardianCooldownMultiplier * gradMul) };
     }
+    if (gradMul > 1) return { cooldownMs: Math.round(GUARDIAN_DEFAULT_COOLDOWN_MS * gradMul) };
     return {};
   }
   var cooldownMs = GUARDIAN_PRODUCTION_COOLDOWN_MS;
   if (mood && mood.guardianCooldownMultiplier) {
     cooldownMs = Math.round(cooldownMs * mood.guardianCooldownMultiplier);
   }
+  cooldownMs = Math.round(cooldownMs * gradMul);
   return {
     strictProduction: true,
     requireConsensus: true,
@@ -9083,7 +9087,8 @@ var NQ_WITNESS_FLAGS = {
   bridges: true,
   synapse: true,
   invoke_gate: true,
-  process_panel: true
+  process_panel: true,
+  wire: true
 };
 
 function isWitnessSubstrateEnabled() {
@@ -9262,6 +9267,7 @@ async function buildSynapseSnapshot() {
     var keys = parseJsonField(br.signal_keys, {});
     return { id: br.id, status: br.status, terms: keys.terms || [] };
   });
+  var elaborationDelta = computeElaborationDelta(discs, bridgeRows);
   var anomalies = collectWitnessAnomalies(arcsMap, perpetual, bridgeRows);
   var synapse = {
     synapse_version: SYNAPSE_VERSION,
@@ -9270,7 +9276,7 @@ async function buildSynapseSnapshot() {
     half_life: halfLife,
     perpetual_orbit_terms: perpetual,
     open_bridges: openBridges,
-    elaboration_delta: null,
+    elaboration_delta: elaborationDelta,
     saccade_log: buildSaccadeLogV1(discs, fastMapById),
     anomalies: anomalies,
     local_pass: { invoke_denied: false, graduation_quiet: false, deny_reason: null }
@@ -9310,6 +9316,238 @@ function isGuardianInvokeDeniedBySynapse() {
     return { denied: true, reason: syn.local_pass.deny_reason || 'thin_map' };
   }
   return { denied: false };
+}
+
+function isGuardianStripSuppressedBySynapse() {
+  if (!isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.wire === false) return false;
+  var syn = getSynapseSnapshot();
+  return !!(syn && syn.local_pass && syn.local_pass.graduation_quiet);
+}
+
+function discourseSentenceComplexity(rawText) {
+  var text = String(rawText || '').trim();
+  if (!text) return 0;
+  var sentences = text.split(/[.!?]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+  if (!sentences.length) return text.split(/\s+/).filter(Boolean).length;
+  var words = text.split(/\s+/).filter(Boolean).length;
+  return words / sentences.length;
+}
+
+function computeElaborationDelta(discs, bridgeRows) {
+  var open = (bridgeRows || []).filter(function (br) { return br.status === 'open'; });
+  if (!open.length) return null;
+  var openedAt = Math.min.apply(null, open.map(function (br) { return br.opened_at || Date.now(); }));
+  var baseline = [];
+  var post = [];
+  for (var i = 0; i < discs.length; i++) {
+    var c = discourseSentenceComplexity(discs[i].raw_text);
+    if (!c) continue;
+    baseline.push(c);
+    if ((discs[i].updated_at || discs[i].created_at || 0) >= openedAt) post.push(c);
+  }
+  if (baseline.length < 2 || post.length < 1) return null;
+  baseline.sort(function (a, b) { return a - b; });
+  post.sort(function (a, b) { return a - b; });
+  var baseMed = baseline[Math.floor(baseline.length / 2)];
+  var postMed = post[Math.floor(post.length / 2)];
+  if (!baseMed) return null;
+  var ratio = postMed / baseMed;
+  return {
+    baseline_median: parseFloat(baseMed.toFixed(2)),
+    post_bridge_median: parseFloat(postMed.toFixed(2)),
+    ratio: parseFloat(ratio.toFixed(2)),
+    spike: ratio >= 3
+  };
+}
+
+function getWitnessPostureProfile(synapse) {
+  var pv = synapse && synapse.posture_vector ? synapse.posture_vector : {};
+  var coh = pv.coherence || 0;
+  var res = pv.resistance || 0;
+  var selfRef = pv.self_ref_ratio || 0;
+  var att = pv.attractor_concentration || 0;
+  if (coh >= 0.85 && res < 0.25) return 'graduation';
+  if (res >= 0.45 && coh >= 0.5) return 'resistance_eloquent';
+  if (att >= 0.5 && selfRef < 0.35) return 'single_attractor';
+  return 'default';
+}
+
+function getWitnessTier4BlockOrder(profile, synapse) {
+  var hasOpen = synapse && synapse.open_bridges && synapse.open_bridges.length;
+  if (profile === 'graduation') {
+    return ['graduation_quiet', 'term_arcs', 'returns', 'silent', 'inter_session', 'rollup'];
+  }
+  if (profile === 'resistance_eloquent') {
+    var r = [];
+    if (hasOpen) { r.push('open_bridges', 'elaboration_delta'); }
+    r.push('perpetual_orbit', 'term_arcs', 'returns', 'silent', 'inter_session', 'rollup');
+    return r;
+  }
+  if (profile === 'single_attractor') {
+    return ['signal_reality', 'term_arcs', 'returns', 'silent', 'rollup'];
+  }
+  var d = ['term_arcs', 'returns', 'geometry_delta', 'silent', 'inter_session', 'rollup'];
+  if (hasOpen) d.unshift('open_bridges');
+  return d;
+}
+
+function getWitnessStripReadOrder(profile, synapse) {
+  if (profile === 'graduation') {
+    return ['graduation_quiet', 'term_arcs', 'prior_witness', 'orbiting_terms', 'silence_markers'];
+  }
+  if (profile === 'resistance_eloquent') {
+    var r = ['open_bridges', 'elaboration_delta', 'perpetual_orbit', 'prior_witness', 'orbiting_terms', 'paradox'];
+    return r;
+  }
+  if (profile === 'single_attractor') {
+    return ['signal_coordinate', 'orbiting_terms', 'writing_signature', 'prior_witness'];
+  }
+  var d = ['term_arcs_summary', 'open_bridges', 'prior_witness', 'orbiting_terms', 'returns_hint'];
+  if (synapse && synapse.saccade_log && synapse.saccade_log.blind_spot) d.push('blind_spot');
+  return d;
+}
+
+function buildSynapseStripPayload(synapse, fastMapSnapshot) {
+  if (!synapse || NQ_WITNESS_FLAGS.wire === false) return null;
+  var profile = getWitnessPostureProfile(synapse);
+  return {
+    posture_profile: profile,
+    posture_vector: synapse.posture_vector,
+    open_bridges: synapse.open_bridges || [],
+    elaboration_delta: synapse.elaboration_delta,
+    perpetual_orbit_terms: synapse.perpetual_orbit_terms || [],
+    saccade_log: synapse.saccade_log,
+    anomalies: (synapse.anomalies || []).slice(0, 8),
+    strip_read_order: getWitnessStripReadOrder(profile, synapse),
+    fast_map: fastMapSnapshot
+  };
+}
+
+function formatWitnessOpenBridgesTier(openRows) {
+  if (!openRows || !openRows.length) return '';
+  var lines = [];
+  for (var i = 0; i < openRows.length; i++) {
+    var br = openRows[i];
+    var keys = parseJsonField(br.signal_keys, {});
+    var terms = (keys.terms || []).join(', ');
+    lines.push('· [' + br.user_action + '] ' + (terms || '—') + ' — ' + String(br.prior_theory || '').slice(0, 100));
+  }
+  return '── OPEN BRIDGES (user correction active) ──\n\n' + lines.join('\n') + '\n\n';
+}
+
+function formatWitnessElaborationTier(delta) {
+  if (!delta) return '';
+  var line = 'Baseline median complexity: ' + delta.baseline_median + ' words/sentence';
+  line += ' · post-bridge: ' + delta.post_bridge_median + ' (×' + delta.ratio + ')';
+  if (delta.spike) line += ' · SPIKE (≥3×)';
+  return '── ELABORATION DELTA ──\n\n' + line + '\n\n';
+}
+
+function formatWitnessPerpetualOrbitTier(terms) {
+  if (!terms || !terms.length) return '';
+  return '── PERPETUAL ORBIT ──\n\n· ' + terms.map(function (t) { return '"' + t + '"'; }).join('\n· ') + '\n\n';
+}
+
+function formatWitnessGraduationQuietTier() {
+  return '── GRADUATION QUIET ──\n\nMap reads stable across sessions. Witness invoke appetite reduced — write if the register shifts, not from habit.\n\n';
+}
+
+function formatWitnessSignalRealityTier(sorted, fastMapById) {
+  if (!sorted.length) return '';
+  var d = sorted[0];
+  var fm = fastMapById.get(d.id);
+  var terms = parseFastMapKeyTermStrings(fm).slice(0, 3);
+  var line = 'One coordinate: "' + (d.title || 'Untitled') + '"';
+  if (terms.length) line += ' · signal terms: ' + terms.join(', ');
+  if (fm && fm.emotional_arc && fm.emotional_arc.direction) line += ' · arc: ' + fm.emotional_arc.direction;
+  return '── SIGNAL REALITY (single attractor) ──\n\n' + line + '\n\n';
+}
+
+function formatWitnessSaccadeTier(saccade) {
+  if (!saccade) return '';
+  var fix = (saccade.fixation_ids || []).map(function (id) { return 'd_' + String(id).slice(-4); }).join(', ');
+  var line = 'Fixation: ' + (fix || 'none');
+  if (saccade.blind_spot) line += ' · blind spot: ' + saccade.blind_spot + ' (' + (saccade.reason || '') + ')';
+  return '── SACCADE LOG ──\n\n' + line + '\n\n';
+}
+
+async function buildWitnessTier4Blocks(discs, sorted, fastMapById, corpusArcs, returnDetections, synapse) {
+  var blocks = {};
+  blocks.returns = formatReturnDetectionsTier(returnDetections, 4);
+  blocks.silent = formatSilentAttractorsTier(corpusArcs, 5);
+  blocks.inter_session = formatInterSessionSilenceTier(corpusArcs);
+  blocks.term_arcs = formatCorpusTermArcsTier(corpusArcs, 5);
+  blocks.geometry_delta = blocks.returns;
+  if (synapse && synapse.perpetual_orbit_terms && synapse.perpetual_orbit_terms.length) {
+    blocks.perpetual_orbit = formatWitnessPerpetualOrbitTier(synapse.perpetual_orbit_terms);
+  }
+  if (synapse && synapse.elaboration_delta) {
+    blocks.elaboration_delta = formatWitnessElaborationTier(synapse.elaboration_delta);
+  }
+  blocks.graduation_quiet = formatWitnessGraduationQuietTier();
+  blocks.signal_reality = formatWitnessSignalRealityTier(sorted, fastMapById);
+  if (synapse && synapse.open_bridges && synapse.open_bridges.length && NQ_WITNESS_FLAGS.bridges !== false) {
+    var allBr = await dbGetAll('bridge_rows');
+    var openIds = {};
+    synapse.open_bridges.forEach(function (ob) { openIds[ob.id] = true; });
+    var openRows = allBr.filter(function (br) { return openIds[br.id] || br.status === 'open'; });
+    blocks.open_bridges = formatWitnessOpenBridgesTier(openRows);
+  }
+  var mappedCount = 0;
+  fastMapById.forEach(function () { mappedCount++; });
+  var rollup = '── ARCHIVE ROLLUP ──\n\n';
+  rollup += 'Fast-mapped discourses: ' + mappedCount + ' / ' + discs.length + '\n';
+  var allTerms = {};
+  for (var ri = 0; ri < sorted.length; ri++) {
+    var rfm = fastMapById.get(sorted[ri].id);
+    if (rfm && rfm.key_terms) {
+      for (var ti = 0; ti < Math.min(5, rfm.key_terms.length); ti++) {
+        var term = rfm.key_terms[ti].term;
+        if (!allTerms[term]) allTerms[term] = 0;
+        allTerms[term]++;
+      }
+    }
+  }
+  var recurring = Object.keys(allTerms).filter(function (t) { return allTerms[t] >= 3; }).sort(function (a, b) { return allTerms[b] - allTerms[a]; }).slice(0, 8);
+  if (recurring.length) {
+    rollup += 'Recurring terms (3+ discourses): ' + recurring.map(function (t) { return '"' + t + '" (' + allTerms[t] + ')'; }).join(', ') + '\n';
+  }
+  var arcs = [];
+  fastMapById.forEach(function (fm) {
+    if (fm.emotional_arc && fm.emotional_arc.direction) arcs.push(fm.emotional_arc);
+  });
+  if (arcs.length >= 3) {
+    var resolved = arcs.filter(function (a) { return a.tension_shift < -0.01; }).length;
+    var escalated = arcs.filter(function (a) { return a.tension_shift > 0.01; }).length;
+    var flat = arcs.filter(function (a) { return Math.abs(a.tension_shift) <= 0.01; }).length;
+    rollup += 'Arc patterns: ' + resolved + ' resolving · ' + escalated + ' escalating · ' + flat + ' flat\n';
+  }
+  var tier1Count = Math.min(3, sorted.length);
+  if (discs.length > tier1Count) {
+    rollup += 'Older discourses (' + (discs.length - tier1Count) + ') omitted from detail; see rollup + recent three above.\n';
+  }
+  rollup += '\n';
+  blocks.rollup = rollup;
+  return blocks;
+}
+
+function assembleGuardianTier4(synapse, blocks) {
+  if (!isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.wire === false || !synapse) {
+    var legacy = (blocks.returns || '') + (blocks.silent || '') + (blocks.inter_session || '') +
+      (blocks.term_arcs || '') + (blocks.rollup || '');
+    return legacy;
+  }
+  var profile = getWitnessPostureProfile(synapse);
+  var order = getWitnessTier4BlockOrder(profile, synapse);
+  var tier4 = formatWitnessSaccadeTier(synapse.saccade_log);
+  var usedReturns = false;
+  for (var i = 0; i < order.length; i++) {
+    var key = order[i];
+    if (key === 'geometry_delta' && usedReturns) continue;
+    if (key === 'returns') usedReturns = true;
+    if (blocks[key]) tier4 += blocks[key];
+  }
+  return tier4;
 }
 
 function signalKeysFromLog(log, fastMap) {
@@ -9438,7 +9676,18 @@ async function renderWitnessProcessPanel() {
     html += '<div class="witness-process-line">denied — ' + escHtml(syn.local_pass.deny_reason || 'thin_map') + '</div></div>';
   } else if (syn.local_pass && syn.local_pass.graduation_quiet) {
     html += '<div class="witness-process-section"><div class="witness-process-h">Invoke gate</div>';
-    html += '<div class="witness-process-line">graduation quiet (map stable)</div></div>';
+    html += '<div class="witness-process-line">graduation quiet — auto strip suppressed, summon cooldown ×2</div></div>';
+  }
+  if (NQ_WITNESS_FLAGS.wire !== false) {
+    var prof = getWitnessPostureProfile(syn);
+    html += '<div class="witness-process-section"><div class="witness-process-h">Wire (W2)</div>';
+    html += '<div class="witness-process-line">profile: ' + escHtml(prof) + ' · strip order: ' +
+      escHtml(getWitnessStripReadOrder(prof, syn).join(' → ')) + '</div>';
+    if (syn.elaboration_delta) {
+      html += '<div class="witness-process-line">elaboration ×' + syn.elaboration_delta.ratio +
+        (syn.elaboration_delta.spike ? ' (spike)' : '') + '</div>';
+    }
+    html += '</div>';
   }
   html += '<div class="witness-process-section"><div class="witness-process-h">Bridges</div>';
   html += '<div class="witness-process-line">' + openN + ' open · ' + bridges.length + ' total</div></div>';
@@ -9814,6 +10063,11 @@ guardianInvokeActive = true;
     try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (eGateR) {}
     return;
   }
+  if (isGuardianStripSuppressedBySynapse() && !pending.revisit) {
+    try { localStorage.removeItem('nq_guardian_invoke_pending'); } catch (eGateG) {}
+    if (NQ_DEV_MODE) console.log('[Witness] strip suppressed — graduation quiet');
+    return;
+  }
 
   if (pending.revisit && pending.observation) {
     var revisitObs = String(pending.observation).trim();
@@ -9871,6 +10125,11 @@ guardianInvokeActive = true;
 
   var triggeredBy = trig.primaryQualifier || 'signal';
   var fastMapSnapshot = buildFastMapSnapshotForWorker(fastMap);
+  var synapseForStrip = getSynapseSnapshot();
+  if (!synapseForStrip) {
+    try { synapseForStrip = await buildSynapseSnapshot(); } catch (eSynStrip) {}
+  }
+  var synapseStrip = buildSynapseStripPayload(synapseForStrip, fastMapSnapshot);
 
   try {
     localStorage.setItem('nq_guardian_last_attempt', String(Date.now()));
@@ -9888,7 +10147,8 @@ guardianInvokeActive = true;
         fastMapSnapshot: fastMapSnapshot,
         triggeredBy: triggeredBy,
         priorTheoryLine: priorTheoryLine,
-        witnessLedgerBlock: witnessLedgerBlock
+        witnessLedgerBlock: witnessLedgerBlock,
+        synapseStrip: synapseStrip
       })
     });
     if (!res.ok) return;
@@ -10631,49 +10891,21 @@ async function buildGuardianContext(discs) {
   }
   var returnDetections = computeReturnDetections(discs, fastMapById, watcherLinks);
 
-  // Tier 4 — temporal corpus + return witness
-  var tier4 = formatReturnDetectionsTier(returnDetections, 4);
-  tier4 += formatSilentAttractorsTier(corpusArcs, 5);
-  tier4 += formatInterSessionSilenceTier(corpusArcs);
-  tier4 += formatCorpusTermArcsTier(corpusArcs, 5);
-
-  // Tier 5 — archive rollup
-  tier4 += '── ARCHIVE ROLLUP ──\n\n';
-  var mappedCount = 0;
-  fastMapById.forEach(function () { mappedCount++; });
-  tier4 += 'Fast-mapped discourses: ' + mappedCount + ' / ' + discs.length + '\n';
-
-  var allTerms = {};
-  for (var ri = 0; ri < sorted.length; ri++) {
-    var rfm = fastMapById.get(sorted[ri].id);
-    if (rfm && rfm.key_terms) {
-      for (var ti = 0; ti < Math.min(5, rfm.key_terms.length); ti++) {
-        var term = rfm.key_terms[ti].term;
-        if (!allTerms[term]) allTerms[term] = 0;
-        allTerms[term]++;
-      }
+  var synapse = getSynapseSnapshot();
+  if (!synapse && isWitnessSubstrateEnabled()) {
+    try { synapse = await buildSynapseSnapshot(); } catch (eSynCtx) {}
+  }
+  if (synapse && isWitnessSubstrateEnabled() && NQ_WITNESS_FLAGS.wire !== false) {
+    var profile = getWitnessPostureProfile(synapse);
+    header += 'Witness posture: ' + profile + '\n';
+    if (synapse.local_pass && synapse.local_pass.graduation_quiet) {
+      header += 'Invoke mode: graduation quiet\n';
     }
-  }
-  var recurring = Object.keys(allTerms).filter(function (t) { return allTerms[t] >= 3; }).sort(function (a, b) { return allTerms[b] - allTerms[a]; }).slice(0, 8);
-  if (recurring.length) {
-    tier4 += 'Recurring terms (3+ discourses): ' + recurring.map(function (t) { return '"' + t + '" (' + allTerms[t] + ')'; }).join(', ') + '\n';
+    header += '\n';
   }
 
-  var arcs = [];
-  fastMapById.forEach(function (fm) {
-    if (fm.emotional_arc && fm.emotional_arc.direction) arcs.push(fm.emotional_arc);
-  });
-  if (arcs.length >= 3) {
-    var resolved = arcs.filter(function (a) { return a.tension_shift < -0.01; }).length;
-    var escalated = arcs.filter(function (a) { return a.tension_shift > 0.01; }).length;
-    var flat = arcs.filter(function (a) { return Math.abs(a.tension_shift) <= 0.01; }).length;
-    tier4 += 'Arc patterns: ' + resolved + ' resolving · ' + escalated + ' escalating · ' + flat + ' flat\n';
-  }
-  tier4 += '\n';
-
-  if (discs.length > tier1Count) {
-    tier4 += 'Older discourses (' + (discs.length - tier1Count) + ') omitted from detail; see rollup + recent three above.\n\n';
-  }
+  var tier4Blocks = await buildWitnessTier4Blocks(discs, sorted, fastMapById, corpusArcs, returnDetections, synapse);
+  var tier4 = assembleGuardianTier4(synapse, tier4Blocks);
 
   return applyGuardianArchiveBudget(header, tier1, tier2, tier3, tier4, GUARDIAN_ARCHIVE_CHAR_BUDGET);
 }

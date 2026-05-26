@@ -107,6 +107,7 @@ export default {
     var triggeredBy = payload.triggeredBy || 'unknown';
     var priorTheoryLine = payload.priorTheoryLine ? String(payload.priorTheoryLine).trim() : '';
     var witnessLedgerBlock = payload.witnessLedgerBlock ? String(payload.witnessLedgerBlock).trim() : '';
+    var synapseStrip = payload.synapseStrip && typeof payload.synapseStrip === 'object' ? payload.synapseStrip : null;
 
     var orbitStr = 'none';
     if (Array.isArray(fastMapSnapshot.orbitingTerms) && fastMapSnapshot.orbitingTerms.length) {
@@ -126,11 +127,52 @@ export default {
       ? fastMapSnapshot.orbitingTerms.slice(0, 4)
       : (fastMapSnapshot.dominantTheme && fastMapSnapshot.dominantTheme !== 'none' ? [fastMapSnapshot.dominantTheme] : []);
 
+    var synapseBlock = '';
+    if (synapseStrip) {
+      synapseBlock = 'Witness synapse (read in this order — sequenced truth, not softer truth):\n';
+      var readOrder = Array.isArray(synapseStrip.strip_read_order) ? synapseStrip.strip_read_order : [];
+      for (var ri = 0; ri < readOrder.length; ri++) {
+        synapseBlock += (ri + 1) + '. ' + readOrder[ri] + '\n';
+      }
+      synapseBlock += '- Posture profile: ' + (synapseStrip.posture_profile || 'default') + '\n';
+      if (synapseStrip.posture_vector) {
+        var pv = synapseStrip.posture_vector;
+        synapseBlock += '- Coherence: ' + (pv.coherence != null ? pv.coherence : '—') +
+          ' · resistance: ' + (pv.resistance != null ? pv.resistance : '—') +
+          ' · self-ref: ' + (pv.self_ref_ratio != null ? pv.self_ref_ratio : '—') +
+          ' · attractor: ' + (pv.attractor_concentration != null ? pv.attractor_concentration : '—') + '\n';
+      }
+      if (Array.isArray(synapseStrip.open_bridges) && synapseStrip.open_bridges.length) {
+        synapseBlock += '- Open bridges: ' + synapseStrip.open_bridges.map(function (b) {
+          return (b.terms || []).join('/') || b.id;
+        }).join('; ') + '\n';
+      }
+      if (synapseStrip.elaboration_delta) {
+        var ed = synapseStrip.elaboration_delta;
+        synapseBlock += '- Elaboration delta: ×' + (ed.ratio != null ? ed.ratio : '?') +
+          (ed.spike ? ' (spike after correction)' : '') + '\n';
+      }
+      if (Array.isArray(synapseStrip.perpetual_orbit_terms) && synapseStrip.perpetual_orbit_terms.length) {
+        synapseBlock += '- Perpetual orbit: ' + synapseStrip.perpetual_orbit_terms.join(', ') + '\n';
+      }
+      if (synapseStrip.saccade_log && synapseStrip.saccade_log.blind_spot) {
+        synapseBlock += '- Blind spot: ' + synapseStrip.saccade_log.blind_spot + '\n';
+      }
+      if (Array.isArray(synapseStrip.anomalies) && synapseStrip.anomalies.length) {
+        synapseBlock += '- Anomalies: ' + synapseStrip.anomalies.join(' · ') + '\n';
+      }
+      if (synapseStrip.posture_profile === 'graduation') {
+        synapseBlock += 'Graduation quiet: map stable — prefer silence or one quiet question; do not escalate.\n';
+      }
+      synapseBlock += '\n';
+    }
+
     var prompt =
       'You are the Guardian. Reply with ONLY valid JSON (no markdown):\n' +
       '{"observation":"one observation, max 3 sentences","directive":{"abyss_tint":{"terms":["term1"],"tint":"amber","duration_hours":24}}}\n\n' +
       'observation: Guardian voice — not warm, not cold. Prefer questions over verdicts when uncertain.\n' +
       'directive.abyss_tint.terms: 1-4 terms from orbiting/dominant theme to highlight in the sky; tint "amber" or "urgent" if contradiction.\n\n' +
+      synapseBlock +
       priorBlock +
       'Fast Map data:\n' +
       '- Triggered by: ' + triggeredBy + '\n' +
