@@ -54,6 +54,42 @@ WRITE (Abyss)
 
 ---
 
+## 2.1 User Zero constraints (dogfood calibration)
+
+The primary dogfooder is also the **builder**. Early vaults are not “pure self-examination from day one.”
+
+| Effect | Why it matters |
+|--------|----------------|
+| **Meta-writing contamination** | Notes about NakedQuantum, architecture, philosophy-of-app use the **resistance lexicon** analytically (“against this pattern,” “must not,” “wrong approach”) — not necessarily psychological resistance in the Abyss sense. |
+| **Builder feedback loop** | Writing *about* the witness inside the witnessed vault inflates coherence/resistance readings. Hardest person to witness accurately — not gaming, **domain bleed**. |
+| **Migration baseline** | Bulk import (e.g. 30k words at once) produces **false stability**: synapse looks mature before temporal patience runs. |
+
+**Calibration stance (not a bug to “fix” before strangers):**
+
+- Witness the person writing in **Abyss**, not only the architect writing about the app.
+- Annotate baseline honestly (`corpus_baseline` — §7D W3-1); tune scalars in W3, don’t reinterpret philosophy in chat.
+- Future users start clean; User Zero data is **calibration notes** when reading back high resistance.
+
+**Later (post-W3, optional):** folder/item_type weight — meta/work discourses contribute less to resistance than Abyss self-examination. Defer until Abyss vs meta split is obvious in dogfood.
+
+---
+
+## 2.2 Reference case — summon silence (26 May 2026)
+
+**Vault:** ~30k words, migrated corpus. **Substrate:** coherence 1 · resistance 1 · self-ref 0.25 · attractor 0.11 · profile `resistance_eloquent` · 0 bridges.
+
+**Summon:** Guardian read geometry accurately (distributed map, pronoun trajectories, paradox as entanglement). User replied with fluency — *“when I go there I will know”* — not a wound or a question.
+
+**Guardian:** `SILENCE` + parenthetical why (*“To dissect it would be violence.”*).
+
+**Proof:** Posture router can sequence **silence as highest truth** — not softer, **correctly ordered**. Not a template to repeat; proof the system can **not speak** when speech would contaminate.
+
+**Not Epictetus:** resistance 1 blocks `graduation_quiet`; router correctly classifies **coherent + combative** (worldview built, edges tested), not integrated calm.
+
+**Mythril still dormant:** zero `bridge_rows` — sensors read; loop has not **watched** via correction yet.
+
+---
+
 ## 3. Ledger: `bridge_rows` (schema — think this before Cursor)
 
 Predictions already use `guardian_logs.prediction_tag` → `prediction_outcome`. **Human correction** gets its own store — same lifecycle idea, different object.
@@ -219,15 +255,63 @@ Guardian **voice** unchanged in Coherence; Isness mode unchanged.
 | Pass | Absorbs | PR theme | Acceptance |
 |------|---------|----------|------------|
 | **W1** | P1–P7 | `witness-substrate` — `bridge_rows`, Correct/Reject, relapse, orbit, posture, half-life, process panel, **versioned** `buildSynapseSnapshot` / `parseSynapseSnapshot`, `runLocalPass`, `invoke_denied` | Bridges + anomalies + synapse blob visible; strip **unchanged**; thin map blocks invoke |
-| **W2** | P8–P11 | `witness-wire` — tier order from posture, `saccade_log` in worker payload, elaboration, denial sediment, graduation quiet | Strip order shifts by posture; worker redeploy note in PR |
+| **W2** | P8–P11 | `witness-wire` — summon archive tier order from posture; elaboration; denial sediment; graduation quiet (strip retired) | Summon context order shifts by profile; SUBSTRATE shows wire profile |
 
-**Why two is enough:** The only hard seam is **observable + gate (P1–P7)** vs **Guardian entangle (P8–P11)**. Merging P1–P5 without P6–P7 leaves no single contract object; merging P6–P7 with P8 in pass 2 is fine **after** `synapse_version` exists in W1.
+**Why two is enough:** The only hard seam is **observable + gate (P1–P7)** vs **Guardian entangle (P8–P11)** on **voluntary summon**. Merging P1–P5 without P6–P7 leaves no single contract object.
 
 **Inside W1:** named blob fields + process UI sections per scalar (Claude guard as code structure, not git history).
 
 **Phase B desktop:** still +4–5 passes later (P12–P16) — not in aggressive PWA batch.
 
 **Tear-away policy:** feature flags in one object `NQ_WITNESS_FLAGS` — flip off without reverting whole PR.
+
+---
+
+### 7D. W3 — Substrate honesty (next PWA pass, iPhone-only)
+
+**Gate:** Ship W3 before W4 bridge dogfood. **One PR**, five sub-items. **Do not** open W5 until at least one **real** bridge (not manufactured — wait for summon friction).
+
+| ID | Name | Scope | Acceptance |
+|----|------|-------|------------|
+| **W3-2** | Resistance normalization | `computePostureVector`: normalize resistance hits by mapped discourse count, e.g. `Math.min(1, hits / Math.max(12, mapped * 1.5))` | 30k corpus: one dense discourse doesn’t solo-max resistance |
+| **W3-1** | Corpus baseline | Synapse field `corpus_baseline: { built_at, total_discourses, organic_writes_since }`; persist on first build; increment when discourse count grows | SUBSTRATE: `baseline: N discourses · M organic since` |
+| **W3-3** | SUBSTRATE empty states | Always show sections with honest copy when empty; always show `built_at` / age | User can tell “working but quiet” vs broken |
+| **W3-4** | Half-life surface | Top 5 terms by weight + bottom 3 decayed in SUBSTRATE | Decayed orbits visible without dev console |
+| **W3-5** | Bridge prompt on summon | After summon response: quiet line + Correct/Reject when `theory_one_line` exists (reuse `openBridgeRow`) | Mythril unlock on mobile — no log archaeology |
+
+**W3-3 copy (v1):**
+
+- Perpetual orbit empty → *no orbit yet — need 3+ cross-discourse appearances*
+- Anomalies empty → *no anomalies — map reading clean*
+- Bridges empty → *0 open · 0 total — correction loop dormant*
+- Footer → *synapse built: {relative time}*
+
+**W3-5 UI (v1):** Below Guardian response: `theory logged · correct or reject?` + `[Correct]` `[Reject]` — only on completed summon with theory line.
+
+**Cursor sequence:** W3-2 → W3-1 → W3-3 → W3-4 → W3-5 (resistance first; bridge prompt last).
+
+**Version bump:** Optional `synapse_version: "2"` only if `corpus_baseline` shape is required at parse time; prefer same major version + optional field degrade.
+
+---
+
+### 7E. W4 — Bridge as practice (after W3)
+
+| Scope | Rule |
+|-------|------|
+| Real bridge only | Wait for summon that makes you **pause** — slightly wrong, slightly off. No manufactured bridge to exercise mechanics. |
+| `mechanical_miss` / calibration feedback | **Skip until desktop/Tauri** — use `user_withdrawn` as escape if signal wrong today |
+| Elaboration delta | Lives once bridge open — already wired |
+
+---
+
+### 7F. W5 — Temporal compare (after ≥1 real bridge)
+
+| Scope | Skip until |
+|-------|------------|
+| `delta_since_last_synapse` — posture/term shift %, new write weight vs baseline | W4 bridge proof |
+| Recent-write weighting for migration vaults | Can extend W3-1 if needed |
+| `void_hints`, BGE matrix | Desktop (P12+) |
+| Local LLM witness side panel | Desktop/Tauri — **not** blocking PWA mythril |
 
 ---
 
@@ -253,8 +337,8 @@ Same as §7B but W1 split into **A1** (P1–P5) + **A2** (P6–P7); **A3** = W2.
 | **P4** | Posture vector | `computePostureVector(synapse inputs)`; process view only | Save discourse → posture numbers appear; no Guardian change | `app.js` |
 | **P5** | Half-life | λ per term; decay weight in arc display | Old terms fade unless reinforced; resurgence flagged | `app.js` |
 | **P6** | Synapse snapshot | `buildSynapseSnapshot()` fuses map + watcher + arcs + bridges + posture | One JSON blob in LS; logged to console in dev | `app.js` |
-| **P7** | Invoke gate | `runLocalPass()` → `invoke_denied` blocks strip Worker + summon | Thin map → no API call; reason in UI | `app.js`, maybe worker |
-| **P8** | Sequenced strip | Posture picks tier order; `saccade_log` in snapshot; worker prompt order only | Strip lists fixation/blind spot; order differs by posture | `app.js`, worker README |
+| **P7** | Invoke gate | `runLocalPass()` → `invoke_denied` blocks voluntary summon | Thin map → toast + reason; SUBSTRATE shows deny |
+| **P8** | Sequenced summon archive | Posture picks tier-4 block order; `saccade_log` in header | Summon context order differs by profile |
 | **P9** | Elaboration delta | Baseline median complexity; spike after open bridge | Post-correction write 3× baseline → anomaly only | `app.js` |
 | **P10** | Denial sediment | Aggregate rejects per term → process anomaly | 3+ rejects same term → one line, no fight | `app.js` |
 | **P11** | Graduation quiet | Sustained coherence → reduced invoke appetite + process message | Epictetus-like vault → “map stable” | `app.js` |
@@ -319,6 +403,9 @@ P9–P11 → optional polish
 |------|--------|-----|
 | **W1** Substrate (P1–P7) | ☑ | witness-substrate PR |
 | **W2** Wire (P8–P11) | ☑ | witness-wire PR |
+| **W3** Substrate honesty | ☐ | §7D — next |
+| **W4** Bridge practice | ☐ | §7E — after W3 + real friction |
+| **W5** Temporal compare | ☐ | §7F — after bridge |
 | *(optional A1–A3 split of W1/W2)* | — | §7C |
 | *(granular P1–P11)* | — | §7A |
 
@@ -332,6 +419,7 @@ P9–P11 → optional polish
 | 2026-05-23 | §4.1 synapse_version contract; §7B aggressive 3-pass track (A1–A3) |
 | 2026-05-23 | §7B default → **2-pass** (W1 substrate / W2 wire); §7C optional 3-pass |
 | 2026-05-23 | Auto-invoke strip + worker retired; loop = synapse + voluntary summon |
+| 2026-05-26 | §2.1 User Zero constraints; §2.2 reference case 26/5; §7D–7F W3–W5 register (iPhone-first) |
 
 ---
 
