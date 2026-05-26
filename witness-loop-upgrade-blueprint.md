@@ -269,7 +269,7 @@ Guardian **voice** unchanged in Coherence; Isness mode unchanged.
 
 ### 7D. W3 — Substrate honesty (next PWA pass, iPhone-only)
 
-**Gate:** Ship W3 before W4 bridge dogfood. **One PR**, five sub-items. **Do not** open W5 until at least one **real** bridge (not manufactured — wait for summon friction).
+**Gate:** Ship W3 before W4 ledger chain. **One PR**, five sub-items. **Do not** open W6 until at least one **real** bridge (not manufactured — wait for summon friction).
 
 | ID | Name | Scope | Acceptance |
 |----|------|-------|------------|
@@ -294,7 +294,27 @@ Guardian **voice** unchanged in Coherence; Isness mode unchanged.
 
 ---
 
-### 7E. W4 — Bridge as practice (after W3)
+### 7E. W4 — Witness ledger chain (pre-bridge dogfood)
+
+**Gate:** Ship after W3. **One PR.** Forward-only chain from first unlock — no backfill of pre-chain logs.
+
+| ID | Name | Scope | Acceptance |
+|----|------|-------|------------|
+| **W4-1** | Schema | `witness_ledger_chain` table: seq, event_type, event_id, payload_hash, prev_hash, link_hash, created_at | Row persists in OPFS SQLite |
+| **W4-2** | Append hooks | After `saveGuardianLog`, `persistWitnessDirectiveLog`, `openBridgeRow`, `closeBridgeRow` | Summon + bridge events extend chain |
+| **W4-3** | HMAC links | `payload_hash` = SHA-256(canonical JSON); `link_hash` = HMAC-SK(seq\|type\|id\|payload\|prev) | Tamper of chained event breaks verify |
+| **W4-4** | Verify on unlock | `verifyWitnessLedgerChain()` on `initializeApp`; SUBSTRATE line | “N links · verified” or “break at seq X” |
+| **W4-5** | Import re-anchor | `importJSON` / Akashic restore clears chain + new genesis | Toast/honest copy; no false alarm |
+
+**Genesis:** `prev_hash` for link 1 = `SHA256("nq-witness-genesis:" + chain_id)`. Pre-chain `guardian_logs` / `bridge_rows` remain valid but unlinked.
+
+**Not chained (v1):** `prediction_outcome` updates, `evaluateBridgeRelapse` check mutations — derived state, not ledger ground.
+
+**Out of scope:** full-DB hash, sync merge, export carry chain, `correction_event` table (future).
+
+---
+
+### 7F. W5 — Bridge as practice (after W4)
 
 | Scope | Rule |
 |-------|------|
@@ -304,11 +324,11 @@ Guardian **voice** unchanged in Coherence; Isness mode unchanged.
 
 ---
 
-### 7F. W5 — Temporal compare (after ≥1 real bridge)
+### 7G. W6 — Temporal compare (after ≥1 real bridge)
 
 | Scope | Skip until |
 |-------|------------|
-| `delta_since_last_synapse` — posture/term shift %, new write weight vs baseline | W4 bridge proof |
+| `delta_since_last_synapse` — posture/term shift %, new write weight vs baseline | W5 bridge proof |
 | Recent-write weighting for migration vaults | Can extend W3-1 if needed |
 | `void_hints`, BGE matrix | Desktop (P12+) |
 | Local LLM witness side panel | Desktop/Tauri — **not** blocking PWA mythril |
@@ -404,8 +424,9 @@ P9–P11 → optional polish
 | **W1** Substrate (P1–P7) | ☑ | witness-substrate PR |
 | **W2** Wire (P8–P11) | ☑ | witness-wire PR |
 | **W3** Substrate honesty | ☑ | §7D — resistance normalize, corpus_baseline, SUBSTRATE empty states, half-life surface, summon bridge prompt |
-| **W4** Bridge practice | ☐ | §7E — after W3 + real friction |
-| **W5** Temporal compare | ☐ | §7F — after bridge |
+| **W4** Witness ledger chain | ☐ | §7E — HMAC chain on summon + bridge events |
+| **W5** Bridge practice | ☐ | §7F — after W4 + real friction |
+| **W6** Temporal compare | ☐ | §7G — after bridge |
 | *(optional A1–A3 split of W1/W2)* | — | §7C |
 | *(granular P1–P11)* | — | §7A |
 
@@ -421,6 +442,8 @@ P9–P11 → optional polish
 | 2026-05-23 | Auto-invoke strip + worker retired; loop = synapse + voluntary summon |
 | 2026-05-26 | §2.1 User Zero constraints; §2.2 reference case 26/5; §7D–7F W3–W5 register (iPhone-first) |
 | 2026-05-26 | **W3 shipped** — W3-2 resistance normalize; W3-1 corpus_baseline; W3-3 empty states; W3-4 half-life panel; W3-5 inline bridge prompt |
+| 2026-05-26 | **Register rename** — old W4 bridge practice → **W5**; old W5 temporal → **W6**; new **W4** = witness ledger chain (§7E) |
+| 2026-05-26 | **W4 shipped** — witness_ledger_chain table; HMAC links; append hooks; verify on unlock; SUBSTRATE ledger line; import re-anchor |
 
 ---
 
