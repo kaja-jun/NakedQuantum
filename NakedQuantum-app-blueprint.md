@@ -35,6 +35,7 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 | Document | Scope |
 |----------|--------|
 | **`NakedQuantum-app-blueprint.md`** (this file) | Product-wide architecture, realms, data, UI language |
+| **`NakedQuantum-quantum-fortress.md`** | Security & cryptography pipeline — gate, sovereign key, encryption, sync, witness ledger |
 | `consciousness-exoskeleton-roadmap-blueprint.md` | Vision → three loops → phased exoskeleton (philosophy, not fantasy) |
 | `NakedQuantum-checkpoint-2026-05.md` | Code review base, risks, **what to do next** |
 | `guardian-refinement-roadmap-blueprint.md` | Guardian G0–G6, Cartographer C1–C8, auto-invoke A1–A3 |
@@ -83,6 +84,7 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 
 ### 4.3 Crypto & sync
 
+- **Full pipeline:** **`NakedQuantum-quantum-fortress.md`** — gate, PRF, AES-GCM, sync, ledger chain, honest gaps.
 - **AES-GCM** at rest when encryption path enabled; WebAuthn **PRF** derives key (memory only).
 - **Backup key** export in Settings — user responsibility.
 - **Sync:** encrypt → `syncPush` / `syncPull` by `updated_at`; tombstones via `deleted_at`.
