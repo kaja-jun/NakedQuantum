@@ -1,6 +1,6 @@
 # NakedQuantum story
 
-**Vision**: *Metacognitive exoskeleton mirror* 
+**Vision**: *NakedQuantum — an obsessive, meta-meta-cognitive consciousness exoskeleton. Is such a thing even possible? I am on a quest to find out.* 
 
 NakedQuantum started as Quantum garden, a tiny 59 lines of code ran in koder iOS app, then evolved into quantum sanctuary. Then the frustrations notion and other apps brought the cosmiOS to the universe, which made twin module personal tools — CosmiOS, a folder-based knowledge archive, and Quantum Sanctuary, a character-driven AI chat space — both built by one person on an iPhone 14, not for users or money but for genuine personal need. The vision evolved honestly: merge them into one organism where writing, encountering, and witnessing yourself over time happen in a single space. Not a productivity app, not a wellness app — something harder to name. A tool that doesn’t comfort but doesn’t perform coldness either. Just accurate. The goal is simple: fund one person’s time to walk their own path, and even if few hundreds of  people find it useful, that’s enough but if no one finds that's enough too:). 
 

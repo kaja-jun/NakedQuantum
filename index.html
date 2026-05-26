@@ -43,13 +43,6 @@
     </button>
   </div>
 </div>
-<div id="guardian-invoke-strip" class="guardian-invoke-strip" style="display:none;" aria-live="polite">
-  <div class="guardian-invoke-inner">
-    <span class="guardian-invoke-glyph">◆</span>
-    <p class="guardian-invoke-text" id="guardian-invoke-text"></p>
-    <button type="button" class="guardian-invoke-dismiss" id="guardian-invoke-dismiss" aria-label="Dismiss">✕</button>
-  </div>
-</div>
 <div id="mode-toast"></div>
 
 <div class="view-host">
@@ -445,13 +438,14 @@
   <div class="guardian-realm" id="guardian-realm">
     <div class="guardian-glyph-wrap">
       <div class="guardian-glyph" id="guardian-glyph">&#43065;</div>
-      <div class="guardian-label">Witness</div>
+      <div class="guardian-label">Witness to guardian</div>
       <div class="guardian-sub" id="guardian-sub">Summon when you want a witness — not a mirror.</div>
-      <button class="btn-summon" id="btn-summon-guardian">Summon witness</button>
+      <button class="btn-summon" id="btn-summon-guardian">SUMMON GUARDIAN</button>
     </div>
     <div class="guardian-response-wrap">
       <div class="guardian-response" id="guardian-response"></div>
       <div class="guardian-silence" id="guardian-silence">&#43065; &mdash; silence</div>
+      <div id="witness-summon-bridge-prompt" class="witness-summon-bridge-prompt hidden"></div>
     </div>
     <div class="guardian-input-area" id="guardian-input-area">
       <textarea class="guardian-input" id="guardian-input" placeholder="Offer a line, if you want…" rows="3"></textarea>
@@ -480,6 +474,10 @@
     <div style="width:52px;"></div>
   </div>
   <div class="guardian-logs-overlay-content">
+    <div id="witness-process-panel" class="witness-process-panel">
+      <div class="witness-process-label">◇ SUBSTRATE</div>
+      <div id="witness-process-content"></div>
+    </div>
     <div id="guardian-logs-list"></div>
   </div>
 </div>
