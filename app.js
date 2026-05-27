@@ -5889,7 +5889,7 @@ var NEURAL_SIGNAL_INTERVAL = 1800; // ms between new signals
 var NEURAL_MAX_SIGNALS = 12;       // max concurrent signals
 var NEURAL_CASCADE_DEPTH = 3;      // max hops per cascade
 var abyssWeather = 'neutral';
-/** Active guardian directive tint for Abyss disc-dots (refreshed on open + after strip). */
+/** Active guardian directive tint for Abyss disc-dots (refreshed on open + after witness field log). */
 var abyssActiveTint = null;
 /** Temporary Soup mesh gravity boost from latest soup_surface directive. */
 var soupSurfaceBoost = null;
@@ -8502,7 +8502,6 @@ var guardianExchangeCount = 0; // how many back-and-forths since summon
 var GUARDIAN_MAX_EXCHANGES = 4;
 
 var guardianPendingTriggerType = null;
-var guardianLastInvokeQualifiers = null;
 
 var GUARDIAN_WITNESS_LEDGER_COUNT = 3;
 var GUARDIAN_ARCHIVE_CHAR_BUDGET = 10000;
@@ -9819,7 +9818,7 @@ async function renderWitnessProcessPanel() {
   if (NQ_WITNESS_FLAGS.wire !== false) {
     var prof = getWitnessPostureProfile(syn);
     html += '<div class="witness-process-section"><div class="witness-process-h">Wire (W2)</div>';
-    html += '<div class="witness-process-line">profile: ' + escHtml(prof) + ' · strip order: ' +
+    html += '<div class="witness-process-line">profile: ' + escHtml(prof) + ' · wire order: ' +
       escHtml(getWitnessStripReadOrder(prof, syn).join(' → ')) + '</div>';
     if (syn.elaboration_delta) {
       html += '<div class="witness-process-line">elaboration ×' + syn.elaboration_delta.ratio +
@@ -10087,52 +10086,12 @@ async function runDailyRevisitCheck() {
 
 async function openGuardianView(entryOpts){
   entryOpts = entryOpts || {};
-  if (entryOpts.fromHeader) {
-    try { localStorage.removeItem('nq_guardian_dismissed_count'); } catch (e) {}
-  }
   try { localStorage.setItem('nq_guardian_last_interaction', String(Date.now())); } catch (e) {}
   showPanel('view-guardian');
   document.getElementById('guardian-footer').classList.add('visible');
   guardianState = 'resting';
   resetGuardianUI();
   applyGuardianUiStrings('idle');
-
-  var seedText = '';
-  if (!entryOpts.fromHeader && entryOpts.seedObservation != null) {
-    seedText = String(entryOpts.seedObservation).trim();
-  }
-  if (seedText) {
-    var discs0 = (await getDiscourses()).filter(function (d) { return !d.deleted_at && !d.isDeleted; });
-    var builtCtx = await buildGuardianContext(discs0);
-    if (builtCtx) {
-      guardianThread = [
-        { role: 'user', content: builtCtx },
-        { role: 'assistant', content: seedText }
-      ];
-      guardianContextBlock = builtCtx;
-    } else {
-      guardianThread = [{ role: 'assistant', content: seedText }];
-      guardianContextBlock = '';
-    }
-    var responseEl = document.getElementById('guardian-response');
-    var glyph2 = document.getElementById('guardian-glyph');
-    var realm2 = document.getElementById('guardian-realm');
-    var inputArea2 = document.getElementById('guardian-input-area');
-    var btn2 = document.getElementById('btn-summon-guardian');
-    if (responseEl) {
-      responseEl.textContent = seedText;
-      responseEl.className = 'guardian-response visible';
-    }
-    if (glyph2) glyph2.className = 'guardian-glyph watching';
-    if (realm2) realm2.classList.remove('dimming');
-    guardianState = 'speaking';
-    if (inputArea2) inputArea2.className = 'guardian-input-area visible';
-    if (btn2) {
-      btn2.textContent = 'Summon Again';
-      btn2.disabled = false;
-    }
-  }
-
   initMappingModeUI();
   await renderGuardianLogs();
 }
@@ -10888,10 +10847,7 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
     fm = await dbGet('guardian_summaries', primaryId);
     snap = buildGeometrySnapshot(primaryId, fm);
   }
-  var quals = guardianLastInvokeQualifiers || [];
-  if (!quals.length && guardianPendingTriggerType) {
-    quals = [{ type: guardianPendingTriggerType }];
-  }
+  var quals = guardianPendingTriggerType ? [{ type: guardianPendingTriggerType }] : [];
   var theory = buildTheoryOneLine(guardianPendingTriggerType, quals, fm, text || '');
   var predictionTag = derivePredictionTag(guardianPendingTriggerType, quals, fm);
   var log = {
@@ -10913,7 +10869,7 @@ async function saveGuardianLog(text, wasSilent, modelUsed){
     prediction_tag: predictionTag,
     prediction_outcome: null
   };
-  guardianLastInvokeQualifiers = null;
+  guardianPendingTriggerType = null;
   await dbPut('guardian_logs', log);
   await appendWitnessLedgerLink(log.log_type === 'witness_field' ? 'witness_field' : 'summon', log.id, log);
   void refreshEpistemicMoodCache();

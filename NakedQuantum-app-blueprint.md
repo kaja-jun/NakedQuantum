@@ -35,10 +35,10 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 | Document | Scope |
 |----------|--------|
 | **`NakedQuantum-app-blueprint.md`** (this file) | Product-wide architecture, realms, data, UI language |
-| **`NakedQuantum-quantum-fortress.md`** | Security pipeline (8 layers + PWA shell); **§18 phased hardening contract** |
+| **`NakedQuantum-quantum-fortress.md`** | Security pipeline (8 layers + PWA shell); **§18 phased contract**, **§18.7–18.8** migration + Meta crosswalk |
 | `consciousness-exoskeleton-roadmap-blueprint.md` | Vision → three loops → phased exoskeleton (philosophy, not fantasy) |
 | `NakedQuantum-checkpoint-2026-05.md` | Code review base, risks, **what to do next** |
-| `guardian-refinement-roadmap-blueprint.md` | Guardian G0–G6, Cartographer C1–C8, auto-invoke A1–A3 |
+| `guardian-refinement-roadmap-blueprint.md` | Guardian G0–G6, Cartographer C1–C8 — **Track A strip retired** (see RETIRED.md) |
 | `abyss-v021-blueprint.md` | Abyss honest sky (settle, DNA, sanctuary presence, sheet UX) |
 | `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6, deferred) |
 | `NakedQuantum Roadmap.md` | Historical checklist + monetisation notes |
@@ -184,27 +184,30 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 
 ## 12. Guardian
 
-*See `guardian-refinement-roadmap-blueprint.md` for batch detail.*
+*See `guardian-refinement-roadmap-blueprint.md` for historical batch detail. **Auto-invoke strip retired May 2026** — voluntary summon only.*
 
-### Three doors
+### Paths (current)
 
 | Path | Trigger | Model | Persists |
 |------|---------|-------|----------|
-| **A — Strip** | After fast map qualifiers | Cloudflare worker | `guardian_logs` + theory line + geometry snapshot |
-| **B — Summon** | User opens Guardian realm | BYOK OpenRouter | Full log + thread + witness ledger |
-| **C — Follow-up** | User message in session | BYOK | Thread in memory; log on stream end |
+| **Summon** | User opens Guardian realm | BYOK OpenRouter | Full log + thread + witness ledger |
+| **Follow-up** | User message in session | BYOK | Thread in memory; log on stream end |
+| **Witness field** | Local directive (revisit, tint, etc.) | No LLM | `guardian_logs` directive rows |
 
 ### Shipped refinements (G1–G5)
 
 - Witness ledger (`theory_one_line`), geometry snapshots, tiered summon context (~10k cap).
-- Tier 2 watcher links carry `divergenceNote`; strip gets `priorTheoryLine` (worker redeploy).
-- UI copy aligned; prior theory stripped from summon block where specified.
+- W2 wire — posture-ordered archive blocks; ◇ SUBSTRATE; W4 ledger chain.
+- UI copy aligned; voluntary summon + invoke gate (`runLocalPass`).
 
-### Not shipped (intentional)
+### Retired / not shipping on PWA
 
-- **A1–A3** production thresholds, qualifier consensus, auto-invoke ethics.
-- **A2** Settings toggle + onboarding for auto strip.
-- **G6** Lighthouse desktop cockpit.
+- **Track A — Auto strip** + Cloudflare `guardian-invoke` worker (`workers/guardian-invoke/RETIRED.md`).
+- **A1–A3** production thresholds, qualifier consensus, strip Settings toggle — **cancelled with strip**.
+
+### Deferred
+
+- **G6** Lighthouse desktop cockpit (`lighthouse-cockpit-blueprint.md`).
 
 ---
 
@@ -243,10 +246,10 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 | Flat mesh Soup + knots + gravity | ✅ | Replaces folder drawer |
 | Watcher + IDB links | ✅ | Soup-only |
 | Cartographer C1–C8 (v5) | ✅ | Fast maps |
-| Guardian G0–G5 + strip worker | ✅ | BYOK summon |
+| Guardian G0–G5 + voluntary summon | ✅ | BYOK; strip retired May 2026 |
 | Abyss v0.21 Batch 1+2 + sheet Enter UX | ✅ | PRs #36–#38 |
 | Alpha → main accident | ⛔ reverted | PR #41 |
-| Auto-invoke production ethics (A1–A3) | ⏳ | Waiting |
+| Auto-invoke strip (A1–A3) | ⛔ retired | witness loop replaces strip |
 | Custom glyphs | ⏳ | Kaja art pass |
 | Onboarding `?` blueprint | ⏳ | |
 | `app.js` module split / Tauri | ⏳ | ARCH / G6 |
@@ -347,6 +350,7 @@ No ads, SEO theatre, or performance marketing.
 | 2026-05-20 | **v2** — Mesh Soup, unified `cosm_discourses`, Cartographer v5, Guardian G1–G5, Abyss v0.21, file split, document index, shipped log; removed obsolete anti-favorites line |
 | 2026-05-26 | **`NakedQuantum-quantum-fortress.md`** + §4.3 truth — Supabase E2EE sync; Akashic interim; PWA→Tauri note; §18 phased contract in fortress doc |
 | 2026-05-26 | Fortress §18.7 — witness ledger migration / re-anchor ceremony (W4.6 deferred) |
+| 2026-05-26 | §12 Guardian — strip retired; paths updated; fortress §18.8 Meta crosswalk |
 
 ---
 

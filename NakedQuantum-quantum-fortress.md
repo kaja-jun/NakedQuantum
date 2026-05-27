@@ -521,6 +521,27 @@ External reviews (e.g. generic PWA audits) may miss: **realm isolation**, **PWA 
 
 **Cross-ref:** `witness-loop-upgrade-blueprint.md` §7E footnote · W4.6 register below.
 
+### 18.8 Meta hardening crosswalk (pin — PWA + Tauri)
+
+External audit (Meta AI, May 2026) largely **confirms §18**. Adopt selectively; **do not** treat as a second roadmap.
+
+| Priority | Item | Phase | Notes |
+|----------|------|-------|-------|
+| **1** | CSP + Trusted Types + `innerHTML` audit | **PWA — before strangers** | Unlocked XSS = full vault; beats more crypto |
+| **2** | `nq_sovereign_key_fp` on verify fail | **PWA** | Interim W4.6 — “key changed” vs “tamper” |
+| **3** | `reanchorWitnessLedgerChain()` | **PWA or Tauri** | Full spec §18.7 |
+| **4** | Akashic client `.nq` E2EE before R2 | **PWA** | When touching backup |
+| **5** | AES-GCM **AAD** (`store` + `row_id`) on `_enc` + Supabase `data_enc` | **PWA or early Tauri** | Anti cut-paste / replay |
+| **6** | Encrypt Watcher IDB vectors; RAM cache after unlock | **Tauri-first** (optional PWA) | Layer 4 |
+| **7** | Auto-lock on `visibilitychange` + PRF backoff | **PWA UX** | Balance iPhone writing flow |
+| **8** | Sync manifest HMAC | **Post-Akashic** | If distrusting sync write path |
+| **9** | KEK/DEK vault wrap, Argon2 passphrase, Ed25519 export | **Tauri / v2** | Not mythril-blocking |
+| **10** | Duress decoy vault | **Product decision** | High UX/ethics risk — pin only, do not sprint |
+
+**Meta got wrong or already shipped:** HMAC already includes `prev_hash`; worker is inline blob (not SRI URL); binding BYOK secrets to `chain_id` forces re-entry on every import — **defer**.
+
+**Sprint order (canonical):** 1 → 4 → 5 → 2–3 → 6–7 on Tauri → rest optional.
+
 ---
 
 ## 19. Revision log
@@ -530,6 +551,7 @@ External reviews (e.g. generic PWA audits) may miss: **realm isolation**, **PWA 
 | 2026-05-26 | Initial pin — full fortress pipeline after W4 ledger chain |
 | 2026-05-26 | §18 phased hardening contract — PWA shippable / not perfect / Tauri Layer 4 / Akashic truth |
 | 2026-05-26 | §18.7 witness ledger migration + re-anchor ceremony (deferred) — key mismatch vs tamper |
+| 2026-05-26 | §18.8 Meta hardening crosswalk — PWA + Tauri sprint order |
 
 ---
 

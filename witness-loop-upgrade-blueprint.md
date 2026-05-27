@@ -448,6 +448,7 @@ P9–P11 → optional polish
 | 2026-05-26 | **Register rename** — old W4 bridge practice → **W5**; old W5 temporal → **W6**; new **W4** = witness ledger chain (§7E) |
 | 2026-05-26 | **W4 shipped** — witness_ledger_chain table; HMAC links; append hooks; verify on unlock; SUBSTRATE ledger line; import re-anchor |
 | 2026-05-26 | **W4.6 register** — ledger migration / re-anchor deferred; pin fortress §18.7 |
+| 2026-05-26 | Security hardening pin — fortress §18.8 Meta crosswalk (PWA + Tauri) |
 
 ---
 
