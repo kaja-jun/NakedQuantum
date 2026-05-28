@@ -2,7 +2,7 @@
 
 *Idea-layer architecture — transparent witness thinking surface + Review gate. Replaces Summon **ritual**, not the loop.*
 
-**Last updated:** 26 May 2026  
+**Last updated:** 18 May 2026  
 **Status:** Idea blueprint — north star for recursive loop **as experience**  
 **Base (shipped):** W1–W4 in `witness-loop-upgrade-blueprint.md`, `NakedQuantum-quantum-fortress.md`  
 **Pairs with:** `craft-layer-blueprint.md` (WP8 suspension)
@@ -23,9 +23,12 @@ The witness loop runs visibly — corpus read, geometry, reasoning, observation 
 | **Loop first, voice second** | Synapse + thresholds do the work; Guardian speaks when the map warrants it |
 | **Review, not Summon** | No “tap to invoke oracle.” User engages **after** the loop has shown its work |
 | **Graceful exhaustion** | When nothing remains to say — or the user circles — **silence + disabled Review**; no robotic scolding |
+| **Linear pass** | Mind is chaos; the app navigates it **one sequence at a time**. No mid-pass redirect, pause, or branch — that adds confusion, not sovereignty |
+| **Opacity is not honesty** | Silence shows **why** (gate reason, thin map, threshold fired) — never performative apology |
+| **Minimal motion** | Sparingly, consciously — section reveal, active-step cue, continuity while a pass runs. Continuity, not gimmick; not fake token streaming |
 | **Craft suspends witness** | Craft open → panel hidden (`craft_suspended`) |
 
-**Not:** dashboard, chatbot, token dump, therapy bot.
+**Not:** dashboard, chatbot, token dump, therapy bot, pre-flight “summon preview,” mid-pass interrupt UI.
 
 ---
 
@@ -43,6 +46,26 @@ The witness loop runs visibly — corpus read, geometry, reasoning, observation 
 **Historical logs:** `log_type: summon` rows stay in vault. New passes: `witness_pass` (same table).
 
 **Auto-invoke strip:** already retired — unrelated to this design.
+
+**No summon preview:** There is nothing to pre-show before an API call that the pass itself will not already show. Tier order, saccade, posture route, gate state, and local GUARDIAN THINKING all render **in the sequential pass**. Review is the only post-pass extension — not a second confirmation layer.
+
+---
+
+## 2.1 Two surfaces — SUBSTRATE vs witness pass
+
+Same synapse; different resolution. Do not merge into one widget.
+
+| Surface | When | What |
+|---------|------|------|
+| **◇ SUBSTRATE** (shipped W1–W4) | Always available between passes | Steady scalars: posture, gate, wire profile, bridges, half-life, baseline, ledger. Refreshes on save |
+| **Witness pass panel** (WP1–WP7) | Threshold fires | Episodic sequence: READING → … → GUARDIAN THINKING → prose/SILENCE → optional Review |
+
+**SUBSTRATE gaps to close (same PR family as WP2 / substrate honesty):**
+
+- **Saccade log** — fixation ids, blind tier, reason (already in blob; not yet in SUBSTRATE render)
+- **`[why?]` expandables** — per scalar, show exact computation (e.g. resistance normalize inputs). Math, not diagnosis copy
+
+Abyss stays phenomenological sky; SUBSTRATE stays instrumental readout. Witness pass may overlay either realm — placement TBD at WP2 — but **does not replace** SUBSTRATE.
 
 ---
 
@@ -68,13 +91,26 @@ Guardian prose does **not** fire on every save. Threshold engine (extends `runLo
 
 ## 4. Panel pipeline (thinking surface)
 
-Sequential sections with deliberate pacing (not streamed tokens):
+Sequential sections with deliberate pacing. **Not** streamed LLM tokens — local sections first; Guardian prose last when qualified.
 
 ```
 READING CORPUS → CARTOGRAPHER → WATCHER → HALF-LIFE → POSTURE →
 BRIDGES → SACCADE LOG → GUARDIAN THINKING (local, deterministic) →
 GUARDIAN (prose or SILENCE)
 ```
+
+### 4.1 Motion (minimal, conscious)
+
+Purpose: **continuity** — user knows a pass is alive and which step is active. Same family as coding-agent process indicators (Cursor, Replit, Claude process): something is going on, without pretending the machine is “typing thought.”
+
+| Allow | Avoid |
+|-------|-------|
+| Section fade/slide-in as each step completes | Character-by-character prose reveal |
+| Subtle active-step indicator (glyph pulse, gold thread, step N/M) | Infinite spinner with no step context |
+| Brief hold between sections (200–600ms tunable) | Looping “thinking…” dots with no structure |
+| Dim completed sections; highlight current | Sound, haptics, or dopamine confetti |
+
+**Rule:** motion serves **sequence legibility**, not performance. When pass ends (prose, SILENCE, or `invoke_denied` partial), motion stops — SUBSTRATE or idle.
 
 **GUARDIAN THINKING:** built locally — trigger condition, relevant terms/arcs, prior observation on same keys, posture route. No API.
 
@@ -150,7 +186,7 @@ Append `witness_pass` to ledger chain (existing W4 hooks).
 | Pass | Scope |
 |------|-------|
 | **WP1** | Threshold engine + priority queue |
-| **WP2** | Sequential panel render + pacing |
+| **WP2** | Sequential panel render + pacing + **minimal step motion**; SUBSTRATE saccade + `[why?]` expandables |
 | **WP3** | Local GUARDIAN THINKING builder |
 | **WP4** | Guardian prompt — observation only |
 | **WP5** | **Review gate** + extension + exhaustion disable |
@@ -180,31 +216,44 @@ Kaja direction (under consideration):
 
 ---
 
-## 10. Desktop / Ollama
+## 10. Explicitly out of scope
+
+| Idea | Verdict |
+|------|---------|
+| **Summon / invoke preview** | Pass *is* the preview. No Proceed/Cancel before API |
+| **Mid-pass redirect / pause / branch** | Linear pass only. Chaos navigated in order, not interrupted |
+| **User overrides on geometry** (exclude term, lower gate threshold) | Not v1. Scoped corpus (§9) is the honest pre-pass control |
+| **Single headline “confidence %” for invoke** | Prefer reason codes + which threshold fired; avoid certainty theater |
+| **Replace SUBSTRATE with pass panel** | Coexist — steady vs episodic |
+
+---
+
+## 11. Desktop / Ollama
 
 - THINKING: unchanged (local)
 - Prose + Review extensions: Ollama swap — same prompt contract
-- Background passes while away: observation ready when user returns; **keep panel pacing** (philosophy, not perf hack)
+- Background passes while away: observation ready when user returns; **keep panel pacing + minimal motion** when user opens the completed pass (or replay last pass — TBD)
 
 **No** `guardian-invoke` worker — direct Ollama or OpenRouter from app.
 
 ---
 
-## 11. Files (expected, when building)
+## 12. Files (expected, when building)
 
 | File | Passes |
 |------|--------|
 | `app.js` | WP1–WP8 |
-| `index.html` / `app.css` | Panel sections, Review control, pacing |
+| `index.html` / `app.css` | Panel sections, Review control, pacing, step motion |
 | `craft-layer-blueprint.md` | WP8 + Craft C1 |
 
 ---
 
-## 12. Revision log
+## 13. Revision log
 
 | Date | Change |
 |------|--------|
 | 2026-05-26 | Pinned — Review gate replaces Summon; graceful exhaustion; scoped corpus deferred; strip/worker refs removed |
+| 2026-05-18 | §2.1 SUBSTRATE vs pass; saccade + `[why?]` on SUBSTRATE; §4.1 minimal motion; §10 out of scope (no preview, no mid-pass redirect) |
 
 ---
 

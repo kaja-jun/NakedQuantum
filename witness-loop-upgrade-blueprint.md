@@ -359,7 +359,7 @@ Same as §7B but W1 split into **A1** (P1–P5) + **A2** (P6–P7); **A3** = W2.
 | Pass | Scope | Acceptance |
 |------|-------|------------|
 | **WP1** | Threshold engine + priority queue | One fire per qualifying event; posture router picks priority |
-| **WP2** | Sequential panel render + pacing | READING → … → GUARDIAN (prose or SILENCE) visible |
+| **WP2** | Sequential panel render + pacing + minimal step motion; SUBSTRATE saccade + `[why?]` | READING → … → GUARDIAN visible; continuity cues; inspectable scalars between passes |
 | **WP3** | Local GUARDIAN THINKING builder | Deterministic context block; no API |
 | **WP4** | Guardian prompt — observation only | Prose does not repeat panel; BYOK / Ollama |
 | **WP5** | **Review gate** + extension + exhaustion | Review disables on silence / circling — UI rest, no lecture copy |
@@ -473,6 +473,7 @@ P9–P11 → optional polish
 | 2026-05-26 | **W4.6 register** — ledger migration / re-anchor deferred; pin fortress §18.7 |
 | 2026-05-26 | Security hardening pin — fortress §18.8 Meta crosswalk (PWA + Tauri) |
 | 2026-05-26 | **§7H register** — WP1–WP8 witness panel (Review gate); cross-link `witness-panel-blueprint.md` |
+| 2026-05-18 | WP2 scope — minimal motion, SUBSTRATE saccade/why; no summon preview / mid-pass redirect (witness-panel §10) |
 
 ---
 
