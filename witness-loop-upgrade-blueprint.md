@@ -2,7 +2,7 @@
 
 > **Purpose:** Build contract for **synapse-temporal-v1** and beyond — merges the dense multi-model discussion, the three-user stress test (Epictetus / narcissist / young girl in love), and Claude’s **observable → entangle → wire** guard.
 >
-> **Read with:** `NakedQuantum-intention-blueprint.md` (why), `consciousness-exoskeleton-roadmap-blueprint.md` (shipped Ph 0–3), `guardian-refinement-roadmap-blueprint.md` (Guardian/strip detail), `NakedQuantum-checkpoint-2026-05.md` (code map).
+> **Read with:** `NakedQuantum-intention-blueprint.md` (why), `consciousness-exoskeleton-roadmap-blueprint.md` (shipped Ph 0–3), `guardian-refinement-roadmap-blueprint.md` (Guardian/strip detail), `witness-panel-blueprint.md` (Review gate + panel — idea layer), `NakedQuantum-checkpoint-2026-05.md` (code map).
 >
 > **Author:** Kaja + co-creator passes · **Last updated:** May 2026
 
@@ -45,7 +45,8 @@ WRITE (Abyss)
         ├─ elaboration_delta (if open bridge)
         └─ saccade_log (this pass)
   → runLocalPass(synapse)           // invoke_denied?, graduation_quiet?
-  → [optional] voluntary Guardian summon  // tier ORDER from posture (BYOK)
+  → [interim] voluntary Guardian summon  // tier ORDER from posture (BYOK)
+  → [target] threshold witness pass → panel → optional Review (WP1–WP7)
   → bridge_rows / guardian_logs update
   → field mutation (directives, revisit) — existing Ph 0–3
 ```
@@ -349,6 +350,27 @@ Same as §7B but W1 split into **A1** (P1–P5) + **A2** (P6–P7); **A3** = W2.
 
 **Do not** merge A3 before A2 lands `synapse_version` on `main`.
 
+---
+
+### 7H. Witness panel — WP1–WP8 (idea layer; not shipped)
+
+**Contract:** **`witness-panel-blueprint.md`**. Builds on W1–W4 substrate. **Review replaces Summon ritual** when WP7 lands — Guardian is not removed; the loop runs first.
+
+| Pass | Scope | Acceptance |
+|------|-------|------------|
+| **WP1** | Threshold engine + priority queue | One fire per qualifying event; posture router picks priority |
+| **WP2** | Sequential panel render + pacing | READING → … → GUARDIAN (prose or SILENCE) visible |
+| **WP3** | Local GUARDIAN THINKING builder | Deterministic context block; no API |
+| **WP4** | Guardian prompt — observation only | Prose does not repeat panel; BYOK / Ollama |
+| **WP5** | **Review gate** + extension + exhaustion | Review disables on silence / circling — UI rest, no lecture copy |
+| **WP6** | `invoke_denied` partial panel | Honest thin-map state |
+| **WP7** | Remove Summon UI; migrate to Review model | Historical `summon` logs preserved |
+| **WP8** | `craft_suspended` | With Craft C1 — panel hidden while craft open |
+
+**Minimum shippable:** WP1–WP6 + WP5 Review. **Gate:** Kaja approves pass before Cursor.
+
+**Deferred (pin only):** user-selected discourse subset for scoped witness pass — `witness-panel-blueprint.md` §9.
+
 ### Phase A — PWA
 
 | Pass | Name | Scope | Acceptance (felt) | Touch |
@@ -430,6 +452,7 @@ P9–P11 → optional polish
 | **W5** Bridge practice | ☐ | §7F — after W4 + real friction |
 | **W4.6** Ledger re-anchor ceremony | ☐ | fortress §18.7 — migration vs tamper |
 | **W6** Temporal compare | ☐ | §7G — after bridge |
+| **WP1–WP8** Witness panel + Review | ☐ | §7H + `witness-panel-blueprint.md` — idea layer |
 | *(optional A1–A3 split of W1/W2)* | — | §7C |
 | *(granular P1–P11)* | — | §7A |
 
@@ -449,6 +472,7 @@ P9–P11 → optional polish
 | 2026-05-26 | **W4 shipped** — witness_ledger_chain table; HMAC links; append hooks; verify on unlock; SUBSTRATE ledger line; import re-anchor |
 | 2026-05-26 | **W4.6 register** — ledger migration / re-anchor deferred; pin fortress §18.7 |
 | 2026-05-26 | Security hardening pin — fortress §18.8 Meta crosswalk (PWA + Tauri) |
+| 2026-05-26 | **§7H register** — WP1–WP8 witness panel (Review gate); cross-link `witness-panel-blueprint.md` |
 
 ---
 

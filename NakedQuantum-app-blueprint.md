@@ -2,7 +2,7 @@
 
 *Living map for Kaja + co-creator agents. Supersedes **Full App Blueprint v1** (30 April 2026).*
 
-**Last updated:** 20 May 2026  
+**Last updated:** 26 May 2026  
 **Built for:** One human at a time — iPhone-first PWA, zero npm, sovereign local-first.
 
 ---
@@ -39,6 +39,9 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 | `consciousness-exoskeleton-roadmap-blueprint.md` | Vision → three loops → phased exoskeleton (philosophy, not fantasy) |
 | `NakedQuantum-checkpoint-2026-05.md` | Code review base, risks, **what to do next** |
 | `guardian-refinement-roadmap-blueprint.md` | Guardian G0–G6, Cartographer C1–C8 — **Track A strip retired** (see RETIRED.md) |
+| `witness-loop-upgrade-blueprint.md` | Synapse loop W1–W6 shipped; **WP1–WP8** witness panel (idea layer) |
+| `witness-panel-blueprint.md` | Thinking surface + **Review gate** (replaces Summon ritual when WP7 ships) |
+| `craft-layer-blueprint.md` | Lighthouse per-discourse writing help — voice brief, witness firewall |
 | `abyss-v021-blueprint.md` | Abyss honest sky (settle, DNA, sanctuary presence, sheet UX) |
 | `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6, deferred) |
 | `NakedQuantum Roadmap.md` | Historical checklist + monetisation notes |
@@ -105,7 +108,7 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 | `view-soup` | **Soup** | Active archive — flat mesh, Engram source |
 | `view-lighthouse` | **Lighthouse** | Discourse / Chronicle / Spark editor (post-open) |
 | `view-subconscious` | **Deep Soup** | Forgotten items (30-day decay); resurrect on open |
-| `view-guardian` | **Guardian** | Deliberate oracle — summon, follow-up, logs |
+| `view-guardian` | **Guardian** | Interim: summon + logs; target: witness panel + **Review** (`witness-panel-blueprint.md`) |
 | `view-abyss` | **Abyss** | Honest sky — Watcher links, fast-map phenotype, presence |
 | `view-data` | **Data** | Export, sync, backup, sovereignty tools |
 | `view-chat` / `view-persona` / `view-forge` / `view-ie` / `view-memory` | Sanctuary sub-flows | Characters, IE deck, forge, vault |
@@ -184,9 +187,9 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 
 ## 12. Guardian
 
-*See `guardian-refinement-roadmap-blueprint.md` for historical batch detail. **Auto-invoke strip retired May 2026** — voluntary summon only.*
+*See `guardian-refinement-roadmap-blueprint.md` for historical batch detail. **Auto-invoke strip retired May 2026.** North star: **`witness-panel-blueprint.md`** — loop first, **Review** after the pass (not Summon ritual).*
 
-### Paths (current)
+### Paths (interim on `main`)
 
 | Path | Trigger | Model | Persists |
 |------|---------|-------|----------|
@@ -194,10 +197,13 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 | **Follow-up** | User message in session | BYOK | Thread in memory; log on stream end |
 | **Witness field** | Local directive (revisit, tint, etc.) | No LLM | `guardian_logs` directive rows |
 
-### Shipped refinements (G1–G5)
+**Target (WP1–WP7):** threshold-fired witness pass → visible thinking surface → optional **Review** to extend while Guardian has something to add; ends in **silence + disabled Review** when exhausted (no nag copy). Historical `log_type: summon` rows stay in vault.
+
+### Shipped refinements (G1–G5 + W1–W4)
 
 - Witness ledger (`theory_one_line`), geometry snapshots, tiered summon context (~10k cap).
 - W2 wire — posture-ordered archive blocks; ◇ SUBSTRATE; W4 ledger chain.
+- W3 substrate honesty — resistance normalize, corpus baseline, bridge prompt on summon.
 - UI copy aligned; voluntary summon + invoke gate (`runLocalPass`).
 
 ### Retired / not shipping on PWA
@@ -205,9 +211,17 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 - **Track A — Auto strip** + Cloudflare `guardian-invoke` worker (`workers/guardian-invoke/RETIRED.md`).
 - **A1–A3** production thresholds, qualifier consensus, strip Settings toggle — **cancelled with strip**.
 
+### Idea layer (not shipped — gate before Cursor)
+
+| Blueprint | Scope |
+|-----------|--------|
+| **`witness-panel-blueprint.md`** | WP1–WP8 — panel, Review gate, Summon UI removal (WP7), craft suspension (WP8) |
+| **`craft-layer-blueprint.md`** | C1–C5 — Lighthouse writing help; witness firewall |
+
 ### Deferred
 
 - **G6** Lighthouse desktop cockpit (`lighthouse-cockpit-blueprint.md`).
+- **Scoped corpus witness** — user-selected discourse subset for a pass (`witness-panel-blueprint.md` §9).
 
 ---
 
@@ -235,6 +249,13 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 - **Chronicle** / **Spark** / **Discourse** placeholders and meta labels differ.
 - **Mosaic** — experimental inline anchors from discourse (early).
 - Opened from Soup mesh, search, Guardian links, or **Abyss Enter**.
+
+### Craft layer (idea — `craft-layer-blueprint.md`)
+
+- Per-discourse writing help: opinion, improve, grammar, refine, structure — **voice-preserving**, not rewrite.
+- Trigger: unobtrusive “work with this piece” control (not Summon / not ◇ SUBSTRATE register).
+- **Witness firewall:** craft sessions never enter synapse; witness panel `craft_suspended` while craft is open.
+- Desktop: Ollama unlimited iteration; PWA interim BYOK OpenRouter.
 
 ---
 
@@ -351,6 +372,7 @@ No ads, SEO theatre, or performance marketing.
 | 2026-05-26 | **`NakedQuantum-quantum-fortress.md`** + §4.3 truth — Supabase E2EE sync; Akashic interim; PWA→Tauri note; §18 phased contract in fortress doc |
 | 2026-05-26 | Fortress §18.7 — witness ledger migration / re-anchor ceremony (W4.6 deferred) |
 | 2026-05-26 | §12 Guardian — strip retired; paths updated; fortress §18.8 Meta crosswalk |
+| 2026-05-26 | Pinned **`craft-layer-blueprint.md`**, **`witness-panel-blueprint.md`**; §12 Review north star; §14 Craft idea layer |
 
 ---
 
