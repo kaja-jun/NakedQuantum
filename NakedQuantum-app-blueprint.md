@@ -22,7 +22,7 @@
 
 ## 1. Vision
 
-NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (characters / chat) into one organism. Not productivity. Not wellness. A place that is **accurate** — sometimes it cuts, sometimes it smiles, never apologizes.
+NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (characters / chat) into one soverign fortress. Not productivity. Not wellness. A tiny universe that is **accurate** — sometimes it cuts, sometimes it smiles, never apologizes.
 
 **I dont claim building a conscious AI brain**
 
@@ -94,7 +94,8 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 - **Full pipeline:** **`NakedQuantum-quantum-fortress.md`** — eight layers, honest gaps, **§18 what to do when**, **§18.7 ledger migration (deferred)**.
 - **Shippable for PWA phase; not perfect** — Layer 4 gaps + Akashic interim documented; Tauri thickens walls later.
 - **AES-GCM** at rest when encryption path enabled; WebAuthn **PRF** derives key (memory only).
-- **Supabase:** E2EE delta sync (`data_enc`). **Akashic/R2:** cold backup — not client-E2EE yet (update fortress when `.nq` upload lands).
+- **Supabase:** E2EE delta sync (`data_enc`). - **Akashic/R2:** cold backup — not client-E2EE yet (update fortress when `.nq` upload -
+- **Ledger Integrity** (Local Hash Chain): Sequential HMAC SHA-256 hashing on  guardian_logs  and  bridge_rows . Enforces meta-meta honesty by making the Witness Ledger tamper-evident. If the vault is manually altered, the chain fractures, and the Guardian reports the structural anomaly rather than reading the ghost.
 - **Backup key** export in Settings — user responsibility.
 - **Exports:** `.md`, `.pdf`, `.docx`, `.html`, `.json` (see Data realm).
 
@@ -348,9 +349,7 @@ No ads, SEO theatre, or performance marketing.
 
 ## 20. Future horizon
 
-- **Tauri** desktop when PWA limits bite (`lighthouse-cockpit-blueprint.md`).
-- Rust / WASM for Watcher perf.
-- Optional P2P sync (Waku / GunDB) — same principles.
+- **Tauri** Desktop (Power Surface): Not just a PWA escape hatch. Driven by: (1) Local Ollama Sidecar (bundled base model + tiered sovereign upgrades), (2) Track B Sentence Matrix (desktop-scale geometry), (3) Background Witness Passes & Local Hash Chains. PWA remains the Reliability Surface.
 - **AB2** — optional 3D / UMAP snapshot for laptop; not in v0.21 PWA.
 
 ---
