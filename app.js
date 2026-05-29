@@ -8985,8 +8985,11 @@ var NQ_WITNESS_FLAGS = {
   invoke_gate: true,
   process_panel: true,
   wire: true,
-  ledger_chain: true
+  ledger_chain: true,
+  weather_cues: true
 };
+var WITNESS_CUE_RETIRED_LS = 'nq_cue_retired';
+var WITNESS_WEATHER_CTX_LS = 'nq_witness_weather_ctx';
 var WITNESS_CHAIN_LS_ID = 'nq_witness_chain_id';
 var WITNESS_CHAIN_GENESIS_AT = 'nq_witness_chain_genesis_at';
 var _witnessLedgerStatus = { ok: null, length: 0, breakAt: null, dormant: false, reanchored: false };
@@ -9059,7 +9062,7 @@ function computeTermHalfLife(arcsMap) {
   return { terms: terms };
 }
 
-function mergeCorpusBaseline(prevBaseline, totalDiscourses) {
+function mergeCorpusBaseline(prevBaseline, totalDiscourses, lastWriteAt) {
   var baseline = prevBaseline || {};
   var builtAt = baseline.built_at || Date.now();
   var prevTotal = baseline.total_discourses || 0;
@@ -9070,8 +9073,74 @@ function mergeCorpusBaseline(prevBaseline, totalDiscourses) {
   return {
     built_at: builtAt,
     total_discourses: totalDiscourses,
-    organic_writes_since: organicSince
+    organic_writes_since: organicSince,
+    last_write_at: lastWriteAt != null ? lastWriteAt : (baseline.last_write_at || builtAt)
   };
+}
+
+function detectResurgentTerms(arcsMap) {
+  var now = Date.now();
+  var out = [];
+  Object.keys(arcsMap || {}).forEach(function (term) {
+    var arc = arcsMap[term];
+    if (!arc || !arc.appearances || arc.appearances.length < 2) return;
+    var last = arc.appearances[arc.appearances.length - 1];
+    var prev = arc.appearances[arc.appearances.length - 2];
+    var gapMs = (last.date || now) - (prev.date || now);
+    var daysSinceLast = (now - (last.date || now)) / 86400000;
+    if (gapMs >= 14 * 86400000 && daysSinceLast <= 10) out.push(term);
+  });
+  return out;
+}
+
+function loadWitnessCueRetired() {
+  try {
+    return JSON.parse(localStorage.getItem(WITNESS_CUE_RETIRED_LS) || '{}');
+  } catch (eCr) {
+    return {};
+  }
+}
+
+function dismissWitnessCue(type, term) {
+  if (typeof WitnessWeather === 'undefined') return;
+  var key = WitnessWeather.cueRetireKey(type, term);
+  var retired = loadWitnessCueRetired();
+  retired[key] = true;
+  try {
+    localStorage.setItem(WITNESS_CUE_RETIRED_LS, JSON.stringify(retired));
+  } catch (eDs) {}
+  void renderWitnessProcessPanel();
+}
+
+function buildWitnessWeatherContext(snap) {
+  var prev = {};
+  try {
+    prev = JSON.parse(localStorage.getItem(WITNESS_WEATHER_CTX_LS) || '{}');
+  } catch (ePrev) {}
+  var resistance = (snap.posture_vector && snap.posture_vector.resistance) || 0;
+  var resistanceDelta = prev.resistance != null ? resistance - prev.resistance : 0;
+  var turbulentStates = { front: true, pressure: true, electrical: true };
+  var prevTurbulent = turbulentStates[prev.last_weather] === true;
+  var lastWrite = (snap.corpus_baseline && snap.corpus_baseline.last_write_at) || snap.built_at || Date.now();
+  var daysSinceWrite = (Date.now() - lastWrite) / 86400000;
+  var ctx = {
+    post_craft: snap.post_craft === true,
+    resistance_delta: resistanceDelta,
+    previous_weather_turbulent: prevTurbulent,
+    days_since_write: daysSinceWrite
+  };
+  if (typeof WitnessWeather !== 'undefined') {
+    var weather = WitnessWeather.computeWeatherState(snap, ctx);
+    try {
+      localStorage.setItem(WITNESS_WEATHER_CTX_LS, JSON.stringify({
+        resistance: resistance,
+        coherence: (snap.posture_vector && snap.posture_vector.coherence) || 0,
+        last_weather: weather.state,
+        last_built_at: snap.built_at || Date.now()
+      }));
+    } catch (eStore) {}
+  }
+  return ctx;
 }
 
 function formatSynapseAgeRelative(ts) {
@@ -9406,6 +9475,12 @@ async function buildSynapseSnapshot() {
   var perpetual = detectPerpetualOrbitTerms(arcsMap);
   var posture = computePostureVector(discs, fastMapById, arcsMap);
   var halfLife = computeTermHalfLife(arcsMap);
+  halfLife.resurgent = detectResurgentTerms(arcsMap);
+  var lastWriteAt = 0;
+  discs.forEach(function (d) {
+    var t = d.updated_at || d.created_at || 0;
+    if (t > lastWriteAt) lastWriteAt = t;
+  });
   var openBridges = bridgeRows.filter(function (br) { return br.status === 'open'; }).map(function (br) {
     var keys = parseJsonField(br.signal_keys, {});
     return { id: br.id, status: br.status, terms: keys.terms || [] };
@@ -9418,7 +9493,13 @@ async function buildSynapseSnapshot() {
     var prevSyn = parseSynapseSnapshot(prevStored);
     if (prevSyn && prevSyn.corpus_baseline) prevBaseline = prevSyn.corpus_baseline;
   } catch (ePrev) {}
-  var corpusBaseline = mergeCorpusBaseline(prevBaseline, discs.length);
+  var corpusBaseline = mergeCorpusBaseline(prevBaseline, discs.length, lastWriteAt);
+  var denialTerms = [];
+  anomalies.forEach(function (a) {
+    if (typeof a === 'string' && a.indexOf('denial_sediment:') === 0) {
+      denialTerms.push(a.slice('denial_sediment:'.length));
+    }
+  });
   var synapse = {
     synapse_version: SYNAPSE_VERSION,
     built_at: Date.now(),
@@ -9427,6 +9508,8 @@ async function buildSynapseSnapshot() {
     half_life: halfLife,
     perpetual_orbit_terms: perpetual,
     open_bridges: openBridges,
+    open_bridges_count: openBridges.length,
+    denial_sediment_terms: denialTerms,
     elaboration_delta: elaborationDelta,
     saccade_log: buildSaccadeLogV1(discs, fastMapById),
     anomalies: anomalies,
@@ -9796,6 +9879,28 @@ async function renderWitnessProcessPanel() {
     panel.innerHTML = '<div class="witness-process-line muted">Substrate not built yet.</div>';
     return;
   }
+  if (NQ_WITNESS_FLAGS.weather_cues !== false && typeof WitnessWeather !== 'undefined') {
+    var wctx = buildWitnessWeatherContext(syn);
+    var weather = WitnessWeather.computeWeatherState(syn, wctx);
+    if (weather.label) {
+      html += '<div class="witness-weather-line">' + escHtml(weather.label) + '</div>';
+    }
+    var cues = WitnessWeather.generateWitnessCues(syn, {
+      context: wctx,
+      retiredKeys: loadWitnessCueRetired()
+    });
+    if (cues.length) {
+      html += '<div class="witness-process-section witness-cues-section"><div class="witness-process-h">Cues</div>';
+      cues.forEach(function (cue) {
+        html += '<div class="witness-cue-row">';
+        html += '<p class="witness-cue-text">' + escHtml(cue.question_text) + '</p>';
+        html += '<button type="button" class="witness-cue-dismiss" data-cue-type="' + escHtml(cue.source_type) +
+          '" data-cue-term="' + escHtml(cue.source_term) + '">release</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+  }
   var cb = syn.corpus_baseline || {};
   html += '<div class="witness-process-section"><div class="witness-process-h">Baseline</div>';
   html += '<div class="witness-process-line">baseline: ' + (cb.total_discourses != null ? cb.total_discourses : '—') +
@@ -9871,7 +9976,29 @@ async function renderWitnessProcessPanel() {
   html += '<div class="witness-process-section witness-process-footer"><div class="witness-process-line muted">synapse built: ' +
     escHtml(formatSynapseAgeRelative(syn.built_at)) + '</div></div>';
   panel.innerHTML = html;
+  panel.querySelectorAll('.witness-cue-dismiss').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      dismissWitnessCue(btn.getAttribute('data-cue-type'), btn.getAttribute('data-cue-term'));
+    });
+  });
 }
+
+async function dogfoodWitnessWeather() {
+  if (typeof WitnessWeather === 'undefined') {
+    console.warn('[Witness] witness-weather.js not loaded');
+    return null;
+  }
+  var syn = getSynapseSnapshot();
+  if (!syn) syn = await refreshWitnessSubstrate();
+  if (!syn) return null;
+  var ctx = buildWitnessWeatherContext(syn);
+  var weather = WitnessWeather.computeWeatherState(syn, ctx);
+  var cues = WitnessWeather.generateWitnessCues(syn, { context: ctx, retiredKeys: loadWitnessCueRetired() });
+  console.log('[Witness] weather', weather, 'cues', cues);
+  return { weather: weather, cues: cues, synapse: syn };
+}
+window.dogfoodWitnessWeather = dogfoodWitnessWeather;
 
 var _witnessDetailLog = null;
 var _witnessSummonLog = null;

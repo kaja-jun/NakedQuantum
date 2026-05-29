@@ -690,7 +690,7 @@ const VOICE_BUCKETS = {
 | `bridge` | first open bridge term from `open_bridges[].signal_keys` |
 | `resurgence` | `half_life.resurgent[0]` *(add in synapse build)* |
 | `denial` | parse `anomalies` entries `denial_sediment:{term}` |
-| `absence` | `void_hints[0]` — **skip on PWA until Track B** |
+| `absence` | `void_hints[0]` — full matrix in `witness-weather.js`; **`ENABLE_ABSENCE_CUES = false`** until Track B |
 
 ### 7.2 Algorithm
 
@@ -789,6 +789,7 @@ If any fail — delete file. Nothing else changes.
 |------|--------|
 | 2026-05 | Initial blueprint — weather states, matrix, selection logic |
 | 2026-05-18 | Pinned — Rilke/Rovelli high bucket; Weil rewrite; no Nietzsche/Kierkegaard; dismiss=release; no UI attribution; PWA signal scope; voice keys internal only |
+| 2026-05-18 | **Shipped v0** — `witness-weather.js` (generated from blueprint); SUBSTRATE dogfood; absence unwired |
 
 ---
 

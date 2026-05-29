@@ -2501,6 +2501,12 @@ select.cosm-input {
 .witness-process-line.muted { opacity: 0.45; }
 .witness-process-deny .witness-process-line { color: var(--g-accent); opacity: 0.9; }
 .witness-process-footer { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--g-border); }
+.witness-weather-line { font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; color: var(--g-accent); opacity: 0.88; margin-bottom: 14px; line-height: 1.35; }
+.witness-cues-section { margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--g-border); }
+.witness-cue-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.witness-cue-text { font-size: 12px; line-height: 1.55; color: var(--g-text); opacity: 0.72; margin: 0; font-style: italic; }
+.witness-cue-dismiss { align-self: flex-start; background: none; border: 1px solid var(--g-border); color: var(--g-muted); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; padding: 5px 10px; border-radius: 4px; cursor: pointer; opacity: 0.65; }
+.witness-cue-dismiss:active { opacity: 1; color: var(--g-accent); border-color: var(--g-accent-dim, var(--g-border)); }
 .witness-summon-bridge-prompt { width: 100%; max-width: 640px; margin-top: 20px; opacity: 1; transition: opacity 0.4s ease; }
 .witness-summon-bridge-prompt.hidden { display: none; }
 .witness-summon-bridge-line { font-size: 11px; letter-spacing: 1.5px; color: var(--g-muted); opacity: 0.75; margin-bottom: 10px; text-transform: lowercase; }
