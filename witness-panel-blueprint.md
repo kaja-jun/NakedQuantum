@@ -5,7 +5,7 @@
 **Last updated:** 18 May 2026  
 **Status:** Idea blueprint — north star for recursive loop **as experience**  
 **Base (shipped):** W1–W4 in `witness-loop-upgrade-blueprint.md`, `NakedQuantum-quantum-fortress.md`  
-**Pairs with:** `craft-layer-blueprint.md` (WP8 suspension)
+**Pairs with:** `craft-layer-blueprint.md` (WP8 suspension), `witness-weather-blueprint.md` (weather line + post-pass cues)
 
 ---
 
@@ -254,6 +254,7 @@ Kaja direction (under consideration):
 |------|--------|
 | 2026-05-26 | Pinned — Review gate replaces Summon; graceful exhaustion; scoped corpus deferred; strip/worker refs removed |
 | 2026-05-18 | §2.1 SUBSTRATE vs pass; saccade + `[why?]` on SUBSTRATE; §4.1 minimal motion; §10 out of scope (no preview, no mid-pass redirect) |
+| 2026-05-18 | Cross-link `witness-weather-blueprint.md` — weather + cues after Guardian |
 
 ---
 

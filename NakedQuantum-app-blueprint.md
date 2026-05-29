@@ -45,6 +45,7 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 | `guardian-refinement-roadmap-blueprint.md` | Guardian G0–G6, Cartographer C1–C8 — **Track A strip retired** (see RETIRED.md) |
 | `witness-loop-upgrade-blueprint.md` | Synapse loop W1–W6 shipped; **WP1–WP8** witness panel (idea layer) |
 | `witness-panel-blueprint.md` | Thinking surface + **Review gate** (replaces Summon ritual when WP7 ships) |
+| `witness-weather-blueprint.md` | Atmospheric weather + witness cues (`witness-weather.js` — idea layer, post-WP2) |
 | `craft-layer-blueprint.md` | Lighthouse per-discourse writing help — voice brief, witness firewall |
 | `abyss-v021-blueprint.md` | Abyss honest sky (settle, DNA, sanctuary presence, sheet UX) |
 | `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6, deferred) |
@@ -376,6 +377,7 @@ No ads, SEO theatre, or performance marketing.
 | 2026-05-26 | Fortress §18.7 — witness ledger migration / re-anchor ceremony (W4.6 deferred) |
 | 2026-05-26 | §12 Guardian — strip retired; paths updated; fortress §18.8 Meta crosswalk |
 | 2026-05-26 | Pinned **`craft-layer-blueprint.md`**, **`witness-panel-blueprint.md`**; §12 Review north star; §14 Craft idea layer |
+| 2026-05-18 | Pinned **`witness-weather-blueprint.md`** — weather + cues; dismiss=release |
 
 ---
 
