@@ -724,24 +724,33 @@ self.onmessage = async (e) => {
 
     if (action === 'CLEAR_KEY') { encKey = null; self.postMessage({ id, result: 'key_cleared' }); return; }
 
-    // THE FIX: History gets encrypted now too for absolute privacy
-    const isEnc = encKey; 
-    const targetStore = isEnc ? (store + "_enc") : store;
+    // Hash-only witness ledger — always plaintext table (no witness_ledger_chain_enc)
+    function ledgerStore(store, isEnc) {
+      if (store === 'witness_ledger_chain') return store;
+      return isEnc ? (store + '_enc') : store;
+    }
+    function storeUsesEnc(store, isEnc) {
+      return isEnc && store !== 'witness_ledger_chain';
+    }
+
+    const isEnc = encKey;
+    const targetStore = ledgerStore(store, isEnc);
+    const useEnc = storeUsesEnc(store, isEnc);
 
     let result = null;
     if (action === 'GET_ALL') {
       const rows = toObjects(db.exec("SELECT * FROM " + targetStore));
-      if (isEnc) { result = await Promise.all(rows.map(async r => r.enc ? await decryptObj(r.enc) : r)); } 
+      if (useEnc) { result = await Promise.all(rows.map(async r => r.enc ? await decryptObj(r.enc) : r)); }
       else { result = rows; }
     }
     else if (action === 'GET') {
       const res = db.exec("SELECT * FROM " + targetStore + " WHERE id=?", [data.id]);
       const row = res.length ? toObjects(res)[0] : null;
-      if (isEnc && row && row.enc) { result = await decryptObj(row.enc); } 
+      if (useEnc && row && row.enc) { result = await decryptObj(row.enc); }
       else { result = row; }
     }
     else if (action === 'GET_BY_INDEX') {
-      if (isEnc) {
+      if (useEnc) {
         const allRows = toObjects(db.exec("SELECT * FROM " + targetStore));
         const decrypted = await Promise.all(allRows.map(async r => r.enc ? await decryptObj(r.enc) : r));
         result = decrypted.filter(r => r && r[field] === value);
@@ -753,7 +762,7 @@ self.onmessage = async (e) => {
       const obj = { ...data };
       if ('isDeleted' in obj) { obj.is_deleted = obj.isDeleted ? 1 : 0; }
 
-      if (isEnc) {
+      if (useEnc) {
         const enc = await encryptObj(obj);
         db.run("INSERT INTO " + targetStore + "(id, enc) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET enc=excluded.enc", [obj.id, enc]);
       } else {
@@ -8993,6 +9002,7 @@ var WITNESS_WEATHER_CTX_LS = 'nq_witness_weather_ctx';
 var WITNESS_CHAIN_LS_ID = 'nq_witness_chain_id';
 var WITNESS_CHAIN_GENESIS_AT = 'nq_witness_chain_genesis_at';
 var _witnessLedgerStatus = { ok: null, length: 0, breakAt: null, dormant: false, reanchored: false };
+var _witnessLedgerVerifyPromise = null;
 
 function isWitnessSubstrateEnabled() {
   return NQ_WITNESS_FLAGS.enabled !== false;
@@ -9364,13 +9374,13 @@ async function verifyWitnessLedgerChain() {
     for (var i = 0; i < chain.length; i++) {
       var link = chain[i];
       if (link.prev_hash !== expectedPrev) {
-        _witnessLedgerStatus = { ok: false, length: chain.length, breakAt: link.seq, dormant: false, reanchored: false };
+        _witnessLedgerStatus = { ok: false, length: chain.length, breakAt: link.seq, dormant: false, reanchored: false, error: 'prev_hash_mismatch' };
         return _witnessLedgerStatus;
       }
       var linkMsg = link.seq + '|' + link.event_type + '|' + link.event_id + '|' + link.payload_hash + '|' + link.prev_hash;
       var expectedLink = await witnessHmacSha256Hex(linkMsg);
       if (!expectedLink || expectedLink !== link.link_hash) {
-        _witnessLedgerStatus = { ok: false, length: chain.length, breakAt: link.seq, dormant: false, reanchored: false };
+        _witnessLedgerStatus = { ok: false, length: chain.length, breakAt: link.seq, dormant: false, reanchored: false, error: 'link_hash_mismatch' };
         return _witnessLedgerStatus;
       }
       expectedPrev = link.link_hash;
@@ -9379,9 +9389,18 @@ async function verifyWitnessLedgerChain() {
     return _witnessLedgerStatus;
   } catch (eVerify) {
     console.warn('[Witness] ledger verify:', eVerify);
-    _witnessLedgerStatus = { ok: false, length: 0, breakAt: null, dormant: false, reanchored: false };
+    _witnessLedgerStatus = { ok: false, length: 0, breakAt: null, dormant: false, reanchored: false, error: String(eVerify && eVerify.message ? eVerify.message : eVerify) };
     return _witnessLedgerStatus;
   }
+}
+
+function ensureWitnessLedgerVerified(force) {
+  if (!isWitnessLedgerChainEnabled()) return Promise.resolve(_witnessLedgerStatus);
+  if (force) _witnessLedgerVerifyPromise = null;
+  if (!_witnessLedgerVerifyPromise || _witnessLedgerStatus.ok === null) {
+    _witnessLedgerVerifyPromise = verifyWitnessLedgerChain();
+  }
+  return _witnessLedgerVerifyPromise;
 }
 
 function formatWitnessLedgerStatusLine() {
@@ -9392,8 +9411,11 @@ function formatWitnessLedgerStatusLine() {
   if (st.ok === false && st.breakAt) {
     return 'ledger: break at seq ' + st.breakAt + ' — import or manual edit?';
   }
+  if (st.ok === false) {
+    return 'ledger: verify failed — ' + (st.error ? String(st.error).slice(0, 48) : 'retry unlock');
+  }
   if (st.ok) return 'ledger: ' + st.length + ' links · verified';
-  return 'ledger: pending verify';
+  return 'ledger: verifying…';
 }
 
 function computeDenialSediment(bridgeRows) {
@@ -9896,6 +9918,9 @@ async function refreshWitnessSubstrate() {
 async function renderWitnessProcessPanel() {
   var panel = document.getElementById('witness-process-content');
   if (!panel || !isWitnessSubstrateEnabled() || NQ_WITNESS_FLAGS.process_panel === false) return;
+  if (isWitnessLedgerChainEnabled()) {
+    await ensureWitnessLedgerVerified();
+  }
   var syn = getSynapseSnapshot();
   if (!syn) syn = await refreshWitnessSubstrate();
   var bridges = await dbGetAll('bridge_rows');
@@ -11835,7 +11860,7 @@ async function init(){
   } catch (eStripLs) {}
   void runDailyRevisitCheck();
   void refreshEpistemicMoodCache();
-  void verifyWitnessLedgerChain().then(function () { void renderWitnessProcessPanel(); });
+  await ensureWitnessLedgerVerified(true);
   void refreshWitnessSubstrate();
 }
 

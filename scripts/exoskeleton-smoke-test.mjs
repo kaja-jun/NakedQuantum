@@ -59,7 +59,8 @@ assert(appSrc.includes('showWitnessSummonBridgePrompt'), 'inline bridge prompt a
 assert(appSrc.includes('witness_ledger_chain'), 'witness ledger chain table');
 assert(appSrc.includes('appendWitnessLedgerLink'), 'ledger chain append helper');
 assert(appSrc.includes('verifyWitnessLedgerChain'), 'ledger chain verify helper');
-assert(appSrc.includes('dogfoodWitnessWeather'), 'witness weather dogfood hook');
+assert(appSrc.includes('ensureWitnessLedgerVerified'), 'ledger verify awaited before SUBSTRATE');
+assert(appSrc.includes("store === 'witness_ledger_chain'"), 'ledger chain stays plaintext when vault encrypted');
 assert(appSrc.includes('detectResurgentTerms'), 'resurgent term detection');
 
 const wwSrc = readFileSync(join(root, 'witness-weather.js'), 'utf8');
