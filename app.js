@@ -9101,17 +9101,6 @@ function loadWitnessCueRetired() {
   }
 }
 
-function dismissWitnessCue(type, term) {
-  if (typeof WitnessWeather === 'undefined') return;
-  var key = WitnessWeather.cueRetireKey(type, term);
-  var retired = loadWitnessCueRetired();
-  retired[key] = true;
-  try {
-    localStorage.setItem(WITNESS_CUE_RETIRED_LS, JSON.stringify(retired));
-  } catch (eDs) {}
-  void renderWitnessProcessPanel();
-}
-
 function buildWitnessWeatherContext(snap) {
   var prev = {};
   try {
@@ -9141,6 +9130,43 @@ function buildWitnessWeatherContext(snap) {
     } catch (eStore) {}
   }
   return ctx;
+}
+
+function formatWitnessWeatherSubstrateLine(weather, cues, snap, retiredKeys) {
+  var stateText = weather.label || weather.state || 'unknown';
+  if (cues && cues.length) {
+    return 'weather: ' + stateText + ' · cues: ' + cues.length + ' active';
+  }
+  if (weather.state === 'calm') {
+    return 'weather: calm · cues: none — map quiet, no qualifying signals';
+  }
+  if (weather.state === 'drought') {
+    return 'weather: ' + stateText + ' · cues: none — long silence gate';
+  }
+  if (typeof WitnessWeather !== 'undefined') {
+    var candidates = WitnessWeather.buildCandidates(snap);
+    if (!candidates.length) {
+      return 'weather: ' + stateText + ' · cues: none — no orbit, bridge, resurgence, or denial signal';
+    }
+    var allRetired = candidates.every(function (c) {
+      return retiredKeys && retiredKeys[WitnessWeather.cueRetireKey(c.type, c.term)];
+    });
+    if (allRetired) {
+      return 'weather: ' + stateText + ' · cues: none — released signals';
+    }
+  }
+  return 'weather: ' + stateText + ' · cues: none — quiet weather gate';
+}
+
+function dismissWitnessCue(type, term) {
+  if (typeof WitnessWeather === 'undefined') return;
+  var key = WitnessWeather.cueRetireKey(type, term);
+  var retired = loadWitnessCueRetired();
+  retired[key] = true;
+  try {
+    localStorage.setItem(WITNESS_CUE_RETIRED_LS, JSON.stringify(retired));
+  } catch (eDs) {}
+  void renderWitnessProcessPanel();
 }
 
 function formatSynapseAgeRelative(ts) {
@@ -9882,15 +9908,19 @@ async function renderWitnessProcessPanel() {
   if (NQ_WITNESS_FLAGS.weather_cues !== false && typeof WitnessWeather !== 'undefined') {
     var wctx = buildWitnessWeatherContext(syn);
     var weather = WitnessWeather.computeWeatherState(syn, wctx);
+    var retiredKeys = loadWitnessCueRetired();
+    var cues = WitnessWeather.generateWitnessCues(syn, {
+      context: wctx,
+      retiredKeys: retiredKeys
+    });
+    html += '<div class="witness-process-section witness-weather-section"><div class="witness-process-h">Weather</div>';
     if (weather.label) {
       html += '<div class="witness-weather-line">' + escHtml(weather.label) + '</div>';
     }
-    var cues = WitnessWeather.generateWitnessCues(syn, {
-      context: wctx,
-      retiredKeys: loadWitnessCueRetired()
-    });
+    html += '<div class="witness-process-line witness-weather-status muted">' +
+      escHtml(formatWitnessWeatherSubstrateLine(weather, cues, syn, retiredKeys)) + '</div>';
     if (cues.length) {
-      html += '<div class="witness-process-section witness-cues-section"><div class="witness-process-h">Cues</div>';
+      html += '<div class="witness-cues-section-inner">';
       cues.forEach(function (cue) {
         html += '<div class="witness-cue-row">';
         html += '<p class="witness-cue-text">' + escHtml(cue.question_text) + '</p>';
@@ -9900,6 +9930,7 @@ async function renderWitnessProcessPanel() {
       });
       html += '</div>';
     }
+    html += '</div>';
   }
   var cb = syn.corpus_baseline || {};
   html += '<div class="witness-process-section"><div class="witness-process-h">Baseline</div>';
