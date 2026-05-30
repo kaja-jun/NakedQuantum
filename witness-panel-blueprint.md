@@ -62,7 +62,7 @@ Same synapse; different resolution. Do not merge into one widget.
 
 **SUBSTRATE gaps to close (same PR family as WP2 / substrate honesty):**
 
-- **Saccade log** — fixation ids, blind tier, reason (already in blob; not yet in SUBSTRATE render)
+- **Saccade log** — fixation ids, blind tier, reason (already in blob; **SUBSTRATE render shipped** pre-laptop — `[why?]` expandables remain WP2)
 - **`[why?]` expandables** — per scalar, show exact computation (e.g. resistance normalize inputs). Math, not diagnosis copy
 
 Abyss stays phenomenological sky; SUBSTRATE stays instrumental readout. Witness pass may overlay either realm — placement TBD at WP2 — but **does not replace** SUBSTRATE.
@@ -252,6 +252,7 @@ Kaja direction (under consideration):
 
 | Date | Change |
 |------|--------|
+| 2026-05-18 | SUBSTRATE saccade line shipped (`formatSubstrateSaccadeLine`); WP1 threshold engine console-only |
 | 2026-05-26 | Pinned — Review gate replaces Summon; graceful exhaustion; scoped corpus deferred; strip/worker refs removed |
 | 2026-05-18 | §2.1 SUBSTRATE vs pass; saccade + `[why?]` on SUBSTRATE; §4.1 minimal motion; §10 out of scope (no preview, no mid-pass redirect) |
 | 2026-05-18 | Cross-link `witness-weather-blueprint.md` — weather + cues after Guardian |

@@ -6,6 +6,29 @@
  * Loads after app.js — uses global dbGet, getDiscourses, escHtml, buildGeometrySnapshot, etc.
  */
 
+/** Align with cartographer.js STOPWORDS — filter noise from half-life / orbit reads. */
+var WITNESS_CORPUS_STOPWORDS = {
+  the: 1, a: 1, an: 1, is: 1, was: 1, were: 1, be: 1, been: 1, being: 1, have: 1, has: 1, had: 1,
+  do: 1, does: 1, did: 1, will: 1, would: 1, shall: 1, should: 1, may: 1, might: 1, must: 1,
+  can: 1, could: 1, i: 1, me: 1, my: 1, mine: 1, myself: 1, you: 1, your: 1, yours: 1,
+  he: 1, him: 1, his: 1, she: 1, her: 1, hers: 1, it: 1, its: 1, itself: 1,
+  we: 1, us: 1, our: 1, ours: 1, they: 1, them: 1, their: 1, theirs: 1,
+  this: 1, that: 1, these: 1, those: 1, what: 1, which: 1, who: 1, whom: 1,
+  and: 1, but: 1, or: 1, nor: 1, not: 1, so: 1, yet: 1, for: 1, if: 1, to: 1, of: 1, in: 1,
+  on: 1, at: 1, by: 1, from: 1, with: 1, about: 1, into: 1, through: 1, during: 1,
+  after: 1, above: 1, below: 1, between: 1, out: 1, off: 1, over: 1, under: 1,
+  again: 1, further: 1, then: 1, once: 1, here: 1, there: 1, when: 1, where: 1,
+  why: 1, how: 1, all: 1, both: 1, each: 1, few: 1, more: 1, most: 1, other: 1, some: 1,
+  such: 1, only: 1, own: 1, same: 1, than: 1, too: 1, very: 1, just: 1, now: 1,
+  also: 1, even: 1, still: 1, already: 1, always: 1, never: 1, sometimes: 1
+};
+
+function isWitnessCorpusNoiseTerm(term) {
+  var t = String(term || '').toLowerCase().trim();
+  if (t.length < 4) return true;
+  return WITNESS_CORPUS_STOPWORDS[t] === 1;
+}
+
 function computeCorpusTermArcs(discs, fastMapById) {
   var termMap = {};
   var now = Date.now();
@@ -19,7 +42,7 @@ function computeCorpusTermArcs(discs, fastMapById) {
     var terms = parseFastMapKeyTermsList(fm);
     for (var ti = 0; ti < Math.min(6, terms.length); ti++) {
       var term = terms[ti].term.toLowerCase();
-      if (term.length < 3) continue;
+      if (isWitnessCorpusNoiseTerm(term)) continue;
       if (!termMap[term]) termMap[term] = { appearances: [], registers: {} };
       var orbitCount = terms[ti].count || 0;
       if (d.raw_text && orbitCount < 2) {
@@ -290,6 +313,7 @@ async function loadWitnessCorpusMaps() {
 function detectPerpetualOrbitTerms(arcsMap) {
   var out = [];
   Object.keys(arcsMap || {}).forEach(function (term) {
+    if (isWitnessCorpusNoiseTerm(term)) return;
     var arc = arcsMap[term];
     if (!arc || arc.appearances.length < 3) return;
     if (arc.register_shift) return;
@@ -308,6 +332,7 @@ function computeTermHalfLife(arcsMap) {
   var lambda = 0.05;
   var terms = {};
   Object.keys(arcsMap || {}).forEach(function (term) {
+    if (isWitnessCorpusNoiseTerm(term)) return;
     var arc = arcsMap[term];
     if (!arc.appearances.length) return;
     var last = arc.appearances[arc.appearances.length - 1];
@@ -338,13 +363,14 @@ function detectResurgentTerms(arcsMap) {
   var now = Date.now();
   var out = [];
   Object.keys(arcsMap || {}).forEach(function (term) {
+    if (isWitnessCorpusNoiseTerm(term)) return;
     var arc = arcsMap[term];
     if (!arc || !arc.appearances || arc.appearances.length < 2) return;
     var last = arc.appearances[arc.appearances.length - 1];
     var prev = arc.appearances[arc.appearances.length - 2];
     var gapMs = (last.date || now) - (prev.date || now);
     var daysSinceLast = (now - (last.date || now)) / 86400000;
-    if (gapMs >= 14 * 86400000 && daysSinceLast <= 10) out.push(term);
+    if (gapMs >= 14 * 86400000 && daysSinceLast <= 10 && !isWitnessCorpusNoiseTerm(term)) out.push(term);
   });
   return out;
 }
@@ -434,11 +460,23 @@ function formatSynapseAgeRelative(ts) {
   return Math.floor(ms / 86400000) + 'd ago';
 }
 
+function formatSubstrateSaccadeLine(saccade) {
+  if (!saccade) return 'no saccade log — rebuild synapse';
+  var fix = (saccade.fixation_ids || []).map(function (id) { return 'd_' + String(id).slice(-4); });
+  var line = 'fixation: ' + (fix.length ? fix.join(', ') : 'none');
+  if (saccade.blind_spot) {
+    line += ' · blind spot: ' + saccade.blind_spot + ' (' + (saccade.reason || '') + ')';
+  } else {
+    line += ' · blind spot: none';
+  }
+  return line;
+}
+
 function formatHalfLifePanelLines(halfLife) {
   var terms = halfLife && halfLife.terms ? halfLife.terms : {};
   var entries = Object.keys(terms).map(function (t) {
     return { term: t, weight: terms[t].weight != null ? terms[t].weight : 0 };
-  });
+  }).filter(function (e) { return !isWitnessCorpusNoiseTerm(e.term); });
   if (!entries.length) {
     return { top: 'no term weights yet — need mapped discourses with arcs', bottom: 'no decayed orbits yet' };
   }
@@ -736,6 +774,7 @@ function collectWitnessAnomalies(arcsMap, perpetual, bridgeRows) {
   var anomalies = computeDenialSediment(bridgeRows);
   perpetual.forEach(function (t) { anomalies.push('perpetual_orbit:' + t); });
   Object.keys(arcsMap || {}).forEach(function (term) {
+    if (isWitnessCorpusNoiseTerm(term)) return;
     var arc = arcsMap[term];
     if (arc && arc.last_seen_days_ago >= 21 && arc.appearances.length >= 3) {
       anomalies.push('silent_attractor:' + term);
@@ -781,10 +820,11 @@ async function buildSynapseSnapshot() {
   });
   var elaborationDelta = computeElaborationDelta(discs, bridgeRows);
   var anomalies = collectWitnessAnomalies(arcsMap, perpetual, bridgeRows);
+  var prevSyn = null;
   var prevBaseline = null;
   try {
     var prevStored = localStorage.getItem(SYNAPSE_LS);
-    var prevSyn = parseSynapseSnapshot(prevStored);
+    prevSyn = parseSynapseSnapshot(prevStored);
     if (prevSyn && prevSyn.corpus_baseline) prevBaseline = prevSyn.corpus_baseline;
   } catch (ePrev) {}
   var corpusBaseline = mergeCorpusBaseline(prevBaseline, discs.length, lastWriteAt);
@@ -810,10 +850,19 @@ async function buildSynapseSnapshot() {
     local_pass: { invoke_denied: false, graduation_quiet: false, deny_reason: null }
   };
   synapse.local_pass = runLocalPass(synapse, discs, fastMapById);
+  var thresholdResult = runWitnessThresholdEngine(synapse, prevSyn, bridgeRows, arcsMap);
+  synapse.threshold_engine = {
+    picked: thresholdResult.picked ? thresholdResult.picked.id : null,
+    candidates: thresholdResult.candidates.map(function (c) { return c.id; }),
+    queue_len: thresholdResult.queue.length
+  };
   try {
     localStorage.setItem(SYNAPSE_LS, JSON.stringify(synapse));
   } catch (eStore) {}
-  if (NQ_DEV_MODE) console.log('[Witness] synapse', synapse);
+  if (NQ_DEV_MODE) {
+    console.log('[Witness] synapse', synapse);
+    if (thresholdResult.picked) console.log('[Witness] threshold picked', thresholdResult.picked.id, thresholdResult);
+  }
   return synapse;
 }
 
@@ -1235,6 +1284,8 @@ async function renderWitnessProcessPanel() {
     }
     html += '</div>';
   }
+  html += '<div class="witness-process-section"><div class="witness-process-h">Saccade</div>';
+  html += '<div class="witness-process-line">' + escHtml(formatSubstrateSaccadeLine(syn.saccade_log)) + '</div></div>';
   html += '<div class="witness-process-section"><div class="witness-process-h">Bridges</div>';
   if (openN || bridges.length) {
     html += '<div class="witness-process-line">' + openN + ' open · ' + bridges.length + ' total</div>';
@@ -1301,6 +1352,143 @@ async function dogfoodWitnessWeather() {
   return { weather: weather, cues: cues, synapse: syn };
 }
 window.dogfoodWitnessWeather = dogfoodWitnessWeather;
+
+/* ── WP1 threshold engine (console-only — no panel UI yet) ── */
+var WITNESS_THRESHOLD_QUEUE_LS = 'nq_witness_threshold_queue';
+var WITNESS_THRESHOLD_LAST_FIRE_LS = 'nq_witness_threshold_last_fire';
+var WITNESS_THRESHOLD_PRIORITY = [
+  'thin_map',
+  'bridge_relapsed',
+  'denial_sediment',
+  'half_life_resurgence',
+  'resistance_shift',
+  'orbit_deepened',
+  'graduation_quiet'
+];
+
+function witnessThresholdPriorityIndex(id) {
+  var i = WITNESS_THRESHOLD_PRIORITY.indexOf(id);
+  return i === -1 ? 999 : i;
+}
+
+function loadWitnessThresholdQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(WITNESS_THRESHOLD_QUEUE_LS) || '[]');
+  } catch (eQ) {
+    return [];
+  }
+}
+
+function saveWitnessThresholdQueue(queue) {
+  try {
+    localStorage.setItem(WITNESS_THRESHOLD_QUEUE_LS, JSON.stringify(queue));
+  } catch (eSq) {}
+}
+
+function detectWitnessThresholdCandidates(synapse, prevSyn, bridgeRows, arcsMap) {
+  if (!synapse) return [];
+  var out = [];
+  var lp = synapse.local_pass || {};
+  if (lp.invoke_denied) {
+    out.push({ id: 'thin_map', detail: lp.deny_reason || 'thin_map' });
+  }
+  var since = (prevSyn && prevSyn.built_at) || (synapse.built_at - 86400000);
+  (bridgeRows || []).forEach(function (br) {
+    if (br.status === 'relapsed' && (br.closed_at || 0) >= since) {
+      out.push({ id: 'bridge_relapsed', detail: br.closure_reason || 'relapsed', bridge_id: br.id });
+    }
+  });
+  if ((synapse.denial_sediment_terms || []).length) {
+    out.push({
+      id: 'denial_sediment',
+      detail: synapse.denial_sediment_terms.slice(0, 3).join(', ')
+    });
+  }
+  var resurgent = ((synapse.half_life && synapse.half_life.resurgent) || []).filter(function (t) {
+    return !isWitnessCorpusNoiseTerm(t);
+  });
+  if (resurgent.length) {
+    out.push({ id: 'half_life_resurgence', detail: resurgent.slice(0, 3).join(', ') });
+  }
+  var res = (synapse.posture_vector && synapse.posture_vector.resistance) || 0;
+  var prevRes = prevSyn && prevSyn.posture_vector ? prevSyn.posture_vector.resistance : null;
+  if (prevRes == null) {
+    try {
+      var wctx = JSON.parse(localStorage.getItem(WITNESS_WEATHER_CTX_LS) || '{}');
+      if (wctx.resistance != null) prevRes = wctx.resistance;
+    } catch (eW) {}
+  }
+  if (prevRes != null && Math.abs(res - prevRes) >= 0.3) {
+    out.push({ id: 'resistance_shift', detail: 'Δ ' + (res - prevRes).toFixed(2) });
+  }
+  var deepOrbits = [];
+  Object.keys(arcsMap || {}).forEach(function (term) {
+    if (isWitnessCorpusNoiseTerm(term)) return;
+    var arc = arcsMap[term];
+    if (arc && arc.appearances.length >= 5) deepOrbits.push(term);
+  });
+  if (deepOrbits.length) {
+    out.push({ id: 'orbit_deepened', detail: deepOrbits.slice(0, 3).join(', ') });
+  }
+  if (lp.graduation_quiet) {
+    out.push({
+      id: 'graduation_quiet',
+      detail: 'coherence ' + ((synapse.posture_vector && synapse.posture_vector.coherence) || 0)
+    });
+  }
+  return out;
+}
+
+function pickWitnessThreshold(candidates) {
+  if (!candidates.length) return { picked: null, queued: [] };
+  var sorted = candidates.slice().sort(function (a, b) {
+    return witnessThresholdPriorityIndex(a.id) - witnessThresholdPriorityIndex(b.id);
+  });
+  return { picked: sorted[0], queued: sorted.slice(1) };
+}
+
+function runWitnessThresholdEngine(synapse, prevSyn, bridgeRows, arcsMap) {
+  var candidates = detectWitnessThresholdCandidates(synapse, prevSyn, bridgeRows, arcsMap);
+  var pick = pickWitnessThreshold(candidates);
+  var mergedQueue = pick.queued.concat(loadWitnessThresholdQueue().filter(function (q) {
+    return !candidates.some(function (c) { return c.id === q.id; });
+  }));
+  saveWitnessThresholdQueue(mergedQueue.slice(0, 12));
+  if (pick.picked) {
+    try {
+      localStorage.setItem(WITNESS_THRESHOLD_LAST_FIRE_LS, JSON.stringify({
+        id: pick.picked.id,
+        at: Date.now(),
+        detail: pick.picked.detail
+      }));
+    } catch (eLf) {}
+  }
+  return { candidates: candidates, picked: pick.picked, queue: mergedQueue.slice(0, 12) };
+}
+
+async function dogfoodWitnessThresholds() {
+  var syn = getSynapseSnapshot();
+  if (!syn) syn = await refreshWitnessSubstrate();
+  if (!syn) return null;
+  var corpus = await loadWitnessCorpusMaps();
+  var arcsMap = computeCorpusTermArcs(corpus.discs, corpus.fastMapById);
+  var bridgeRows = await dbGetAll('bridge_rows');
+  var live = runWitnessThresholdEngine(syn, null, bridgeRows, arcsMap);
+  var lastFire = null;
+  try {
+    lastFire = JSON.parse(localStorage.getItem(WITNESS_THRESHOLD_LAST_FIRE_LS) || 'null');
+  } catch (eLf) {}
+  var out = {
+    synapse_built_at: syn.built_at,
+    stored: syn.threshold_engine || null,
+    live: live,
+    queue: loadWitnessThresholdQueue(),
+    last_fire: lastFire
+  };
+  console.log('[Witness] thresholds', out);
+  return out;
+}
+window.dogfoodWitnessThresholds = dogfoodWitnessThresholds;
 
 var _witnessDetailLog = null;
 var _witnessSummonLog = null;

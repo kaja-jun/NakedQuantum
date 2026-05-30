@@ -47,6 +47,8 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 | `witness-panel-blueprint.md` | Thinking surface + **Review gate** (replaces Summon ritual when WP7 ships) |
 | `witness-weather-blueprint.md` | Atmospheric weather + witness cues (`witness-weather.js` — idea layer, post-WP2) |
 | **`app-architecture-split-blueprint.md`** | Phased `app.js` extraction S0–S6 (`witness-synapse.js` S1 shipped) |
+| **`desktop-vessel-blueprint.md`** | Tauri + Ollama power surface — pre-laptop gate |
+| **`Kaja-cursor.md`** | Co-creator handoff — how Kaja + Cursor work (any new thread) |
 | `craft-layer-blueprint.md` | Lighthouse per-discourse writing help — voice brief, witness firewall |
 | `abyss-v021-blueprint.md` | Abyss honest sky (settle, DNA, sanctuary presence, sheet UX) |
 | `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6, deferred) |
@@ -79,7 +81,7 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 - **Witness weather:** `witness-weather.js` — atmospheric cues (S0).
 - **NLP / fast maps:** `cartographer.js` ES module (`CARTO_VERSION = 5`).
 - **Styles:** `app.css` (~2.6k lines).
-- **Offline:** `sw.js` cache `nq-v19`; network-first for `app.js` / `app.css`.
+- **Offline:** `sw.js` cache `nq-v20`; network-first for `app.js` / `app.css`.
 - **Guardian summon:** BYOK OpenRouter only (auto-invoke strip worker retired — `workers/guardian-invoke/RETIRED.md`).
 
 ### 4.2 Storage

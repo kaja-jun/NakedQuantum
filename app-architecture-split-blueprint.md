@@ -108,12 +108,12 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ## 6. Before laptop (companion work — not split)
 
-| Item | Blueprint |
-|------|-----------|
-| Half-life stopword filter | witness-loop / SUBSTRATE honesty |
-| SUBSTRATE saccade line | witness-panel WP2 subset |
-| Desktop vessel | `desktop-vessel-blueprint.md` (TBD pin) |
-| WP1 threshold engine | console-only, no panel UI |
+| Item | Blueprint | Status |
+|------|-----------|--------|
+| Half-life stopword filter | witness-loop / SUBSTRATE honesty | ☑ `isWitnessCorpusNoiseTerm` in `witness-synapse.js` |
+| SUBSTRATE saccade line | witness-panel WP2 subset | ☑ `formatSubstrateSaccadeLine` in SUBSTRATE render |
+| Desktop vessel | `desktop-vessel-blueprint.md` | ☑ pinned |
+| WP1 threshold engine | console-only, no panel UI | ☑ `dogfoodWitnessThresholds()` |
 
 ---
 
@@ -123,6 +123,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 |------|-------|-------|
 | 2026-05-18 | **Blueprint pinned** | S0–S6 map; S1 load-order contract |
 | 2026-05-18 | **S1** | `witness-synapse.js` — corpus arcs, synapse, ledger, bridges, SUBSTRATE, wire tiers; cache `nq-v19` |
+| 2026-05-18 | **Pre-laptop backlog** | Stopword filter, SUBSTRATE saccade, WP1 console thresholds, `desktop-vessel-blueprint.md`; cache `nq-v20` |
 
 ---
 
