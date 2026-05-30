@@ -34,6 +34,7 @@ assert(negMap && negMap.word_count >= 35, 'negation sample has enough words');
 // Read app.js + witness-synapse.js for function presence (not executing browser app)
 const appSrc = readFileSync(join(root, 'app.js'), 'utf8');
 const synSrc = readFileSync(join(root, 'witness-synapse.js'), 'utf8');
+const abyssSrc = readFileSync(join(root, 'abyss.js'), 'utf8');
 const indexHtml = readFileSync(join(root, 'index.html'), 'utf8');
 const wiring = [
   ['computeReturnDetections', synSrc],
@@ -47,11 +48,16 @@ const wiring = [
   ['discourseHasPersistentOrbit', appSrc],
   ['buildGuardianDirectiveRoot', appSrc],
   ['GUARDIAN_LEDGER_RECKONING_INSTRUCTION', appSrc],
-  ['refreshAbyssActiveTint', appSrc],
+  ['refreshAbyssActiveTint', abyssSrc],
+  ['openAbyssView', abyssSrc],
+  ['abyssStop', abyssSrc],
   ['buildWitnessLedgerCompactBlock', appSrc]
 ];
 for (const [name, src] of wiring) {
-  assert(src.includes(name), (src === synSrc ? 'witness-synapse.js' : 'app.js') + ' contains ' + name);
+  var label = 'app.js';
+  if (src === synSrc) label = 'witness-synapse.js';
+  else if (src === abyssSrc) label = 'abyss.js';
+  assert(src.includes(name), label + ' contains ' + name);
 }
 
 assert(appSrc.includes('ALTER TABLE guardian_logs ADD COLUMN prediction_tag'), 'prediction_tag migration');
@@ -69,6 +75,8 @@ assert(synSrc.includes('formatSubstrateSaccadeLine'), 'SUBSTRATE saccade line');
 assert(synSrc.includes('runWitnessThresholdEngine'), 'WP1 threshold engine');
 assert(synSrc.includes('dogfoodWitnessThresholds'), 'WP1 console dogfood hook');
 assert(indexHtml.includes('witness-synapse.js'), 'index.html loads witness-synapse.js');
+assert(indexHtml.includes('abyss.js'), 'index.html loads abyss.js');
+assert(!appSrc.includes('function openAbyssView'), 'openAbyssView extracted from app.js');
 
 const wwSrc = readFileSync(join(root, 'witness-weather.js'), 'utf8');
 const wwSandbox = { WitnessWeather: null };

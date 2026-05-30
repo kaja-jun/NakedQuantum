@@ -2,9 +2,9 @@
 
 *Phased extraction of `app.js` into native ES modules / standalone scripts — zero npm, no bundler.*
 
-**Last updated:** 18 May 2026  
-**Status:** Active contract — S1 shipped  
-**Base:** ~10.6k lines `app.js` + ~1.3k `witness-synapse.js` · PWA iPhone-first · Tauri later (same files, thicker shell)
+**Last updated:** 30 May 2026  
+**Status:** Active contract — S2 shipped  
+**Base:** ~8.8k lines `app.js` + ~1.3k `witness-synapse.js` + ~1.8k `abyss.js` · PWA iPhone-first · Tauri later (same files, thicker shell)
 
 ---
 
@@ -46,7 +46,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 |-------|------|-------|--------|--------|
 | **S0** | `witness-weather.js` | Weather + cues matrix | 600 | ☑ shipped |
 | **S1** | `witness-synapse.js` | Synapse, SUBSTRATE, ledger, bridges, wire tiers, weather UI hooks | ~1.3k | ☑ shipped |
-| **S2** | `abyss.js` | Canvas engine + interaction | ~3.5k | ☐ |
+| **S2** | `abyss.js` | Canvas engine + interaction | ~1.8k | ☑ shipped |
 | **S3** | `guardian.js` | Summon, logs, archive assembly, settings | ~2k | ☐ |
 | **S4** | `watcher.js` | Embeddings shadow queue + LED strip | ~1.5k | ☐ |
 | **S5** | `nq-crypto.js` | Sovereign key, WebAuthn helpers, secure storage | ~400 | ☐ |
@@ -96,9 +96,42 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ---
 
-## 5. Future phases (sketch)
+## 5. S2 — `abyss.js` (detail)
 
-**S2 abyss.js** — `#abyss-canvas` only; export `initAbyss()`, `refreshAbyssTint()`.
+### 5.1 Includes
+
+- Canvas loop: `abyssTick`, `abyssUpdate`, `abyssDraw`, settle physics
+- Object build: `buildAbyssObjects`, DNA/weather/hash helpers
+- Interaction: touch/mouse, sheet, tooltip, thread sheet
+- Entry: `openAbyssView()`; lifecycle: `abyssStop()`, `abyssCloseSheet()`
+- Tint (display): `refreshAbyssActiveTint`, `normalizeAbyssTintDirective`, `abyssDotMatchesActiveTint`, `abyssTintRgb`
+
+### 5.2 Stays in `app.js` (S2)
+
+- Realm routing: `showPanel` calls `abyssStop()` / `abyssCloseSheet()`; `btn-abyss-back` wiring
+- `soupSurfaceBoost`, `watcherFocusActive`, `getWatcherSimilarityThreshold()` — relocated near Watcher block (Soup/S4 boundary)
+- `deriveAbyssTintDirective()` — Guardian directive derivation (S3)
+- `parseFastMapKeyTermStrings()` — shared fast-map helper
+
+### 5.3 Load order (`index.html`)
+
+```html
+<script src="witness-weather.js?v=…"></script>
+<script src="app.js?v=…"></script>
+<script src="witness-synapse.js?v=…"></script>
+<script src="abyss.js?v=…"></script>
+```
+
+### 5.4 Acceptance
+
+- [x] `node --check abyss.js app.js`
+- [x] `node scripts/exoskeleton-smoke-test.mjs` passes
+- [ ] Abyss open / sheet / back unchanged in dogfood (User Zero)
+- [ ] Guardian directive tint on disc-dots unchanged after witness field log (User Zero)
+
+---
+
+## 6. Future phases (sketch)
 
 **S3 guardian.js** — `#view-guardian`; depends on `NQWitness.*` for synapse/ledger.
 
@@ -106,7 +139,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ---
 
-## 6. Before laptop (companion work — not split)
+## 7. Before laptop (companion work — not split)
 
 | Item | Blueprint | Status |
 |------|-----------|--------|
@@ -117,13 +150,14 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ---
 
-## 7. Shipped log
+## 8. Shipped log
 
 | Date | Phase | Notes |
 |------|-------|-------|
 | 2026-05-18 | **Blueprint pinned** | S0–S6 map; S1 load-order contract |
 | 2026-05-18 | **S1** | `witness-synapse.js` — corpus arcs, synapse, ledger, bridges, SUBSTRATE, wire tiers; cache `nq-v19` |
 | 2026-05-18 | **Pre-laptop backlog** | Stopword filter, SUBSTRATE saccade, WP1 console thresholds, `desktop-vessel-blueprint.md`; cache `nq-v20` |
+| 2026-05-30 | **S2** | `abyss.js` — canvas engine, interaction, active tint; Soup/Watcher vars relocated in shell; cache `nq-v21` |
 
 ---
 
