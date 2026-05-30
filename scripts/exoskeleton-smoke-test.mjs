@@ -64,6 +64,10 @@ assert(synSrc.includes('verifyWitnessLedgerChain'), 'ledger chain verify helper'
 assert(synSrc.includes('ensureWitnessLedgerVerified'), 'ledger verify awaited before SUBSTRATE');
 assert(appSrc.includes("store === 'witness_ledger_chain'"), 'ledger chain stays plaintext when vault encrypted');
 assert(synSrc.includes('detectResurgentTerms'), 'resurgent term detection');
+assert(synSrc.includes('isWitnessCorpusNoiseTerm'), 'half-life stopword filter');
+assert(synSrc.includes('formatSubstrateSaccadeLine'), 'SUBSTRATE saccade line');
+assert(synSrc.includes('runWitnessThresholdEngine'), 'WP1 threshold engine');
+assert(synSrc.includes('dogfoodWitnessThresholds'), 'WP1 console dogfood hook');
 assert(indexHtml.includes('witness-synapse.js'), 'index.html loads witness-synapse.js');
 
 const wwSrc = readFileSync(join(root, 'witness-weather.js'), 'utf8');

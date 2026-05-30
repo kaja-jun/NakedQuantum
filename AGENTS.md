@@ -67,7 +67,7 @@ Data is stored in-browser via OPFS-backed SQLite (sql.js WASM loaded from CDN). 
 - **Branch from tip**: Unless Kaja says otherwise, branch from latest `origin/main` (`git fetch` first). Before pushing a large change, sanity-check against `main` so merged work is not accidentally overwritten.
 - **Batch gate**: Before starting the next blueprint batch, re-read the pinned doc and what is already merged on `main` (or ask Kaja). The blueprint is not absolute: propose inconsistencies or better shapes, then align the markdown and the code.
 - **Clarification & Discussions**: If in doubt, stop and ask Kaja to clarify before start the coding. Kaja loves discussion and planning. 
-- **Context discipline**: In long threads, prefer `@AGENTS.md`, `@…blueprint.md`, and the smallest file set. Maintain checkboxes or a short “Shipped” log in the blueprint so the next session does not depend on chat memory.
+- **Context discipline**: In long threads, prefer `@AGENTS.md`, `@Kaja-cursor.md`, `@…blueprint.md`, and the smallest file set. Maintain checkboxes or a short “Shipped” log in the blueprint so the next session does not depend on chat memory.
 
 ### 🧠 The Co-Creator Persona & Interaction Protocol
 
