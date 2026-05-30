@@ -2,7 +2,7 @@
 
 *Living map for Kaja + co-creator agents. Supersedes **Full App Blueprint v1** (30 April 2026).*
 
-**Last updated:** 26 May 2026  
+**Last updated:** 30 May 2026  
 **Built for:** One human at a time — iPhone-first PWA, zero npm, sovereign local-first.
 
 ---
@@ -12,9 +12,9 @@
 | When | Read |
 |------|------|
 | New feature / realm design | §1 vision, §3 realms, §6–§12 features |
-| Before coding | Pinned sub-blueprint if one exists (§2 index) |
-| Agent handoff | §15 **Shipped log** + `NakedQuantum-checkpoint-2026-05.md` §7 queue |
-| Production ship | `NakedQuantum-checkpoint-2026-05.md` §5 P0 (`NQ_DEV_MODE`, worker deploy, thresholds) |
+| Before coding | Pinned sub-blueprint if one exists (§2 index — **Status** column) |
+| Agent handoff | §15 **Shipped log** + **`witness-loop-upgrade-blueprint.md`** (active build contract) |
+| Production ship | `NakedQuantum-quantum-fortress.md` §18 + `NQ_DEV_MODE` / threshold checklist (historical P0 notes in `NakedQuantum-checkpoint-2026-05.md` §5) |
 
 **Rules (unchanged):** accurate over comfortable, Sanctuary blind to Trio (Watcher / Cartographer / Guardian), blueprint-first, one batch per PR, no bundler without explicit approval.
 
@@ -36,25 +36,31 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 
 ## 2. Document index (pinned contracts)
 
-| Document | Scope |
-|----------|--------|
-| **`NakedQuantum-app-blueprint.md`** (this file) | Product-wide architecture, realms, data, UI language |
-| **`NakedQuantum-quantum-fortress.md`** | Security pipeline (8 layers + PWA shell); **§18 phased contract**, **§18.7–18.8** migration + Meta crosswalk |
-| `consciousness-exoskeleton-roadmap-blueprint.md` | Vision → three loops → phased exoskeleton (philosophy, not fantasy) |
-| `NakedQuantum-checkpoint-2026-05.md` | Code review base, risks, **what to do next** |
-| `guardian-refinement-roadmap-blueprint.md` | Guardian G0–G6, Cartographer C1–C8 — **Track A strip retired** (see RETIRED.md) |
-| `witness-loop-upgrade-blueprint.md` | Synapse loop W1–W6 shipped; **WP1–WP8** witness panel (idea layer) |
-| `witness-panel-blueprint.md` | Thinking surface + **Review gate** (replaces Summon ritual when WP7 ships) |
-| `witness-weather-blueprint.md` | Atmospheric weather + witness cues (`witness-weather.js` — idea layer, post-WP2) |
-| **`app-architecture-split-blueprint.md`** | Phased `app.js` extraction S0–S6 (`witness-synapse.js` S1 shipped) |
-| **`desktop-vessel-blueprint.md`** | Tauri + Ollama power surface — pre-laptop gate |
-| **`Kaja-cursor.md`** | Co-creator handoff — how Kaja + Cursor work (any new thread) |
-| `craft-layer-blueprint.md` | Lighthouse per-discourse writing help — voice brief, witness firewall |
-| `abyss-v021-blueprint.md` | Abyss honest sky (settle, DNA, sanctuary presence, sheet UX) |
-| `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6, deferred) |
-| `NakedQuantum Roadmap.md` | Historical checklist + monetisation notes |
-| `Watcher implementation.md` | Watcher / embeddings notes |
-| `AGENTS.md` | Agent runbook (dev server, WebAuthn bypass, lint) |
+| Document | Scope | Status |
+|----------|--------|--------|
+| **`NakedQuantum-app-blueprint.md`** (this file) | Product-wide architecture, realms, data, UI language | **ACTIVE** — master map |
+| **`witness-loop-upgrade-blueprint.md`** | Synapse W1–W6; WP1–WP8 register; active build contract | **ACTIVE** |
+| **`desktop-vessel-blueprint.md`** | Tauri + Ollama — pre-laptop gate | **ACTIVE** — not started |
+| **`NakedQuantum-quantum-fortress.md`** | Security pipeline (8 layers + PWA shell); §18 phased contract | **ACTIVE** |
+| **`lighthouse-cockpit-blueprint.md`** | Desktop write column + live marginalia strip (G6) | **PRE-LAPTOP** |
+| **`NakedQuantum-intention-blueprint.md`** | Why + philosophy; what the app must never become | **PERMANENT** |
+| **`consciousness-exoskeleton-roadmap-blueprint.md`** | Vision → three loops; Ph 0–3 shipped | **VISION ANCHOR** — loops shipped |
+| **`witness-panel-blueprint.md`** | Thinking surface + **Review gate** (WP7 north star) | **IDEA LAYER** |
+| **`craft-layer-blueprint.md`** | Lighthouse per-discourse writing help; witness firewall | **IDEA LAYER** — gated |
+| **`witness-weather-blueprint.md`** | Weather states + 250-question cues matrix | **SHIPPED** — §3–§6 authoritative |
+| **`app-architecture-split-blueprint.md`** | Phased `app.js` extraction S0–S6 | **SHIPPED** — May 2026 |
+| **`abyss-v021-blueprint.md`** | Abyss honest sky (settle, DNA, sanctuary presence) | **SHIPPED** — code in `abyss.js` |
+| **`guardian-refinement-roadmap-blueprint.md`** | Guardian G0–G6, Cartographer C1–C8 (strip retired) | **ARCHAEOLOGY** — superseded by witness loop |
+| **`NakedQuantum-checkpoint-2026-05.md`** | May 2026 code-review snapshot (PR #33 base) | **ARCHAEOLOGY** — do not use for next work |
+| **`Kaja-cursor.md`** | Co-creator handoff — how Kaja + Cursor work | **AGENT RUNBOOK** |
+| **`AGENTS.md`** | Dev server, WebAuthn bypass, lint, collaboration rules | **AGENT RUNBOOK** |
+| `NakedQuantum-Roadmap.md` | April 2026 checklist + monetisation notes | **ARCHAEOLOGY** |
+| `Watcher-implementation-ordeal.md` | Watcher / Safari worker build journal | **JOURNAL** — not a contract |
+| `NakedQuantum-story.md` | Origin narrative | **PERSONAL** |
+| `NakedQuantum-journal.md` | Builder journal | **PERSONAL** |
+| `workers/guardian-invoke/RETIRED.md` | Auto-invoke strip retirement note | **ARCHAEOLOGY** |
+
+**Routing (agents):** pick **one ACTIVE** contract for the batch; use **SHIPPED** / **ARCHAEOLOGY** docs only for history, creative assets, or security cross-ref — not as the build queue.
 
 When a sub-blueprint and this file disagree, **update both** or spell the delta in the PR — not only in chat.
 
@@ -75,13 +81,20 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 
 ### 4.1 Deployment & runtime
 
-- **PWA** on Cloudflare Pages (**interim shell** — **Tauri desktop** is the next vessel; see `lighthouse-cockpit-blueprint.md`). **No build step**, no `package.json` dependencies.
+- **PWA** on Cloudflare Pages (**interim shell** — **Tauri desktop** is the next vessel; see `desktop-vessel-blueprint.md`). **No build step**, no `package.json` dependencies.
 - **Shell:** `index.html` (markup only).
-- **Logic:** `app.js` (~10.6k lines) — DB worker, realms, sync, crypto hooks; **`witness-synapse.js`** (~1.3k) — synapse, SUBSTRATE, ledger, bridges, tier-4 wire (S1).
+- **Logic (split modules, load order):**
+  - `app.js` (~6.2k) — realms, routing, init, sync hooks, cosm CRUD callers
+  - `nq-db.js` (~285) — OPFS SQLite worker blob + `dbPut`/`dbGet` bridge
+  - `nq-crypto.js` (~470) — sovereign key, WebAuthn PRF, `bootApp`, cloud crypto
+  - `witness-synapse.js` (~1.3k) — synapse, SUBSTRATE, ledger, bridges, tier-4 wire
+  - `abyss.js` (~1.8k) — canvas engine + interaction
+  - `watcher.js` (~530) — embeddings queue, LED strip, similarity pass
+  - `guardian.js` (~1.35k) — summon, archive, logs, directives, settings
 - **Witness weather:** `witness-weather.js` — atmospheric cues (S0).
 - **NLP / fast maps:** `cartographer.js` ES module (`CARTO_VERSION = 5`).
 - **Styles:** `app.css` (~2.6k lines).
-- **Offline:** `sw.js` cache `nq-v20`; network-first for `app.js` / `app.css`.
+- **Offline:** `sw.js` cache `nq-v25`; network-first for `app.js` / `app.css`.
 - **Guardian summon:** BYOK OpenRouter only (auto-invoke strip worker retired — `workers/guardian-invoke/RETIRED.md`).
 
 ### 4.2 Storage
@@ -106,7 +119,7 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 
 ### 4.4 Dev vs production knobs
 
-Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): WebAuthn bypass paths, Watcher similarity ~0.50, Guardian cooldown ~6 min, fake strip surface. **Do not ship to strangers until P0 checklist** in `nq-review-checkpoint-2026-05.md`.
+Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): WebAuthn bypass paths, Watcher similarity ~0.50, Guardian cooldown ~6 min. **Do not ship to strangers until production thresholds are hardened** — see `NakedQuantum-quantum-fortress.md` §18 and historical P0 notes in `NakedQuantum-checkpoint-2026-05.md` §5.
 
 ---
 
@@ -197,7 +210,7 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 
 ## 12. Guardian
 
-*See `guardian-refinement-roadmap-blueprint.md` for historical batch detail. **Auto-invoke strip retired May 2026.** North star: **`witness-panel-blueprint.md`** — loop first, **Review** after the pass (not Summon ritual).*
+*Active contract: `witness-loop-upgrade-blueprint.md`. Historical batch detail: `guardian-refinement-roadmap-blueprint.md` (archaeology). **Auto-invoke strip retired May 2026.** North star: **`witness-panel-blueprint.md`** — loop first, **Review** after the pass (not Summon ritual).*
 
 ### Paths (interim on `main`)
 
@@ -283,7 +296,8 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 | Auto-invoke strip (A1–A3) | ⛔ retired | witness loop replaces strip |
 | Custom glyphs | ⏳ | Kaja art pass |
 | Onboarding `?` blueprint | ⏳ | |
-| `app.js` module split / Tauri | ⏳ | ARCH / G6 |
+| `app.js` module split S0–S6 | ✅ | May 2026 — see `app-architecture-split-blueprint.md`; cache `nq-v25` |
+| Tauri desktop vessel | ⏳ | `desktop-vessel-blueprint.md` — pre-laptop gate |
 
 *Tick sub-blueprints when merging batches — this table is the executive summary.*
 
@@ -382,7 +396,8 @@ No ads, SEO theatre, or performance marketing.
 | 2026-05-26 | §12 Guardian — strip retired; paths updated; fortress §18.8 Meta crosswalk |
 | 2026-05-26 | Pinned **`craft-layer-blueprint.md`**, **`witness-panel-blueprint.md`**; §12 Review north star; §14 Craft idea layer |
 | 2026-05-18 | Pinned **`witness-weather-blueprint.md`** — weather + cues; dismiss=release |
+| 2026-05-30 | **S0–S6 module split shipped** — `nq-db.js`, `nq-crypto.js`, `abyss.js`, `watcher.js`, `guardian.js`; §2 Status index; §4.1 module map |
 
 ---
 
-*Build to this map and NakedQuantum stays true to its compass. For the next coding batch, start with `nq-review-checkpoint-2026-05.md` §7, then the relevant pinned blueprint.*
+*Build to this map and NakedQuantum stays true to its compass. For the next coding batch, start with **`witness-loop-upgrade-blueprint.md`**, then the relevant pinned blueprint (§2 Status).*

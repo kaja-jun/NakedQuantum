@@ -1,6 +1,9 @@
 # NakedQuantum — Code Review Checkpoint (May 2026)
 
-> **Purpose:** Single base document after the Cartographer v0.5 + Guardian G1–G5 push. Use it before the next batch to decide **what to do**, **what not to do**, and **how to work**.
+> **Status:** **ARCHAEOLOGY** — historical snapshot frozen at PR #33 (May 2026). **Do not use §7 as next-work queue.**  
+> **Active build contract:** `witness-loop-upgrade-blueprint.md` · **Master routing:** `NakedQuantum-app-blueprint.md` §2.
+>
+> **Purpose:** Single base document after the Cartographer v0.5 + Guardian G1–G5 push. Preserved for P0 risk notes (§5) and architecture context (§3).
 >
 > **Read with:** `consciousness-exoskeleton-roadmap-blueprint.md`, `guardian-refinement-roadmap-blueprint.md`, `AGENTS.md`, `lighthouse-cockpit-blueprint.md`.
 
