@@ -1,10 +1,10 @@
 # Abyss v0.21 — Blueprint (pinned)
 
-> **Canonical contract** for fixing the Abyss “honest sky” without becoming a 3D mind-graph product.
+> **Status:** **SHIPPED** — Batch 1+2 merged (PRs #36–#38). Implementation lives in **`abyss.js`** (extracted S2).  
+> **Historical contract** — layout, DNA, sanctuary presence, sheet UX. AB2 (3D/UMAP) deferred to laptop.  
+> **Read with:** `app-architecture-split-blueprint.md`, `AGENTS.md`
 >
-> **Read with:** `guardian-refinement-roadmap-blueprint.md` (§9 AB track), `nq-review-checkpoint-2026-05.md`, `AGENTS.md`
->
-> **Supersedes:** draft `abyss-v0.20` discussion doc. **Two batches** — ship Batch 1, tick + date, re-read this file, then Batch 2.
+> **Supersedes:** draft `abyss-v0.20` discussion doc. **Two batches** — both shipped; log preserved below.
 
 ---
 
@@ -16,7 +16,7 @@
 | **Blueprint first** | If implementation diverges, update **this file** (or PR delta), not only chat. |
 | **Zero new npm** | Layout uses existing Watcher vectors + forces. No UMAP/t-SNE in-browser. |
 | **Sanctuary blind to Trio** | Watcher, Cartographer, Guardian never read Sanctuary content. Abyss may show **presence only**. |
-| **Files touched** | Primarily `app.js` (Abyss engine ~5814+). `index.html` / `app.css` only if AB1 copy needs a host. |
+| **Files touched** | Primarily **`abyss.js`** (Abyss engine — S2 split). `index.html` / `app.css` only if copy needs a host. |
 
 ---
 

@@ -2,7 +2,7 @@
 
 *Pin before Tauri + Ollama work. One vault, two envelopes.*
 
-**Last updated:** 18 May 2026  
+**Last updated:** 30 May 2026  
 **Status:** Active contract — **not started** (pre-laptop gate)  
 **Pairs with:** `lighthouse-cockpit-blueprint.md`, `app-architecture-split-blueprint.md`, `NakedQuantum-intention-blueprint.md` §9
 
@@ -45,13 +45,12 @@ The **PWA stays the reliability surface**; **Tauri desktop** is the power surfac
 
 | Item | Status |
 |------|--------|
-| `app.js` module split S0–S1 | ☑ `witness-weather.js`, `witness-synapse.js` |
-| S2–S6 split (`abyss`, `guardian`, `watcher`, crypto, db) | ☐ phased on `app-architecture-split-blueprint.md` |
+| `app.js` module split S0–S6 | ☑ May 2026 — see `app-architecture-split-blueprint.md`; cache `nq-v25` |
 | WP1 threshold engine | ☑ console-only (`dogfoodWitnessThresholds`) |
 | WP2+ witness panel UI | ☐ after laptop |
 | Summon → Review migration | ☐ WP7 — not before panel dogfood |
 
-**Gate:** finish **S2–S4 split** (or agreed subset) so Tauri wraps files, not a 10k monolith.
+**Gate:** module split complete — Tauri wraps the split files, not a monolith.
 
 ---
 
@@ -61,7 +60,7 @@ The **PWA stays the reliability surface**; **Tauri desktop** is the power surfac
 |-------|--------|-------|
 | Shell | **Tauri 2** | Native webview; same `index.html` entry |
 | Bundler | **Vite** (dev only) | Build step acceptable **only** for desktop envelope — PWA on Pages stays zero-build |
-| Assets | Copy from repo root | `app.js`, `witness-synapse.js`, `cartographer.js`, `app.css`, `sw.js` optional offline |
+| Assets | Copy from repo root | `app.js`, `nq-db.js`, `nq-crypto.js`, `witness-synapse.js`, `abyss.js`, `watcher.js`, `guardian.js`, `cartographer.js`, `app.css`, `sw.js` optional offline |
 | DB | OPFS or Tauri fs path to `nq.db` | Same sql.js WASM; migration story documented before ship |
 | Ollama | Localhost sidecar | Guardian prose channel; synapse/threshold still local-first |
 
@@ -80,6 +79,7 @@ Nothing in the desktop shell reads Sanctuary chat, Forge, or Memory Vault conten
 | Date | Item | Notes |
 |------|------|-------|
 | 2026-05-18 | **Blueprint pinned** | Pre-laptop contract; links cockpit + split + intention §9 |
+| 2026-05-30 | **§3 readiness** | S0–S6 split shipped; gate cleared for Tauri init when Kaja gates |
 
 ---
 

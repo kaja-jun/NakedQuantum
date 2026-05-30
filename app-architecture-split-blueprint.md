@@ -3,7 +3,8 @@
 *Phased extraction of `app.js` into native ES modules / standalone scripts — zero npm, no bundler.*
 
 **Last updated:** 30 May 2026  
-**Status:** Active contract — S6 shipped (split complete)  
+**Status:** **SHIPPED** — S0–S6 complete (May 2026). Historical contract + shipped log.  
+**Do not use for next work** — active build queue: `witness-loop-upgrade-blueprint.md`.  
 **Base:** ~6.2k lines `app.js` + split modules · PWA iPhone-first · Tauri later (same files, thicker shell)
 
 ---

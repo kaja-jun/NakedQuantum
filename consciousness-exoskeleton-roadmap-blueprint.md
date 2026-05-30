@@ -2,9 +2,12 @@
 
 > **Vision:** *An obsessive, meta-meta-cognitive consciousness exoskeleton. Is such a thing even possible?* — Yes, as **practice** sustained by code, not as a shipped “conscious AI product.”
 >
-> **Read with:** `NakedQuantum-app-blueprint.md`, `guardian-refinement-roadmap-blueprint.md`, `NakedQuantum-checkpoint-2026-05.md`, `AGENTS.md`
+> **Read with:** `NakedQuantum-app-blueprint.md`, `NakedQuantum-intention-blueprint.md`, `AGENTS.md`
 >
-> **This doc:** Where we move next — **philosophy-aligned, incrementally provable.** No somatic APIs, no npm, no fantasy features until prior loops close.
+> **Status:** **VISION ANCHOR** — Loops 1–3 and Phases 0–3 **all shipped** (see §10 shipped log).  
+> **Living sections:** §4 fantasy guardrails, §11 revision log.  
+> **Not the active build contract** — use `witness-loop-upgrade-blueprint.md` for next batches.  
+> **This doc:** Where the vision came from — **philosophy-aligned, incrementally provable.** No somatic APIs, no npm, no fantasy features until prior loops close.
 
 **Last updated:** 20 May 2026
 

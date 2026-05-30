@@ -3,8 +3,10 @@
 *Architecture and content for `witness-weather.js` — atmospheric state + witness cue matrix.*
 
 **Last updated:** 18 May 2026  
-**Status:** Blueprint — discuss then implement  
-**File:** `witness-weather.js` (new, standalone, pure utility)  
+**Status:** **SHIPPED** — `witness-weather.js` live as of May 2026.  
+**Creative content (§3–§6):** authoritative question bank (weather states, voice buckets, cues matrix).  
+**Implementation detail (§7–§9):** historical reference only.  
+**File:** `witness-weather.js` (standalone, pure utility)  
 **Depends on:** `buildSynapseSnapshot()` output from `app.js`  
 **Pairs with:** `witness-panel-blueprint.md` (weather = first line; cues = after Guardian)  
 **Detachable:** yes — delete file + remove two function calls = clean removal

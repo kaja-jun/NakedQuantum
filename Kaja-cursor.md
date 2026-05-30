@@ -2,7 +2,7 @@
 
 *Read this at the start of **any new chat thread** alongside `@AGENTS.md` and the relevant `*-blueprint.md`. This file holds **how we work** — not feature specs (those live in blueprints).*
 
-**Last updated:** 18 May 2026
+**Last updated:** 30 May 2026
 
 ---
 
@@ -55,14 +55,20 @@ Full vision: `NakedQuantum-app-blueprint.md` §1, `consciousness-exoskeleton-roa
 | File | Role |
 |------|------|
 | `index.html` | Markup shell only |
-| `app.js` | ~10.6k — DB worker, realms, init, Guardian summon |
-| `witness-synapse.js` | ~1.4k — synapse, SUBSTRATE, ledger, bridges, wire, WP1 thresholds (console) |
+| `app.js` | ~6.2k — realms, routing, init, sync hooks |
+| `nq-db.js` | OPFS SQLite worker + db bridge |
+| `nq-crypto.js` | Sovereign key, WebAuthn, bootApp |
+| `witness-synapse.js` | ~1.3k — synapse, SUBSTRATE, ledger, bridges, wire |
+| `abyss.js` | Canvas engine + interaction |
+| `watcher.js` | Embeddings queue, LED strip |
+| `guardian.js` | Summon, archive, logs, directives |
 | `witness-weather.js` | Weather + cues matrix |
 | `cartographer.js` | ES module NLP / fast maps |
 | `app.css` | Styles |
-| `sw.js` | PWA cache (bump `nq-v*` with material changes) |
+| `sw.js` | PWA cache (bump `nq-v*` with material changes — currently `nq-v25`) |
 
-**Split roadmap:** `app-architecture-split-blueprint.md` (S0–S6).  
+**Active build contract:** `witness-loop-upgrade-blueprint.md` (W5–W6 pending; WP1–WP8 gated).  
+**Split (shipped):** `app-architecture-split-blueprint.md` (S0–S6 complete).  
 **Witness panel target:** `witness-panel-blueprint.md` (Review gate replaces Summon ritual at WP7).  
 **Desktop next:** `desktop-vessel-blueprint.md` + `lighthouse-cockpit-blueprint.md`.
 
@@ -87,7 +93,7 @@ dogfoodWitnessThresholds()   // WP1 threshold engine (console-only)
 - Do not merge SUBSTRATE and witness pass panel into one widget.
 - Do not remove Guardian — only the **Summon ritual** retires at WP7.
 - Do not wire absence cues until `void_hints` (Track B) — matrix exists, `ENABLE_ABSENCE_CUES = false`.
-- Do not start Tauri before module split + Kaja laptop dogfood gate.
+- Do not start Tauri before module split dogfood gate — **S0–S6 split shipped May 2026**; laptop gate is `desktop-vessel-blueprint.md`.
 - Blueprints can be wrong — **propose fixes** to Kaja, then update markdown + code together.
 
 ---
@@ -102,15 +108,23 @@ dogfoodWitnessThresholds()   // WP1 threshold engine (console-only)
 
 ## 9. Pinned doc index (quick)
 
-| Doc | When |
-|-----|------|
-| `Kaja-cursor.md` (this file) | New thread, collaboration norms |
-| `AGENTS.md` | Dev server, WebAuthn bypass, lint |
-| `NakedQuantum-app-blueprint.md` | Product-wide architecture |
-| `app-architecture-split-blueprint.md` | Module split phases |
-| `witness-panel-blueprint.md` | Review gate, panel pipeline |
-| `witness-loop-upgrade-blueprint.md` | W1–W6 shipped witness loop |
-| `desktop-vessel-blueprint.md` | Tauri + Ollama gate |
+Full index with **Status** column: `NakedQuantum-app-blueprint.md` §2.
+
+| Doc | Status | When |
+|-----|--------|------|
+| `Kaja-cursor.md` (this file) | AGENT RUNBOOK | New thread, collaboration norms |
+| `AGENTS.md` | AGENT RUNBOOK | Dev server, WebAuthn bypass, lint |
+| `NakedQuantum-app-blueprint.md` | ACTIVE | Master map — start here for routing |
+| `witness-loop-upgrade-blueprint.md` | ACTIVE | Next witness loop batches (W5–W6, WP*) |
+| `desktop-vessel-blueprint.md` | ACTIVE | Tauri + Ollama — pre-laptop |
+| `NakedQuantum-quantum-fortress.md` | ACTIVE | Security pipeline |
+| `witness-panel-blueprint.md` | IDEA LAYER | Review gate, panel pipeline |
+| `craft-layer-blueprint.md` | IDEA LAYER | Craft layer — gated |
+| `app-architecture-split-blueprint.md` | SHIPPED | S0–S6 split history |
+| `witness-weather-blueprint.md` | SHIPPED | Question bank §3–§6 |
+| `consciousness-exoskeleton-roadmap-blueprint.md` | VISION ANCHOR | Philosophy + loops (shipped) |
+| `guardian-refinement-roadmap-blueprint.md` | ARCHAEOLOGY | Guardian/Cartographer history |
+| `NakedQuantum-checkpoint-2026-05.md` | ARCHAEOLOGY | May snapshot — not next-work queue |
 
 ---
 

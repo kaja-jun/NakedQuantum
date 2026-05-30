@@ -2,7 +2,9 @@
 
 > **Purpose:** Build contract for **synapse-temporal-v1** and beyond — merges the dense multi-model discussion, the three-user stress test (Epictetus / narcissist / young girl in love), and Claude’s **observable → entangle → wire** guard.
 >
-> **Read with:** `NakedQuantum-intention-blueprint.md` (why), `consciousness-exoskeleton-roadmap-blueprint.md` (shipped Ph 0–3), `guardian-refinement-roadmap-blueprint.md` (Guardian/strip detail), `witness-panel-blueprint.md` (Review gate + panel — idea layer), `NakedQuantum-checkpoint-2026-05.md` (code map).
+> **Read with:** `NakedQuantum-intention-blueprint.md` (why), `consciousness-exoskeleton-roadmap-blueprint.md` (vision anchor — Ph 0–3 shipped), `witness-panel-blueprint.md` (Review gate + panel — idea layer), `NakedQuantum-app-blueprint.md` §2 (doc routing).
+>
+> **Historical detail (archaeology):** `guardian-refinement-roadmap-blueprint.md`, `NakedQuantum-checkpoint-2026-05.md` — build history only, not the active queue.
 >
 > **Author:** Kaja + co-creator passes · **Last updated:** May 2026
 
