@@ -1,11 +1,11 @@
 # NakedQuantum — Code Review Checkpoint (May 2026)
 
-> **Status:** **ARCHAEOLOGY** — historical snapshot frozen at PR #33 (May 2026). **Do not use §7 as next-work queue.**  
-> **Active build contract:** `witness-loop-upgrade-blueprint.md` · **Master routing:** `NakedQuantum-app-blueprint.md` §2.
+> **Location:** `_archive/NakedQuantum-checkpoint-2026-05.md` · **Archived:** May 2026  
+> **Superseded by:** `witness-loop-upgrade-blueprint.md` · **Keep for:** P0 risk notes (§5), PR #33 architecture snapshot (§3). **Do not use §7 as next-work queue.**
 >
 > **Purpose:** Single base document after the Cartographer v0.5 + Guardian G1–G5 push. Preserved for P0 risk notes (§5) and architecture context (§3).
 >
-> **Read with:** `consciousness-exoskeleton-roadmap-blueprint.md`, `guardian-refinement-roadmap-blueprint.md`, `AGENTS.md`, `lighthouse-cockpit-blueprint.md`.
+> **Read with:** `consciousness-exoskeleton-roadmap-blueprint.md`, `guardian-refinement-roadmap-2026-05.md` (this folder), `AGENTS.md`, `lighthouse-cockpit-blueprint.md`.
 
 ---
 
@@ -234,7 +234,7 @@ Use this as the **default queue**; override only with explicit Kaja decision.
 
 ## 9. How to work (process cheat sheet)
 
-1. **Pick one batch** from `guardian-refinement-roadmap-blueprint.md` or §7 above.
+1. **Pick one batch** from `guardian-refinement-roadmap-2026-05.md` (archived) or §7 above.
 2. **Re-read** blueprint + this checkpoint + `AGENTS.md`.
 3. **Branch** `cursor/<name>-b53a` from latest `origin/main`.
 4. **Propose** in plain English if designing; **ship** if implementation pass assigned.
@@ -261,8 +261,8 @@ WebAuthn bypass for VM testing: see `AGENTS.md`.
 
 | Document | Use |
 |----------|-----|
-| `nq-review-checkpoint-2026-05.md` | **This file** — review base |
-| `guardian-refinement-roadmap-blueprint.md` | Guardian + Cartographer roadmap & shipped log |
+| `NakedQuantum-checkpoint-2026-05.md` | **This file** — review base |
+| `guardian-refinement-roadmap-2026-05.md` | Guardian + Cartographer roadmap & shipped log (archived) |
 | `abyss-v021-blueprint.md` | **Abyss** — honest sky (two batches) |
 | `lighthouse-cockpit-blueprint.md` | Desktop Guardian / editor (G6) |
 | `AGENTS.md` | Agent runbook, dev server, lint |

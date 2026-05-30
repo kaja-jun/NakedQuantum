@@ -7,7 +7,7 @@ Started as a quest to solve personal problem built using iPhone from the 59 line
 
 > **Purpose:** Canonical statement of **what NakedQuantum is for** and **what it must never become**. Use this for contemplation, design sessions, and agent handoff — **before** feature blueprints or code.
 >
-> **Not this doc:** Implementation batches, shipped PRs, or file-level maps. Those live in `consciousness-exoskeleton-roadmap-blueprint.md`, `guardian-refinement-roadmap-blueprint.md`, `lighthouse-cockpit-blueprint.md`, `NakedQuantum-app-blueprint.md`, and `NakedQuantum-checkpoint-2026-05.md`.
+> **Not this doc:** Implementation batches, shipped PRs, or file-level maps. Those live in `consciousness-exoskeleton-roadmap-blueprint.md`, `_archive/guardian-refinement-roadmap-2026-05.md`, `lighthouse-cockpit-blueprint.md`, `NakedQuantum-app-blueprint.md`, and `_archive/NakedQuantum-checkpoint-2026-05.md`.
 >
 > **Author:** Kaja (vision) · **Last updated:** 22 May 2026
 

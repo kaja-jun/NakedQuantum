@@ -4,7 +4,7 @@
 >
 > **Read with:** `NakedQuantum-intention-blueprint.md` (why), `consciousness-exoskeleton-roadmap-blueprint.md` (vision anchor — Ph 0–3 shipped), `witness-panel-blueprint.md` (Review gate + panel — idea layer), `NakedQuantum-app-blueprint.md` §2 (doc routing).
 >
-> **Historical detail (archaeology):** `guardian-refinement-roadmap-blueprint.md`, `NakedQuantum-checkpoint-2026-05.md` — build history only, not the active queue.
+> **Historical detail (archaeology):** `_archive/guardian-refinement-roadmap-2026-05.md`, `_archive/NakedQuantum-checkpoint-2026-05.md` — build history only, not the active queue.
 >
 > **Author:** Kaja + co-creator passes · **Last updated:** May 2026
 

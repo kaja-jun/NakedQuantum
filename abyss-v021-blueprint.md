@@ -322,7 +322,7 @@ Live `abyssUpdate` thread pulls stay **weaker** than settle. If dots drift back 
 | **AB2** 3D / UMAP offline | **Deferred** — laptop snapshot when Tauri; not blocking v0.21 |
 | **AB3** thread semantics | **Addressed** by M1 settle + existing thread honesty; hash threads no longer *only* signal |
 
-After v0.21 ships, update `guardian-refinement-roadmap-blueprint.md` §9 checkboxes and shipped log.
+*Shipped — historical note preserved in `_archive/guardian-refinement-roadmap-2026-05.md` §9.*
 
 ---
 

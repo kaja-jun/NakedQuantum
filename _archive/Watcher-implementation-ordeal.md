@@ -1,5 +1,9 @@
 # Watcher implementation journey
 
+> **Location:** `_archive/Watcher-implementation-ordeal.md` · **Archived:** May 2026  
+> **Superseded by:** `watcher.js` (S4 split) · **Keep for:** Safari worker / embed-queue debug journal — not a build contract.
+
+---
 Watcher Implementation — Status Report v2.0
 
 Phase 1: Worker + Loading Indicator ✅

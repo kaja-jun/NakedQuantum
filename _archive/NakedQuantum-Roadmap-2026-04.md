@@ -1,5 +1,9 @@
 # NakedQuantum Roadmap 16/04/26
 
+> **Location:** `_archive/NakedQuantum-Roadmap-2026-04.md` · **Archived:** May 2026  
+> **Superseded by:** `NakedQuantum-app-blueprint.md` §15 shipped log · **Keep for:** early checklist + monetisation notes (April 2026).
+
+---
 - Type - PWA ✅
 - Cloudflare deployment ✅
 - IndexedDB ✅
