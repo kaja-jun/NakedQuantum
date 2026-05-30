@@ -31,37 +31,40 @@ const negText = Array(40).fill('I am not happy but I feel joy enough thought').j
 const negMap = carto.generateFastMapData(negText);
 assert(negMap && negMap.word_count >= 35, 'negation sample has enough words');
 
-// Read app.js snippets via regex for function presence (not executing browser app)
+// Read app.js + witness-synapse.js for function presence (not executing browser app)
 const appSrc = readFileSync(join(root, 'app.js'), 'utf8');
+const synSrc = readFileSync(join(root, 'witness-synapse.js'), 'utf8');
+const indexHtml = readFileSync(join(root, 'index.html'), 'utf8');
 const wiring = [
-  'computeReturnDetections',
-  'runDailyRevisitCheck',
-  'persistWitnessDirectiveLog',
-  'buildSynapseSnapshot',
-  'scoreGuardianPredictionsOnSave',
-  'refreshWatcherFocus',
-  'refreshEpistemicMoodCache',
-  'formatInterSessionSilenceTier',
-  'discourseHasPersistentOrbit',
-  'buildGuardianDirectiveRoot',
-  'GUARDIAN_LEDGER_RECKONING_INSTRUCTION',
-  'refreshAbyssActiveTint',
-  'buildWitnessLedgerCompactBlock'
+  ['computeReturnDetections', synSrc],
+  ['runDailyRevisitCheck', appSrc],
+  ['persistWitnessDirectiveLog', appSrc],
+  ['buildSynapseSnapshot', synSrc],
+  ['scoreGuardianPredictionsOnSave', appSrc],
+  ['refreshWatcherFocus', appSrc],
+  ['refreshEpistemicMoodCache', appSrc],
+  ['formatInterSessionSilenceTier', synSrc],
+  ['discourseHasPersistentOrbit', appSrc],
+  ['buildGuardianDirectiveRoot', appSrc],
+  ['GUARDIAN_LEDGER_RECKONING_INSTRUCTION', appSrc],
+  ['refreshAbyssActiveTint', appSrc],
+  ['buildWitnessLedgerCompactBlock', appSrc]
 ];
-for (const name of wiring) {
-  assert(appSrc.includes(name), 'app.js contains ' + name);
+for (const [name, src] of wiring) {
+  assert(src.includes(name), (src === synSrc ? 'witness-synapse.js' : 'app.js') + ' contains ' + name);
 }
 
 assert(appSrc.includes('ALTER TABLE guardian_logs ADD COLUMN prediction_tag'), 'prediction_tag migration');
-assert(appSrc.includes('mergeCorpusBaseline'), 'corpus_baseline merge helper');
-assert(appSrc.includes('corpus_baseline'), 'corpus_baseline on synapse');
-assert(appSrc.includes('showWitnessSummonBridgePrompt'), 'inline bridge prompt after summon');
-assert(appSrc.includes('witness_ledger_chain'), 'witness ledger chain table');
-assert(appSrc.includes('appendWitnessLedgerLink'), 'ledger chain append helper');
-assert(appSrc.includes('verifyWitnessLedgerChain'), 'ledger chain verify helper');
-assert(appSrc.includes('ensureWitnessLedgerVerified'), 'ledger verify awaited before SUBSTRATE');
+assert(synSrc.includes('mergeCorpusBaseline'), 'corpus_baseline merge helper');
+assert(synSrc.includes('corpus_baseline'), 'corpus_baseline on synapse');
+assert(synSrc.includes('showWitnessSummonBridgePrompt'), 'inline bridge prompt after summon');
+assert(synSrc.includes('witness_ledger_chain'), 'witness ledger chain table');
+assert(synSrc.includes('appendWitnessLedgerLink'), 'ledger chain append helper');
+assert(synSrc.includes('verifyWitnessLedgerChain'), 'ledger chain verify helper');
+assert(synSrc.includes('ensureWitnessLedgerVerified'), 'ledger verify awaited before SUBSTRATE');
 assert(appSrc.includes("store === 'witness_ledger_chain'"), 'ledger chain stays plaintext when vault encrypted');
-assert(appSrc.includes('detectResurgentTerms'), 'resurgent term detection');
+assert(synSrc.includes('detectResurgentTerms'), 'resurgent term detection');
+assert(indexHtml.includes('witness-synapse.js'), 'index.html loads witness-synapse.js');
 
 const wwSrc = readFileSync(join(root, 'witness-weather.js'), 'utf8');
 const wwSandbox = { WitnessWeather: null };
