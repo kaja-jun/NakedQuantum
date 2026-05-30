@@ -35,6 +35,7 @@ assert(negMap && negMap.word_count >= 35, 'negation sample has enough words');
 const appSrc = readFileSync(join(root, 'app.js'), 'utf8');
 const synSrc = readFileSync(join(root, 'witness-synapse.js'), 'utf8');
 const abyssSrc = readFileSync(join(root, 'abyss.js'), 'utf8');
+const watcherSrc = readFileSync(join(root, 'watcher.js'), 'utf8');
 const guardianSrc = readFileSync(join(root, 'guardian.js'), 'utf8');
 const indexHtml = readFileSync(join(root, 'index.html'), 'utf8');
 const wiring = [
@@ -54,13 +55,18 @@ const wiring = [
   ['abyssStop', abyssSrc],
   ['summonGuardian', guardianSrc],
   ['openGuardianView', guardianSrc],
-  ['buildWitnessLedgerCompactBlock', guardianSrc]
+  ['buildWitnessLedgerCompactBlock', guardianSrc],
+  ['initWatcher', watcherSrc],
+  ['injectWatcherFlags', watcherSrc],
+  ['queueWatcherEmbed', watcherSrc],
+  ['syncWatcherLedStrip', watcherSrc]
 ];
 for (const [name, src] of wiring) {
   var label = 'app.js';
   if (src === synSrc) label = 'witness-synapse.js';
   else if (src === abyssSrc) label = 'abyss.js';
   else if (src === guardianSrc) label = 'guardian.js';
+  else if (src === watcherSrc) label = 'watcher.js';
   assert(src.includes(name), label + ' contains ' + name);
 }
 
@@ -81,8 +87,11 @@ assert(synSrc.includes('dogfoodWitnessThresholds'), 'WP1 console dogfood hook');
 assert(indexHtml.includes('witness-synapse.js'), 'index.html loads witness-synapse.js');
 assert(indexHtml.includes('abyss.js'), 'index.html loads abyss.js');
 assert(indexHtml.includes('guardian.js'), 'index.html loads guardian.js');
+assert(indexHtml.includes('watcher.js'), 'index.html loads watcher.js');
+assert(indexHtml.indexOf('watcher.js') < indexHtml.indexOf('guardian.js'), 'watcher.js before guardian.js');
 assert(!appSrc.includes('function openAbyssView'), 'openAbyssView extracted from app.js');
 assert(!appSrc.includes('async function summonGuardian'), 'summonGuardian extracted from app.js');
+assert(!appSrc.includes('async function initWatcher'), 'initWatcher extracted from app.js');
 
 const wwSrc = readFileSync(join(root, 'witness-weather.js'), 'utf8');
 const wwSandbox = { WitnessWeather: null };
