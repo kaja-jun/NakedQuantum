@@ -3,8 +3,8 @@
 *Phased extraction of `app.js` into native ES modules / standalone scripts — zero npm, no bundler.*
 
 **Last updated:** 30 May 2026  
-**Status:** Active contract — S4 shipped  
-**Base:** ~7k lines `app.js` + split modules (synapse, abyss, watcher, guardian) · PWA iPhone-first · Tauri later (same files, thicker shell)
+**Status:** Active contract — S5 shipped  
+**Base:** ~6.5k lines `app.js` + split modules · PWA iPhone-first · Tauri later (same files, thicker shell)
 
 ---
 
@@ -49,7 +49,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 | **S2** | `abyss.js` | Canvas engine + interaction | ~1.8k | ☑ shipped |
 | **S3** | `guardian.js` | Summon, logs, archive assembly, settings | ~1.35k | ☑ shipped |
 | **S4** | `watcher.js` | Embeddings shadow queue + LED strip | ~530 | ☑ shipped |
-| **S5** | `nq-crypto.js` | Sovereign key, WebAuthn helpers, secure storage | ~400 | ☐ |
+| **S5** | `nq-crypto.js` | Sovereign key, WebAuthn helpers, secure storage | ~470 | ☑ shipped |
 | **S6** | `nq-db.js` | Worker blob + db helpers | ~800 | ☐ |
 | **Shell** | `app.js` | Realms, Soup, Sanctuary, Lighthouse, init, routing | ~3k target | ongoing |
 
@@ -213,15 +213,54 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ---
 
-## 8. Future phases (sketch)
+## 8. S5 — `nq-crypto.js` (detail)
 
-**S5 nq-crypto.js** — sovereign key, WebAuthn helpers, secure storage.
+### 8.1 Includes
 
-**S6 nq-db.js** — worker blob extraction; highest regression risk; do last.
+- Sovereign key RAM state: `setSovereignKey`, `getSovereignKey`, `showSovereignKey`
+- WebAuthn PRF: `unlockWithPRF`, `resetWebAuthnRegistration`, fallback key unlock
+- Wrap/unwrap sovereign key with PRF (`wrapSovereignKey`, `unwrapSovereignKey`)
+- Secure BYOK storage: `storeSecureKey`, `readSecureKey`
+- Cloud sync envelope: `getCloudCryptoKey`, `encForCloud`, `decFromCloud`
+- Lock screen boot: `bootApp`, `obliterateAbyss`
+
+### 8.2 Stays in `app.js` (S5)
+
+- `setEncryptionKey` — posts `SET_KEY` to SQL worker (S6 candidate)
+- `init()` shell startup + `window.initializeApp = init` (AGENTS bypass)
+- `handleSync` — calls crypto globals for Supabase delta
+- Worker inline `encryptObj` / `decryptObj` (S6)
+
+### 8.3 Load order (`index.html`)
+
+```html
+<script src="witness-weather.js?v=…"></script>
+<script src="app.js?v=…"></script>
+<script src="nq-crypto.js?v=…"></script>
+<script src="witness-synapse.js?v=…"></script>
+<script src="abyss.js?v=…"></script>
+<script src="watcher.js?v=…"></script>
+<script src="guardian.js?v=…"></script>
+```
+
+`nq-crypto.js` runs **immediately after** `app.js` (needs `setEncryptionKey`, `init`, `NQ_DEV_MODE`).
+
+### 8.4 Acceptance
+
+- [x] `node --check nq-crypto.js app.js`
+- [x] `node scripts/exoskeleton-smoke-test.mjs` passes
+- [ ] Lock screen / Face ID / fallback key unchanged (User Zero)
+- [ ] Settings BYOK encrypt + Supabase sync unchanged when unlocked
 
 ---
 
-## 9. Before laptop (companion work — not split)
+## 9. Future phases (sketch)
+
+**S6 nq-db.js** — worker blob + db helpers; highest regression risk; do last.
+
+---
+
+## 10. Before laptop (companion work — not split)
 
 | Item | Blueprint | Status |
 |------|-----------|--------|
@@ -232,7 +271,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ---
 
-## 10. Shipped log
+## 11. Shipped log
 
 | Date | Phase | Notes |
 |------|-------|-------|
@@ -242,6 +281,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 | 2026-05-30 | **S2** | `abyss.js` — canvas engine, interaction, active tint; Soup/Watcher vars relocated in shell; cache `nq-v21` |
 | 2026-05-30 | **S3** | `guardian.js` — summon, archive, logs, directives, settings; cache `nq-v22` |
 | 2026-05-30 | **S4** | `watcher.js` — embed queue, similarity pass, LED strip, injectWatcherFlags; cache `nq-v23` |
+| 2026-05-30 | **S5** | `nq-crypto.js` — sovereign key, WebAuthn PRF, secure storage, bootApp; fix stray brace from S4; cache `nq-v24` |
 
 ---
 
