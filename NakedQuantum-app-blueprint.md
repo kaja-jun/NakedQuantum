@@ -26,7 +26,7 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 
 **I dont claim building a conscious AI brain**
 
-**North star (quest):** *An obsessive, meta-meta-cognitive exoskeleton.* Possible as **practice** + three closed loops — see **`consciousness-exoskeleton-roadmap-blueprint.md`**
+**North star (quest):** *An obsessive, meta-metacognitive exoskeleton.* Possible as **practice** + three closed loops — see **`consciousness-exoskeleton-roadmap-blueprint.md`**
 
 *"NakedQuantum is an epistemic asymptote. We do not promise consciousness; we build the telescope. The goal of the 'Consciousness Exoskeleton' is inward-facing—an engineering discipline for the builder, not a marketing claim for the user. By aiming for the impossible limit of structural honesty, we accidentally invent the mechanisms (Synapse, Void, Bridges) that the market didn't know it needed. We do not compete with note-taking apps; we compete with the human capacity for self-deception."*
 
