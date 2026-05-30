@@ -3,7 +3,7 @@
 /**
  * Quantum fortress — sovereign key, WebAuthn PRF, secure BYOK storage, cloud sync crypto.
  * See app-architecture-split-blueprint.md (S5).
- * Loads after app.js — calls setEncryptionKey to arm the SQL worker.
+ * Loads after nq-db.js — calls setEncryptionKey to arm the SQL worker.
  */
 
 /* NQ ABYSS GATEKEEPER */

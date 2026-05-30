@@ -37,6 +37,7 @@ const synSrc = readFileSync(join(root, 'witness-synapse.js'), 'utf8');
 const abyssSrc = readFileSync(join(root, 'abyss.js'), 'utf8');
 const watcherSrc = readFileSync(join(root, 'watcher.js'), 'utf8');
 const cryptoSrc = readFileSync(join(root, 'nq-crypto.js'), 'utf8');
+const dbSrc = readFileSync(join(root, 'nq-db.js'), 'utf8');
 const guardianSrc = readFileSync(join(root, 'guardian.js'), 'utf8');
 const indexHtml = readFileSync(join(root, 'index.html'), 'utf8');
 const wiring = [
@@ -66,7 +67,12 @@ const wiring = [
   ['readSecureKey', cryptoSrc],
   ['unlockWithPRF', cryptoSrc],
   ['bootApp', cryptoSrc],
-  ['encForCloud', cryptoSrc]
+  ['encForCloud', cryptoSrc],
+  ['initWorker', dbSrc],
+  ['dbPut', dbSrc],
+  ['dbGet', dbSrc],
+  ['setEncryptionKey', dbSrc],
+  ['WORKER_CODE', dbSrc]
 ];
 for (const [name, src] of wiring) {
   var label = 'app.js';
@@ -75,10 +81,11 @@ for (const [name, src] of wiring) {
   else if (src === guardianSrc) label = 'guardian.js';
   else if (src === watcherSrc) label = 'watcher.js';
   else if (src === cryptoSrc) label = 'nq-crypto.js';
+  else if (src === dbSrc) label = 'nq-db.js';
   assert(src.includes(name), label + ' contains ' + name);
 }
 
-assert(appSrc.includes('ALTER TABLE guardian_logs ADD COLUMN prediction_tag'), 'prediction_tag migration');
+assert(dbSrc.includes('ALTER TABLE guardian_logs ADD COLUMN prediction_tag'), 'prediction_tag migration');
 assert(synSrc.includes('mergeCorpusBaseline'), 'corpus_baseline merge helper');
 assert(synSrc.includes('corpus_baseline'), 'corpus_baseline on synapse');
 assert(synSrc.includes('showWitnessSummonBridgePrompt'), 'inline bridge prompt after summon');
@@ -86,7 +93,7 @@ assert(synSrc.includes('witness_ledger_chain'), 'witness ledger chain table');
 assert(synSrc.includes('appendWitnessLedgerLink'), 'ledger chain append helper');
 assert(synSrc.includes('verifyWitnessLedgerChain'), 'ledger chain verify helper');
 assert(synSrc.includes('ensureWitnessLedgerVerified'), 'ledger verify awaited before SUBSTRATE');
-assert(appSrc.includes("store === 'witness_ledger_chain'"), 'ledger chain stays plaintext when vault encrypted');
+assert(dbSrc.includes("store === 'witness_ledger_chain'"), 'ledger chain stays plaintext when vault encrypted');
 assert(synSrc.includes('detectResurgentTerms'), 'resurgent term detection');
 assert(synSrc.includes('isWitnessCorpusNoiseTerm'), 'half-life stopword filter');
 assert(synSrc.includes('formatSubstrateSaccadeLine'), 'SUBSTRATE saccade line');
@@ -95,8 +102,10 @@ assert(synSrc.includes('dogfoodWitnessThresholds'), 'WP1 console dogfood hook');
 assert(indexHtml.includes('witness-synapse.js'), 'index.html loads witness-synapse.js');
 assert(indexHtml.includes('abyss.js'), 'index.html loads abyss.js');
 assert(indexHtml.includes('guardian.js'), 'index.html loads guardian.js');
+assert(indexHtml.includes('nq-db.js'), 'index.html loads nq-db.js');
 assert(indexHtml.includes('nq-crypto.js'), 'index.html loads nq-crypto.js');
-assert(indexHtml.indexOf('app.js') < indexHtml.indexOf('nq-crypto.js'), 'nq-crypto.js after app.js');
+assert(indexHtml.indexOf('app.js') < indexHtml.indexOf('nq-db.js'), 'nq-db.js after app.js');
+assert(indexHtml.indexOf('nq-db.js') < indexHtml.indexOf('nq-crypto.js'), 'nq-crypto.js after nq-db.js');
 assert(indexHtml.includes('watcher.js'), 'index.html loads watcher.js');
 assert(!appSrc.includes('async function bootApp'), 'bootApp extracted from app.js');
 assert(!appSrc.includes('async function unlockWithPRF'), 'unlockWithPRF extracted from app.js');
@@ -105,6 +114,8 @@ assert(indexHtml.indexOf('watcher.js') < indexHtml.indexOf('guardian.js'), 'watc
 assert(!appSrc.includes('function openAbyssView'), 'openAbyssView extracted from app.js');
 assert(!appSrc.includes('async function summonGuardian'), 'summonGuardian extracted from app.js');
 assert(!appSrc.includes('async function initWatcher'), 'initWatcher extracted from app.js');
+assert(!appSrc.includes('const WORKER_CODE'), 'WORKER_CODE extracted from app.js');
+assert(!appSrc.includes('function initWorker'), 'initWorker extracted from app.js');
 
 const wwSrc = readFileSync(join(root, 'witness-weather.js'), 'utf8');
 const wwSandbox = { WitnessWeather: null };
