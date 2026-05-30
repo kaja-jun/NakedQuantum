@@ -3,8 +3,8 @@
 *Phased extraction of `app.js` into native ES modules / standalone scripts — zero npm, no bundler.*
 
 **Last updated:** 30 May 2026  
-**Status:** Active contract — S5 shipped  
-**Base:** ~6.5k lines `app.js` + split modules · PWA iPhone-first · Tauri later (same files, thicker shell)
+**Status:** Active contract — S6 shipped (split complete)  
+**Base:** ~6.2k lines `app.js` + split modules · PWA iPhone-first · Tauri later (same files, thicker shell)
 
 ---
 
@@ -35,7 +35,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 | **Zero behavior change** | Extract + wire only; no feature creep in split passes |
 | **Globals OK for S1–S4** | `witness-synapse.js` loads **after** `app.js`; uses existing global `dbGet`, `getDiscourses`, etc. |
 | **Modules later** | S5+ may introduce `type="module"` entry when DB worker splits |
-| **Worker last** | Inline SQL worker string stays in `app.js` until **S6** |
+| **Worker last** | Inline SQL worker string moved to `nq-db.js` in **S6** |
 | **Blueprint first** | Update this doc shipped log when a phase lands |
 
 ---
@@ -50,7 +50,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 | **S3** | `guardian.js` | Summon, logs, archive assembly, settings | ~1.35k | ☑ shipped |
 | **S4** | `watcher.js` | Embeddings shadow queue + LED strip | ~530 | ☑ shipped |
 | **S5** | `nq-crypto.js` | Sovereign key, WebAuthn helpers, secure storage | ~470 | ☑ shipped |
-| **S6** | `nq-db.js` | Worker blob + db helpers | ~800 | ☐ |
+| **S6** | `nq-db.js` | Worker blob + db helpers | ~285 | ☑ shipped |
 | **Shell** | `app.js` | Realms, Soup, Sanctuary, Lighthouse, init, routing | ~3k target | ongoing |
 
 **Existing modules (unchanged):** `cartographer.js`, `witness-weather.js`, `sw.js`
@@ -226,10 +226,9 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ### 8.2 Stays in `app.js` (S5)
 
-- `setEncryptionKey` — posts `SET_KEY` to SQL worker (S6 candidate)
 - `init()` shell startup + `window.initializeApp = init` (AGENTS bypass)
 - `handleSync` — calls crypto globals for Supabase delta
-- Worker inline `encryptObj` / `decryptObj` (S6)
+- Worker inline `encryptObj` / `decryptObj` → moved to **S6** (`nq-db.js`)
 
 ### 8.3 Load order (`index.html`)
 
@@ -243,7 +242,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 <script src="guardian.js?v=…"></script>
 ```
 
-`nq-crypto.js` runs **immediately after** `app.js` (needs `setEncryptionKey`, `init`, `NQ_DEV_MODE`).
+`nq-crypto.js` runs **after** `nq-db.js` (needs `setEncryptionKey`, `init`, `NQ_DEV_MODE`).
 
 ### 8.4 Acceptance
 
@@ -254,9 +253,41 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ---
 
-## 9. Future phases (sketch)
+## 9. S6 — `nq-db.js` (detail)
 
-**S6 nq-db.js** — worker blob + db helpers; highest regression risk; do last.
+### 9.1 Includes
+
+- Inline `WORKER_CODE` blob: sql.js init, schema, migrations, OPFS save/load
+- Worker-side `encryptObj` / `decryptObj` + vault table routing
+- Main-thread bridge: `initWorker`, `_workerReady`, `dbPut`, `dbGet`, `dbGetAll`, `dbGetByIndex`, `dbDelete`
+- `setEncryptionKey` — posts `SET_KEY` to worker after sovereign unlock
+
+### 9.2 Stays in `app.js` (S6)
+
+- `init()` shell startup + `window.initializeApp = init` (AGENTS bypass)
+- `handleSync` — calls crypto globals for Supabase delta
+- All realm routing, cartographer hooks, cosm/guardian CRUD callers (use db globals)
+
+### 9.3 Load order (`index.html`)
+
+```html
+<script src="witness-weather.js?v=…"></script>
+<script src="app.js?v=…"></script>
+<script src="nq-db.js?v=…"></script>
+<script src="nq-crypto.js?v=…"></script>
+<script src="witness-synapse.js?v=…"></script>
+<script src="abyss.js?v=…"></script>
+<script src="watcher.js?v=…"></script>
+<script src="guardian.js?v=…"></script>
+```
+
+`nq-db.js` runs **after** `app.js` and **before** `nq-crypto.js` (`bootApp` → `setEncryptionKey`).
+
+### 9.4 Acceptance
+
+- [x] `node --check nq-db.js app.js nq-crypto.js`
+- [x] `node scripts/exoskeleton-smoke-test.mjs` passes
+- [ ] App boots, OPFS persists, encrypted vault PUT/GET after unlock (User Zero)
 
 ---
 
@@ -282,6 +313,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 | 2026-05-30 | **S3** | `guardian.js` — summon, archive, logs, directives, settings; cache `nq-v22` |
 | 2026-05-30 | **S4** | `watcher.js` — embed queue, similarity pass, LED strip, injectWatcherFlags; cache `nq-v23` |
 | 2026-05-30 | **S5** | `nq-crypto.js` — sovereign key, WebAuthn PRF, secure storage, bootApp; fix stray brace from S4; cache `nq-v24` |
+| 2026-05-30 | **S6** | `nq-db.js` — WORKER_CODE blob, initWorker, db bridge, setEncryptionKey; shell ~6.2k; cache `nq-v25` |
 
 ---
 
