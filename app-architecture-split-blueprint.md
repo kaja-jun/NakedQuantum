@@ -3,8 +3,8 @@
 *Phased extraction of `app.js` into native ES modules / standalone scripts — zero npm, no bundler.*
 
 **Last updated:** 30 May 2026  
-**Status:** Active contract — S2 shipped  
-**Base:** ~8.8k lines `app.js` + ~1.3k `witness-synapse.js` + ~1.8k `abyss.js` · PWA iPhone-first · Tauri later (same files, thicker shell)
+**Status:** Active contract — S3 shipped  
+**Base:** ~7.5k lines `app.js` + ~1.3k `witness-synapse.js` + ~1.8k `abyss.js` + ~1.35k `guardian.js` · PWA iPhone-first · Tauri later (same files, thicker shell)
 
 ---
 
@@ -47,7 +47,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 | **S0** | `witness-weather.js` | Weather + cues matrix | 600 | ☑ shipped |
 | **S1** | `witness-synapse.js` | Synapse, SUBSTRATE, ledger, bridges, wire tiers, weather UI hooks | ~1.3k | ☑ shipped |
 | **S2** | `abyss.js` | Canvas engine + interaction | ~1.8k | ☑ shipped |
-| **S3** | `guardian.js` | Summon, logs, archive assembly, settings | ~2k | ☐ |
+| **S3** | `guardian.js` | Summon, logs, archive assembly, settings | ~1.35k | ☑ shipped |
 | **S4** | `watcher.js` | Embeddings shadow queue + LED strip | ~1.5k | ☐ |
 | **S5** | `nq-crypto.js` | Sovereign key, WebAuthn helpers, secure storage | ~400 | ☐ |
 | **S6** | `nq-db.js` | Worker blob + db helpers | ~800 | ☐ |
@@ -131,15 +131,56 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ---
 
-## 6. Future phases (sketch)
+## 6. S3 — `guardian.js` (detail)
 
-**S3 guardian.js** — `#view-guardian`; depends on `NQWitness.*` for synapse/ledger.
+### 6.1 Includes
+
+- System prompt, summon stream, log save, follow-up exchange
+- Archive assembly: `buildGuardianContext`, tier-1–4 blocks, prior witness / ledger compact
+- Geometry + theory line helpers, prediction scoring on save
+- Directive derivation + refresh (`abyss_tint`, `soup_surface`, `watcher_focus`, revisit)
+- Guardian view UI: `openGuardianView`, settings modal, logs list/detail
+- `runDailyRevisitCheck`, `initGuardianModel`
+
+### 6.2 Stays in `app.js` (S3)
+
+- Realm routing: `showPanel` guardian teardown, header `openGuardianView` wiring
+- `generateFastMap` — calls `scoreGuardianPredictionsOnSave` global from `guardian.js`
+- `selectUrgentDiscourses` — shared with Cartographer deep-map pass
+- `discourseHasPersistentOrbit` — Soup mesh gravity (not Guardian-only)
+- DB schema migrations for `guardian_logs` / `guardian_summaries`
+- Event bindings in init (summon button, settings, logs overlay)
+
+### 6.3 Load order (`index.html`)
+
+```html
+<script src="witness-weather.js?v=…"></script>
+<script src="app.js?v=…"></script>
+<script src="witness-synapse.js?v=…"></script>
+<script src="abyss.js?v=…"></script>
+<script src="guardian.js?v=…"></script>
+```
+
+`guardian.js` runs **after** `witness-synapse.js` (wire tiers, ledger, bridge prompt) and `abyss.js` (tint refresh).
+
+### 6.4 Acceptance
+
+- [x] `node --check guardian.js app.js`
+- [x] `node scripts/exoskeleton-smoke-test.mjs` passes
+- [ ] Summon + tier-4 archive order unchanged in dogfood (User Zero)
+- [ ] Directive side-effects (Abyss tint, Soup boost, Watcher focus) unchanged after witness field log
+
+---
+
+## 7. Future phases (sketch)
+
+**S4 watcher.js** — embeddings shadow queue + LED strip.
 
 **S6 nq-db.js** — worker blob extraction; highest regression risk; do last.
 
 ---
 
-## 7. Before laptop (companion work — not split)
+## 8. Before laptop (companion work — not split)
 
 | Item | Blueprint | Status |
 |------|-----------|--------|
@@ -150,7 +191,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ---
 
-## 8. Shipped log
+## 9. Shipped log
 
 | Date | Phase | Notes |
 |------|-------|-------|
@@ -158,6 +199,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 | 2026-05-18 | **S1** | `witness-synapse.js` — corpus arcs, synapse, ledger, bridges, SUBSTRATE, wire tiers; cache `nq-v19` |
 | 2026-05-18 | **Pre-laptop backlog** | Stopword filter, SUBSTRATE saccade, WP1 console thresholds, `desktop-vessel-blueprint.md`; cache `nq-v20` |
 | 2026-05-30 | **S2** | `abyss.js` — canvas engine, interaction, active tint; Soup/Watcher vars relocated in shell; cache `nq-v21` |
+| 2026-05-30 | **S3** | `guardian.js` — summon, archive, logs, directives, settings; cache `nq-v22` |
 
 ---
 
