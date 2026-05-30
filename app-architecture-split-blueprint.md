@@ -3,8 +3,8 @@
 *Phased extraction of `app.js` into native ES modules / standalone scripts — zero npm, no bundler.*
 
 **Last updated:** 30 May 2026  
-**Status:** Active contract — S3 shipped  
-**Base:** ~7.5k lines `app.js` + ~1.3k `witness-synapse.js` + ~1.8k `abyss.js` + ~1.35k `guardian.js` · PWA iPhone-first · Tauri later (same files, thicker shell)
+**Status:** Active contract — S4 shipped  
+**Base:** ~7k lines `app.js` + split modules (synapse, abyss, watcher, guardian) · PWA iPhone-first · Tauri later (same files, thicker shell)
 
 ---
 
@@ -48,7 +48,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 | **S1** | `witness-synapse.js` | Synapse, SUBSTRATE, ledger, bridges, wire tiers, weather UI hooks | ~1.3k | ☑ shipped |
 | **S2** | `abyss.js` | Canvas engine + interaction | ~1.8k | ☑ shipped |
 | **S3** | `guardian.js` | Summon, logs, archive assembly, settings | ~1.35k | ☑ shipped |
-| **S4** | `watcher.js` | Embeddings shadow queue + LED strip | ~1.5k | ☐ |
+| **S4** | `watcher.js` | Embeddings shadow queue + LED strip | ~530 | ☑ shipped |
 | **S5** | `nq-crypto.js` | Sovereign key, WebAuthn helpers, secure storage | ~400 | ☐ |
 | **S6** | `nq-db.js` | Worker blob + db helpers | ~800 | ☐ |
 | **Shell** | `app.js` | Realms, Soup, Sanctuary, Lighthouse, init, routing | ~3k target | ongoing |
@@ -158,6 +158,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 <script src="app.js?v=…"></script>
 <script src="witness-synapse.js?v=…"></script>
 <script src="abyss.js?v=…"></script>
+<script src="watcher.js?v=…"></script>
 <script src="guardian.js?v=…"></script>
 ```
 
@@ -172,15 +173,55 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ---
 
-## 7. Future phases (sketch)
+## 7. S4 — `watcher.js` (detail)
 
-**S4 watcher.js** — embeddings shadow queue + LED strip.
+### 7.1 Includes
+
+- Xenova embedder init, shadow queue, similarity pass
+- IndexedDB `nq_watcher` (`wdb` helpers), cosine / SHA256 utils
+- LED strip + cluster panel UI
+- `injectWatcherFlags` for fast-map Cartographer enrichment
+- `watcherFocusActive` + `getWatcherSimilarityThreshold()` (Guardian directive consumer)
+- Dev hooks: `devForcePass`, `devClearWatcher`
+
+### 7.2 Stays in `app.js` (S4)
+
+- `NQ_DEV_MODE`, Soup/Guardian shell constants, `soupSurfaceBoost`
+- `refreshEpistemicMoodCache` — reads `W_PASS_COOLDOWN_HOURS` global from `watcher.js`
+- Realm routing: Guardian entry/exit teardown, Soup re-queue on `showPanel`
+- `generateFastMap` — calls `injectWatcherFlags` global
+
+### 7.3 Load order (`index.html`)
+
+```html
+<script src="witness-weather.js?v=…"></script>
+<script src="app.js?v=…"></script>
+<script src="witness-synapse.js?v=…"></script>
+<script src="abyss.js?v=…"></script>
+<script src="watcher.js?v=…"></script>
+<script src="guardian.js?v=…"></script>
+```
+
+`watcher.js` runs **before** `guardian.js` (`buildGuardianContext` uses `wdb` / `isWatcherReady`).
+
+### 7.4 Acceptance
+
+- [x] `node --check watcher.js app.js`
+- [x] `node scripts/exoskeleton-smoke-test.mjs` passes
+- [ ] Soup LED strip + Watcher panel unchanged in dogfood (User Zero)
+- [ ] Fast-map save still injects Watcher echoes when index ready
+
+---
+
+## 8. Future phases (sketch)
+
+**S5 nq-crypto.js** — sovereign key, WebAuthn helpers, secure storage.
 
 **S6 nq-db.js** — worker blob extraction; highest regression risk; do last.
 
 ---
 
-## 8. Before laptop (companion work — not split)
+## 9. Before laptop (companion work — not split)
 
 | Item | Blueprint | Status |
 |------|-----------|--------|
@@ -191,7 +232,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 
 ---
 
-## 9. Shipped log
+## 10. Shipped log
 
 | Date | Phase | Notes |
 |------|-------|-------|
@@ -200,6 +241,7 @@ Laptop adds Tauri + Ollama shell; it does **not** require a 12k-line single file
 | 2026-05-18 | **Pre-laptop backlog** | Stopword filter, SUBSTRATE saccade, WP1 console thresholds, `desktop-vessel-blueprint.md`; cache `nq-v20` |
 | 2026-05-30 | **S2** | `abyss.js` — canvas engine, interaction, active tint; Soup/Watcher vars relocated in shell; cache `nq-v21` |
 | 2026-05-30 | **S3** | `guardian.js` — summon, archive, logs, directives, settings; cache `nq-v22` |
+| 2026-05-30 | **S4** | `watcher.js` — embed queue, similarity pass, LED strip, injectWatcherFlags; cache `nq-v23` |
 
 ---
 
