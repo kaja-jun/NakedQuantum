@@ -1,7 +1,7 @@
 # Guardian & Cartographer Refinement — Roadmap Blueprint
 
-> **Status:** **ARCHAEOLOGY** — all phases C1–C8, G0–G5 shipped. Preserved as build history + external review log.  
-> **Active contract:** `witness-loop-upgrade-blueprint.md` · **Master routing:** `NakedQuantum-app-blueprint.md` §2.
+> **Location:** `_archive/guardian-refinement-roadmap-2026-05.md` · **Archived:** May 2026  
+> **Superseded by:** `witness-loop-upgrade-blueprint.md` · **Keep for:** C/G phase history, Kimi review log, three-path architecture diagram.
 >
 > **Retired May 2026:** Track **A — Auto strip** (Soup banner + `naked-guardian` Cloudflare Worker) is **removed from the PWA**. Witness substrate + voluntary summon replace it. See `workers/guardian-invoke/RETIRED.md`. Historical `auto_invoke` logs remain in vault.
 
@@ -375,7 +375,7 @@ function divergenceNote(link, mapA, mapB) {
 
 | Doc | Relationship |
 |-----|----------------|
-| `nq-review-checkpoint-2026-05.md` | **Code review checkpoint** — syntax, risks, what to do / not do / how (base for next sessions) |
+| `NakedQuantum-checkpoint-2026-05.md` | **Code review checkpoint** — syntax, risks (archived; see `_archive/`) |
 | `abyss-v021-blueprint.md` | **Abyss honest sky** — two-batch contract (layout, DNA, Sanctuary, M4) |
 | `lighthouse-cockpit-blueprint.md` | Desktop write column + live strip; Guardian whisper channel; **wait for Tauri** |
 | `NQ blueprint.md` | Realms, Engram, core ethics |

@@ -108,7 +108,7 @@ dogfoodWitnessThresholds()   // WP1 threshold engine (console-only)
 
 ## 9. Pinned doc index (quick)
 
-Full index with **Status** column: `NakedQuantum-app-blueprint.md` §2.
+Full index with **Status** column: `NakedQuantum-app-blueprint.md` §2. Archived history: `_archive/README.md`.
 
 | Doc | Status | When |
 |-----|--------|------|
@@ -123,8 +123,8 @@ Full index with **Status** column: `NakedQuantum-app-blueprint.md` §2.
 | `app-architecture-split-blueprint.md` | SHIPPED | S0–S6 split history |
 | `witness-weather-blueprint.md` | SHIPPED | Question bank §3–§6 |
 | `consciousness-exoskeleton-roadmap-blueprint.md` | VISION ANCHOR | Philosophy + loops (shipped) |
-| `guardian-refinement-roadmap-blueprint.md` | ARCHAEOLOGY | Guardian/Cartographer history |
-| `NakedQuantum-checkpoint-2026-05.md` | ARCHAEOLOGY | May snapshot — not next-work queue |
+| `guardian-refinement-roadmap-2026-05.md` | ARCHIVED | `_archive/` — Guardian/Cartographer history |
+| `NakedQuantum-checkpoint-2026-05.md` | ARCHIVED | `_archive/` — May snapshot, P0 notes only |
 
 ---
 

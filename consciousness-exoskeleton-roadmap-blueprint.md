@@ -197,7 +197,7 @@ Pass 1 → Pass 2 → Pass 3 → tick §10. Worker deploy is **your** step after
 | **P1-c** | Per-field **confidence** on fast map | Guardian weights uncertain fields; documented in blueprint |
 | **P1-d** | Negation scope hardening | Wider than 2-token window for common patterns; tests on real discourses |
 | **P1-e** | **`directive: soup_surface`** | Temporary gravity boost on one `discourse_id` |
-| **P1-f** | A1–A3 guardian ethics | Settings toggle, cooldown, qualifier consensus (`guardian-refinement-roadmap-blueprint.md`) |
+| **P1-f** | A1–A3 guardian ethics | Settings toggle, cooldown, qualifier consensus (`_archive/guardian-refinement-roadmap-2026-05.md`) |
 
 ---
 
@@ -326,9 +326,9 @@ Inject via `buildGuardianPriorWitnessBlock` (summon) and compact variant for str
 |-----|------|
 | `NakedQuantum-app-blueprint.md` | Stable product map (realms, tables, shipped log) |
 | **This file** | Vision → loops → phased exoskeleton work |
-| `guardian-refinement-roadmap-blueprint.md` | Guardian/Cartographer batch detail; reference P0–P1 here |
+| `_archive/guardian-refinement-roadmap-2026-05.md` | Guardian/Cartographer batch detail (archived) |
 | `abyss-v021-blueprint.md` | Abyss **shipped**; tint directives extend M2 phenotype |
-| `NakedQuantum-checkpoint-2026-05.md` | P0 risks, lint, process |
+| `_archive/NakedQuantum-checkpoint-2026-05.md` | P0 risks, lint (archived snapshot) |
 
 When merging a batch: tick **Shipped log** below + relevant section in guardian roadmap.
 

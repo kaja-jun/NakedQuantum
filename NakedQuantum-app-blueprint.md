@@ -14,7 +14,7 @@
 | New feature / realm design | §1 vision, §3 realms, §6–§12 features |
 | Before coding | Pinned sub-blueprint if one exists (§2 index — **Status** column) |
 | Agent handoff | §15 **Shipped log** + **`witness-loop-upgrade-blueprint.md`** (active build contract) |
-| Production ship | `NakedQuantum-quantum-fortress.md` §18 + `NQ_DEV_MODE` / threshold checklist (historical P0 notes in `NakedQuantum-checkpoint-2026-05.md` §5) |
+| Production ship | `NakedQuantum-quantum-fortress.md` §18 + `NQ_DEV_MODE` / threshold checklist (historical P0 notes in `_archive/NakedQuantum-checkpoint-2026-05.md` §5) |
 
 **Rules (unchanged):** accurate over comfortable, Sanctuary blind to Trio (Watcher / Cartographer / Guardian), blueprint-first, one batch per PR, no bundler without explicit approval.
 
@@ -36,6 +36,8 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 
 ## 2. Document index (pinned contracts)
 
+Archived build history lives in **`_archive/`** — see [`_archive/README.md`](_archive/README.md). Do not use archived docs as the active build queue.
+
 | Document | Scope | Status |
 |----------|--------|--------|
 | **`NakedQuantum-app-blueprint.md`** (this file) | Product-wide architecture, realms, data, UI language | **ACTIVE** — master map |
@@ -50,12 +52,12 @@ NakedQuantum merges **CosmiOS** (archive / Soup) and **Quantum Sanctuary** (char
 | **`witness-weather-blueprint.md`** | Weather states + 250-question cues matrix | **SHIPPED** — §3–§6 authoritative |
 | **`app-architecture-split-blueprint.md`** | Phased `app.js` extraction S0–S6 | **SHIPPED** — May 2026 |
 | **`abyss-v021-blueprint.md`** | Abyss honest sky (settle, DNA, sanctuary presence) | **SHIPPED** — code in `abyss.js` |
-| **`guardian-refinement-roadmap-blueprint.md`** | Guardian G0–G6, Cartographer C1–C8 (strip retired) | **ARCHAEOLOGY** — superseded by witness loop |
-| **`NakedQuantum-checkpoint-2026-05.md`** | May 2026 code-review snapshot (PR #33 base) | **ARCHAEOLOGY** — do not use for next work |
+| **`_archive/guardian-refinement-roadmap-2026-05.md`** | Guardian G0–G6, Cartographer C1–C8 (strip retired) | **ARCHIVED** |
+| **`_archive/NakedQuantum-checkpoint-2026-05.md`** | May 2026 code-review snapshot (PR #33 base) | **ARCHIVED** |
 | **`Kaja-cursor.md`** | Co-creator handoff — how Kaja + Cursor work | **AGENT RUNBOOK** |
 | **`AGENTS.md`** | Dev server, WebAuthn bypass, lint, collaboration rules | **AGENT RUNBOOK** |
-| `NakedQuantum-Roadmap.md` | April 2026 checklist + monetisation notes | **ARCHAEOLOGY** |
-| `Watcher-implementation-ordeal.md` | Watcher / Safari worker build journal | **JOURNAL** — not a contract |
+| `_archive/NakedQuantum-Roadmap-2026-04.md` | April 2026 checklist + monetisation notes | **ARCHIVED** |
+| `_archive/Watcher-implementation-ordeal.md` | Watcher / Safari worker build journal | **ARCHIVED** — journal |
 | `NakedQuantum-story.md` | Origin narrative | **PERSONAL** |
 | `NakedQuantum-journal.md` | Builder journal | **PERSONAL** |
 | `workers/guardian-invoke/RETIRED.md` | Auto-invoke strip retirement note | **ARCHAEOLOGY** |
@@ -119,7 +121,7 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 
 ### 4.4 Dev vs production knobs
 
-Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): WebAuthn bypass paths, Watcher similarity ~0.50, Guardian cooldown ~6 min. **Do not ship to strangers until production thresholds are hardened** — see `NakedQuantum-quantum-fortress.md` §18 and historical P0 notes in `NakedQuantum-checkpoint-2026-05.md` §5.
+Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): WebAuthn bypass paths, Watcher similarity ~0.50, Guardian cooldown ~6 min. **Do not ship to strangers until production thresholds are hardened** — see `NakedQuantum-quantum-fortress.md` §18 and historical P0 notes in `_archive/NakedQuantum-checkpoint-2026-05.md` §5.
 
 ---
 
@@ -210,7 +212,7 @@ Several thresholds are **dev-soft** today (`NQ_DEV_MODE = true` in `app.js`): We
 
 ## 12. Guardian
 
-*Active contract: `witness-loop-upgrade-blueprint.md`. Historical batch detail: `guardian-refinement-roadmap-blueprint.md` (archaeology). **Auto-invoke strip retired May 2026.** North star: **`witness-panel-blueprint.md`** — loop first, **Review** after the pass (not Summon ritual).*
+*Active contract: `witness-loop-upgrade-blueprint.md`. Historical batch detail: `_archive/guardian-refinement-roadmap-2026-05.md`. **Auto-invoke strip retired May 2026.** North star: **`witness-panel-blueprint.md`** — loop first, **Review** after the pass (not Summon ritual).*
 
 ### Paths (interim on `main`)
 
@@ -397,6 +399,7 @@ No ads, SEO theatre, or performance marketing.
 | 2026-05-26 | Pinned **`craft-layer-blueprint.md`**, **`witness-panel-blueprint.md`**; §12 Review north star; §14 Craft idea layer |
 | 2026-05-18 | Pinned **`witness-weather-blueprint.md`** — weather + cues; dismiss=release |
 | 2026-05-30 | **S0–S6 module split shipped** — `nq-db.js`, `nq-crypto.js`, `abyss.js`, `watcher.js`, `guardian.js`; §2 Status index; §4.1 module map |
+| 2026-05-30 | **Docs Pass B** — `_archive/` for guardian-refinement, checkpoint, April roadmap, Watcher journal |
 
 ---
 
