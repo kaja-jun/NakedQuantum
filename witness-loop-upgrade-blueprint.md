@@ -475,7 +475,7 @@ P9–P11 → optional polish
 | **W3** Substrate honesty | ☑ | §7D — resistance normalize, corpus_baseline, SUBSTRATE empty states, half-life surface, summon bridge prompt |
 | **W4** Witness ledger chain | ☑ | §7E — HMAC chain on summon + bridge events; import re-anchor |
 | **W5-practice** Bridge as practice (human gate) | ☐ | §7F — real friction; gates W5-D dogfood |
-| **W5 mechanics** Biological limits (E-lite … H) | ☐ | §7I + `w5-biological-limits-blueprint.md` |
+| **W5 mechanics** Biological limits (E-lite … H) | ☑ PWA batch | §7I + `witness-w5.js` — E-lite, F, C, I, A-scout |
 | **W4.6** Ledger re-anchor ceremony | ☐ | fortress §18.7 — migration vs tamper |
 | **W6** Temporal compare (legacy) | — | §7G — superseded by W5-E + W5-G |
 | **WP1–WP8** Witness panel + Review | ☐ | §7H + `witness-panel-blueprint.md` — idea layer |

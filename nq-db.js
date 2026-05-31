@@ -56,6 +56,7 @@ db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoke
   db.run("CREATE TABLE IF NOT EXISTS bridge_rows(id TEXT PRIMARY KEY, opened_at INTEGER, source_log_id TEXT, prior_theory TEXT, user_action TEXT, user_note TEXT, signal_keys TEXT, geometry_at_open TEXT, status TEXT, checks INTEGER DEFAULT 0, last_check_at INTEGER, closed_at INTEGER, closure_reason TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS bridge_rows_enc(id TEXT PRIMARY KEY, enc TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS witness_ledger_chain(id TEXT PRIMARY KEY, seq INTEGER NOT NULL, event_type TEXT NOT NULL, event_id TEXT NOT NULL, payload_hash TEXT NOT NULL, prev_hash TEXT NOT NULL, link_hash TEXT NOT NULL, created_at INTEGER NOT NULL)");
+  db.run("CREATE TABLE IF NOT EXISTS pinned_snapshots(id TEXT PRIMARY KEY, pinned_at INTEGER, trigger_condition TEXT, posture_vector TEXT, top_terms TEXT, orbit_terms TEXT, open_bridges INTEGER, weather_state TEXT, cluster_signature TEXT, ref_id TEXT)");
 
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN auto_invoked INTEGER DEFAULT 0"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN triggered_by TEXT"); } catch (e) {}
@@ -69,7 +70,7 @@ db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoke
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN prediction_tag TEXT"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN prediction_outcome TEXT"); } catch (e) {}
 
-  ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities', 'bridge_rows', 'witness_ledger_chain'].forEach
+  ['cosm_folders', 'cosm_discourses', 'characters', 'history', 'summaries', 'cosm_mosaic_tiles', 'cosm_backlinks', 'guardian_logs', 'guardian_summaries', 'immutable_entities', 'bridge_rows', 'witness_ledger_chain', 'pinned_snapshots'].forEach
 (t => {
     try {
       const info = db.exec("PRAGMA table_info(" + t + ")");
@@ -171,11 +172,11 @@ self.onmessage = async (e) => {
 
     // Hash-only witness ledger — always plaintext table (no witness_ledger_chain_enc)
     function ledgerStore(store, isEnc) {
-      if (store === 'witness_ledger_chain') return store;
+      if (store === 'witness_ledger_chain' || store === 'pinned_snapshots') return store;
       return isEnc ? (store + '_enc') : store;
     }
     function storeUsesEnc(store, isEnc) {
-      return isEnc && store !== 'witness_ledger_chain';
+      return isEnc && store !== 'witness_ledger_chain' && store !== 'pinned_snapshots';
     }
 
     const isEnc = encKey;

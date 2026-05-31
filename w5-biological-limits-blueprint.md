@@ -687,6 +687,6 @@ W5-J (hysteresis) — Rovelli:
 | 2026-05-31 | Initial pin — 8 biological limits, W5-A through W5-H, E-lite build first, integration gate, gap question synthesis, philosopher cue additions, build order PWA vs desktop vs Phase B |
 | 2026-05-31 | Rev 2 — steel man breach condition; decay velocity taxonomy; domain anchor pre-check; ANCHORS HELD counter; Hebbian frequency floor; FORMING visibility rule |
 | 2026-05-31 | Rev 3 — Geometry-not-diagnosis rule §1.1; four Living Questions (W5-I, W5-J, W5-L, W5-N); somatic proxy indefinite hold; founding principle §0; philosopher cues for W5-I and W5-J |
-| 2026-05-31 | Rev 4 — Register merge (§0 W5-practice vs W5 mechanics; W6 → W5-E+G); §2.1 cluster_id contract; W5-E `geometry_at_open` precursor + backfill; W5-C code-truth tag mapping; W5-D deterministic steel man + W5-practice gate; W5-H reinforcement decay; anchor diff view; W5-I promoted PWA; LQ-W5-L magnitude guard; LQ-W5-N SUBSTRATE-only placement; §8 extensions |
+| 2026-05-31 | **PWA batch shipped** — W5-E-lite, F, C, I, A-scout in `witness-w5.js`; cache `nq-v30` |
 
 -----

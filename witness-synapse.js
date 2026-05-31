@@ -872,8 +872,12 @@ async function buildSynapseSnapshot() {
   synapse.threshold_engine = {
     picked: thresholdResult.picked ? thresholdResult.picked.id : null,
     candidates: thresholdResult.candidates.map(function (c) { return c.id; }),
-    queue_len: thresholdResult.queue.length
+    queue_len: thresholdResult.queue.length,
+    forming: thresholdResult.forming || []
   };
+  if (typeof w5EnrichSynapse === 'function') {
+    await w5EnrichSynapse(synapse, prevSyn, bridgeRows, arcsMap, fastMapById);
+  }
   try {
     localStorage.setItem(SYNAPSE_LS, JSON.stringify(synapse));
   } catch (eStore) {}
@@ -1163,6 +1167,8 @@ async function openBridgeRow(sourceLog, userAction, userNote) {
   await dbPut('bridge_rows', row);
   await appendWitnessLedgerLink('bridge_open', row.id, row);
   await refreshWitnessSubstrate();
+  var synAfter = getSynapseSnapshot();
+  if (typeof w5PinOnBridgeOpen === 'function') await w5PinOnBridgeOpen(synAfter, row);
   return row;
 }
 
@@ -1172,6 +1178,13 @@ async function closeBridgeRow(row, status, reason) {
   row.closed_at = Date.now();
   await dbPut('bridge_rows', row);
   await appendWitnessLedgerLink('bridge_close', row.id + '_close_' + (row.closed_at || Date.now()), row);
+  if (status === 'relapsed' && typeof w5PinOnBridgeRelapse === 'function') {
+    var synRel = getSynapseSnapshot();
+    if (!synRel) {
+      try { synRel = await refreshWitnessSubstrate(); } catch (ePin) {}
+    }
+    await w5PinOnBridgeRelapse(synRel, row);
+  }
 }
 
 async function evaluateBridgeRelapse() {
@@ -1215,6 +1228,9 @@ async function evaluateBridgeRelapse() {
 
 async function refreshWitnessSubstrate() {
   if (!isWitnessSubstrateEnabled()) return null;
+  if (typeof w5BackfillPinsFromBridges === 'function') {
+    try { await w5BackfillPinsFromBridges(); } catch (eBf) { console.warn('[W5] backfill:', eBf); }
+  }
   try {
     await evaluateBridgeRelapse();
   } catch (eBr) {
@@ -1274,6 +1290,23 @@ async function renderWitnessProcessPanel() {
   html += '<div class="witness-process-section"><div class="witness-process-h">Baseline</div>';
   html += '<div class="witness-process-line">baseline: ' + (cb.total_discourses != null ? cb.total_discourses : '—') +
     ' discourses · ' + (cb.organic_writes_since != null ? cb.organic_writes_since : '0') + ' organic since</div></div>';
+  if (typeof w5GetAllPins === 'function') {
+    var w5Pins = await w5GetAllPins();
+    html += '<div class="witness-process-section"><div class="witness-process-h">Anchors held</div>';
+    html += '<div class="witness-process-line">' + escHtml(w5FormatAnchorsHeldLine(w5Pins)) + '</div>';
+    if (w5Pins.length && typeof w5FormatAnchorDiffHtml === 'function') {
+      html += w5FormatAnchorDiffHtml(syn, w5Pins);
+    }
+    html += '</div>';
+  }
+  var formingLine = '';
+  if (syn.threshold_engine && syn.threshold_engine.forming && typeof w5FormatFormingLine === 'function') {
+    formingLine = w5FormatFormingLine(syn.threshold_engine.forming);
+  }
+  if (formingLine) {
+    html += '<div class="witness-process-section"><div class="witness-process-h">Forming</div>';
+    html += '<div class="witness-process-line muted">' + escHtml(formingLine) + '</div></div>';
+  }
   var pv = syn.posture_vector || {};
   html += '<div class="witness-process-section"><div class="witness-process-h">Posture</div>';
   html += '<div class="witness-process-line">coherence ' + (pv.coherence != null ? pv.coherence : '—') +
@@ -1304,6 +1337,14 @@ async function renderWitnessProcessPanel() {
   }
   html += '<div class="witness-process-section"><div class="witness-process-h">Saccade</div>';
   html += '<div class="witness-process-line">' + escHtml(formatSubstrateSaccadeLine(syn.saccade_log)) + '</div></div>';
+  if (syn.w5_confidence && typeof w5FormatConfidenceLine === 'function') {
+    html += '<div class="witness-process-section"><div class="witness-process-h">Witness confidence</div>';
+    html += '<div class="witness-process-line muted">' + escHtml(w5FormatConfidenceLine(syn.w5_confidence)) + '</div></div>';
+  }
+  if (syn.w5_encoding_mismatch && typeof w5FormatEncodingMismatchLine === 'function') {
+    html += '<div class="witness-process-section"><div class="witness-process-h">Encoding context</div>';
+    html += '<div class="witness-process-line">' + escHtml(w5FormatEncodingMismatchLine(syn.w5_encoding_mismatch)) + '</div></div>';
+  }
   html += '<div class="witness-process-section"><div class="witness-process-h">Bridges</div>';
   if (openN || bridges.length) {
     html += '<div class="witness-process-line">' + openN + ' open · ' + bridges.length + ' total</div>';
@@ -1345,7 +1386,11 @@ async function renderWitnessProcessPanel() {
   }
   html += '</div>';
   html += '<div class="witness-process-section witness-process-footer"><div class="witness-process-line muted">synapse built: ' +
-    escHtml(formatSynapseAgeRelative(syn.built_at)) + '</div></div>';
+    escHtml(formatSynapseAgeRelative(syn.built_at)) + '</div>';
+  if (typeof w5FormatContainerAckLine === 'function') {
+    html += '<div class="witness-process-line muted witness-umwelt-line">' + escHtml(w5FormatContainerAckLine()) + '</div>';
+  }
+  html += '</div>';
   panel.innerHTML = html;
   panel.querySelectorAll('.witness-cue-dismiss').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
@@ -1467,7 +1512,14 @@ function pickWitnessThreshold(candidates) {
 
 function runWitnessThresholdEngine(synapse, prevSyn, bridgeRows, arcsMap) {
   var candidates = detectWitnessThresholdCandidates(synapse, prevSyn, bridgeRows, arcsMap);
-  var pick = pickWitnessThreshold(candidates);
+  var forming = [];
+  var eligible = candidates;
+  if (typeof w5FilterThresholdCandidates === 'function') {
+    var gated = w5FilterThresholdCandidates(candidates);
+    forming = gated.forming;
+    eligible = gated.eligible;
+  }
+  var pick = pickWitnessThreshold(eligible);
   var mergedQueue = pick.queued.concat(loadWitnessThresholdQueue().filter(function (q) {
     return !candidates.some(function (c) { return c.id === q.id; });
   }));
@@ -1481,7 +1533,7 @@ function runWitnessThresholdEngine(synapse, prevSyn, bridgeRows, arcsMap) {
       }));
     } catch (eLf) {}
   }
-  return { candidates: candidates, picked: pick.picked, queue: mergedQueue.slice(0, 12) };
+  return { candidates: candidates, picked: pick.picked, queue: mergedQueue.slice(0, 12), forming: forming };
 }
 
 async function dogfoodWitnessThresholds() {
