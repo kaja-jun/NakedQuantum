@@ -5592,9 +5592,9 @@ async function exportDiscourseMarkdown(id){const d=await getDiscourse(id);if(!d)
 
 async function exportFolderContents(fId){const discs=(await dbGetByIndex("cosm_discourses","folder_id",fId)).filter(d=>!d.isDeleted);if(!discs.length){showToast("No discourses to export ◆");return;}let md=`# Folder Export\n\n`;for(const d of discs){const t=await getMosaicTile(d.id);md+=`## ${d.title}\n\n`;if(t&&t.anchors&&t.anchors.length)md+=`> **Mosaic**\n${t.anchors.map(a=>`> - ${a}`).join('\n')}\n\n`;md+=d.raw_text||" ";md+=`\n\n---\n\n`;}const blob=new Blob([md],{type:"text/markdown"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`folder_export_${new Date().toISOString().slice(0,10)}.md`;a.click();URL.revokeObjectURL(url);showToast(`Exported ${discs.length} discourse(s)`);}
 
-async function exportJSON(){const f=await dbGetAll("cosm_folders"),d=await dbGetAll("cosm_discourses"),m=await dbGetAll("cosm_mosaic_tiles"),b=await dbGetAll("cosm_backlinks"),c=await dbGetAll("characters"),h=await dbGetAll("history"),s=await dbGetAll("summaries"),gl=await dbGetAll("guardian_logs"),gs=await dbGetAll("guardian_summaries"),ie=await dbGetAll("immutable_entities"),br=await dbGetAll("bridge_rows");const payload={version:"NakedQuantum",exported_at:new Date().toISOString(),cosm_folders:f,cosm_discourses:d,cosm_mosaic_tiles:m,cosm_backlinks:b,characters:c,history:h,summaries:s,guardian_logs:gl,guardian_summaries:gs,immutable_entities:ie,bridge_rows:br};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`NQ_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);showToast("Backup exported ◆");}
+async function exportJSON(){const f=await dbGetAll("cosm_folders"),d=await dbGetAll("cosm_discourses"),m=await dbGetAll("cosm_mosaic_tiles"),b=await dbGetAll("cosm_backlinks"),c=await dbGetAll("characters"),h=await dbGetAll("history"),s=await dbGetAll("summaries"),gl=await dbGetAll("guardian_logs"),gs=await dbGetAll("guardian_summaries"),ie=await dbGetAll("immutable_entities"),br=await dbGetAll("bridge_rows"),ps=await dbGetAll("pinned_snapshots");const payload={version:"NakedQuantum",exported_at:new Date().toISOString(),cosm_folders:f,cosm_discourses:d,cosm_mosaic_tiles:m,cosm_backlinks:b,characters:c,history:h,summaries:s,guardian_logs:gl,guardian_summaries:gs,immutable_entities:ie,bridge_rows:br,pinned_snapshots:ps};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`NQ_backup_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);showToast("Backup exported ◆");}
 
-async function importJSON(event){const file=event.target.files[0];if(!file)return;if(!confirm("Import will merge with existing data. Continue?")){event.target.value='';return;}try{const text=await file.text();const payload=JSON.parse(text);const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store]))for(const item of payload[store])await dbPut(store,item);}await resetWitnessLedgerChain('import');mosaicCache={};if(currentMode==='soup')await renderTableView();else await renderSanctuaryView();showToast("Import complete ✓");}catch(err){console.error(err);showToast("Import failed");}event.target.value='';}
+async function importJSON(event){const file=event.target.files[0];if(!file)return;if(!confirm("Import will merge with existing data. Continue?")){event.target.value='';return;}try{const text=await file.text();const payload=JSON.parse(text);const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows','pinned_snapshots'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store]))for(const item of payload[store])await dbPut(store,item);}await resetWitnessLedgerChain('import');mosaicCache={};if(currentMode==='soup')await renderTableView();else await renderSanctuaryView();showToast("Import complete ✓");}catch(err){console.error(err);showToast("Import failed");}event.target.value='';}
 
 /* MOSAIC EXTRACT */
 async function extractMemory(){
@@ -5652,7 +5652,8 @@ async function backupToAkashic(){
       guardian_logs: await dbGetAll('guardian_logs'),
       guardian_summaries: await dbGetAll('guardian_summaries'),
       immutable_entities: await dbGetAll('immutable_entities'),
-      bridge_rows: await dbGetAll('bridge_rows')
+      bridge_rows: await dbGetAll('bridge_rows'),
+      pinned_snapshots: await dbGetAll('pinned_snapshots')
     };
     const envelope = await encForAkashicBlob(payload);
     const res = await fetch(`${AKASHIC_URL}/backup`, {
@@ -5671,7 +5672,7 @@ async function restoreFromAkashic(){
     const res = await fetch(`${AKASHIC_URL}/backup/latest?user_id=${cosmUserId}`);
     if (!res.ok) throw new Error('No backup');
     const payload = await parseAkashicBackupResponse(await res.text());
-    const stores = ['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows'];
+    const stores = ['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows','pinned_snapshots'];
     for (const store of stores) {
       if (payload[store] && Array.isArray(payload[store])) {
         const all = await dbGetAll(store);

@@ -2501,6 +2501,11 @@ select.cosm-input {
 .witness-process-line.muted { opacity: 0.45; }
 .witness-process-deny .witness-process-line { color: var(--g-accent); opacity: 0.9; }
 .witness-process-footer { margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--g-border); }
+.witness-umwelt-line { margin-top: 6px; font-size: 11px; opacity: 0.4; }
+.w5-anchor-diff { margin-top: 6px; font-size: 11px; opacity: 0.75; }
+.w5-anchor-diff-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; line-height: 1.4; }
+.w5-anchor-diff-head { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.5; margin-bottom: 2px; }
+.w5-anchor-diff-row .muted { opacity: 0.55; }
 .witness-weather-line { font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; color: var(--g-accent); opacity: 0.88; margin-bottom: 6px; line-height: 1.35; }
 .witness-weather-section { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--g-border); }
 .witness-weather-status { font-size: 11px; line-height: 1.45; margin-bottom: 4px; }
