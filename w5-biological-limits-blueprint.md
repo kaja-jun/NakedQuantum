@@ -25,7 +25,7 @@ Do not confuse **W5-practice** (wait for a summon that makes you pause) with **W
 
 ## 0.1 The soul of this document
 
-*We are not here to make anyone suffer. But if anyone is suffocating by this container, we are here to show what is really hiding in plain sight.*
+*We are not here to make anyone suffer. But if anyone is suffocating by this container of existence, we are here to show what is really hiding in plain sight.*
 
 Whether the existence cuts or hugs or both — whether the user accepts or rejects — the burden lies on the existence itself. The exoskeleton does not perform from above. It holds the coordinate. The human decides what to do with it.
 
@@ -690,5 +690,3 @@ W5-J (hysteresis) — Rovelli:
 | 2026-05-31 | Rev 4 — Register merge (§0 W5-practice vs W5 mechanics; W6 → W5-E+G); §2.1 cluster_id contract; W5-E `geometry_at_open` precursor + backfill; W5-C code-truth tag mapping; W5-D deterministic steel man + W5-practice gate; W5-H reinforcement decay; anchor diff view; W5-I promoted PWA; LQ-W5-L magnitude guard; LQ-W5-N SUBSTRATE-only placement; §8 extensions |
 
 -----
-
-*We are not here to make anyone suffer. But if anyone is suffocating by this container of existence, we are here to show what is really hiding in plain sight.*
