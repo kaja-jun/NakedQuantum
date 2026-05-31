@@ -1017,8 +1017,11 @@ function openIEBottomSheet(id){
     
     const sigilEl = document.getElementById('ie-manifest-sigil');
     const rawSigil = (e.sigil_svg || '').trim();
-    if (/^<svg[\s>]/i.test(rawSigil)) sigilEl.innerHTML = rawSigil;
-    else sigilEl.textContent = '◈';
+    if (/^<svg[\s>]/i.test(rawSigil)) {
+      var cleanSigil = sanitizeSvg(rawSigil);
+      if (cleanSigil) sigilEl.innerHTML = cleanSigil;
+      else sigilEl.textContent = '◈';
+    } else sigilEl.textContent = '◈';
     
     document.getElementById('ie-manifest-name').textContent = e.display_name || 'Unnamed';
     document.getElementById('ie-manifest-archetype').textContent = e.archetype_tag || '';
@@ -3999,7 +4002,7 @@ strip.appendChild(ctaCard);
           if (!url) return;
           const av = card.querySelector('#cavatar-' + c.id);
           if (!av) return;
-          av.innerHTML = '<img src="' + url + '" alt="">';
+          av.innerHTML = safeImgSrc(url) ? '<img src="' + escAttr(url) + '" alt="">' : escHtml(c.name.charAt(0).toUpperCase());
         });
       }
       card.addEventListener('click', () => {
@@ -4210,7 +4213,7 @@ async function openChat(id){
   const primarySlot = (c.image !== undefined && c.image !== null && c.image !== '') ? Number(c.image) : -1;
   if (primarySlot >= 0) {
     loadCharacterPhoto(c.id, primarySlot).then(url => {
-      if (url) pill.innerHTML = '<img src="' + url + '" alt="">';
+      if (url && safeImgSrc(url)) pill.innerHTML = '<img src="' + escAttr(url) + '" alt="">';
     });
   }
   // Tap pill to open lightbox if photos exist
@@ -5319,7 +5322,7 @@ return;}
   const mc=chars.filter(c=>!c.isDeleted&&((c.name||'').toLowerCase().includes(q)||(c.role||'').toLowerCase().includes(q))).map(c=>({type:'character',item:c,path:'Sanctuary'}));
   const all=[...mf,...md,...mc];
   if(!all.length){re.innerHTML='<div class="global-search-empty">No results</div>';return;}
-  re.innerHTML=all.map(r=>`<div class="global-search-result" data-type="${r.type}" data-id="${r.item.id}"><div class="global-search-result-title">${escHtml(r.type==='folder'?r.item.name:(r.type==='character'?r.item.name:(r.item.title||'Untitled')))}<span class="global-search-result-type ${r.type}">${r.type}</span></div><div class="global-search-result-path">${escHtml(r.path)}</div></div>`).join('');
+  re.innerHTML=all.map(r=>`<div class="global-search-result" data-type="${escAttr(r.type)}" data-id="${escAttr(r.item.id)}"><div class="global-search-result-title">${escHtml(r.type==='folder'?r.item.name:(r.type==='character'?r.item.name:(r.item.title||'Untitled')))}<span class="global-search-result-type ${escAttr(r.type)}">${escHtml(r.type)}</span></div><div class="global-search-result-path">${escHtml(r.path)}</div></div>`).join('');
   re.querySelectorAll('.global-search-result').forEach(el=>{el.addEventListener('click',()=>{const type=el.dataset.type,id=el.dataset.id;closeGlobalSearch();if(type==='folder')enterFolder(id,fm.get(id)?.name||'Folder');else if(type==='character')openChat(id);else openDiscourse(id);});});
 }
 
@@ -5463,8 +5466,8 @@ function renderContent(raw){
   const cb=[];t=t.replace(/```([\s\S]*?)```/g,(_,c)=>{const i=cb.length;cb.push('<pre><code>'+escHtml(c.trim())+'</code></pre>');return'%%CB'+i+'%%';});
   const ic=[];t=t.replace(/`([^`]+)`/g,(_,c)=>{const i=ic.length;ic.push('<code>'+escHtml(c)+'</code>');return'%%IC'+i+'%%';});
   const bm=[];const sb=h=>{const i=bm.length;bm.push(h);return'%%BL'+i+'%%';};
-  t=t.replace(/^### (.+)$/gm,(_,x)=>sb('<h3>'+x+'</h3>'));t=t.replace(/^## (.+)$/gm,(_,x)=>sb('<h2>'+x+'</h2>'));t=t.replace(/^# (.+)$/gm,(_,x)=>sb('<h1>'+x+'</h1>'));
-  t=t.replace(/^> (.+)$/gm,(_,x)=>sb('<blockquote>'+x+'</blockquote>'));
+  t=t.replace(/^### (.+)$/gm,(_,x)=>sb('<h3>'+escHtml(x)+'</h3>'));t=t.replace(/^## (.+)$/gm,(_,x)=>sb('<h2>'+escHtml(x)+'</h2>'));t=t.replace(/^# (.+)$/gm,(_,x)=>sb('<h1>'+escHtml(x)+'</h1>'));
+  t=t.replace(/^> (.+)$/gm,(_,x)=>sb('<blockquote>'+escHtml(x)+'</blockquote>'));
   t=t.replace(/^---$/gm,()=>sb('<hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">'));
   t=escHtml(t);t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');t=t.replace(/\*(.+?)\*/g,'<em>$1</em>');t=t.replace(/&lt;u&gt;(.+?)&lt;\/u&gt;/g,'<u>$1</u>');
   const lines=t.split('\n'),out=[];let il=false,io=false;
@@ -5660,7 +5663,6 @@ function cancelLP(card){
 
 /* TOAST & UTILS */
 function showToast(msg){const t=document.getElementById("cosm-toast");t.textContent=msg;t.style.opacity="1";clearTimeout(t._timer);t._timer=setTimeout(()=>{t.style.opacity="0";},2200);}
-function escHtml(str){if(!str)return"";return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;");}
 
 function openPhotoLightbox(urls) {
   let current = 0;
@@ -5674,7 +5676,7 @@ function openPhotoLightbox(urls) {
     closeBtn.onclick = () => lb.remove();
     lb.appendChild(closeBtn);
     const img = document.createElement('img');
-    img.src = urls[current];
+    img.src = safeImgSrc(urls[current]) || '';
     lb.appendChild(img);
     if (urls.length > 1) {
       const dots = document.createElement('div');

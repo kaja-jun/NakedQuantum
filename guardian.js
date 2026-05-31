@@ -572,7 +572,7 @@ function openGuardianSettingsModal() {
     const btn = document.createElement('button');
     btn.className = 'management-btn';
     btn.id = 'g-model-opt-' + i;
-    btn.innerHTML = '<span>◈</span> ' + (GUARDIAN_MODEL_LABELS[m] || m.split('/').pop());
+    btn.innerHTML = '<span>◈</span> ' + escHtml(GUARDIAN_MODEL_LABELS[m] || m.split('/').pop());
     if(i === pendingModelIdx) btn.style.borderColor = 'var(--accent)';
     btn.onclick = () => {
       pendingModelIdx = i;
