@@ -98,29 +98,19 @@ NakedQuantum model names are internal — not exposed as GGUF filenames or Qwen 
 ## 4. First-run onboarding flow
 
 ```
-Install NakedQuantum.app
+Download NakedQuantum (~2.5GB with NQ Standard bundled)
 ↓
-First launch — no model detected
+Install and launch
 ↓
-MODEL REQUIRED screen (before anything else)
+Boot detection — model present and valid? → yes → continue
+                                          → no  → re-download prompt
+↓
+Onboarding — shows model tier screen as information
+"Your model: NQ Standard
+ Upgrade available: NQ Enhanced, NQ Deep"
+↓
+App opens
 
-  "NakedQuantum thinks on your device.
-   Nothing leaves your Mac."
-
-  [NQ Standard — 2.5GB — Recommended]  ← pre-selected
-  [NQ Enhanced — 5.1GB — Higher quality]
-  [NQ Deep — 9.2GB — Maximum depth]
-
-  System check shown: RAM available, disk space available
-  ↓
-  [Download and continue]
-  ↓
-  Progress bar — resumable if interrupted
-  ↓
-  App opens when complete
-
-Post-onboarding nudge (shown once, day 3):
-  "Upgrade your model anytime from the witness panel → MODEL"
 ```
 
 **Rules:**
