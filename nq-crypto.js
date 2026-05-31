@@ -1,5 +1,5 @@
 /* jshint esversion: 11 */
-/* global window, localStorage, document, crypto, navigator, indexedDB, setTimeout, setInterval, clearInterval, confirm, prompt, alert, NQ_DEV_MODE, setEncryptionKey, showToast, init */
+/* global window, localStorage, document, crypto, navigator, indexedDB, setTimeout, setInterval, clearInterval, clearTimeout, confirm, prompt, alert, NQ_DEV_MODE, setEncryptionKey, clearEncryptionKey, showToast, init */
 /**
  * Quantum fortress — sovereign key, WebAuthn PRF, secure BYOK storage, cloud sync crypto.
  * See app-architecture-split-blueprint.md (S5).
@@ -73,8 +73,78 @@ async function unwrapSovereignKey(wrappedJson, prfKeyBytes) {
 
 // ── RAM KEY STATE & EXPORTER ──
 let _sovereignKey = null;
+const SOVEREIGN_FP_KEY = 'nq_sovereign_key_fp';
+const AUTO_LOCK_GRACE_MS = 45000;
+let _autoLockTimer = null;
+
+async function sovereignKeyFingerprint(keyBytes) {
+  const hash = await crypto.subtle.digest('SHA-256', keyBytes);
+  return Array.from(new Uint8Array(hash)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+async function persistSovereignKeyFingerprint(keyBytes) {
+  const fp = await sovereignKeyFingerprint(keyBytes);
+  localStorage.setItem(SOVEREIGN_FP_KEY, fp);
+  return fp;
+}
+
+async function getSovereignKeyFingerprint() {
+  const sk = getSovereignKey();
+  if (!sk) return null;
+  return sovereignKeyFingerprint(sk);
+}
+
+async function armSovereignKey(keyBytes) {
+  setSovereignKey(keyBytes);
+  await setEncryptionKey(keyBytes);
+  await persistSovereignKeyFingerprint(keyBytes);
+}
+
 function setSovereignKey(keyBytes) { _sovereignKey = keyBytes; }
 function getSovereignKey() { return _sovereignKey; }
+
+async function lockAbyss() {
+  if (_autoLockTimer) {
+    clearTimeout(_autoLockTimer);
+    _autoLockTimer = null;
+  }
+  _sovereignKey = null;
+  try {
+    if (typeof clearEncryptionKey === 'function') await clearEncryptionKey();
+  } catch (e) {}
+  const lockScreen = document.getElementById('lock-screen');
+  if (lockScreen) {
+    lockScreen.style.display = 'flex';
+    const statusEl = document.getElementById('lock-status');
+    if (statusEl) statusEl.textContent = 'Abyss locked — tap to unlock';
+    const btnManualUnlock = document.getElementById('btn-manual-unlock');
+    if (btnManualUnlock) {
+      btnManualUnlock.style.display = 'block';
+      btnManualUnlock.textContent = 'Tap to Unlock';
+    }
+    document.getElementById('fallback-key-input').style.display = 'none';
+    document.getElementById('btn-fallback-unlock').style.display = 'none';
+    document.getElementById('btn-faceid-retry').style.display = 'none';
+  }
+}
+
+function initAbyssAutoLock() {
+  if (typeof NQ_DEV_MODE !== 'undefined' && NQ_DEV_MODE) return;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      if (_autoLockTimer) clearTimeout(_autoLockTimer);
+      _autoLockTimer = setTimeout(function () {
+        _autoLockTimer = null;
+        if (document.hidden && getSovereignKey()) void lockAbyss();
+      }, AUTO_LOCK_GRACE_MS);
+      return;
+    }
+    if (_autoLockTimer) {
+      clearTimeout(_autoLockTimer);
+      _autoLockTimer = null;
+    }
+  });
+}
 
 // Expose globally so the HTML button can see it
 window.showSovereignKey = function() {
@@ -130,8 +200,7 @@ async function unlockWithPRF(){
       const ext = cred.getClientExtensionResults();
       if (ext.prf?.results?.first) {
         let prfKey = new Uint8Array(ext.prf.results.first);
-        setSovereignKey(prfKey);
-        await setEncryptionKey(prfKey);
+        await armSovereignKey(prfKey);
         showToast('◈ Face ID registered');
         return true;
       } else {
@@ -176,8 +245,7 @@ async function unlockWithPRF(){
         }
       }
       
-      setSovereignKey(finalKey); 
-      await setEncryptionKey(finalKey); 
+      await armSovereignKey(finalKey);
       showToast('Sovereign key active ◆');
       return true;
     } else {
@@ -305,8 +373,7 @@ async function unlockWithFallbackKey() {
     
     if(keyBytes.length !== 32) throw new Error("Incorrect key length");
     
-    setSovereignKey(keyBytes);
-    await setEncryptionKey(keyBytes);
+    await armSovereignKey(keyBytes);
     
     document.getElementById('lock-screen').style.display = 'none';
     showToast("Abyss Unlocked ◆"); // This toast is fine because the keyboard drops when app loads
@@ -467,5 +534,7 @@ async function bootApp() {
       statusEl.textContent = 'Face ID rejected. Use sovereign key.';
     }
   }
+
+  initAbyssAutoLock();
 }
 

@@ -270,6 +270,7 @@ var WITNESS_CUE_RETIRED_LS = 'nq_cue_retired';
 var WITNESS_WEATHER_CTX_LS = 'nq_witness_weather_ctx';
 var WITNESS_CHAIN_LS_ID = 'nq_witness_chain_id';
 var WITNESS_CHAIN_GENESIS_AT = 'nq_witness_chain_genesis_at';
+var WITNESS_LEDGER_KEY_FP = 'nq_witness_ledger_key_fp';
 var _witnessLedgerStatus = { ok: null, length: 0, breakAt: null, dormant: false, reanchored: false };
 var _witnessLedgerVerifyPromise = null;
 
@@ -593,6 +594,7 @@ async function resetWitnessLedgerChain(reason) {
     }
     localStorage.removeItem(WITNESS_CHAIN_LS_ID);
     localStorage.removeItem(WITNESS_CHAIN_GENESIS_AT);
+    localStorage.removeItem(WITNESS_LEDGER_KEY_FP);
     _witnessLedgerStatus = { ok: null, length: 0, breakAt: null, dormant: false, reanchored: true, reason: reason || null };
   } catch (eReset) {
     console.warn('[Witness] ledger reset:', eReset);
@@ -612,6 +614,12 @@ async function appendWitnessLedgerLink(eventType, eventId, row) {
     var seq = chain.length ? (chain[chain.length - 1].seq + 1) : 1;
     if (seq === 1) {
       try { localStorage.setItem(WITNESS_CHAIN_GENESIS_AT, String(Date.now())); } catch (eGen) {}
+      try {
+        if (typeof getSovereignKeyFingerprint === 'function') {
+          var fp = await getSovereignKeyFingerprint();
+          if (fp) localStorage.setItem(WITNESS_LEDGER_KEY_FP, fp);
+        }
+      } catch (eFp) {}
     }
     var linkMsg = seq + '|' + eventType + '|' + eventId + '|' + payloadHash + '|' + prevHash;
     var linkHash = await witnessHmacSha256Hex(linkMsg);
@@ -639,6 +647,13 @@ async function appendWitnessLedgerLink(eventType, eventId, row) {
   }
 }
 
+async function witnessLedgerKeyChanged() {
+  var ledgerFp = localStorage.getItem(WITNESS_LEDGER_KEY_FP);
+  if (!ledgerFp || typeof getSovereignKeyFingerprint !== 'function') return false;
+  var currentFp = await getSovereignKeyFingerprint();
+  return !!(currentFp && ledgerFp !== currentFp);
+}
+
 async function verifyWitnessLedgerChain() {
   if (!isWitnessLedgerChainEnabled()) {
     _witnessLedgerStatus = { ok: null, length: 0, breakAt: null, dormant: true, reanchored: false };
@@ -658,13 +673,15 @@ async function verifyWitnessLedgerChain() {
     for (var i = 0; i < chain.length; i++) {
       var link = chain[i];
       if (link.prev_hash !== expectedPrev) {
-        _witnessLedgerStatus = { ok: false, length: chain.length, breakAt: link.seq, dormant: false, reanchored: false, error: 'prev_hash_mismatch' };
+        var keyChangedPrev = await witnessLedgerKeyChanged();
+        _witnessLedgerStatus = { ok: false, length: chain.length, breakAt: link.seq, dormant: false, reanchored: false, error: keyChangedPrev ? 'key_changed' : 'prev_hash_mismatch', keyChanged: keyChangedPrev };
         return _witnessLedgerStatus;
       }
       var linkMsg = link.seq + '|' + link.event_type + '|' + link.event_id + '|' + link.payload_hash + '|' + link.prev_hash;
       var expectedLink = await witnessHmacSha256Hex(linkMsg);
       if (!expectedLink || expectedLink !== link.link_hash) {
-        _witnessLedgerStatus = { ok: false, length: chain.length, breakAt: link.seq, dormant: false, reanchored: false, error: 'link_hash_mismatch' };
+        var keyChangedLink = await witnessLedgerKeyChanged();
+        _witnessLedgerStatus = { ok: false, length: chain.length, breakAt: link.seq, dormant: false, reanchored: false, error: keyChangedLink ? 'key_changed' : 'link_hash_mismatch', keyChanged: keyChangedLink };
         return _witnessLedgerStatus;
       }
       expectedPrev = link.link_hash;
@@ -692,8 +709,9 @@ function formatWitnessLedgerStatusLine() {
   if (st.dormant) return 'ledger: dormant — unlock required';
   if (st.reanchored) return 'ledger: re-anchored after import — pre-chain history unlinked';
   if (st.length === 0 && st.ok) return 'ledger: 0 links · verified (pre-chain logs unlinked)';
+  if (st.ok === false && st.keyChanged) return 'ledger: key changed — re-anchor or restore backup key';
   if (st.ok === false && st.breakAt) {
-    return 'ledger: break at seq ' + st.breakAt + ' — import or manual edit?';
+    return 'ledger: break at seq ' + st.breakAt + ' — possible tamper';
   }
   if (st.ok === false) {
     return 'ledger: verify failed — ' + (st.error ? String(st.error).slice(0, 48) : 'retry unlock');

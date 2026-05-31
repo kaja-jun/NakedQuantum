@@ -282,4 +282,8 @@ const setEncryptionKey = (keyBytes) => _workerReady.then(() => new Promise((res,
   const msgId = ++_id; _pending[msgId] = { resolve: res, reject: rej };
   _worker.postMessage({ id: msgId, action: 'SET_KEY', data: { keyBytes: Array.from(keyBytes) } });
 }));
+const clearEncryptionKey = () => _workerReady.then(() => new Promise((res, rej) => {
+  const msgId = ++_id; _pending[msgId] = { resolve: res, reject: rej };
+  _worker.postMessage({ id: msgId, action: 'CLEAR_KEY' });
+}));
 
