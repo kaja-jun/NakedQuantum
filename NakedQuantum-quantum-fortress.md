@@ -2,8 +2,8 @@
 
 *Security & cryptography architecture. For Kaja’s architectural docs and co-creator handoff.*
 
-**Last updated:** 26 May 2026  
-**Code anchors:** `app.js` (gatekeeper, worker, sync), `sw.js` (offline shell), `witness-loop-upgrade-blueprint.md` §7E (ledger chain)
+**Last updated:** 30 May 2026  
+**Code anchors:** `nq-crypto.js` (gate, PRF, BYOK), `nq-db.js` (worker encrypt), `witness-synapse.js` (ledger), `nq-xss.js` (output encoding), `sw.js` + `_headers` (shell), `witness-loop-upgrade-blueprint.md` §7E
 
 ---
 
@@ -17,11 +17,11 @@
 
 | Principle | What it means in practice |
 |-----------|---------------------------|
-| **Sovereignty absolute** | Plaintext lives on device only while unlocked. No server holds the sovereign key. Loss of key = unrecoverable by design. |
+| **Sovereignty absolute** | Plaintext lives on device only while unlocked. We do not hold user keys or corpus on our servers. Loss of key = unrecoverable by design. |
 | **Confidentiality ≠ integrity** | AES-GCM hides content. The witness ledger chain detects silent edits to summon/bridge history. |
-| **Honest gaps** | We document what is *not* encrypted, not pretend the whole phone is a HSM. |
+| **Fix leaks, don’t perform security** | If a byte path leaks — client or cloud — we close it. We do not collect user writing; optional cloud sees ciphertext (Supabase) or what the user explicitly exports. |
+| **Minimum dependency** | Default: **`crypto.subtle`** + native DOM only. Justified additions (e.g. CSP headers, future `.nq` crypto helpers) are gated — not npm-by-default. |
 | **BYOK for voltage** | OpenRouter / Supabase credentials are user-supplied. The app never ships provider secrets. |
-| **Zero npm crypto** | All primitives via **`crypto.subtle`** (Web Crypto API). No third-party crypto libraries. |
 
 **Threat model (realistic):**
 
@@ -171,7 +171,7 @@ No `sessionStorage` for key material. Lock screen hides app; closing Safari clea
 
 ### 5.1 Architecture
 
-- **sql.js** runs inside a **dedicated Web Worker** (`WORKER_CODE` blob in `app.js`).
+- **sql.js** runs inside a **dedicated Web Worker** (`WORKER_CODE` in **`nq-db.js`**).
 - Primary database file: **OPFS** `nq.db` (Origin Private File System — survives normal cache clears better than raw IndexedDB for the main corpus).
 - When `encKey` is set in the worker, **every `dbPut`** for encrypted stores writes to parallel **`store_enc`** tables.
 
@@ -328,15 +328,17 @@ Merge: last-write-wins on updated_at; tombstones via deleted_at
 
 ---
 
-## 11. Layer 8 — PWA shell integrity (`sw.js`)
+## 11. Layer 8 — PWA shell integrity (`sw.js` + `_headers`)
 
 | Concern | Behavior |
 |---------|----------|
-| Offline app shell | Cache `nq-v15`: `index.html`, `app.css`, `app.js`, manifest, icon |
+| Offline app shell | Cache `nq-v26`: `index.html`, `app.css`, split scripts (`nq-xss.js`, `app.js`, `nq-db.js`, …), manifest, icon |
 | Live updates | **Network-first** for `app.js` / `app.css` — deploys visible without nuking site data |
 | User data | **Not** in CacheStorage — lives in OPFS / IDB / LS |
+| **CSP (F1)** | Cloudflare Pages **`_headers`**: restrict scripts to `'self'` + jsDelivr; `connect-src https:` for BYOK; `frame-src 'none'`; `object-src 'none'` |
+| **Output encoding (F1)** | **`nq-xss.js`** — `escHtml`, `escAttr`, `sanitizeSvg`, `safeImgSrc` loaded before app bundle |
 
-Service worker protects **availability**, not **secrecy**. SW cannot access OPFS DB or sovereign key.
+Service worker protects **availability**, not **secrecy**. SW cannot access OPFS DB or sovereign key. CSP reduces XSS blast radius; it does not replace encoding at sink sites.
 
 ---
 
@@ -402,7 +404,7 @@ Sanctuary is **private by architecture**; Soup is **witness ground**.
 | Akashic backup plaintext JSON | High if misused | User-triggered; document as “encrypt before upload” future |
 | `guardian_logs_enc` schema drift | Medium | Some columns may lag plain migrations — verify if encryption enabled |
 | No subresource integrity on CDN WASM | Low | Supply-chain trust on jsDelivr |
-| XSS in app | High | Would inherit full unlocked session — audit `innerHTML` sites |
+| XSS in app | High | **F1 shipped (partial):** CSP + `nq-xss.js` + markdown header fix + SVG/attr sinks; full `innerHTML` audit ongoing |
 | Multi-device ledger fork | Expected | Per-device chain v1; sync merge TBD |
 
 ---
@@ -411,13 +413,15 @@ Sanctuary is **private by architecture**; Soup is **witness ground**.
 
 | Concern | Location |
 |---------|----------|
-| Worker SQL + encrypt | `app.js` → `WORKER_CODE` |
-| Lock / PRF / burn | `app.js` → `unlockWithPRF`, `obliterateAbyss`, `bootApp` |
-| Secure settings keys | `app.js` → `storeSecureKey`, `readSecureKey` |
-| Supabase sync | `app.js` → `handleSync`, `encForCloud`, `decFromCloud` |
-| Witness ledger | `app.js` → `appendWitnessLedgerLink`, `verifyWitnessLedgerChain` |
-| Offline shell | `sw.js` |
-| Agent dev bypass | `AGENTS.md` |
+| Worker SQL + encrypt | **`nq-db.js`** → `WORKER_CODE` |
+| Lock / PRF / burn | **`nq-crypto.js`** → `unlockWithPRF`, `obliterateAbyss`, `bootApp` |
+| Secure settings keys | **`nq-crypto.js`** → `storeSecureKey`, `readSecureKey` |
+| Supabase sync | **`app.js`** → `handleSync`; **`nq-crypto.js`** → `encForCloud`, `decFromCloud` |
+| Witness ledger | **`witness-synapse.js`** → `appendWitnessLedgerLink`, `verifyWitnessLedgerChain` |
+| XSS helpers | **`nq-xss.js`** → `escHtml`, `escAttr`, `sanitizeSvg`, `safeImgSrc` |
+| CSP + response headers | **`_headers`** (Cloudflare Pages) |
+| Offline shell | **`sw.js`** |
+| Agent dev bypass | **`AGENTS.md`** |
 
 ---
 
@@ -471,7 +475,7 @@ Also: `navigator.storage.persist()` on init (request, not OS guarantee on iOS).
 - **Do not** claim “production-grade” against nation-state or compromised OS.
 - **Do not** call Akashic E2EE until client encrypts before upload.
 - **Do not** hash-chain the whole `nq.db` — witness ledger only (§8).
-- **Do not** add npm crypto libs — `crypto.subtle` only.
+- **Do not** add npm crypto libs without explicit gate — **`crypto.subtle`** first; vetted libraries only when native APIs cannot reach the bar (document in this file).
 - **Do not** let Guardian read Sanctuary chat or Memory Vault (realm policy — orthogonal to layers but equally binding).
 - **Do not** reopen Layers 0–2 architecture on PWA out of perfectionism — **thicken Layer 4 on desktop**.
 
@@ -527,7 +531,7 @@ External audit (Meta AI, May 2026) largely **confirms §18**. Adopt selectively;
 
 | Priority | Item | Phase | Notes |
 |----------|------|-------|-------|
-| **1** | CSP + Trusted Types + `innerHTML` audit | **PWA — before strangers** | Unlocked XSS = full vault; beats more crypto |
+| **1** | CSP + Trusted Types + `innerHTML` audit | **PWA — F1 partial ☑** | CSP + `nq-xss.js` + critical sink fixes; continue audit |
 | **2** | `nq_sovereign_key_fp` on verify fail | **PWA** | Interim W4.6 — “key changed” vs “tamper” |
 | **3** | `reanchorWitnessLedgerChain()` | **PWA or Tauri** | Full spec §18.7 |
 | **4** | Akashic client `.nq` E2EE before R2 | **PWA** | When touching backup |
@@ -552,7 +556,9 @@ External audit (Meta AI, May 2026) largely **confirms §18**. Adopt selectively;
 | 2026-05-26 | §18 phased hardening contract — PWA shippable / not perfect / Tauri Layer 4 / Akashic truth |
 | 2026-05-26 | §18.7 witness ledger migration + re-anchor ceremony (deferred) — key mismatch vs tamper |
 | 2026-05-26 | §18.8 Meta hardening crosswalk — PWA + Tauri sprint order |
+| 2026-05-30 | **F0** — post-S6 file map, `_headers` CSP, minimum-dependency philosophy |
+| 2026-05-30 | **F1** — `nq-xss.js`, CSP headers, markdown header XSS fix, SVG/attr/img sinks |
 
 ---
 
-*The fortress doesn’t pretend to save you from yourself. It makes the vault honest, local, and keyed — so when the witness speaks, the ledger can prove it was paying attention.*
+*We do not hold your writing. We key it locally, chain the witness log, and fix any leak path we find — client or cloud — without pretending the phone is a HSM.*

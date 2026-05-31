@@ -1244,8 +1244,8 @@ async function renderWitnessProcessPanel() {
       cues.forEach(function (cue) {
         html += '<div class="witness-cue-row">';
         html += '<p class="witness-cue-text">' + escHtml(cue.question_text) + '</p>';
-        html += '<button type="button" class="witness-cue-dismiss" data-cue-type="' + escHtml(cue.source_type) +
-          '" data-cue-term="' + escHtml(cue.source_term) + '">release</button>';
+        html += '<button type="button" class="witness-cue-dismiss" data-cue-type="' + escAttr(cue.source_type) +
+          '" data-cue-term="' + escAttr(cue.source_term) + '">release</button>';
         html += '</div>';
       });
       html += '</div>';

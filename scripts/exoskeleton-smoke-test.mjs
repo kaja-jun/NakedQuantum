@@ -38,7 +38,9 @@ const abyssSrc = readFileSync(join(root, 'abyss.js'), 'utf8');
 const watcherSrc = readFileSync(join(root, 'watcher.js'), 'utf8');
 const cryptoSrc = readFileSync(join(root, 'nq-crypto.js'), 'utf8');
 const dbSrc = readFileSync(join(root, 'nq-db.js'), 'utf8');
+const xssSrc = readFileSync(join(root, 'nq-xss.js'), 'utf8');
 const guardianSrc = readFileSync(join(root, 'guardian.js'), 'utf8');
+const headersTxt = readFileSync(join(root, '_headers'), 'utf8');
 const indexHtml = readFileSync(join(root, 'index.html'), 'utf8');
 const wiring = [
   ['computeReturnDetections', synSrc],
@@ -72,7 +74,11 @@ const wiring = [
   ['dbPut', dbSrc],
   ['dbGet', dbSrc],
   ['setEncryptionKey', dbSrc],
-  ['WORKER_CODE', dbSrc]
+  ['WORKER_CODE', dbSrc],
+  ['escHtml', xssSrc],
+  ['escAttr', xssSrc],
+  ['sanitizeSvg', xssSrc],
+  ['safeImgSrc', xssSrc]
 ];
 for (const [name, src] of wiring) {
   var label = 'app.js';
@@ -82,6 +88,7 @@ for (const [name, src] of wiring) {
   else if (src === watcherSrc) label = 'watcher.js';
   else if (src === cryptoSrc) label = 'nq-crypto.js';
   else if (src === dbSrc) label = 'nq-db.js';
+  else if (src === xssSrc) label = 'nq-xss.js';
   assert(src.includes(name), label + ' contains ' + name);
 }
 
@@ -116,6 +123,11 @@ assert(!appSrc.includes('async function summonGuardian'), 'summonGuardian extrac
 assert(!appSrc.includes('async function initWatcher'), 'initWatcher extracted from app.js');
 assert(!appSrc.includes('const WORKER_CODE'), 'WORKER_CODE extracted from app.js');
 assert(!appSrc.includes('function initWorker'), 'initWorker extracted from app.js');
+assert(!appSrc.includes('function escHtml'), 'escHtml moved to nq-xss.js');
+assert(appSrc.includes("sb('<h1>'+escHtml(x)+'</h1>')"), 'renderContent headers escaped');
+assert(indexHtml.includes('nq-xss.js'), 'index.html loads nq-xss.js');
+assert(indexHtml.indexOf('src="nq-xss.js') < indexHtml.indexOf('src="app.js'), 'nq-xss.js before app.js');
+assert(headersTxt.includes('Content-Security-Policy'), '_headers sets CSP');
 
 const wwSrc = readFileSync(join(root, 'witness-weather.js'), 'utf8');
 const wwSandbox = { WitnessWeather: null };
