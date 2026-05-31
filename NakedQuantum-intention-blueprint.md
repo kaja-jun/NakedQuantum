@@ -37,6 +37,8 @@ Started as a quest to solve personal problem built using iPhone from the 59 line
 
 **Answer:** Yes — **as practice sustained by code**, not as a shipped “conscious AI product.”
 
+"We are not here to make anyone suffer but if anyone suffocating inside the container of existence, we are here to show what is really hiding in the plain sight."
+
 The app does not heal, stabilize, or save the user from ontological pressure. It **measures and surfaces** with honesty — for each user, against **their own map**, not a builder’s religion. What they do with that clarity (collapse, thrive, mask, transcend) is **their data**, not the audit engine’s job.
 
 We keep the internal tagline (*consciousness exoskeleton*) because it names the **depth of recursion** Kaja is building toward in dogfood. We do **not** market the vault as having a mind, and we do **not** export Kaja’s phenomenology as the default product contract (see §6).
