@@ -1640,7 +1640,7 @@ function showBottomBar(pills){
   pills.forEach(p=>{
     const div=document.createElement('div');
     div.className='bar-pill'+(p.style?' '+p.style:'');
-    div.innerHTML=`<span class="bar-pill-icon">${p.icon}</span><span class="bar-pill-label">${p.label}</span>`;
+    div.innerHTML=`<span class="bar-pill-icon">${escHtml(p.icon)}</span><span class="bar-pill-label">${escHtml(p.label)}</span>`;
     div.addEventListener('click',p.action);
     scroll.appendChild(div);
   });
@@ -2329,7 +2329,7 @@ async function _executeRenderTableView() {
         const portal = document.createElement('div');
         portal.className = 'folder-card card';
         portal.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;opacity:0.5;border-style:dashed;';
-        portal.innerHTML = `<div style="font-size:22px;color:var(--accent);">▤</div><div style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:900;text-transform:uppercase;">Browse All</div><div style="font-size:9px;color:var(--muted);text-align:center;padding:0 8px;">${items.length - RECENT_MAX} more</div>`;
+        portal.innerHTML = `<div style="font-size:22px;color:var(--accent);">▤</div><div style="font-size:9px;letter-spacing:2px;color:var(--accent);font-weight:900;text-transform:uppercase;">Browse All</div><div style="font-size:9px;color:var(--muted);text-align:center;padding:0 8px;">${escHtml(String(items.length - RECENT_MAX))} more</div>`;
         portal.onclick = () => openLineage();
         g.appendChild(portal);
       }

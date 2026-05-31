@@ -116,6 +116,7 @@ flowchart TB
 | **Face ID / passkey (primary)** | Tap unlock → WebAuthn `credentials.get()` with **PRF extension** |
 | **Backup sovereign key** | After 3 failed biometrics → paste base64 32-byte key → `unlockWithFallbackKey()` |
 | **Burn Abyss** | After lockout → type `NAKED AGAIN` → `obliterateAbyss()` wipes OPFS, Watcher IDB, all `localStorage` |
+| **Auto-lock (F3)** | After **45s** in background → `lockAbyss()` clears RAM key + worker `CLEAR_KEY`; re-show gate. Skipped when `NQ_DEV_MODE` |
 | **Dev bypass** | `NQ_DEV_MODE = true` skips lock (documented in `AGENTS.md` — not production) |
 
 The gate is **UX + key hygiene**, not a network ACL. Once unlocked, all crypto runs in the same origin as the app.
@@ -405,7 +406,7 @@ Sanctuary is **private by architecture**; Soup is **witness ground**.
 | `guardian_logs_enc` schema drift | Medium | Some columns may lag plain migrations — verify if encryption enabled |
 | No subresource integrity on CDN WASM | Low | Supply-chain trust on jsDelivr |
 | XSS in app | High | **F1 shipped (partial):** CSP + `nq-xss.js` + markdown header fix + SVG/attr sinks; full `innerHTML` audit ongoing |
-| Multi-device ledger fork | Expected | Per-device chain v1; sync merge TBD |
+| Multi-device ledger fork | Expected | Per-device chain v1; key-changed vs tamper now distinct (F2) |
 
 ---
 
@@ -413,8 +414,8 @@ Sanctuary is **private by architecture**; Soup is **witness ground**.
 
 | Concern | Location |
 |---------|----------|
-| Worker SQL + encrypt | **`nq-db.js`** → `WORKER_CODE` |
-| Lock / PRF / burn | **`nq-crypto.js`** → `unlockWithPRF`, `obliterateAbyss`, `bootApp` |
+| Worker SQL + encrypt | **`nq-db.js`** → `WORKER_CODE`, `setEncryptionKey`, `clearEncryptionKey` |
+| Lock / PRF / burn / auto-lock | **`nq-crypto.js`** → `unlockWithPRF`, `obliterateAbyss`, `bootApp`, `lockAbyss`, `initAbyssAutoLock` |
 | Secure settings keys | **`nq-crypto.js`** → `storeSecureKey`, `readSecureKey` |
 | Supabase sync | **`app.js`** → `handleSync`; **`nq-crypto.js`** → `encForCloud`, `decFromCloud` |
 | Witness ledger | **`witness-synapse.js`** → `appendWitnessLedgerLink`, `verifyWitnessLedgerChain` |
@@ -521,7 +522,7 @@ External reviews (e.g. generic PWA audits) may miss: **realm isolation**, **PWA 
 4. New `chain_id` + genesis under **new SK**; optional `chain_open` link referencing `old_chain_id`.
 5. SUBSTRATE: **`ledger: migrated · new chain · old archived (N links)`** — not “break”.
 
-**Interim UX (cheap, before full ceremony):** persist `nq_sovereign_key_fp = SHA256(SK)` at first append; on verify fail, if fingerprint ≠ stored → **`ledger: key changed — re-anchor or reset`** vs **`break at seq N — possible tamper`**.
+**Interim UX (F2 / Pass 1 — shipped):** persist `nq_witness_ledger_key_fp` at first chain append; `nq_sovereign_key_fp` on unlock; on verify fail, fingerprint mismatch → **`ledger: key changed — re-anchor or restore backup key`** vs **`break at seq N — possible tamper`**.
 
 **Cross-ref:** `witness-loop-upgrade-blueprint.md` §7E footnote · W4.6 register below.
 
@@ -532,19 +533,33 @@ External audit (Meta AI, May 2026) largely **confirms §18**. Adopt selectively;
 | Priority | Item | Phase | Notes |
 |----------|------|-------|-------|
 | **1** | CSP + Trusted Types + `innerHTML` audit | **PWA — F1 partial ☑** | CSP + `nq-xss.js` + critical sink fixes; continue audit |
-| **2** | `nq_sovereign_key_fp` on verify fail | **PWA** | Interim W4.6 — “key changed” vs “tamper” |
+| **2** | `nq_sovereign_key_fp` on verify fail | **PWA Pass 1 ☑** | W4.6 interim — SUBSTRATE “key changed” vs “tamper” |
 | **3** | `reanchorWitnessLedgerChain()` | **PWA or Tauri** | Full spec §18.7 |
 | **4** | Akashic client `.nq` E2EE before R2 | **PWA** | When touching backup |
 | **5** | AES-GCM **AAD** (`store` + `row_id`) on `_enc` + Supabase `data_enc` | **PWA or early Tauri** | Anti cut-paste / replay |
 | **6** | Encrypt Watcher IDB vectors; RAM cache after unlock | **Tauri-first** (optional PWA) | Layer 4 |
-| **7** | Auto-lock on `visibilitychange` + PRF backoff | **PWA UX** | Balance iPhone writing flow |
+| **7** | Auto-lock on `visibilitychange` + PRF backoff | **PWA Pass 1 ☑** | 45s grace; skipped in `NQ_DEV_MODE` |
 | **8** | Sync manifest HMAC | **Post-Akashic** | If distrusting sync write path |
 | **9** | KEK/DEK vault wrap, Argon2 passphrase, Ed25519 export | **Tauri / v2** | Not mythril-blocking |
 | **10** | Duress decoy vault | **Product decision** | High UX/ethics risk — pin only, do not sprint |
 
 **Meta got wrong or already shipped:** HMAC already includes `prev_hash`; worker is inline blob (not SRI URL); binding BYOK secrets to `chain_id` forces re-entry on every import — **defer**.
 
-**Sprint order (canonical):** 1 → 4 → 5 → 2–3 → 6–7 on Tauri → rest optional.
+**Sprint order (canonical):** Pass 1 (F2+F3) ☑ → **Pass 2** (F4 Akashic `.nq` + F5 AAD) → **Pass 3 / laptop** (Layer 4, reanchor ceremony, full XSS audit) → rest optional.
+
+### 18.9 Fortress pass registry (two PWA passes + laptop)
+
+| Pass | Items | Status | When |
+|------|-------|--------|------|
+| **F0** | Fortress doc refresh post-S6 | ☑ May 2026 | — |
+| **F1** | CSP `_headers`, `nq-xss.js`, critical XSS sinks | ☑ May 2026 | — |
+| **Pass 1** | **F2** key fingerprint + ledger UX · **F3** auto-lock (45s) · **F1b lite** sink fixes | ☑ May 2026 | Pre-strangers PWA |
+| **Pass 2** | **F4** Akashic client `.nq` E2EE · **F5** AES-GCM AAD on vault + sync blobs | ☐ | Pre-laptop or when touching backup |
+| **Pass 3 (laptop/Tauri)** | Encrypt Watcher IDB · OS keychain BYOK · `reanchorWitnessLedgerChain()` · full `innerHTML` / Trusted Types · installer signing | ☐ | `desktop-vessel-blueprint.md` gate |
+
+**Pass 2 dogfood:** Akashic backup → restore round-trip; one Supabase row sync; old ciphertext still decrypts (F5 backward compat).
+
+**Pass 3 dogfood:** Tauri shell + Ollama sidecar; Watcher vectors encrypted at rest; ledger migration ceremony with backup key.
 
 ---
 
@@ -558,6 +573,7 @@ External audit (Meta AI, May 2026) largely **confirms §18**. Adopt selectively;
 | 2026-05-26 | §18.8 Meta hardening crosswalk — PWA + Tauri sprint order |
 | 2026-05-30 | **F0** — post-S6 file map, `_headers` CSP, minimum-dependency philosophy |
 | 2026-05-30 | **F1** — `nq-xss.js`, CSP headers, markdown header XSS fix, SVG/attr/img sinks |
+| 2026-05-30 | **Pass 1** — F2 `nq_witness_ledger_key_fp`, F3 auto-lock 45s, F1b lite; §18.9 pass registry |
 
 ---
 

@@ -74,7 +74,11 @@ const wiring = [
   ['dbPut', dbSrc],
   ['dbGet', dbSrc],
   ['setEncryptionKey', dbSrc],
+  ['clearEncryptionKey', dbSrc],
   ['WORKER_CODE', dbSrc],
+  ['getSovereignKeyFingerprint', cryptoSrc],
+  ['lockAbyss', cryptoSrc],
+  ['initAbyssAutoLock', cryptoSrc],
   ['escHtml', xssSrc],
   ['escAttr', xssSrc],
   ['sanitizeSvg', xssSrc],
@@ -101,6 +105,10 @@ assert(synSrc.includes('appendWitnessLedgerLink'), 'ledger chain append helper')
 assert(synSrc.includes('verifyWitnessLedgerChain'), 'ledger chain verify helper');
 assert(synSrc.includes('ensureWitnessLedgerVerified'), 'ledger verify awaited before SUBSTRATE');
 assert(dbSrc.includes("store === 'witness_ledger_chain'"), 'ledger chain stays plaintext when vault encrypted');
+assert(synSrc.includes('witnessLedgerKeyChanged'), 'ledger key-changed detection');
+assert(synSrc.includes('key changed'), 'SUBSTRATE key-changed ledger copy');
+assert(synSrc.includes('possible tamper'), 'SUBSTRATE tamper ledger copy');
+assert(synSrc.includes('WITNESS_LEDGER_KEY_FP'), 'ledger key fingerprint storage');
 assert(synSrc.includes('detectResurgentTerms'), 'resurgent term detection');
 assert(synSrc.includes('isWitnessCorpusNoiseTerm'), 'half-life stopword filter');
 assert(synSrc.includes('formatSubstrateSaccadeLine'), 'SUBSTRATE saccade line');
