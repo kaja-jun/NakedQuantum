@@ -139,6 +139,9 @@ assert(appSrc.includes("sb('<h1>'+escHtml(x)+'</h1>')"), 'renderContent headers 
 assert(indexHtml.includes('nq-xss.js'), 'index.html loads nq-xss.js');
 assert(indexHtml.indexOf('src="nq-xss.js') < indexHtml.indexOf('src="app.js'), 'nq-xss.js before app.js');
 assert(headersTxt.includes('Content-Security-Policy'), '_headers sets CSP');
+assert(!indexHtml.includes('onclick='), 'index.html has no inline onclick (CSP)');
+assert(indexHtml.includes('id="btn-akashic-push"'), 'Akashic push button id');
+assert(indexHtml.includes('id="btn-reveal-sovereign-key"'), 'reveal key button id');
 assert(cryptoSrc.includes('additionalData: aad'), 'encForCloud uses AES-GCM AAD');
 assert(dbSrc.includes('additionalData: aad'), 'worker encryptObj uses AES-GCM AAD');
 assert(dbSrc.includes('v:2'), 'worker vault envelope v2');

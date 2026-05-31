@@ -339,7 +339,7 @@ Merge: last-write-wins on updated_at; tombstones via deleted_at
 | Offline app shell | Cache `nq-v26`: `index.html`, `app.css`, split scripts (`nq-xss.js`, `app.js`, `nq-db.js`, …), manifest, icon |
 | Live updates | **Network-first** for `app.js` / `app.css` — deploys visible without nuking site data |
 | User data | **Not** in CacheStorage — lives in OPFS / IDB / LS |
-| **CSP (F1)** | Cloudflare Pages **`_headers`**: restrict scripts to `'self'` + jsDelivr; `connect-src https:` for BYOK; `frame-src 'none'`; `object-src 'none'` |
+| **CSP (F1)** | Cloudflare Pages **`_headers`**: restrict scripts to `'self'` + jsDelivr; **no inline `onclick`** — wire handlers in `app.js` via `addEventListener` |
 | **Output encoding (F1)** | **`nq-xss.js`** — `escHtml`, `escAttr`, `sanitizeSvg`, `safeImgSrc` loaded before app bundle |
 
 Service worker protects **availability**, not **secrecy**. SW cannot access OPFS DB or sovereign key. CSP reduces XSS blast radius; it does not replace encoding at sink sites.
