@@ -123,23 +123,33 @@ function toObjects(res) {
   });
 }
 
-async function encryptObj(obj){
+async function encryptObj(obj, store){
   const iv = self.crypto.getRandomValues(new Uint8Array(12));
+  const plain = new TextEncoder().encode(JSON.stringify(obj));
+  const aad = new TextEncoder().encode(store + '|' + obj.id);
   const ct = await self.crypto.subtle.encrypt(
-    {name:'AES-GCM', iv},
+    {name:'AES-GCM', iv, additionalData: aad},
     encKey,
-    new TextEncoder().encode(JSON.stringify(obj))
+    plain
   );
-  return JSON.stringify({iv:Array.from(iv), ct:Array.from(new Uint8Array(ct))});
+  return JSON.stringify({v:2, iv:Array.from(iv), ct:Array.from(new Uint8Array(ct))});
 }
 
-async function decryptObj(encData){
+async function decryptObj(encData, store, rowId){
   const obj = typeof encData === 'string' ? JSON.parse(encData) : encData;
-  const dec = await self.crypto.subtle.decrypt(
-    {name:'AES-GCM', iv: new Uint8Array(obj.iv)},
-    encKey,
-    new Uint8Array(obj.ct)
-  );
+  const iv = new Uint8Array(obj.iv);
+  const ct = new Uint8Array(obj.ct);
+  let dec;
+  if (obj.v === 2 && store && rowId) {
+    try {
+      const aad = new TextEncoder().encode(store + '|' + rowId);
+      dec = await self.crypto.subtle.decrypt({name:'AES-GCM', iv, additionalData: aad}, encKey, ct);
+    } catch (aadErr) {
+      dec = await self.crypto.subtle.decrypt({name:'AES-GCM', iv}, encKey, ct);
+    }
+  } else {
+    dec = await self.crypto.subtle.decrypt({name:'AES-GCM', iv}, encKey, ct);
+  }
   return JSON.parse(new TextDecoder().decode(dec));
 }
 
@@ -175,19 +185,19 @@ self.onmessage = async (e) => {
     let result = null;
     if (action === 'GET_ALL') {
       const rows = toObjects(db.exec("SELECT * FROM " + targetStore));
-      if (useEnc) { result = await Promise.all(rows.map(async r => r.enc ? await decryptObj(r.enc) : r)); }
+      if (useEnc) { result = await Promise.all(rows.map(async r => r.enc ? await decryptObj(r.enc, store, r.id) : r)); }
       else { result = rows; }
     }
     else if (action === 'GET') {
       const res = db.exec("SELECT * FROM " + targetStore + " WHERE id=?", [data.id]);
       const row = res.length ? toObjects(res)[0] : null;
-      if (useEnc && row && row.enc) { result = await decryptObj(row.enc); }
+      if (useEnc && row && row.enc) { result = await decryptObj(row.enc, store, data.id); }
       else { result = row; }
     }
     else if (action === 'GET_BY_INDEX') {
       if (useEnc) {
         const allRows = toObjects(db.exec("SELECT * FROM " + targetStore));
-        const decrypted = await Promise.all(allRows.map(async r => r.enc ? await decryptObj(r.enc) : r));
+        const decrypted = await Promise.all(allRows.map(async r => r.enc ? await decryptObj(r.enc, store, r.id) : r));
         result = decrypted.filter(r => r && r[field] === value);
       } else {
         result = toObjects(db.exec("SELECT * FROM " + store + " WHERE " + field + "=?", [value]));
@@ -198,7 +208,7 @@ self.onmessage = async (e) => {
       if ('isDeleted' in obj) { obj.is_deleted = obj.isDeleted ? 1 : 0; }
 
       if (useEnc) {
-        const enc = await encryptObj(obj);
+        const enc = await encryptObj(obj, store);
         db.run("INSERT INTO " + targetStore + "(id, enc) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET enc=excluded.enc", [obj.id, enc]);
       } else {
         const validCols = tableColumns[store] || [];
