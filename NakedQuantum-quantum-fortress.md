@@ -183,6 +183,8 @@ No `sessionStorage` for key material. Lock screen hides app; closing Safari clea
 | Cipher | **AES-GCM** |
 | Key length | **256 bit** (raw sovereign key imported as AES-GCM key) |
 | IV | **12 random bytes** per row (`crypto.getRandomValues`) |
+| **AAD (F5)** | Vault rows: `store\|row_id` · Supabase: `nq_sync\|store\|row_id` · Akashic: `nq_akashic\|v1` |
+| Envelope | `{ v: 2, iv, ct }` for new writes; legacy `{ iv, ct }` still decrypts |
 | Serialization | `JSON.stringify(obj)` → encrypt → store as `{ iv, ct }` blob (or legacy guardian_logs columns) |
 
 Decrypt on `GET` / `GET_ALL`: transparent to application code — worker returns plain objects.
@@ -298,9 +300,10 @@ Merge: last-write-wins on updated_at; tombstones via deleted_at
 
 ### 9.2 Akashic cold backup (Cloudflare Worker → R2)
 
-- User-triggered POST of JSON export payload to worker URL (`AKASHIC_URL`).
-- Payload is **application JSON of decrypted rows** at backup time — treat as **cold disaster recovery**, not zero-trust cloud storage.
-- Worker sees whatever the client sends; encrypt-at-rest on R2 is operator-side.
+- User-triggered POST of **client-encrypted** envelope (`NQAK1` / `format: nqak1`) to worker URL (`AKASHIC_URL`).
+- **`encForAkashicBlob`** — AES-GCM over full export JSON; AAD `nq_akashic|v1`; sovereign key required.
+- Worker/R2 sees ciphertext only — **not** plaintext corpus (Pass 2 / F4).
+- **`parseAkashicBackupResponse`** — decrypts `NQAK1` or accepts legacy plaintext `NakedQuantum` exports.
 - Restore overwrites local stores + re-anchors witness chain.
 
 ### 9.3 JSON export / import (Data realm)
@@ -402,7 +405,7 @@ Sanctuary is **private by architecture**; Soup is **witness ground**.
 | Watcher vectors plaintext | Medium | Acceptable for PWA perf; desktop may encrypt IDB |
 | Character photos plaintext | Medium | Sanctuary-local; user-visible |
 | Synapse in localStorage | Low | Derived; no raw discourse |
-| Akashic backup plaintext JSON | High if misused | User-triggered; document as “encrypt before upload” future |
+| Akashic backup plaintext JSON | ~~High if misused~~ | **F4 shipped** — `NQAK1` client E2EE before upload |
 | `guardian_logs_enc` schema drift | Medium | Some columns may lag plain migrations — verify if encryption enabled |
 | No subresource integrity on CDN WASM | Low | Supply-chain trust on jsDelivr |
 | XSS in app | High | **F1 shipped (partial):** CSP + `nq-xss.js` + markdown header fix + SVG/attr sinks; full `innerHTML` audit ongoing |
@@ -418,6 +421,7 @@ Sanctuary is **private by architecture**; Soup is **witness ground**.
 | Lock / PRF / burn / auto-lock | **`nq-crypto.js`** → `unlockWithPRF`, `obliterateAbyss`, `bootApp`, `lockAbyss`, `initAbyssAutoLock` |
 | Secure settings keys | **`nq-crypto.js`** → `storeSecureKey`, `readSecureKey` |
 | Supabase sync | **`app.js`** → `handleSync`; **`nq-crypto.js`** → `encForCloud`, `decFromCloud` |
+| Akashic backup | **`app.js`** → `backupToAkashic`; **`nq-crypto.js`** → `encForAkashicBlob`, `parseAkashicBackupResponse` |
 | Witness ledger | **`witness-synapse.js`** → `appendWitnessLedgerLink`, `verifyWitnessLedgerChain` |
 | XSS helpers | **`nq-xss.js`** → `escHtml`, `escAttr`, `sanitizeSvg`, `safeImgSrc` |
 | CSP + response headers | **`_headers`** (Cloudflare Pages) |
@@ -474,7 +478,7 @@ Also: `navigator.storage.persist()` on init (request, not OS guarantee on iOS).
 ### 18.4 What NOT to do
 
 - **Do not** claim “production-grade” against nation-state or compromised OS.
-- **Do not** call Akashic E2EE until client encrypts before upload.
+- **Do not** call Akashic plaintext — **NQAK1** ships Pass 2; legacy plaintext restores still supported for old backups.
 - **Do not** hash-chain the whole `nq.db` — witness ledger only (§8).
 - **Do not** add npm crypto libs without explicit gate — **`crypto.subtle`** first; vetted libraries only when native APIs cannot reach the bar (document in this file).
 - **Do not** let Guardian read Sanctuary chat or Memory Vault (realm policy — orthogonal to layers but equally binding).
@@ -485,7 +489,7 @@ Also: `navigator.storage.persist()` on init (request, not OS guarantee on iOS).
 | Path | E2EE? | Role |
 |------|-------|------|
 | **Supabase `nq_sync`** | **Yes** | Delta sync; blind cloud |
-| **Akashic / R2** | **No (interim)** | Cold backup; encrypt `.nq` later |
+| **Akashic / R2** | **Yes (NQAK1)** | Cold backup; client E2EE before upload (F4) |
 | **JSON export** | **No** | Sovereign exit — user responsibility |
 
 ### 18.6 Horizon note
@@ -535,8 +539,8 @@ External audit (Meta AI, May 2026) largely **confirms §18**. Adopt selectively;
 | **1** | CSP + Trusted Types + `innerHTML` audit | **PWA — F1 partial ☑** | CSP + `nq-xss.js` + critical sink fixes; continue audit |
 | **2** | `nq_sovereign_key_fp` on verify fail | **PWA Pass 1 ☑** | W4.6 interim — SUBSTRATE “key changed” vs “tamper” |
 | **3** | `reanchorWitnessLedgerChain()` | **PWA or Tauri** | Full spec §18.7 |
-| **4** | Akashic client `.nq` E2EE before R2 | **PWA** | When touching backup |
-| **5** | AES-GCM **AAD** (`store` + `row_id`) on `_enc` + Supabase `data_enc` | **PWA or early Tauri** | Anti cut-paste / replay |
+| **4** | Akashic client `.nq` E2EE before R2 | **PWA Pass 2 ☑** | `NQAK1` / `encForAkashicBlob` |
+| **5** | AES-GCM **AAD** (`store` + `row_id`) on `_enc` + Supabase `data_enc` | **PWA Pass 2 ☑** | `v:2` envelope; legacy decrypt fallback |
 | **6** | Encrypt Watcher IDB vectors; RAM cache after unlock | **Tauri-first** (optional PWA) | Layer 4 |
 | **7** | Auto-lock on `visibilitychange` + PRF backoff | **PWA Pass 1 ☑** | 45s grace; skipped in `NQ_DEV_MODE` |
 | **8** | Sync manifest HMAC | **Post-Akashic** | If distrusting sync write path |
@@ -554,7 +558,7 @@ External audit (Meta AI, May 2026) largely **confirms §18**. Adopt selectively;
 | **F0** | Fortress doc refresh post-S6 | ☑ May 2026 | — |
 | **F1** | CSP `_headers`, `nq-xss.js`, critical XSS sinks | ☑ May 2026 | — |
 | **Pass 1** | **F2** key fingerprint + ledger UX · **F3** auto-lock (45s) · **F1b lite** sink fixes | ☑ May 2026 | Pre-strangers PWA |
-| **Pass 2** | **F4** Akashic client `.nq` E2EE · **F5** AES-GCM AAD on vault + sync blobs | ☐ | Pre-laptop or when touching backup |
+| **Pass 2** | **F4** Akashic client `.nq` E2EE · **F5** AES-GCM AAD on vault + sync blobs | ☑ May 2026 | Pre-laptop PWA |
 | **Pass 3 (laptop/Tauri)** | Encrypt Watcher IDB · OS keychain BYOK · `reanchorWitnessLedgerChain()` · full `innerHTML` / Trusted Types · installer signing | ☐ | `desktop-vessel-blueprint.md` gate |
 
 **Pass 2 dogfood:** Akashic backup → restore round-trip; one Supabase row sync; old ciphertext still decrypts (F5 backward compat).
@@ -574,6 +578,7 @@ External audit (Meta AI, May 2026) largely **confirms §18**. Adopt selectively;
 | 2026-05-30 | **F0** — post-S6 file map, `_headers` CSP, minimum-dependency philosophy |
 | 2026-05-30 | **F1** — `nq-xss.js`, CSP headers, markdown header XSS fix, SVG/attr/img sinks |
 | 2026-05-30 | **Pass 1** — F2 `nq_witness_ledger_key_fp`, F3 auto-lock 45s, F1b lite; §18.9 pass registry |
+| 2026-05-31 | **Pass 2** — F4 Akashic `NQAK1` E2EE; F5 AES-GCM AAD (`v:2`) vault + sync |
 
 ---
 

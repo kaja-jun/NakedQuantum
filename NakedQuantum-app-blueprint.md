@@ -107,14 +107,14 @@ When a sub-blueprint and this file disagree, **update both** or spell the delta 
 | **IndexedDB `nq_watcher`** | Embedding vectors + similarity links (speed) |
 | **localStorage** | Settings, sovereign flags, Guardian invoke clocks |
 | **Optional Supabase** | Per-row encrypted deltas (BYOK URL + anon key in Settings) |
-| **Optional R2 (Akashic)** | Cold backup via worker — **interim plaintext JSON** until client `.nq` E2EE ships |
+| **Optional R2 (Akashic)** | Cold backup via worker — **client E2EE `NQAK1`** (Fortress Pass 2) |
 
 ### 4.3 Crypto & sync
 
 - **Full pipeline:** **`NakedQuantum-quantum-fortress.md`** — eight layers, honest gaps, **§18 what to do when**, **§18.7 ledger migration (deferred)**.
 - **Shippable for PWA phase; not perfect** — Layer 4 gaps + Akashic interim documented; Tauri thickens walls later.
 - **AES-GCM** at rest when encryption path enabled; WebAuthn **PRF** derives key (memory only).
-- **Supabase:** E2EE delta sync (`data_enc`). - **Akashic/R2:** cold backup — not client-E2EE yet (update fortress when `.nq` upload -
+- **Supabase:** E2EE delta sync (`data_enc`). **Akashic/R2:** cold backup — **NQAK1** client E2EE before upload (see fortress §9.2).
 - **Ledger Integrity** (Local Hash Chain): Sequential HMAC SHA-256 hashing on  guardian_logs  and  bridge_rows . Enforces meta-meta honesty by making the Witness Ledger tamper-evident. If the vault is manually altered, the chain fractures, and the Guardian reports the structural anomaly rather than reading the ghost.
 - **Backup key** export in Settings — user responsibility.
 - **Exports:** `.md`, `.pdf`, `.docx`, `.html`, `.json` (see Data realm).

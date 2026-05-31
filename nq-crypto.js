@@ -14,18 +14,78 @@ async function getCloudCryptoKey() {
   return await crypto.subtle.importKey('raw', getSovereignKey(), {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
 }
 
-async function encForCloud(obj) {
+async function encForCloud(obj, store) {
   const key = await getCloudCryptoKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(JSON.stringify(obj)));
-  return JSON.stringify({iv:Array.from(iv), ct:Array.from(new Uint8Array(ct))});
+  const plain = new TextEncoder().encode(JSON.stringify(obj));
+  const aad = new TextEncoder().encode('nq_sync|' + store + '|' + (obj.id || ''));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv, additionalData: aad}, key, plain);
+  return JSON.stringify({v:2, iv:Array.from(iv), ct:Array.from(new Uint8Array(ct))});
 }
 
-async function decFromCloud(encStr) {
+async function decFromCloud(encStr, store, rowId) {
   const key = await getCloudCryptoKey();
-  const {iv, ct} = JSON.parse(encStr);
-  const dec = await crypto.subtle.decrypt({name:'AES-GCM', iv: new Uint8Array(iv)}, key, new Uint8Array(ct));
+  const parsed = JSON.parse(encStr);
+  const iv = new Uint8Array(parsed.iv);
+  const ct = new Uint8Array(parsed.ct);
+  let dec;
+  if (parsed.v === 2 && store != null && rowId != null) {
+    try {
+      const aad = new TextEncoder().encode('nq_sync|' + store + '|' + rowId);
+      dec = await crypto.subtle.decrypt({name:'AES-GCM', iv, additionalData: aad}, key, ct);
+    } catch (aadErr) {
+      dec = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+    }
+  } else {
+    dec = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+  }
   return JSON.parse(new TextDecoder().decode(dec));
+}
+
+const NQ_AKASHIC_AAD_BYTES = new TextEncoder().encode('nq_akashic|v1');
+
+async function encForAkashicBlob(payloadObj) {
+  const key = await getCloudCryptoKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const plain = new TextEncoder().encode(JSON.stringify(payloadObj));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv, additionalData: NQ_AKASHIC_AAD_BYTES}, key, plain);
+  return JSON.stringify({
+    magic: 'NQAK1',
+    v: 1,
+    iv: Array.from(iv),
+    ct: Array.from(new Uint8Array(ct)),
+    exported_at: payloadObj.exported_at || new Date().toISOString()
+  });
+}
+
+async function decFromAkashicBlob(rawJson) {
+  const parsed = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson;
+  if (parsed.version === 'NakedQuantum' || (parsed.cosm_discourses && !parsed.magic)) {
+    return parsed;
+  }
+  if (parsed.magic !== 'NQAK1') throw new Error('Unknown Akashic backup format');
+  const key = await getCloudCryptoKey();
+  const iv = new Uint8Array(parsed.iv);
+  const ct = new Uint8Array(parsed.ct);
+  const dec = await crypto.subtle.decrypt({name:'AES-GCM', iv, additionalData: NQ_AKASHIC_AAD_BYTES}, key, ct);
+  return JSON.parse(new TextDecoder().decode(dec));
+}
+
+async function parseAkashicBackupResponse(rawText) {
+  const outer = JSON.parse(rawText);
+  if (outer.magic === 'NQAK1') return decFromAkashicBlob(outer);
+  if (outer.version === 'NakedQuantum') return outer;
+  if (outer.format === 'nqak1' && outer.data) {
+    const inner = typeof outer.data === 'string' ? JSON.parse(outer.data) : outer.data;
+    if (inner.magic === 'NQAK1') return decFromAkashicBlob(inner);
+    if (inner.version === 'NakedQuantum') return inner;
+  }
+  if (typeof outer.data === 'string') {
+    const inner = JSON.parse(outer.data);
+    if (inner.magic === 'NQAK1') return decFromAkashicBlob(inner);
+    if (inner.version === 'NakedQuantum') return inner;
+  }
+  throw new Error('Unrecognized Akashic backup envelope');
 }
 
 /* NQ ABYSS GATEKEEPER */

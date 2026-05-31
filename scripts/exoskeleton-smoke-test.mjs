@@ -70,6 +70,9 @@ const wiring = [
   ['unlockWithPRF', cryptoSrc],
   ['bootApp', cryptoSrc],
   ['encForCloud', cryptoSrc],
+  ['decFromCloud', cryptoSrc],
+  ['encForAkashicBlob', cryptoSrc],
+  ['parseAkashicBackupResponse', cryptoSrc],
   ['initWorker', dbSrc],
   ['dbPut', dbSrc],
   ['dbGet', dbSrc],
@@ -136,6 +139,11 @@ assert(appSrc.includes("sb('<h1>'+escHtml(x)+'</h1>')"), 'renderContent headers 
 assert(indexHtml.includes('nq-xss.js'), 'index.html loads nq-xss.js');
 assert(indexHtml.indexOf('src="nq-xss.js') < indexHtml.indexOf('src="app.js'), 'nq-xss.js before app.js');
 assert(headersTxt.includes('Content-Security-Policy'), '_headers sets CSP');
+assert(cryptoSrc.includes('additionalData: aad'), 'encForCloud uses AES-GCM AAD');
+assert(dbSrc.includes('additionalData: aad'), 'worker encryptObj uses AES-GCM AAD');
+assert(dbSrc.includes('v:2'), 'worker vault envelope v2');
+assert(cryptoSrc.includes("magic: 'NQAK1'"), 'Akashic NQAK1 magic');
+assert(appSrc.includes("format: 'nqak1'"), 'Akashic push uses nqak1 format');
 
 const wwSrc = readFileSync(join(root, 'witness-weather.js'), 'utf8');
 const wwSandbox = { WitnessWeather: null };

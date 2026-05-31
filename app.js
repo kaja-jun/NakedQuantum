@@ -5636,8 +5636,54 @@ async function saveSupaFromDataPage(){
 }
 
 /* AKASHIC */
-async function backupToAkashic(){try{const payload={version:"NakedQuantum",exported_at:new Date().toISOString(),cosm_folders:await dbGetAll("cosm_folders"),cosm_discourses:await dbGetAll("cosm_discourses"),cosm_mosaic_tiles:await dbGetAll("cosm_mosaic_tiles"),cosm_backlinks:await dbGetAll("cosm_backlinks"),characters:await dbGetAll("characters"),history:await dbGetAll("history"),summaries:await dbGetAll("summaries"),guardian_logs:await dbGetAll("guardian_logs"),guardian_summaries:await dbGetAll("guardian_summaries"),immutable_entities:await dbGetAll("immutable_entities"),bridge_rows:await dbGetAll("bridge_rows")};const res=await fetch(`${AKASHIC_URL}/backup`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:cosmUserId,data:JSON.stringify(payload)})});if(res.ok)showToast('Akashic Synced ◆');}catch(e){console.error(e);}}
-async function restoreFromAkashic(){if(!confirm("Pull from Akashic? This will overwrite local fragments."))return;try{const res=await fetch(`${AKASHIC_URL}/backup/latest?user_id=${cosmUserId}`);if(!res.ok)throw new Error('No backup');const payload=JSON.parse(await res.text());const stores=['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows'];for(const store of stores){if(payload[store]&&Array.isArray(payload[store])){const all=await dbGetAll(store);for(const item of all)await dbDelete(store,item.id);for(const item of payload[store])await dbPut(store,item);}}await resetWitnessLedgerChain('akashic_restore');showToast('Sanctuary Restored ◆');setTimeout(()=>location.reload(),1200);}catch(e){console.error(e);showToast('Akashic offline ◆');}}
+async function backupToAkashic(){
+  try {
+    if (!getSovereignKey()) { showToast('⚠ Unlock Abyss first'); return; }
+    const payload = {
+      version: 'NakedQuantum',
+      exported_at: new Date().toISOString(),
+      cosm_folders: await dbGetAll('cosm_folders'),
+      cosm_discourses: await dbGetAll('cosm_discourses'),
+      cosm_mosaic_tiles: await dbGetAll('cosm_mosaic_tiles'),
+      cosm_backlinks: await dbGetAll('cosm_backlinks'),
+      characters: await dbGetAll('characters'),
+      history: await dbGetAll('history'),
+      summaries: await dbGetAll('summaries'),
+      guardian_logs: await dbGetAll('guardian_logs'),
+      guardian_summaries: await dbGetAll('guardian_summaries'),
+      immutable_entities: await dbGetAll('immutable_entities'),
+      bridge_rows: await dbGetAll('bridge_rows')
+    };
+    const envelope = await encForAkashicBlob(payload);
+    const res = await fetch(`${AKASHIC_URL}/backup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: cosmUserId, format: 'nqak1', data: envelope })
+    });
+    if (res.ok) showToast('Akashic Synced ◆');
+  } catch (e) { console.error(e); showToast('Akashic push failed ◆'); }
+}
+
+async function restoreFromAkashic(){
+  if (!confirm('Pull from Akashic? This will overwrite local fragments.')) return;
+  if (!getSovereignKey()) { showToast('⚠ Unlock Abyss first'); return; }
+  try {
+    const res = await fetch(`${AKASHIC_URL}/backup/latest?user_id=${cosmUserId}`);
+    if (!res.ok) throw new Error('No backup');
+    const payload = await parseAkashicBackupResponse(await res.text());
+    const stores = ['cosm_folders','cosm_discourses','cosm_mosaic_tiles','cosm_backlinks','characters','history','summaries','guardian_logs','guardian_summaries','immutable_entities','bridge_rows'];
+    for (const store of stores) {
+      if (payload[store] && Array.isArray(payload[store])) {
+        const all = await dbGetAll(store);
+        for (const item of all) await dbDelete(store, item.id);
+        for (const item of payload[store]) await dbPut(store, item);
+      }
+    }
+    await resetWitnessLedgerChain('akashic_restore');
+    showToast('Sanctuary Restored ◆');
+    setTimeout(() => location.reload(), 1200);
+  } catch (e) { console.error(e); showToast('Akashic offline ◆'); }
+}
 
 /* LONG PRESS */
 function startLP(e,card,item){
@@ -5777,7 +5823,7 @@ async function handleSync() {
         await dbDelete(row.store, nqSyncLocalId(row.id, row.store));
       } else if (row.data_enc) {
         try {
-          const obj = await decFromCloud(row.data_enc);
+          const obj = await decFromCloud(row.data_enc, row.store, nqSyncLocalId(row.id, row.store));
           await dbPut(row.store, obj);
         } catch (decErr) {
           console.warn('◈ Voided a corrupted cloud engram:', row.store, row.id, decErr);
@@ -5798,7 +5844,7 @@ async function handleSync() {
         let dataEnc = null;
         if (!isDel) {
           try {
-            dataEnc = await encForCloud(item);
+            dataEnc = await encForCloud(item, store);
           } catch (encErr) {
             console.warn('◈ Skipping encrypt for sync:', store, item.id, encErr);
             continue;
