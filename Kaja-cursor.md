@@ -67,7 +67,8 @@ Full vision: `NakedQuantum-app-blueprint.md` §1, `consciousness-exoskeleton-roa
 | `app.css` | Styles |
 | `sw.js` | PWA cache (bump `nq-v*` with material changes — currently `nq-v25`) |
 
-**Active build contract:** `witness-loop-upgrade-blueprint.md` (W5–W6 pending; WP1–WP8 gated).  
+**Active build contract:** `witness-loop-upgrade-blueprint.md` (W5-practice + §7I; WP1–WP8 gated).  
+**W5 mechanics:** `w5-biological-limits-blueprint.md` (E-lite first when gated).  
 **Split (shipped):** `app-architecture-split-blueprint.md` (S0–S6 complete).  
 **Witness panel target:** `witness-panel-blueprint.md` (Review gate replaces Summon ritual at WP7).  
 **Desktop next:** `desktop-vessel-blueprint.md` + `lighthouse-cockpit-blueprint.md`.
@@ -115,7 +116,8 @@ Full index with **Status** column: `NakedQuantum-app-blueprint.md` §2. Archived
 | `Kaja-cursor.md` (this file) | AGENT RUNBOOK | New thread, collaboration norms |
 | `AGENTS.md` | AGENT RUNBOOK | Dev server, WebAuthn bypass, lint |
 | `NakedQuantum-app-blueprint.md` | ACTIVE | Master map — start here for routing |
-| `witness-loop-upgrade-blueprint.md` | ACTIVE | Next witness loop batches (W5–W6, WP*) |
+| `witness-loop-upgrade-blueprint.md` | ACTIVE | W5-practice human gate; §7I register |
+| `w5-biological-limits-blueprint.md` | IDEA LAYER | Eight brain limits; W5-E … W5-H |
 | `desktop-vessel-blueprint.md` | ACTIVE | Tauri + Ollama — pre-laptop |
 | `NakedQuantum-quantum-fortress.md` | ACTIVE | Security pipeline |
 | `witness-panel-blueprint.md` | IDEA LAYER | Review gate, panel pipeline |

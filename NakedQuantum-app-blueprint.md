@@ -2,7 +2,7 @@
 
 *Living map for Kaja + co-creator agents. Supersedes **Full App Blueprint v1** (30 April 2026).*
 
-**Last updated:** 30 May 2026  
+**Last updated:** 31 May 2026  
 **Built for:** One human at a time — iPhone-first PWA, zero npm, sovereign local-first.
 
 ---
@@ -41,7 +41,8 @@ Archived build history lives in **`_archive/`** — see [`_archive/README.md`](_
 | Document | Scope | Status |
 |----------|--------|--------|
 | **`NakedQuantum-app-blueprint.md`** (this file) | Product-wide architecture, realms, data, UI language | **ACTIVE** — master map |
-| **`witness-loop-upgrade-blueprint.md`** | Synapse W1–W6; WP1–WP8 register; active build contract | **ACTIVE** |
+| **`witness-loop-upgrade-blueprint.md`** | Synapse W1–W4 shipped; W5-practice + §7I register; WP1–WP8 | **ACTIVE** |
+| **`w5-biological-limits-blueprint.md`** | Eight brain limits; W5-E … W5-H compensations; geometry-not-diagnosis | **IDEA LAYER — pinned** |
 | **`desktop-vessel-blueprint.md`** | Tauri + Ollama — pre-laptop gate | **ACTIVE** — not started |
 | **`NakedQuantum-quantum-fortress.md`** | Security pipeline (8 layers + PWA shell); §18 phased contract | **ACTIVE** |
 | **`lighthouse-cockpit-blueprint.md`** | Desktop write column + live marginalia strip (G6) | **PRE-LAPTOP** |

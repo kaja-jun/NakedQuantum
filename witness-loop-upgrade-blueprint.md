@@ -2,7 +2,7 @@
 
 > **Purpose:** Build contract for **synapse-temporal-v1** and beyond — merges the dense multi-model discussion, the three-user stress test (Epictetus / narcissist / young girl in love), and Claude’s **observable → entangle → wire** guard.
 >
-> **Read with:** `NakedQuantum-intention-blueprint.md` (why), `consciousness-exoskeleton-roadmap-blueprint.md` (vision anchor — Ph 0–3 shipped), `witness-panel-blueprint.md` (Review gate + panel — idea layer), `NakedQuantum-app-blueprint.md` §2 (doc routing).
+> **Read with:** `NakedQuantum-intention-blueprint.md` (why), `consciousness-exoskeleton-roadmap-blueprint.md` (vision anchor — Ph 0–3 shipped), `w5-biological-limits-blueprint.md` (W5 mechanics — next horizon), `witness-panel-blueprint.md` (Review gate + panel — idea layer), `NakedQuantum-app-blueprint.md` §2 (doc routing).
 >
 > **Historical detail (archaeology):** `_archive/guardian-refinement-roadmap-2026-05.md`, `_archive/NakedQuantum-checkpoint-2026-05.md` — build history only, not the active queue.
 >
@@ -319,7 +319,9 @@ Guardian **voice** unchanged in Coherence; Isness mode unchanged.
 
 ---
 
-### 7F. W5 — Bridge as practice (after W4)
+### 7F. W5-practice — Bridge as practice (human gate)
+
+**Not the W5 code register.** Geometry mechanics live in **`w5-biological-limits-blueprint.md`**. This section is the **human gate** only — when to dogfood bridge-dependent batches (W5-D steel man, relapse taxonomy, LQ-W5-L).
 
 | Scope | Rule |
 |-------|------|
@@ -327,16 +329,37 @@ Guardian **voice** unchanged in Coherence; Isness mode unchanged.
 | `mechanical_miss` / calibration feedback | **Skip until desktop/Tauri** — use `user_withdrawn` as escape if signal wrong today |
 | Elaboration delta | Lives once bridge open — already wired |
 
+**W5-E-lite ships regardless** of practice — pinning snapshots does not require bridge friction.
+
 ---
 
-### 7G. W6 — Temporal compare (after ≥1 real bridge)
+### 7G. W6 — Temporal compare (legacy pointer)
 
-| Scope | Skip until |
-|-------|------------|
-| `delta_since_last_synapse` — posture/term shift %, new write weight vs baseline | W5 bridge proof |
+**Superseded in spirit by W5-E + W5-G** in `w5-biological-limits-blueprint.md`. Keep this row so old chat/PR references resolve.
+
+| Legacy scope | Now lives in |
+|--------------|--------------|
+| `delta_since_last_synapse` — posture/term shift | W5-G gap question + anchor diff |
 | Recent-write weighting for migration vaults | Can extend W3-1 if needed |
-| `void_hints`, BGE matrix | Desktop (P12+) |
-| Local LLM witness side panel | Desktop/Tauri — **not** blocking PWA mythril |
+| `void_hints`, BGE matrix | Desktop (P12+) — Phase B |
+| Local LLM witness side panel | Desktop/Tauri + witness panel WP1–WP5 |
+
+---
+
+### 7I. W5 mechanics — biological limits (idea layer)
+
+**Contract:** **`w5-biological-limits-blueprint.md`**. Builds on W1–W4. **First code batch when gated:** W5-E-lite only.
+
+| Pass | Scope | Platform |
+|------|-------|----------|
+| **W5-E-lite** | `pinned_snapshots`, ANCHORS HELD, anchor diff; extends `geometry_at_open` | PWA |
+| **W5-I** | State-dependent retrieval (posture at encoding vs now) | PWA |
+| **W5-A-scout / W5-C / W5-F** | Lexical archaeology, prediction confidence, integration gate | PWA |
+| **W5-A-full, W5-B, W5-G, W5-D** | Full drift, affective delta, gap question, steel man | Desktop |
+| **W5-J, W5-L, W5-N** | Hysteresis, trivialization, performative geometry | Desktop (after W5-practice) |
+| **W5-H** | Hebbian locks | Phase B (6mo+ corpus) |
+
+**Minimum shippable (PWA):** W5-E-lite + W5-F. **Gate:** Kaja approves pass split before Cursor.
 
 ---
 
@@ -451,9 +474,10 @@ P9–P11 → optional polish
 | **W2** Wire (P8–P11) | ☑ | witness-wire PR |
 | **W3** Substrate honesty | ☑ | §7D — resistance normalize, corpus_baseline, SUBSTRATE empty states, half-life surface, summon bridge prompt |
 | **W4** Witness ledger chain | ☑ | §7E — HMAC chain on summon + bridge events; import re-anchor |
-| **W5** Bridge practice | ☐ | §7F — after W4 + real friction |
+| **W5-practice** Bridge as practice (human gate) | ☐ | §7F — real friction; gates W5-D dogfood |
+| **W5 mechanics** Biological limits (E-lite … H) | ☐ | §7I + `w5-biological-limits-blueprint.md` |
 | **W4.6** Ledger re-anchor ceremony | ☐ | fortress §18.7 — migration vs tamper |
-| **W6** Temporal compare | ☐ | §7G — after bridge |
+| **W6** Temporal compare (legacy) | — | §7G — superseded by W5-E + W5-G |
 | **WP1–WP8** Witness panel + Review | ☐ | §7H + `witness-panel-blueprint.md` — idea layer |
 | *(optional A1–A3 split of W1/W2)* | — | §7C |
 | *(granular P1–P11)* | — | §7A |
@@ -476,6 +500,7 @@ P9–P11 → optional polish
 | 2026-05-26 | Security hardening pin — fortress §18.8 Meta crosswalk (PWA + Tauri) |
 | 2026-05-26 | **§7H register** — WP1–WP8 witness panel (Review gate); cross-link `witness-panel-blueprint.md` |
 | 2026-05-18 | WP2 scope — minimal motion, SUBSTRATE saccade/why; no summon preview / mid-pass redirect (witness-panel §10) |
+| 2026-05-31 | **W5 register merge** — §7F renamed W5-practice; §7G W6 legacy pointer; §7I W5 mechanics → `w5-biological-limits-blueprint.md` |
 
 ---
 
