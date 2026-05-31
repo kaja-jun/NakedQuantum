@@ -6118,6 +6118,21 @@ document.getElementById('btn-ie-dev-forge').addEventListener('click', devCreateI
     showToast("Gateway solidified ◆");
   });
 
+  document.getElementById('btn-purge-engine').addEventListener('click', removeActiveModel);
+  document.getElementById('btn-summon-model').addEventListener('click', summonNewModel);
+  document.getElementById('btn-reveal-sovereign-key').addEventListener('click', () => showSovereignKey());
+  document.getElementById('btn-reset-webauthn').addEventListener('click', () => resetWebAuthnRegistration());
+  document.getElementById('btn-akashic-push').addEventListener('click', () => backupToAkashic());
+  document.getElementById('btn-akashic-pull').addEventListener('click', () => restoreFromAkashic());
+  document.getElementById('btn-dev-force-pass').addEventListener('click', () => devForcePass());
+  document.getElementById('btn-dev-clear-watcher').addEventListener('click', () => devClearWatcher());
+  document.getElementById('ie-model-chip').addEventListener('click', cycleIEModel);
+  document.getElementById('btn-ie-manifest-dissolve').addEventListener('click', () => {
+    const id = document.getElementById('ie-manifest-modal').dataset.ieId;
+    if (id) void deleteImmutableEntity(id);
+  });
+  document.getElementById('btn-lineage-close').addEventListener('click', closeLineage);
+
   document.getElementById('btn-forge-save').addEventListener('click',saveCharacterForge);
   document.getElementById('btn-forge-close').addEventListener('click',closeCharacterForge);
   document.getElementById('btn-role-cancel').addEventListener('click',closeOverlay);
