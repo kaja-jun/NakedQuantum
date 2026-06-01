@@ -7,6 +7,8 @@
  */
 
 var W5_PERSISTENCE_LS = 'nq_w5_threshold_persistence';
+var W5_FORMING_WATCH_LS = 'nq_w5_forming_watch';
+var W5_ABORTED_LOG_LS = 'nq_w5_aborted_threshold_log';
 var W5_PERSISTENCE_THRESHOLD = 2;
 var W5_BACKFILL_LS = 'nq_w5_pin_backfill_done';
 var W5_FIRST_ORBIT_LS = 'nq_w5_first_orbit_pinned';
@@ -68,6 +70,24 @@ async function w5GetAllPins() {
   }
 }
 
+function w5ComputeSyntacticPosture(discs) {
+  if (typeof discourseSentenceComplexity !== 'function' || !discs || !discs.length) return null;
+  var sorted = discs.slice().sort(function (a, b) {
+    return (b.updated_at || b.created_at || 0) - (a.updated_at || a.created_at || 0);
+  });
+  var vals = [];
+  for (var i = 0; i < Math.min(8, sorted.length); i++) {
+    var c = discourseSentenceComplexity(sorted[i].raw_text);
+    if (c > 0) vals.push(c);
+  }
+  if (!vals.length) return null;
+  vals.sort(function (a, b) { return a - b; });
+  return {
+    words_per_sentence: parseFloat(vals[Math.floor(vals.length / 2)].toFixed(2)),
+    sample_n: vals.length
+  };
+}
+
 function w5WeatherLabelForSynapse(synapse) {
   if (typeof WitnessWeather === 'undefined' || typeof buildWitnessWeatherContext !== 'function') return '';
   try {
@@ -92,7 +112,8 @@ async function w5PinSnapshot(triggerCondition, synapse, meta) {
     orbit_terms: JSON.stringify(synapse.perpetual_orbit_terms || []),
     open_bridges: synapse.open_bridges_count || 0,
     weather_state: w5WeatherLabelForSynapse(synapse),
-    cluster_signature: JSON.stringify(sig)
+    cluster_signature: JSON.stringify(sig),
+    syntactic_posture: JSON.stringify(synapse.syntactic_posture || null)
   };
   if (meta.ref_id) row.ref_id = meta.ref_id;
   await dbPut('pinned_snapshots', row);
@@ -200,32 +221,112 @@ function w5SavePersistence(obj) {
   } catch (eS) {}
 }
 
-function w5FilterThresholdCandidates(candidates) {
+function w5LoadFormingWatch() {
+  try {
+    return JSON.parse(localStorage.getItem(W5_FORMING_WATCH_LS) || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+function w5SaveFormingWatch(obj) {
+  try {
+    localStorage.setItem(W5_FORMING_WATCH_LS, JSON.stringify(obj));
+  } catch (eS) {}
+}
+
+function w5LoadAbortedLog() {
+  try {
+    return JSON.parse(localStorage.getItem(W5_ABORTED_LOG_LS) || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+function w5SaveAbortedLog(obj) {
+  try {
+    localStorage.setItem(W5_ABORTED_LOG_LS, JSON.stringify(obj));
+  } catch (eS) {}
+}
+
+function w5FilterThresholdCandidates(candidates, synapse) {
   var persist = w5LoadPersistence();
+  var watch = w5LoadFormingWatch();
   var forming = [];
   var eligible = [];
   var ids = {};
+  var sig = synapse ? w5BuildClusterSignature(synapse) : null;
   (candidates || []).forEach(function (c) { ids[c.id] = true; });
   for (var i = 0; i < (candidates || []).length; i++) {
     var c = candidates[i];
     if (c.id === 'bridge_relapsed') {
       eligible.push(c);
       persist[c.id] = W5_PERSISTENCE_THRESHOLD;
+      delete watch[c.id];
       continue;
     }
     var count = (persist[c.id] || 0) + 1;
     persist[c.id] = count;
     if (count < W5_PERSISTENCE_THRESHOLD) {
       forming.push({ id: c.id, count: count, need: W5_PERSISTENCE_THRESHOLD });
+      if (count === 1 && sig) {
+        watch[c.id] = {
+          formed_at: Date.now(),
+          cluster_id: sig.cluster_id,
+          cluster_terms: sig.cluster_terms.slice()
+        };
+      }
     } else {
       eligible.push(c);
+      delete watch[c.id];
     }
   }
   Object.keys(persist).forEach(function (k) {
     if (!ids[k] && persist[k] > 0) persist[k] = Math.max(0, persist[k] - 1);
   });
   w5SavePersistence(persist);
+  w5SaveFormingWatch(watch);
   return { forming: forming, eligible: eligible };
+}
+
+function w5CheckAbortedThresholds(arcsMap) {
+  var watch = w5LoadFormingWatch();
+  var persist = w5LoadPersistence();
+  var abortedLog = w5LoadAbortedLog();
+  var aborted = [];
+  var now = Date.now();
+  Object.keys(watch).forEach(function (signalId) {
+    if ((persist[signalId] || 0) >= W5_PERSISTENCE_THRESHOLD) {
+      delete watch[signalId];
+      return;
+    }
+    var w = watch[signalId];
+    if (!w || !w.formed_at) return;
+    if (abortedLog[signalId]) return;
+    var daysSince = (now - w.formed_at) / 86400000;
+    if (daysSince < 21) return;
+    var terms = w.cluster_terms || [];
+    var clusterActive = false;
+    for (var ti = 0; ti < terms.length; ti++) {
+      var arc = arcsMap && arcsMap[terms[ti]];
+      if (arc && arc.last_seen_days_ago != null && arc.last_seen_days_ago <= 21) {
+        clusterActive = true;
+        break;
+      }
+    }
+    if (!clusterActive) {
+      aborted.push({
+        id: signalId,
+        formed_at: w.formed_at,
+        abandoned_days: Math.floor(daysSince)
+      });
+      abortedLog[signalId] = w.formed_at;
+      delete watch[signalId];
+    }
+  });
+  w5SaveFormingWatch(watch);
+  w5SaveAbortedLog(abortedLog);
+  return aborted;
 }
 
 function w5MapPredictionTagToClass(tag) {
@@ -343,26 +444,43 @@ function w5DetectStateDependentMismatch(synapse, pins) {
   if (!match) return null;
   var encPosture = w5ParsePinJson(match.posture_vector) || {};
   var nowPosture = synapse.posture_vector || {};
+  var encSyntactic = w5ParsePinJson(match.syntactic_posture) || {};
+  var nowSyntactic = synapse.syntactic_posture || {};
   var dCoh = Math.abs((nowPosture.coherence || 0) - (encPosture.coherence || 0));
   var dRes = Math.abs((nowPosture.resistance || 0) - (encPosture.resistance || 0));
-  if (dCoh < 0.25 && dRes < 0.25) return null;
+  var dWps = Math.abs((nowSyntactic.words_per_sentence || 0) - (encSyntactic.words_per_sentence || 0));
+  var semanticFar = dCoh >= 0.25 || dRes >= 0.25;
+  var syntacticFar = dWps >= 4;
+  if (!semanticFar && !syntacticFar) return null;
   return {
     cluster_id: sig.cluster_id,
     days_since_pin: Math.floor((now - (match.pinned_at || now)) / 86400000),
     encoding: encPosture,
     now: nowPosture,
+    encoding_syntactic: encSyntactic,
+    now_syntactic: nowSyntactic,
     pinned_at: match.pinned_at
   };
 }
 
-async function w5EnrichSynapse(synapse, prevSyn, bridgeRows, arcsMap, fastMapById) {
+async function w5EnrichSynapse(synapse, prevSyn, bridgeRows, arcsMap, fastMapById, discs) {
   if (!isW5Enabled() || !synapse) return synapse;
+  if (typeof w5ComputeSyntacticPosture === 'function' && discs && !synapse.syntactic_posture) {
+    synapse.syntactic_posture = w5ComputeSyntacticPosture(discs);
+  }
   await w5MaybePinOnSynapseBuild(synapse, prevSyn, bridgeRows, arcsMap);
   var drifts = w5DetectLexicalArchaeology(arcsMap, fastMapById);
   if (drifts.length) {
     synapse.w5_lexical_drifts = drifts;
     drifts.forEach(function (d) {
       synapse.anomalies.push('coordinate_shift:' + d.term);
+    });
+  }
+  var aborted = w5CheckAbortedThresholds(arcsMap);
+  if (aborted.length) {
+    synapse.w5_aborted_thresholds = aborted;
+    aborted.forEach(function (a) {
+      synapse.anomalies.push('aborted_threshold:' + a.id);
     });
   }
   var pins = await w5GetAllPins();
@@ -440,16 +558,31 @@ function w5FormatEncodingMismatchLine(m) {
   if (!m) return '';
   var e = m.encoding || {};
   var n = m.now || {};
-  return 'encoding: coh ' + (e.coherence != null ? e.coherence : '—') + ' res ' +
+  var es = m.encoding_syntactic || {};
+  var ns = m.now_syntactic || {};
+  var line = 'encoding: coh ' + (e.coherence != null ? e.coherence : '—') + ' res ' +
     (e.resistance != null ? e.resistance : '—') + ' · now: coh ' +
     (n.coherence != null ? n.coherence : '—') + ' res ' +
     (n.resistance != null ? n.resistance : '—') + ' · ' + m.days_since_pin + 'd since pin';
+  if (es.words_per_sentence != null || ns.words_per_sentence != null) {
+    line += ' · syntax: ' + (es.words_per_sentence != null ? es.words_per_sentence : '—') +
+      ' w/s → ' + (ns.words_per_sentence != null ? ns.words_per_sentence : '—') + ' w/s';
+  }
+  return line;
+}
+
+function w5FormatAbortedLine(aborted) {
+  if (!aborted || !aborted.length) return '';
+  return aborted.slice(0, 2).map(function (a) {
+    return a.id + ' · formed ' + a.abandoned_days + 'd ago · cluster abandoned · formation incomplete';
+  }).join(' · ');
 }
 
 function w5FormatContainerAckLine() {
   return 'not in vault: Sanctuary · body · unwritten thought';
 }
 
+window.w5ComputeSyntacticPosture = w5ComputeSyntacticPosture;
 window.w5BackfillPinsFromBridges = w5BackfillPinsFromBridges;
 window.w5PinOnBridgeOpen = w5PinOnBridgeOpen;
 window.w5PinOnBridgeRelapse = w5PinOnBridgeRelapse;
@@ -461,4 +594,5 @@ window.w5FormatAnchorDiffHtml = w5FormatAnchorDiffHtml;
 window.w5FormatFormingLine = w5FormatFormingLine;
 window.w5FormatConfidenceLine = w5FormatConfidenceLine;
 window.w5FormatEncodingMismatchLine = w5FormatEncodingMismatchLine;
+window.w5FormatAbortedLine = w5FormatAbortedLine;
 window.w5FormatContainerAckLine = w5FormatContainerAckLine;

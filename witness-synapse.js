@@ -876,7 +876,7 @@ async function buildSynapseSnapshot() {
     forming: thresholdResult.forming || []
   };
   if (typeof w5EnrichSynapse === 'function') {
-    await w5EnrichSynapse(synapse, prevSyn, bridgeRows, arcsMap, fastMapById);
+    await w5EnrichSynapse(synapse, prevSyn, bridgeRows, arcsMap, fastMapById, discs);
   }
   try {
     localStorage.setItem(SYNAPSE_LS, JSON.stringify(synapse));
@@ -1307,6 +1307,10 @@ async function renderWitnessProcessPanel() {
     html += '<div class="witness-process-section"><div class="witness-process-h">Forming</div>';
     html += '<div class="witness-process-line muted">' + escHtml(formingLine) + '</div></div>';
   }
+  if (syn.w5_aborted_thresholds && syn.w5_aborted_thresholds.length && typeof w5FormatAbortedLine === 'function') {
+    html += '<div class="witness-process-section"><div class="witness-process-h">Aborted threshold</div>';
+    html += '<div class="witness-process-line muted">' + escHtml(w5FormatAbortedLine(syn.w5_aborted_thresholds)) + '</div></div>';
+  }
   var pv = syn.posture_vector || {};
   html += '<div class="witness-process-section"><div class="witness-process-h">Posture</div>';
   html += '<div class="witness-process-line">coherence ' + (pv.coherence != null ? pv.coherence : '—') +
@@ -1515,7 +1519,7 @@ function runWitnessThresholdEngine(synapse, prevSyn, bridgeRows, arcsMap) {
   var forming = [];
   var eligible = candidates;
   if (typeof w5FilterThresholdCandidates === 'function') {
-    var gated = w5FilterThresholdCandidates(candidates);
+    var gated = w5FilterThresholdCandidates(candidates, synapse);
     forming = gated.forming;
     eligible = gated.eligible;
   }

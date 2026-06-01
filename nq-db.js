@@ -56,7 +56,8 @@ db.run("CREATE TABLE IF NOT EXISTS guardian_logs_enc(id TEXT PRIMARY KEY, invoke
   db.run("CREATE TABLE IF NOT EXISTS bridge_rows(id TEXT PRIMARY KEY, opened_at INTEGER, source_log_id TEXT, prior_theory TEXT, user_action TEXT, user_note TEXT, signal_keys TEXT, geometry_at_open TEXT, status TEXT, checks INTEGER DEFAULT 0, last_check_at INTEGER, closed_at INTEGER, closure_reason TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS bridge_rows_enc(id TEXT PRIMARY KEY, enc TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS witness_ledger_chain(id TEXT PRIMARY KEY, seq INTEGER NOT NULL, event_type TEXT NOT NULL, event_id TEXT NOT NULL, payload_hash TEXT NOT NULL, prev_hash TEXT NOT NULL, link_hash TEXT NOT NULL, created_at INTEGER NOT NULL)");
-  db.run("CREATE TABLE IF NOT EXISTS pinned_snapshots(id TEXT PRIMARY KEY, pinned_at INTEGER, trigger_condition TEXT, posture_vector TEXT, top_terms TEXT, orbit_terms TEXT, open_bridges INTEGER, weather_state TEXT, cluster_signature TEXT, ref_id TEXT)");
+  db.run("CREATE TABLE IF NOT EXISTS pinned_snapshots(id TEXT PRIMARY KEY, pinned_at INTEGER, trigger_condition TEXT, posture_vector TEXT, top_terms TEXT, orbit_terms TEXT, open_bridges INTEGER, weather_state TEXT, cluster_signature TEXT, ref_id TEXT, syntactic_posture TEXT)");
+  try { db.run("ALTER TABLE pinned_snapshots ADD COLUMN syntactic_posture TEXT"); } catch (ePs) {}
 
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN auto_invoked INTEGER DEFAULT 0"); } catch (e) {}
   try { db.run("ALTER TABLE guardian_logs ADD COLUMN triggered_by TEXT"); } catch (e) {}
