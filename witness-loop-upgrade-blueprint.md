@@ -475,7 +475,7 @@ P9–P11 → optional polish
 | **W3** Substrate honesty | ☑ | §7D — resistance normalize, corpus_baseline, SUBSTRATE empty states, half-life surface, summon bridge prompt |
 | **W4** Witness ledger chain | ☑ | §7E — HMAC chain on summon + bridge events; import re-anchor |
 | **W5-practice** Bridge as practice (human gate) | ☐ | §7F — real friction; gates W5-D dogfood |
-| **W5 mechanics** Biological limits (E-lite … H) | ☑ PWA batch | §7I + `witness-w5.js` — E-lite, F, C, I, A-scout |
+| **W5 mechanics** Biological limits (E-lite … H) | ☑ PWA + F.1 | §7I + `witness-w5.js` |
 | **W4.6** Ledger re-anchor ceremony | ☐ | fortress §18.7 — migration vs tamper |
 | **W6** Temporal compare (legacy) | — | §7G — superseded by W5-E + W5-G |
 | **WP1–WP8** Witness panel + Review | ☐ | §7H + `witness-panel-blueprint.md` — idea layer |
@@ -501,6 +501,7 @@ P9–P11 → optional polish
 | 2026-05-26 | **§7H register** — WP1–WP8 witness panel (Review gate); cross-link `witness-panel-blueprint.md` |
 | 2026-05-18 | WP2 scope — minimal motion, SUBSTRATE saccade/why; no summon preview / mid-pass redirect (witness-panel §10) |
 | 2026-05-31 | **W5 register merge** — §7F renamed W5-practice; §7G W6 legacy pointer; §7I W5 mechanics → `w5-biological-limits-blueprint.md` |
+| 2026-05-31 | **W5-F.1 + syntactic posture** — pre-laptop PWA complete; cache `nq-v31` |
 
 ---
 

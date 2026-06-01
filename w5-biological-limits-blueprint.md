@@ -2,8 +2,8 @@
 
 *The exoskeleton compensates for what the brain edits away. This document maps eight specific biological limits, the mechanics that address each one, and the build contract for W5.*
 
-**Last updated:** 31 May 2026 (rev 4 — register merge, code-truth mapping, cluster contract, anchor diff)
-**Status:** **IDEA LAYER — pinned** — discuss pass split before Cursor touches code
+**Last updated:** 31 May 2026 (rev 5 — W5-F.1 aborted threshold, W5-I syntactic posture, LQ-W5-Lb mass transfer)
+**Status:** **ACTIVE** — PWA mechanics shipping; desktop batches gated
 **Pairs with:** `witness-loop-upgrade-blueprint.md` (W1–W4 foundation; §7F W5-practice; §7I register), `witness-panel-blueprint.md` (WP1–WP8 surface), `NakedQuantum-intention-blueprint.md` (§1–§6 philosophy)
 **Gate:** W1–W4 shipped, split complete, desktop vessel decided — W5 mechanics are the next horizon
 
@@ -165,6 +165,15 @@ FORMING
 
 Not the content of what is forming. Not the conclusion. Just: *something is accumulating, it has not crossed the threshold yet.* The user who wants to summon early can. That is their choice. The exoskeleton does not gate voluntary attention — only autonomous overwhelm.
 
+**Aborted threshold (W5-F.1)** — when a signal reached formation count 1 and the related cluster was subsequently abandoned ≥21 days before persistence completed, SUBSTRATE logs once:
+
+```
+ABORTED THRESHOLD
+  resistance_shift · formed 24d ago · cluster abandoned · formation incomplete
+```
+
+Geometry only — the perimeter was approached; the cluster went quiet before the pattern locked. Not an accusation of fleeing. A held coordinate about incomplete formation.
+
 -----
 
 ## 4. W5 mechanics — the compensations
@@ -205,6 +214,7 @@ Not the content of what is forming. Not the conclusion. Just: *something is accu
 | `open_bridges` | INTEGER | Count at pin moment |
 | `weather_state` | TEXT | Atmospheric state at pin |
 | `cluster_signature` | TEXT | JSON — see §2.1 |
+| `syntactic_posture` | TEXT | JSON — median words/sentence over recent discourses at pin (W5-I) |
 
 **Guardian output (geometry only):**
 
@@ -405,6 +415,47 @@ Same geometry. Different temporal signature. The output is always pure measureme
 
 **This is not a cooldown timer.** A cooldown says “wait N hours.” The integration gate says “this pattern has appeared across multiple sessions — it is structural, not a spike.”
 
+#### W5-F.1 — Aborted threshold (PWA — shipped)
+
+*Addresses: Limit 3 (macro-saccade) + integration bandwidth*
+
+**What the brain does:** Senses the perimeter of an anomaly, feels voltage rising, and backs away before the pattern fully forms — a macro-saccade at the integration window.
+
+**What the exoskeleton holds:** Signals that reached `persistence_count = 1` (FORMING) but never reached 2, while the related cluster went dormant ≥21 days.
+
+**Mechanics:**
+
+1. On first FORMING hit (`count === 1`), record `forming_watch`: signal id, `formed_at`, `cluster_terms`, `cluster_id`
+2. On each synapse build, if watch age ≥21d AND all cluster terms have `last_seen_days_ago > 21` AND signal never reached persistence threshold → log **aborted_threshold** once
+3. Clear watch; do not repeat SUBSTRATE line for same signal id
+
+**Output (geometry only):**
+
+*“Signal [X] reached initial formation on [date]. Cluster inactive [N] days. Formation did not complete.”*
+
+**Exception:** Bridge relapse still bypasses integration gate entirely.
+
+-----
+
+### W5-I — State-Dependent Retrieval (PWA — shipped)
+
+*Addresses: Encoding context mismatch — semantic + syntactic posture*
+
+**What the brain does:** Encodes memories in the emotional and syntactic context of the moment. Retrieval from a different state contaminates or fails — not because the memory is gone, but because the key does not fit.
+
+**What the exoskeleton holds:** `posture_vector` **and** `syntactic_posture` at pin time vs now on cluster reactivation (≥21d gap, matching `cluster_id`).
+
+**Syntactic posture (pinned on every snapshot):**
+
+- Median words/sentence over last 8 discourses at pin moment
+- Compared on reactivation — Δ ≥ 4 words/sentence triggers encoding line even when semantic posture is stable
+
+**Output (geometry only):**
+
+*“Posture at encoding: resistance 0.8, coherence 0.6. Posture now: resistance 0.1, coherence 1.0. Syntax: 18.2 w/s → 6.1 w/s. [N]d since pin.”*
+
+No “respiratory rate” copy — numbers only. The human supplies meaning.
+
 -----
 
 ### W5-G — Gap Question (E + B synthesis)
@@ -461,7 +512,9 @@ Four mechanics from creative review. Per dev rules §0, these sit here for 48 ho
 
 ### LQ-W5-I — State-Dependent Retrieval
 
-*Biological limit: The brain encodes memories with the emotional and physiological context of the moment. When the retrieval state doesn’t match the encoding state, the memory is inaccessible — not because it is gone, but because the key doesn’t fit the lock.*
+**Graduated → §4 W5-I (shipped).** Retained here as intention trace only.
+
+*Biological limit: The brain encodes memories with the emotional and physiological context of the moment.*
 
 **What the exoskeleton holds:** The posture vector as encoding context — pinned at the moment a significant observation was made.
 
@@ -518,6 +571,29 @@ No verdict on whether the ejection was defensive. Just: the orbit was high-gravi
 **Why it fits:** Catches the most sophisticated ego defense — the one that looks like philosophical wisdom but is actually escape from a specific pressure. The timing is the signal, not the language.
 
 **Status:** Full 48h Living Questions — noisy for User Zero if corpus includes philosophical absurdism writing.
+
+-----
+
+### LQ-W5-Lb — Mass Transfer (Law of Conservation of Orbit)
+
+*Extension of LQ-W5-L — not v1. Biological limit: displaced kinetic energy — anxiety conservation.*
+
+**What the brain does:** When high-gravity orbit mass is ejected, the energy does not vanish — it often relocates to a lower-co-occurrence cluster.
+
+**What the exoskeleton holds:** Time-ordered correlation between orbit drop on term A and gravity spike on term B within 3–5 subsequent discourses.
+
+**Guards (all required):**
+
+1. Orbit drop magnitude floor (same as LQ-W5-L)
+2. Apathy markers + recent high-voltage event (same window as LQ-W5-L)
+3. Term B had **<10% prior co-occurrence** with term A — not “trivial”, just geometrically unrelated
+4. Term B gravity spike ≥ dogfood threshold
+
+**Output (geometry only — never label stakes):**
+
+*“Orbit gravity for ‘{term-A}’: [before] → [after] on [date]. [N] days later, ‘{term-B}’ gravity: [low] → [high]. Δt: [hours].”*
+
+**Status:** Living Question — desktop second pass after LQ-W5-L core exists. Do not use “trivial term” in any output.
 
 -----
 
@@ -590,11 +666,12 @@ The pass narrates what changed. It does not narrate what the change means about 
 
 | Pass | Mechanic | Biological limit | Dependency | Platform |
 |------|----------|------------------|------------|----------|
-| **W5-E-lite** | Temporal anchoring + ANCHORS HELD + anchor diff | 8 — Reconsolidation | None; extends `geometry_at_open` | PWA now |
-| **W5-I** | State-dependent retrieval | Encoding context mismatch | W5-E-lite, §2.1 | PWA now |
-| **W5-A-scout** | Lexical archaeology (collocation shift) | 7 — Semantic drift | None | PWA now |
-| **W5-C** | Prediction confidence + saccade penalty | 3 + epistemic humility | 10+ prediction outcomes per class | PWA now |
-| **W5-F** | Integration gate + FORMING display | All — integration bandwidth | W1–W4 threshold engine | PWA now |
+| **W5-F** | Integration gate + FORMING display | All — integration bandwidth | W1–W4 threshold engine | ☑ PWA |
+| **W5-F.1** | Aborted threshold | Macro-saccade / integration | W5-F | ☑ PWA |
+| **W5-I** | State-dependent + syntactic posture | Encoding context | W5-E-lite | ☑ PWA |
+| **W5-A-scout** | Lexical archaeology | 7 — Semantic drift | None | ☑ PWA |
+| **W5-C** | Prediction confidence | 3 + epistemic humility | 10+ outcomes | ☑ PWA |
+| **W5-E-lite** | Temporal anchoring + ANCHORS HELD | 8 — Reconsolidation | None | ☑ PWA |
 | **W5-A-full** | Semantic drift (embedding clusters) | 7 — Semantic drift | W5-E-lite, Watcher BGE | Desktop |
 | **W5-B** | Affective delta + negative space | 6 — Affective forecasting | W5-E-lite, §2.1, Cartographer | Desktop |
 | **W5-G** | Gap question synthesis | 6, 7, 8 | W5-E, W5-B | Desktop |
@@ -604,7 +681,8 @@ The pass narrates what changed. It does not narrate what the change means about 
 | **W5-N** | Performative geometry | Observer effect | Real corpus, process panel | Desktop |
 | **W5-H** | Hebbian lock detection | 5 — Hebbian locking | 6+ months corpus | Phase B |
 
-**PWA-safe now:** W5-E-lite, W5-I, W5-A-scout, W5-C, W5-F
+**PWA shipped:** W5-E-lite, W5-I (+ syntactic), W5-A-scout, W5-C, W5-F, W5-F.1
+**PWA-safe before laptop:** — (PWA pre-laptop batch complete)
 **Desktop first pass:** W5-A-full, W5-B, W5-G, W5-D
 **Desktop second pass (after W5-practice):** W5-J, W5-L, W5-N
 **Phase B after corpus depth:** W5-H
@@ -688,5 +766,7 @@ W5-J (hysteresis) — Rovelli:
 | 2026-05-31 | Rev 2 — steel man breach condition; decay velocity taxonomy; domain anchor pre-check; ANCHORS HELD counter; Hebbian frequency floor; FORMING visibility rule |
 | 2026-05-31 | Rev 3 — Geometry-not-diagnosis rule §1.1; four Living Questions (W5-I, W5-J, W5-L, W5-N); somatic proxy indefinite hold; founding principle §0; philosopher cues for W5-I and W5-J |
 | 2026-05-31 | **PWA batch shipped** — W5-E-lite, F, C, I, A-scout in `witness-w5.js`; cache `nq-v30` |
+| 2026-05-31 | **Rev 5** — W5-F.1 aborted threshold; W5-I syntactic posture on pins; LQ-W5-Lb mass transfer (Living Q); philosophy: compensate, never accuse |
+| 2026-05-31 | **W5-F.1 + syntactic shipped** — cache `nq-v31` |
 
 -----
